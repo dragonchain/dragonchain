@@ -93,6 +93,10 @@ All feature development should take place in Git branch dedicated to that featur
 
 Issues are tracked within Github: [Dragonchain Issues](https://github.com/dragonchain/dragonchain/issues)
 
+## Formatting
+
+Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0008/) for Python code where possible. 
+
 ## Contributors
 
 - Joe Roets - Principal Architect / Vision
