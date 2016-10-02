@@ -95,25 +95,25 @@ Issues are tracked within Github: [Dragonchain Issues](https://github.com/dragon
 
 ## Contributors
 
-Joe Roets - Principal Architect / Vision
-Eileen Quenin - Product Manager / Evangelist
-Brandon Kite - Lead Developer
-Dylan Yelton - Developer
-Michael Bachtel - DevOps / Developer
-Lucas Ontivero - Developer
-Adam Bronfin - Developer / Reviewer
-Benjamin Israelson - Developer / Reviewer
-Forrest Fisher - Program Manager
-Robbin Schill - Program Manager
-Krassi Krustev - Developer
-Rob Eichman - iOS Developer
-Sean Ochoa - DevOps / Sysadmin
-Paul Sonier - Developer / Reviewer
-Steve Owens - Reviewer
-Mark LaPerriere - Reviewer
-Kevin Duane - Reviewer
-Chris Moore - Reviewer
-Brian J Wilson - Architect
+- Joe Roets - Principal Architect / Vision
+- Eileen Quenin - Product Manager / Evangelist
+- Brandon Kite - Lead Developer
+- Dylan Yelton - Developer
+- Michael Bachtel - DevOps / Developer
+- Lucas Ontivero - Developer
+- Adam Bronfin - Developer / Reviewer
+- Benjamin Israelson - Developer / Reviewer
+- Forrest Fisher - Program Manager
+- Robbin Schill - Program Manager
+- Krassi Krustev - Developer
+- Rob Eichman - iOS Developer
+- Sean Ochoa - DevOps / Sysadmin
+- Paul Sonier - Developer / Reviewer
+- Steve Owens - Reviewer
+- Mark LaPerriere - Reviewer
+- Kevin Duane - Reviewer
+- Chris Moore - Reviewer
+- Brian J Wilson - Architect
 
 
 
