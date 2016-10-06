@@ -110,7 +110,7 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - Forrest Fisher - Program Manager
 - Robbin Schill - Program Manager
 - Krassi Krustev - Developer
-- Rob Eichman - iOS Developer
+- Rob Eickmann - iOS Developer
 - Sean Ochoa - DevOps / Sysadmin
 - Paul Sonier - Developer / Reviewer
 - Steve Owens - Reviewer
