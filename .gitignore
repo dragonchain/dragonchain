@@ -91,3 +91,11 @@ ENV/
 # PyCharm
 .idea
 
+# configs
+dragonchain/configs
+
+# pki
+dragonchain/pki
+
+# logs
+dragonchain/logs
