@@ -91,3 +91,11 @@ ENV/
 # PyCharm
 .idea
 
+# configs
+configs/
+
+# pki
+pki/
+
+# logs
+logs/
