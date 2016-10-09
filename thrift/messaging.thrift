@@ -85,10 +85,10 @@ struct Signature {
     1: optional string signatory,
     2: string hash,
     3: optional string strip_hash,
-    4: string digest,
+    4: string signature,
     5: string public_key,
     6: i32 signature_ts,
-    7: optional string signature /* child signature */
+    7: optional string child_signature /* child signature */
 }
 
 struct Payload {

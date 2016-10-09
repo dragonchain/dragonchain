@@ -207,8 +207,8 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
                         hashed_items.append(transaction_header[header_key])
 
                 # checking if this signature has a child signature digest and adding to hash verification
-                if "signature" in signature_block and signature_block["signature"]:
-                    hashed_items.append(signature_block["signature"]["digest"])
+                if "child_signature" in signature_block and signature_block["child_signature"]:
+                    hashed_items.append(signature_block["child_signature"]["signature"])
 
                 # adding signature info for hash verification
                 hashed_items.append(signature_block["signatory"])
@@ -228,9 +228,9 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
                     if not full_hash == signature_block["hash"]:
                         return False
 
-                if "signature" in signature_block:
+                if "child_signature" in signature_block:
                     log.info("Reviewing the child signature")
-                    signature_block = signature_block["signature"]
+                    signature_block = signature_block["child_signature"]
                 else:
                     signature_block = None
 
@@ -248,7 +248,7 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
     verifying_key = VerifyingKey.from_pem(signature_block["public_key"])
 
     log.info("Decoding the digest")
-    decoded_digest = signature_block["digest"].decode('base64')
+    decoded_digest = signature_block["signature"].decode('base64')
 
     log.info('Performing signature verification')
     # checking stripped hash if this is a transaction signature
@@ -300,7 +300,7 @@ def validate_verification_record(verification_record, verification_info, log=log
     return True
 
 
-def assemble_sig_block(record, signatory, public_key_string, digest, hash, signature_ts, stripped_hash=None,
+def assemble_sig_block(record, signatory, public_key_string, signature, hash, signature_ts, stripped_hash=None,
                        child_signature=None, log=logging.getLogger(__name__)):
     """
     assemble new signature record
@@ -311,7 +311,7 @@ def assemble_sig_block(record, signatory, public_key_string, digest, hash, signa
 
     record["signature"] = {
         "signatory": signatory,
-        "digest": digest,
+        "signature": signature,
         "hash": hash,
         "public_key": public_key_string,
         "signature_ts": signature_ts
@@ -323,7 +323,7 @@ def assemble_sig_block(record, signatory, public_key_string, digest, hash, signa
 
     # set the child signature if there was one
     if child_signature:
-        record["signature"]["signature"] = child_signature
+        record["signature"]["child_signature"] = child_signature
 
 
 def bytes2long(str):

@@ -91,3 +91,8 @@ ENV/
 # PyCharm
 .idea
 
+# pki
+blockchain/pki
+
+#logs
+blockchain/logs

@@ -602,10 +602,10 @@ class Signature:
    - signatory
    - hash
    - strip_hash
-   - digest
+   - signature
    - public_key
    - signature_ts
-   - signature
+   - child_signature
   """
 
   thrift_spec = (
@@ -613,20 +613,20 @@ class Signature:
     (1, TType.STRING, 'signatory', None, None, ), # 1
     (2, TType.STRING, 'hash', None, None, ), # 2
     (3, TType.STRING, 'strip_hash', None, None, ), # 3
-    (4, TType.STRING, 'digest', None, None, ), # 4
+    (4, TType.STRING, 'signature', None, None, ), # 4
     (5, TType.STRING, 'public_key', None, None, ), # 5
     (6, TType.I32, 'signature_ts', None, None, ), # 6
-    (7, TType.STRING, 'signature', None, None, ), # 7
+    (7, TType.STRING, 'child_signature', None, None, ), # 7
   )
 
-  def __init__(self, signatory=None, hash=None, strip_hash=None, digest=None, public_key=None, signature_ts=None, signature=None,):
+  def __init__(self, signatory=None, hash=None, strip_hash=None, signature=None, public_key=None, signature_ts=None, child_signature=None,):
     self.signatory = signatory
     self.hash = hash
     self.strip_hash = strip_hash
-    self.digest = digest
+    self.signature = signature
     self.public_key = public_key
     self.signature_ts = signature_ts
-    self.signature = signature
+    self.child_signature = child_signature
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -654,7 +654,7 @@ class Signature:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.STRING:
-          self.digest = iprot.readString()
+          self.signature = iprot.readString()
         else:
           iprot.skip(ftype)
       elif fid == 5:
@@ -669,7 +669,7 @@ class Signature:
           iprot.skip(ftype)
       elif fid == 7:
         if ftype == TType.STRING:
-          self.signature = iprot.readString()
+          self.child_signature = iprot.readString()
         else:
           iprot.skip(ftype)
       else:
@@ -694,9 +694,9 @@ class Signature:
       oprot.writeFieldBegin('strip_hash', TType.STRING, 3)
       oprot.writeString(self.strip_hash)
       oprot.writeFieldEnd()
-    if self.digest is not None:
-      oprot.writeFieldBegin('digest', TType.STRING, 4)
-      oprot.writeString(self.digest)
+    if self.signature is not None:
+      oprot.writeFieldBegin('signature', TType.STRING, 4)
+      oprot.writeString(self.signature)
       oprot.writeFieldEnd()
     if self.public_key is not None:
       oprot.writeFieldBegin('public_key', TType.STRING, 5)
@@ -706,9 +706,9 @@ class Signature:
       oprot.writeFieldBegin('signature_ts', TType.I32, 6)
       oprot.writeI32(self.signature_ts)
       oprot.writeFieldEnd()
-    if self.signature is not None:
-      oprot.writeFieldBegin('signature', TType.STRING, 7)
-      oprot.writeString(self.signature)
+    if self.child_signature is not None:
+      oprot.writeFieldBegin('child_signature', TType.STRING, 7)
+      oprot.writeString(self.child_signature)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -722,10 +722,10 @@ class Signature:
     value = (value * 31) ^ hash(self.signatory)
     value = (value * 31) ^ hash(self.hash)
     value = (value * 31) ^ hash(self.strip_hash)
-    value = (value * 31) ^ hash(self.digest)
+    value = (value * 31) ^ hash(self.signature)
     value = (value * 31) ^ hash(self.public_key)
     value = (value * 31) ^ hash(self.signature_ts)
-    value = (value * 31) ^ hash(self.signature)
+    value = (value * 31) ^ hash(self.child_signature)
     return value
 
   def __repr__(self):

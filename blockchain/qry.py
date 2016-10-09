@@ -64,7 +64,7 @@ def format_block_verification(block_verification):
         "verification_id":      block_verification["verification_id"],
         "verified_ts":          format_time(block_verification["verified_ts"]),
         "block_id":             block_verification["block_id"],
-        "signature":            block_verification["signature"],
+        "signature":      block_verification["signature"],
         "origin_id":            block_verification["origin_id"],
         "phase":                block_verification["phase"],
         "verification_info":    block_verification["verification_info"],
