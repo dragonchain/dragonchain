@@ -113,6 +113,7 @@ def sign_transaction(signatory,
 
 def sign_verification_record(signatory,
                              prior_block_hash,
+                             lower_phase_hash,
                              public_key_string,
                              private_key_string,
                              block_id,
@@ -124,6 +125,7 @@ def sign_verification_record(signatory,
     sign verification record (common and special info among each phase)
     * signatory (current node's name/id)
     * prior_block_hash
+    * lower_phase_hash
     * public_key
     * private_key
     * block_id
@@ -139,13 +141,15 @@ def sign_verification_record(signatory,
     """
     # signature, transaction_hash = \
     #     sign_signatures(map(lambda tx: tx["signature"], approved_transactions), private_key_string)
+
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
     block_info = {}
     signature_ts = int(time.time())
     hashed_items = []
 
-    # append prior_block_hash
+    # append prior_block_hash and lower_phase_hash
     hashed_items.append(prior_block_hash)
+    hashed_items.append(lower_phase_hash)
 
     # append my signing info for hashing
     hashed_items.append(signatory)
@@ -172,6 +176,7 @@ def sign_verification_record(signatory,
         "origin_id": origin_id,
         "phase": int(phase),
         "prior_hash": prior_block_hash,
+        "lower_phase_hash": lower_phase_hash,
         "verification_info": verification_info  # special phase info
     }
 
@@ -273,6 +278,7 @@ def validate_verification_record(verification_record, verification_info, log=log
         validate_signature(signature_block)
 
         hashed_items.append(record['prior_hash'])
+        hashed_items.append(record['lower_phase_hash'])
 
         hashed_items.append(signature_block['signatory'])
         hashed_items.append(signature_block['signature_ts'])

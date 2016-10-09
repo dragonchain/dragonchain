@@ -110,22 +110,23 @@ struct Node {
     5: i32 phases
 }
 
-struct VerificationRecordInfo {
+struct VerificationRecordCommonInfo {
     1: i32 block_id,
     2: string origin_id,
     3: i32 phase,
     4: i32 verification_ts,
     5: Signature signature,
-    6: string prior_hash
+    6: string prior_hash,
+    7: string lower_phase_hash
 }
 
 struct Phase_1_msg {
-    1: VerificationRecordInfo record,
+    1: VerificationRecordCommonInfo record,
     2: list<Transaction> transactions
 }
 
 struct Phase_2_msg {
-    1: VerificationRecordInfo record,
+    1: VerificationRecordCommonInfo record,
     2: string lower_phase_hash,
     3: list<Transaction> valid_txs,
     4: list<Transaction> invalid_txs,
@@ -133,9 +134,9 @@ struct Phase_2_msg {
     6: string deploy_location
 }
 
-/* rename business_list to businesses and deploy_loc_list to deploy_locations */
+/* TODO: rename business_list and deploy_loc_list to businesses and deploy_locations respectively */
 struct Phase_3_msg {
-    1: VerificationRecordInfo record,
+    1: VerificationRecordCommonInfo record,
     2: list<string> lower_phase_hashes,
     3: i32 p2_count,
     4: list<string> business_list,
@@ -143,13 +144,13 @@ struct Phase_3_msg {
 }
 
 struct Phase_4_msg {
-    1: VerificationRecordInfo record,
+    1: VerificationRecordCommonInfo record,
     2: string lower_phase_hash
 }
 
 union Phase_5_msg {
     1: Transaction transaction,
-    2: VerificationRecordInfo record,
+    2: VerificationRecordCommonInfo record,
     /* Level 5 node will NOT hash this field */
     3: string hash,
     /* Level 5 node WILL hash this field */
