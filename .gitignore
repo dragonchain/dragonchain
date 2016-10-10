@@ -91,3 +91,14 @@ ENV/
 # PyCharm
 .idea
 
+# configs
+configs/blockchain1.yml
+configs/blockchain2.yml
+configs/blockchain3.yml
+configs/blockchain4.yml
+
+# pki
+pki/
+
+# logs
+logs/
