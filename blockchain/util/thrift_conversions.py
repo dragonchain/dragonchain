@@ -79,7 +79,7 @@ def convert_thrift_header(thrift_header):
 def convert_thrift_signature(thrift_signature):
     """ returns a dictionary representation of a thrift transaction signature """
     return {
-        "digest": thrift_signature.digest,
+        "signature": thrift_signature.signature,
         "hash": thrift_signature.hash,
         "signatory": thrift_signature.signatory,
         "public_key": thrift_signature.public_key,
@@ -131,7 +131,7 @@ def convert_to_thrift_signature(tx_signature):
         thrift_signature.strip_hash = tx_signature['stripped_hash']
 
     thrift_signature.hash = tx_signature['hash']
-    thrift_signature.digest = tx_signature['digest']
+    thrift_signature.signature = tx_signature['signature']
     thrift_signature.public_key = tx_signature['public_key']
 
     return thrift_signature
