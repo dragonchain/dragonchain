@@ -311,7 +311,6 @@ class ProcessingNode(object):
 
             valid_transactions, invalid_transactions = self.check_tx_requirements(phase_1_info.transactions)
 
-            # TODO: take lower_phase_hash out of verification_info and have it hashed in sign_verification instead
             verification_info = {
                 'valid_txs': valid_transactions,
                 'invalid_txs': invalid_transactions,

@@ -127,11 +127,10 @@ struct Phase_1_msg {
 
 struct Phase_2_msg {
     1: VerificationRecordCommonInfo record,
-    2: string lower_phase_hash,
-    3: list<Transaction> valid_txs,
-    4: list<Transaction> invalid_txs,
-    5: string business,
-    6: string deploy_location
+    2: list<Transaction> valid_txs,
+    3: list<Transaction> invalid_txs,
+    4: string business,
+    5: string deploy_location
 }
 
 /* TODO: rename business_list and deploy_loc_list to businesses and deploy_locations respectively */
@@ -144,8 +143,7 @@ struct Phase_3_msg {
 }
 
 struct Phase_4_msg {
-    1: VerificationRecordCommonInfo record,
-    2: string lower_phase_hash
+    1: VerificationRecordCommonInfo record
 }
 
 union Phase_5_msg {
