@@ -374,7 +374,7 @@ class ProcessingNode(object):
         valid = True
         if not transaction.tx_signature:
             valid = False
-        elif not transaction.tx_signature.digest:
+        elif not transaction.tx_signature.signature:
             valid = False
         elif not transaction.tx_signature.hash:
             valid = False
