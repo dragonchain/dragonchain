@@ -48,6 +48,8 @@ from ecdsa import SigningKey,   \
                   VerifyingKey, \
                   BadSignatureError
 
+non_included_txn_items = {'block_id', 'status', 'creator_id'}
+
 
 def sign_transaction(signatory,
                      private_key_string,
@@ -74,7 +76,8 @@ def sign_transaction(signatory,
     # add transaction header info to hashed_items
     transaction_header = transaction["header"]
     for header_key in transaction_header:
-        hashed_items.append(transaction_header[header_key])
+        if header_key not in non_included_txn_items:
+            hashed_items.append(transaction_header[header_key])
 
     # append my signing info for hashing
     hashed_items.append(signatory)
@@ -203,7 +206,7 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
                 transaction_header = transaction["header"]
                 for header_key in transaction_header:
                     # TODO: create a global req_header_info list to check what to add in signing and what to check for here
-                    if not header_key == 'block_id' and not header_key == 'status' and not header_key == 'creator_id':
+                    if header_key not in non_included_txn_items:
                         hashed_items.append(transaction_header[header_key])
 
                 # checking if this signature has a child signature digest and adding to hash verification
