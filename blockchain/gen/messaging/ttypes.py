@@ -1037,7 +1037,7 @@ class Node:
   def __ne__(self, other):
     return not (self == other)
 
-class VerificationRecordInfo:
+class VerificationRecordCommonInfo:
   """
   Attributes:
    - block_id
@@ -1046,6 +1046,7 @@ class VerificationRecordInfo:
    - verification_ts
    - signature
    - prior_hash
+   - lower_phase_hash
   """
 
   thrift_spec = (
@@ -1056,15 +1057,17 @@ class VerificationRecordInfo:
     (4, TType.I32, 'verification_ts', None, None, ), # 4
     (5, TType.STRUCT, 'signature', (Signature, Signature.thrift_spec), None, ), # 5
     (6, TType.STRING, 'prior_hash', None, None, ), # 6
+    (7, TType.STRING, 'lower_phase_hash', None, None, ), # 7
   )
 
-  def __init__(self, block_id=None, origin_id=None, phase=None, verification_ts=None, signature=None, prior_hash=None,):
+  def __init__(self, block_id=None, origin_id=None, phase=None, verification_ts=None, signature=None, prior_hash=None, lower_phase_hash=None,):
     self.block_id = block_id
     self.origin_id = origin_id
     self.phase = phase
     self.verification_ts = verification_ts
     self.signature = signature
     self.prior_hash = prior_hash
+    self.lower_phase_hash = lower_phase_hash
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1106,6 +1109,11 @@ class VerificationRecordInfo:
           self.prior_hash = iprot.readString()
         else:
           iprot.skip(ftype)
+      elif fid == 7:
+        if ftype == TType.STRING:
+          self.lower_phase_hash = iprot.readString()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1115,7 +1123,7 @@ class VerificationRecordInfo:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('VerificationRecordInfo')
+    oprot.writeStructBegin('VerificationRecordCommonInfo')
     if self.block_id is not None:
       oprot.writeFieldBegin('block_id', TType.I32, 1)
       oprot.writeI32(self.block_id)
@@ -1140,6 +1148,10 @@ class VerificationRecordInfo:
       oprot.writeFieldBegin('prior_hash', TType.STRING, 6)
       oprot.writeString(self.prior_hash)
       oprot.writeFieldEnd()
+    if self.lower_phase_hash is not None:
+      oprot.writeFieldBegin('lower_phase_hash', TType.STRING, 7)
+      oprot.writeString(self.lower_phase_hash)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1155,6 +1167,7 @@ class VerificationRecordInfo:
     value = (value * 31) ^ hash(self.verification_ts)
     value = (value * 31) ^ hash(self.signature)
     value = (value * 31) ^ hash(self.prior_hash)
+    value = (value * 31) ^ hash(self.lower_phase_hash)
     return value
 
   def __repr__(self):
@@ -1177,7 +1190,7 @@ class Phase_1_msg:
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'record', (VerificationRecordInfo, VerificationRecordInfo.thrift_spec), None, ), # 1
+    (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
     (2, TType.LIST, 'transactions', (TType.STRUCT,(Transaction, Transaction.thrift_spec)), None, ), # 2
   )
 
@@ -1196,7 +1209,7 @@ class Phase_1_msg:
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordInfo()
+          self.record = VerificationRecordCommonInfo()
           self.record.read(iprot)
         else:
           iprot.skip(ftype)
@@ -1260,7 +1273,6 @@ class Phase_2_msg:
   """
   Attributes:
    - record
-   - lower_phase_hash
    - valid_txs
    - invalid_txs
    - business
@@ -1269,17 +1281,15 @@ class Phase_2_msg:
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'record', (VerificationRecordInfo, VerificationRecordInfo.thrift_spec), None, ), # 1
-    (2, TType.STRING, 'lower_phase_hash', None, None, ), # 2
-    (3, TType.LIST, 'valid_txs', (TType.STRUCT,(Transaction, Transaction.thrift_spec)), None, ), # 3
-    (4, TType.LIST, 'invalid_txs', (TType.STRUCT,(Transaction, Transaction.thrift_spec)), None, ), # 4
-    (5, TType.STRING, 'business', None, None, ), # 5
-    (6, TType.STRING, 'deploy_location', None, None, ), # 6
+    (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
+    (2, TType.LIST, 'valid_txs', (TType.STRUCT,(Transaction, Transaction.thrift_spec)), None, ), # 2
+    (3, TType.LIST, 'invalid_txs', (TType.STRUCT,(Transaction, Transaction.thrift_spec)), None, ), # 3
+    (4, TType.STRING, 'business', None, None, ), # 4
+    (5, TType.STRING, 'deploy_location', None, None, ), # 5
   )
 
-  def __init__(self, record=None, lower_phase_hash=None, valid_txs=None, invalid_txs=None, business=None, deploy_location=None,):
+  def __init__(self, record=None, valid_txs=None, invalid_txs=None, business=None, deploy_location=None,):
     self.record = record
-    self.lower_phase_hash = lower_phase_hash
     self.valid_txs = valid_txs
     self.invalid_txs = invalid_txs
     self.business = business
@@ -1296,16 +1306,11 @@ class Phase_2_msg:
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordInfo()
+          self.record = VerificationRecordCommonInfo()
           self.record.read(iprot)
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.STRING:
-          self.lower_phase_hash = iprot.readString()
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
         if ftype == TType.LIST:
           self.valid_txs = []
           (_etype40, _size37) = iprot.readListBegin()
@@ -1316,7 +1321,7 @@ class Phase_2_msg:
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
-      elif fid == 4:
+      elif fid == 3:
         if ftype == TType.LIST:
           self.invalid_txs = []
           (_etype46, _size43) = iprot.readListBegin()
@@ -1327,12 +1332,12 @@ class Phase_2_msg:
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
-      elif fid == 5:
+      elif fid == 4:
         if ftype == TType.STRING:
           self.business = iprot.readString()
         else:
           iprot.skip(ftype)
-      elif fid == 6:
+      elif fid == 5:
         if ftype == TType.STRING:
           self.deploy_location = iprot.readString()
         else:
@@ -1351,30 +1356,26 @@ class Phase_2_msg:
       oprot.writeFieldBegin('record', TType.STRUCT, 1)
       self.record.write(oprot)
       oprot.writeFieldEnd()
-    if self.lower_phase_hash is not None:
-      oprot.writeFieldBegin('lower_phase_hash', TType.STRING, 2)
-      oprot.writeString(self.lower_phase_hash)
-      oprot.writeFieldEnd()
     if self.valid_txs is not None:
-      oprot.writeFieldBegin('valid_txs', TType.LIST, 3)
+      oprot.writeFieldBegin('valid_txs', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.valid_txs))
       for iter49 in self.valid_txs:
         iter49.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.invalid_txs is not None:
-      oprot.writeFieldBegin('invalid_txs', TType.LIST, 4)
+      oprot.writeFieldBegin('invalid_txs', TType.LIST, 3)
       oprot.writeListBegin(TType.STRUCT, len(self.invalid_txs))
       for iter50 in self.invalid_txs:
         iter50.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.business is not None:
-      oprot.writeFieldBegin('business', TType.STRING, 5)
+      oprot.writeFieldBegin('business', TType.STRING, 4)
       oprot.writeString(self.business)
       oprot.writeFieldEnd()
     if self.deploy_location is not None:
-      oprot.writeFieldBegin('deploy_location', TType.STRING, 6)
+      oprot.writeFieldBegin('deploy_location', TType.STRING, 5)
       oprot.writeString(self.deploy_location)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1387,7 +1388,6 @@ class Phase_2_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.record)
-    value = (value * 31) ^ hash(self.lower_phase_hash)
     value = (value * 31) ^ hash(self.valid_txs)
     value = (value * 31) ^ hash(self.invalid_txs)
     value = (value * 31) ^ hash(self.business)
@@ -1417,7 +1417,7 @@ class Phase_3_msg:
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'record', (VerificationRecordInfo, VerificationRecordInfo.thrift_spec), None, ), # 1
+    (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
     (2, TType.LIST, 'lower_phase_hashes', (TType.STRING,None), None, ), # 2
     (3, TType.I32, 'p2_count', None, None, ), # 3
     (4, TType.LIST, 'business_list', (TType.STRING,None), None, ), # 4
@@ -1442,7 +1442,7 @@ class Phase_3_msg:
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordInfo()
+          self.record = VerificationRecordCommonInfo()
           self.record.read(iprot)
         else:
           iprot.skip(ftype)
@@ -1551,18 +1551,15 @@ class Phase_4_msg:
   """
   Attributes:
    - record
-   - lower_phase_hash
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'record', (VerificationRecordInfo, VerificationRecordInfo.thrift_spec), None, ), # 1
-    (2, TType.STRING, 'lower_phase_hash', None, None, ), # 2
+    (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, record=None, lower_phase_hash=None,):
+  def __init__(self, record=None,):
     self.record = record
-    self.lower_phase_hash = lower_phase_hash
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1575,13 +1572,8 @@ class Phase_4_msg:
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordInfo()
+          self.record = VerificationRecordCommonInfo()
           self.record.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.lower_phase_hash = iprot.readString()
         else:
           iprot.skip(ftype)
       else:
@@ -1598,10 +1590,6 @@ class Phase_4_msg:
       oprot.writeFieldBegin('record', TType.STRUCT, 1)
       self.record.write(oprot)
       oprot.writeFieldEnd()
-    if self.lower_phase_hash is not None:
-      oprot.writeFieldBegin('lower_phase_hash', TType.STRING, 2)
-      oprot.writeString(self.lower_phase_hash)
-      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1612,7 +1600,6 @@ class Phase_4_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.record)
-    value = (value * 31) ^ hash(self.lower_phase_hash)
     return value
 
   def __repr__(self):
@@ -1638,7 +1625,7 @@ class Phase_5_msg:
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'transaction', (Transaction, Transaction.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'record', (VerificationRecordInfo, VerificationRecordInfo.thrift_spec), None, ), # 2
+    (2, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 2
     (3, TType.STRING, 'hash', None, None, ), # 3
     (4, TType.STRING, 'misc', None, None, ), # 4
   )
@@ -1666,7 +1653,7 @@ class Phase_5_msg:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordInfo()
+          self.record = VerificationRecordCommonInfo()
           self.record.read(iprot)
         else:
           iprot.skip(ftype)

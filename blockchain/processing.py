@@ -29,13 +29,13 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-from blockchain.block import Block,               \
-                             BLOCK_FIXATE_OFFSET, \
-                             BLOCK_INTERVAL,      \
-                             get_block_time,      \
-                             get_current_block_id
+from blockchain.block import Block, \
+    BLOCK_FIXATE_OFFSET, \
+    BLOCK_INTERVAL, \
+    get_block_time, \
+    get_current_block_id
 
-from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record
+from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
 from blockchain.util.thrift_conversions import thrift_record_to_dict, thrift_transaction_to_dict
 
@@ -99,6 +99,7 @@ class ProcessingNode(object):
             observer["callback"](config=observer["config"], **kwargs)
 
     """ INTERNAL METHODS """
+
     def _init_networking(self):
         """ currently only starts up network, may add more features """
         print 'initializing network'
@@ -250,9 +251,12 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
+            lower_phase_hash = str(deep_hash(0))
+
             # sign approved transactions
             block_info = sign_verification_record(signatory,
                                                   prior_block_hash,
+                                                  lower_phase_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   current_block_id,
@@ -308,16 +312,18 @@ class ProcessingNode(object):
             valid_transactions, invalid_transactions = self.check_tx_requirements(phase_1_info.transactions)
 
             verification_info = {
-                                 'lower_phase_hash': phase_1_record['signature']['hash'],
-                                 'valid_txs': valid_transactions,
-                                 'invalid_txs': invalid_transactions,
-                                 'business': self.network.business,
-                                 'deploy_location': self.network.deploy_location
-                                }
+                'valid_txs': valid_transactions,
+                'invalid_txs': invalid_transactions,
+                'business': self.network.business,
+                'deploy_location': self.network.deploy_location
+            }
+
+            lower_phase_hash = phase_1_record['signature']['hash']
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
+                                                  lower_phase_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_1_record['block_id'],
@@ -390,12 +396,11 @@ class ProcessingNode(object):
         prior_block_hash = self.get_prior_hash(phase_2_record['origin_id'], phase)
 
         p2_verification_info = {
-                             'lower_phase_hash': phase_2_info.lower_phase_hash,
-                             'valid_txs': map(thrift_transaction_to_dict, phase_2_info.valid_txs),
-                             'invalid_txs': map(thrift_transaction_to_dict, phase_2_info.invalid_txs),
-                             'business': phase_2_info.business,
-                             'deploy_location': phase_2_info.deploy_location
-                             }
+            'valid_txs': map(thrift_transaction_to_dict, phase_2_info.valid_txs),
+            'invalid_txs': map(thrift_transaction_to_dict, phase_2_info.invalid_txs),
+            'business': phase_2_info.business,
+            'deploy_location': phase_2_info.deploy_location
+        }
 
         if validate_verification_record(phase_2_info, p2_verification_info):
             # storing valid verification record
@@ -411,16 +416,22 @@ class ProcessingNode(object):
                 phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
+                lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
+                # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
+                # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
-                                     'lower_phase_hashes': [record['signature']['hash'] for record in phase_2_records],
-                                     'p2_count': len(signatories),
-                                     'business_list': list(businesses),
-                                     'deploy_location_list': list(locations)
-                                    }
+                    'lower_phase_hashes': lower_phase_hashes,
+                    'p2_count': len(signatories),
+                    'business_list': list(businesses),
+                    'deploy_location_list': list(locations)
+                }
+
+                lower_phase_hash = str(deep_hash(lower_phase_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
                                                       prior_block_hash,
+                                                      lower_phase_hash,
                                                       self.service_config['public_key'],
                                                       self.service_config['private_key'],
                                                       phase_2_record['block_id'],
@@ -480,11 +491,11 @@ class ProcessingNode(object):
         phase_3_record = thrift_record_to_dict(phase_3_info.record)
 
         p3_verification_info = {
-                             'lower_phase_hashes': phase_3_info.lower_phase_hashes,
-                             'p2_count': phase_3_info.p2_count,
-                             'business_list': phase_3_info.business_list,
-                             'deploy_location_list': phase_3_info.deploy_loc_list
-                            }
+            'lower_phase_hashes': phase_3_info.lower_phase_hashes,
+            'p2_count': phase_3_info.p2_count,
+            'business_list': phase_3_info.business_list,
+            'deploy_location_list': phase_3_info.deploy_loc_list
+        }
 
         phase_3_record['verification_info'] = p3_verification_info
 
@@ -493,9 +504,12 @@ class ProcessingNode(object):
 
             phase_3_record['phase'] = phase
 
+            lower_phase_hash = phase_3_record['signature']['hash']
+
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
+                                                  lower_phase_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_3_record['block_id'],
@@ -566,6 +580,7 @@ def main():
 
     finally:
         postgres.cleanup()
+
 
 # start calling f now and every 60 sec thereafter
 

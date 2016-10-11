@@ -43,7 +43,8 @@ def thrift_record_to_dict(thrift_record):
         'phase': thrift_record.phase,
         'verification_ts': thrift_record.verification_ts,
         'signature': convert_thrift_signature(thrift_record.signature),
-        'prior_hash': thrift_record.prior_hash
+        'prior_hash': thrift_record.prior_hash,
+        'lower_phase_hash': thrift_record.lower_phase_hash
     }
 
 
@@ -139,11 +140,12 @@ def convert_to_thrift_signature(tx_signature):
 
 def get_verification_record(record):
     """ returns a thrift representation of a dictionary verification record """
-    thrift_record = message_types.VerificationRecordInfo()
+    thrift_record = message_types.VerificationRecordCommonInfo()
     thrift_record.block_id = record['block_id']
     thrift_record.origin_id = record['origin_id']
     thrift_record.phase = record['phase']
     thrift_record.verification_ts = record['verification_ts']
+    thrift_record.lower_phase_hash = record['lower_phase_hash']
 
     if record['prior_hash']:
         thrift_record.prior_hash = record['prior_hash']

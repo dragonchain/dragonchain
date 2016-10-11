@@ -416,7 +416,6 @@ class ConnectionManager(object):
 
         phase_2_msg = message_types.Phase_2_msg()
         phase_2_msg.record = get_verification_record(verification_record)
-        phase_2_msg.lower_phase_hash = verification_info['lower_phase_hash']
         phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
         phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
         phase_2_msg.business = verification_info['business']
@@ -436,10 +435,10 @@ class ConnectionManager(object):
 
         phase_3_msg = message_types.Phase_3_msg()
         phase_3_msg.record = get_verification_record(verification_record)
-        phase_3_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
         phase_3_msg.p2_count = verification_info['p2_count']
         phase_3_msg.business_list = verification_info['business_list']
         phase_3_msg.deploy_loc_list = verification_info['deploy_location_list']
+        phase_3_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
 
         for node in self.peer_dict[phase_type]:
             try:
