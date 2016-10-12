@@ -447,10 +447,22 @@ class ConnectionManager(object):
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
-    # TODO: implement this broadcast
+    # TODO: review this broadcast implementation
     def phase_4_broadcast(self, block_info, phase_type):
-        pass
+        """ send phase_4 information for phase_5 execution """
+        verification_record = block_info['verification_record']
+        verification_info = verification_record['verification_info']
 
+        phase_4_msg = message_types.Phase_4_msg()
+        phase_4_msg.record = get_verification_record(verification_record)
+        phase_4_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
+
+        for node in self.peer_dict[phase_type]:
+            try:
+                node.client.phase_4_message(phase_4_msg)
+            except:
+                logger().warning('failed to submit to node %s', node.node_id)
+                continue
 
 class BlockchainServiceHandler:
     def __init__(self, connection_manager):
