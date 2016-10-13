@@ -31,6 +31,6 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
+\i schema/types.sql
+\i schema/txpool.sql
+\i schema/net.sql
