@@ -416,7 +416,7 @@ class ProcessingNode(object):
                 phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
-                lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
+                lower_phase_hashes = [record['signature']['signatory'] + ":" + record['signature']['hash'] for record in phase_2_records]
                 # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
                 # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
