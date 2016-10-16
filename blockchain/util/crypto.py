@@ -267,7 +267,7 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
         verifying_key.verify(decoded_digest, str(signature_block["hash"]))
 
 
-def validate_verification_record(verification_record, verification_info, log=logging.getLogger(__name__)):
+def validate_verification_record(record, verification_info, log=logging.getLogger(__name__)):
     """
     validate verification record signature
     * verification_record - general info per phase - signing name, timestamp, pub_key, block_id, etc.
@@ -275,7 +275,6 @@ def validate_verification_record(verification_record, verification_info, log=log
     """
     hashed_items = []
     try:
-        record = thrift_record_to_dict(verification_record.record)
         signature_block = record['signature']
 
         validate_signature(signature_block)

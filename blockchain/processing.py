@@ -296,20 +296,18 @@ class ProcessingNode(object):
           - tx minus the payload
         """
         phase = 2
-        prior_block_hash = self.get_prior_hash(phase_1_info.record.origin_id, phase)
-        p1_verification_info = map(thrift_transaction_to_dict, phase_1_info.transactions)
+        # prior_block_hash = self.get_prior_hash(phase_1_info.record.origin_id, phase)
+        phase_1_record = phase_1_info["record"]
+        p1_verification_info = phase_1_info["verification_info"]
+        phase_1_record['verification_info'] = p1_verification_info
+        prior_block_hash = self.get_prior_hash(phase_1_record["origin_id"], phase)
 
         # validate phase_1's verification record
-        if validate_verification_record(phase_1_info, p1_verification_info):
-            # storing valid verification record
-            phase_1_record = thrift_record_to_dict(phase_1_info.record)
-            phase_1_record['verification_info'] = p1_verification_info
-            verfication_db.insert_verification(phase_1_record)  # works, just don't want to do this for the same block repeatedly
-
-            phase_1_record = thrift_record_to_dict(phase_1_info.record)
+        if validate_verification_record(phase_1_record, p1_verification_info):
+            verfication_db.insert_verification(phase_1_record)
             phase_1_record['phase'] = phase
 
-            valid_transactions, invalid_transactions = self.check_tx_requirements(phase_1_info.transactions)
+            valid_transactions, invalid_transactions = self.check_tx_requirements(p1_verification_info)
 
             verification_info = {
                 'valid_txs': valid_transactions,
@@ -334,10 +332,9 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            # verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
+            verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
             self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record['phase'])
 
-            print "block owner:", phase_1_info.record.origin_id
             print "phase_2 executed"
 
     def check_tx_requirements(self, transactions):
@@ -345,38 +342,37 @@ class ProcessingNode(object):
         valid = True
         valid_txs, invalid_txs = [], []
         for tx in transactions:
-            # check transaction signature using crypto service
-            tx_dict = thrift_transaction_to_dict(tx)
-
-            if not tx.tx_header.transaction_type:
+            tx_header = tx['header']
+            if not tx_header['transaction_type']:
                 valid = False
-            elif not tx.tx_header.transaction_id:
+            elif not tx_header['transaction_id']:
                 valid = False
-            elif not tx.tx_header.transaction_ts:
+            elif not tx_header['transaction_ts']:
                 valid = False
-            elif not tx.tx_header.owner:
+            elif not tx_header['owner']:
                 valid = False
             elif not self.check_tx_sig_existence(tx):
                 valid = False
-            elif not valid_transaction_sig(tx_dict):
+            elif not valid_transaction_sig(tx):
                 valid = False
 
             if valid:
-                valid_txs.append(tx_dict)
+                valid_txs.append(tx)
             else:
-                invalid_txs.append(tx_dict)
+                invalid_txs.append(tx)
                 valid = True
 
         return valid_txs, invalid_txs
 
     def check_tx_sig_existence(self, transaction):
         """ checks signature of given transaction """
+        signature = transaction['signature']
         valid = True
-        if not transaction.tx_signature:
+        if not signature:
             valid = False
-        elif not transaction.tx_signature.signature:
+        elif not signature['signature']:
             valid = False
-        elif not transaction.tx_signature.hash:
+        elif not signature['hash']:
             valid = False
 
         return valid

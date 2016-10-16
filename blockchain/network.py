@@ -46,7 +46,10 @@ from blockchain.db.postgres import network_db as net_dao
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
 
-from blockchain.util.thrift_conversions import convert_to_thrift_transaction, get_verification_record
+from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
+                                               get_verification_record, \
+                                               thrift_record_to_dict, \
+                                               thrift_transaction_to_dict
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -335,7 +338,6 @@ class ConnectionManager(object):
                     # peer.connection_attempts < MAX_CONNECTION_ATTEMPTS and \
                     # len(self.peers) < self.max_outbound_connections:
                     logger().info('attempting connect_thrift_node %s:%s', node_to_connect.host, node_to_connect.port)
-                    # self.peers.append(peer)
 
                     pass_phrase = str(uuid.uuid4())
 
@@ -518,7 +520,11 @@ class BlockchainServiceHandler:
 
     def phase_1_message(self, phase_1):
         """ submit phase_1 block for phase_2 validation_phase """
-        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1)
+        phase_1_info = {
+            'record': thrift_record_to_dict(phase_1.record),
+            'verification_info': map(thrift_transaction_to_dict, phase_1.transactions)
+        }
+        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
 
     def phase_2_message(self, phase_2):
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2)
