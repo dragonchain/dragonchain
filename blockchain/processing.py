@@ -416,17 +416,17 @@ class ProcessingNode(object):
                 phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
-                lower_hash = [record['signature']['hash'] for record in phase_2_records]
+                lower_hashes = [record['signature']['hash'] for record in phase_2_records]
                 # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
                 # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
-                    'lower_hash': lower_hash,
+                    'lower_hashes': lower_hashes,
                     'p2_count': len(signatories),
                     'business_list': list(businesses),
                     'deploy_location_list': list(locations)
                 }
 
-                lower_hash = str(deep_hash(lower_hash))
+                lower_hash = str(deep_hash(lower_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
@@ -491,7 +491,7 @@ class ProcessingNode(object):
         phase_3_record = thrift_record_to_dict(phase_3_info.record)
 
         p3_verification_info = {
-            'lower_hash': phase_3_info.lower_hash,
+            'lower_hashes': phase_3_info.lower_hashes,
             'p2_count': phase_3_info.p2_count,
             'business_list': phase_3_info.business_list,
             'deploy_location_list': phase_3_info.deploy_loc_list

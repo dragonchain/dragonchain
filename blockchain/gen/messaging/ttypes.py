@@ -1409,7 +1409,7 @@ class Phase_3_msg:
   """
   Attributes:
    - record
-   - lower_hash
+   - lower_hashes
    - p2_count
    - business_list
    - deploy_loc_list
@@ -1418,15 +1418,15 @@ class Phase_3_msg:
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
-    (2, TType.LIST, 'lower_hash', (TType.STRING,None), None, ), # 2
+    (2, TType.LIST, 'lower_hashes', (TType.STRING,None), None, ), # 2
     (3, TType.I32, 'p2_count', None, None, ), # 3
     (4, TType.LIST, 'business_list', (TType.STRING,None), None, ), # 4
     (5, TType.LIST, 'deploy_loc_list', (TType.STRING,None), None, ), # 5
   )
 
-  def __init__(self, record=None, lower_hash=None, p2_count=None, business_list=None, deploy_loc_list=None,):
+  def __init__(self, record=None, lower_hashes=None, p2_count=None, business_list=None, deploy_loc_list=None,):
     self.record = record
-    self.lower_hash = lower_hash
+    self.lower_hashes = lower_hashes
     self.p2_count = p2_count
     self.business_list = business_list
     self.deploy_loc_list = deploy_loc_list
@@ -1448,11 +1448,11 @@ class Phase_3_msg:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.LIST:
-          self.lower_hash = []
+          self.lower_hashes = []
           (_etype54, _size51) = iprot.readListBegin()
           for _i55 in xrange(_size51):
             _elem56 = iprot.readString()
-            self.lower_hash.append(_elem56)
+            self.lower_hashes.append(_elem56)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1495,10 +1495,10 @@ class Phase_3_msg:
       oprot.writeFieldBegin('record', TType.STRUCT, 1)
       self.record.write(oprot)
       oprot.writeFieldEnd()
-    if self.lower_hash is not None:
-      oprot.writeFieldBegin('lower_hash', TType.LIST, 2)
-      oprot.writeListBegin(TType.STRING, len(self.lower_hash))
-      for iter69 in self.lower_hash:
+    if self.lower_hashes is not None:
+      oprot.writeFieldBegin('lower_hashes', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRING, len(self.lower_hashes))
+      for iter69 in self.lower_hashes:
         oprot.writeString(iter69)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
@@ -1530,7 +1530,7 @@ class Phase_3_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.record)
-    value = (value * 31) ^ hash(self.lower_hash)
+    value = (value * 31) ^ hash(self.lower_hashes)
     value = (value * 31) ^ hash(self.p2_count)
     value = (value * 31) ^ hash(self.business_list)
     value = (value * 31) ^ hash(self.deploy_loc_list)

@@ -145,7 +145,7 @@ def get_verification_record(record):
     thrift_record.origin_id = record['origin_id']
     thrift_record.phase = record['phase']
     thrift_record.verification_ts = record['verification_ts']
-    thrift_record.lower_hash = record['lower_hash']
+    thrift_record.lower_hashes = record['lower_hashes']
 
     if record['prior_hash']:
         thrift_record.prior_hash = record['prior_hash']

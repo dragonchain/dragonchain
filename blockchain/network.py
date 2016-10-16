@@ -438,7 +438,7 @@ class ConnectionManager(object):
         phase_3_msg.p2_count = verification_info['p2_count']
         phase_3_msg.business_list = verification_info['business_list']
         phase_3_msg.deploy_loc_list = verification_info['deploy_location_list']
-        phase_3_msg.lower_hash = verification_info['lower_hash']
+        phase_3_msg.lower_hashes = verification_info['lower_hashes']
 
         for node in self.peer_dict[phase_type]:
             try:
