@@ -117,7 +117,7 @@ struct VerificationRecordCommonInfo {
     4: i32 verification_ts,
     5: Signature signature,
     6: string prior_hash,
-    7: string lower_phase_hash
+    7: string lower_hash
 }
 
 struct Phase_1_msg {
@@ -136,7 +136,7 @@ struct Phase_2_msg {
 /* TODO: rename business_list and deploy_loc_list to businesses and deploy_locations respectively */
 struct Phase_3_msg {
     1: VerificationRecordCommonInfo record,
-    2: list<string> lower_phase_hashes,
+    2: list<string> lower_hash,
     3: i32 p2_count,
     4: list<string> business_list,
     5: list<string> deploy_loc_list

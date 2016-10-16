@@ -251,12 +251,12 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
-            lower_phase_hash = str(deep_hash(0))
+            lower_hash = str(deep_hash(0))
 
             # sign approved transactions
             block_info = sign_verification_record(signatory,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   current_block_id,
@@ -318,12 +318,12 @@ class ProcessingNode(object):
                 'deploy_location': self.network.deploy_location
             }
 
-            lower_phase_hash = phase_1_record['signature']['hash']
+            lower_hash = phase_1_record['signature']['hash']
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_1_record['block_id'],
@@ -416,22 +416,22 @@ class ProcessingNode(object):
                 phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
-                lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
+                lower_hash = [record['signature']['hash'] for record in phase_2_records]
                 # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
                 # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
-                    'lower_phase_hashes': lower_phase_hashes,
+                    'lower_hash': lower_hash,
                     'p2_count': len(signatories),
                     'business_list': list(businesses),
                     'deploy_location_list': list(locations)
                 }
 
-                lower_phase_hash = str(deep_hash(lower_phase_hashes))
+                lower_hash = str(deep_hash(lower_hash))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
                                                       prior_block_hash,
-                                                      lower_phase_hash,
+                                                      lower_hash,
                                                       self.service_config['public_key'],
                                                       self.service_config['private_key'],
                                                       phase_2_record['block_id'],
@@ -491,7 +491,7 @@ class ProcessingNode(object):
         phase_3_record = thrift_record_to_dict(phase_3_info.record)
 
         p3_verification_info = {
-            'lower_phase_hashes': phase_3_info.lower_phase_hashes,
+            'lower_hash': phase_3_info.lower_hash,
             'p2_count': phase_3_info.p2_count,
             'business_list': phase_3_info.business_list,
             'deploy_location_list': phase_3_info.deploy_loc_list
@@ -504,12 +504,12 @@ class ProcessingNode(object):
 
             phase_3_record['phase'] = phase
 
-            lower_phase_hash = phase_3_record['signature']['hash']
+            lower_hash = phase_3_record['signature']['hash']
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_3_record['block_id'],
