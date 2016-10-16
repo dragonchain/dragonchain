@@ -304,6 +304,7 @@ class ProcessingNode(object):
 
         # validate phase_1's verification record
         if validate_verification_record(phase_1_record, p1_verification_info):
+            # storing valid verification record
             verfication_db.insert_verification(phase_1_record)
             phase_1_record['phase'] = phase
 
@@ -388,20 +389,14 @@ class ProcessingNode(object):
         * All signed "Phase 3 Signature Structures" will be grouped, concatenated, and cryptographically signed by the node.
         """
         phase = 3
-        phase_2_record = thrift_record_to_dict(phase_2_info.record)
+        phase_2_record = phase_2_info['record']
+        p2_verification_info = phase_2_info['verification_info']
+        phase_2_record['verification_info'] = p2_verification_info
         prior_block_hash = self.get_prior_hash(phase_2_record['origin_id'], phase)
 
-        p2_verification_info = {
-            'valid_txs': map(thrift_transaction_to_dict, phase_2_info.valid_txs),
-            'invalid_txs': map(thrift_transaction_to_dict, phase_2_info.invalid_txs),
-            'business': phase_2_info.business,
-            'deploy_location': phase_2_info.deploy_location
-        }
-
-        if validate_verification_record(phase_2_info, p2_verification_info):
+        if validate_verification_record(phase_2_record, p2_verification_info):
             # storing valid verification record
-            phase_2_record['verification_info'] = p2_verification_info
-            verfication_db.insert_verification(phase_2_record)  # works, just don't want to do this for the same block repeatedly
+            verfication_db.insert_verification(phase_2_record)
 
             phase_2_records = self.get_sig_records(phase_2_record)
 
@@ -409,7 +404,6 @@ class ProcessingNode(object):
 
             # checking if passed requirements to move on to next phase
             if len(signatories) >= P2_COUNT_REQ and len(businesses) >= P2_BUS_COUNT_REQ and len(locations) >= P2_LOC_COUNT_REQ:
-                phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
                 lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
@@ -438,7 +432,7 @@ class ProcessingNode(object):
                                                       )
 
                 # inserting verification info after signing
-                verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
+                verfication_db.insert_verification(block_info['verification_record'])
                 self.network.send_block(self.network.phase_3_broadcast, block_info, phase)
                 print "phase 3 executed"
 
