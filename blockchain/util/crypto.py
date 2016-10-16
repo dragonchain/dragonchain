@@ -179,7 +179,7 @@ def sign_verification_record(signatory,
         "origin_id": origin_id,
         "phase": int(phase),
         "prior_hash": prior_block_hash,
-        "lower_hashes": lower_hashes,
+        "lower_hash": lower_hash,
         "verification_info": verification_info  # special phase info
     }
 
