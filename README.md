@@ -56,18 +56,22 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 ### Keys
 
-* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out sk.pem`
-* Verifying Key Generation `openssl ec -in sk.pem -pubout -out pk.pem`
-
+* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
+* Verifying Key Generation `openssl ec -in sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
 
 # Execution
 
-## Transaction && Query Service
-    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+## Transaction Service
+
+    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
+    
+## Query Service
+
+    python <Dragonchain Home>/blockchain/query_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
 ## Blockchain Processor
 
-    python <Dragonchain Home>/blockchain/processing.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+    python <Dragonchain Home>/blockchain/processing.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
     --private-key (required - signing key for transaction service and processing module)
     --public-key  (required)
@@ -82,8 +86,6 @@ Configuration within yaml files within configs directory.
 ### Environment Variables
 
 `BLOCKCHAIN_DB_NAME` = Blockchain database (also selects `.yaml` config and log file with same name)
-
-
 
 # Contribution
 
