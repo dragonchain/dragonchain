@@ -395,6 +395,7 @@ class ProcessingNode(object):
         phase_2_record['verification_info'] = p2_verification_info
         prior_block_hash = self.get_prior_hash(phase_2_record['origin_id'], phase)
 
+        # validate phase_2's verification record
         if validate_verification_record(phase_2_record, p2_verification_info):
             # storing valid verification record
             verfication_db.insert_verification(phase_2_record)
@@ -484,6 +485,7 @@ class ProcessingNode(object):
         phase_3_record['verification_info'] = p3_verification_info
         prior_block_hash = self.get_prior_hash(phase_3_record['origin_id'], phase)
 
+        # validate phase_3's verification record
         if validate_verification_record(phase_3_record, p3_verification_info):
             # storing valid verification record
             verfication_db.insert_verification(phase_3_record)
