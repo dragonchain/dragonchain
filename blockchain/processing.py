@@ -296,7 +296,6 @@ class ProcessingNode(object):
           - tx minus the payload
         """
         phase = 2
-        # prior_block_hash = self.get_prior_hash(phase_1_info.record.origin_id, phase)
         phase_1_record = phase_1_info["record"]
         p1_verification_info = phase_1_info["verification_info"]
         phase_1_record['verification_info'] = p1_verification_info
@@ -335,7 +334,7 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
+            verfication_db.insert_verification(block_info['verification_record'])
             self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record['phase'])
 
             print "phase_2 executed"
@@ -508,7 +507,7 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
+            verfication_db.insert_verification(block_info['verification_record'])
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
