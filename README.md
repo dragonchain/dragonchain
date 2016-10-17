@@ -86,9 +86,13 @@ Configuration within yaml files within configs directory.
 ### Environment Variables
 
 `BLOCKCHAIN_DB_HOSTNAME` = Hostname of the database instance (default localhost)
+
 `BLOCKCHAIN_DB_PORT` = Port of the database server (default 5432)
+
 `BLOCKCHAIN_DB_USERNAME` = Database username (default blocky)
+
 `BLOCKCHAIN_DB_PASSWORD` = Database password (default None)
+
 `BLOCKCHAIN_DB_NAME` = Blockchain database (default blockchain, also selects `.yaml` config and log file with same name)
 
 # Contribution
