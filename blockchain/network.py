@@ -539,7 +539,16 @@ class BlockchainServiceHandler:
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
 
     def phase_3_message(self, phase_3):
-        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3)
+        phase_3_info = {
+            'record': thrift_record_to_dict(phase_3.record),
+            'verification_info': {
+                'lower_phase_hashes': phase_3.lower_phase_hashes,
+                'p2_count': phase_3.p2_count,
+                'business_list': phase_3.business_list,
+                'deploy_location_list': phase_3.deploy_loc_list
+            }
+        }
+        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
 
     def phase_4_message(self, phase_4):
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)
