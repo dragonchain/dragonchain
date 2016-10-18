@@ -1,9 +1,8 @@
 # Dragonchain
-The Dragonchain blockchain platform encompasses the development of an internal blockchain platform that provides an secure foundation providing non-repudiation, an network wide common interface, cryptographic capabilities, and efficient distribution of data to the edge.
 
-Dragonchain architecture represents a fast-paced emerging technology foundation for businesses with which to integrate and apply toward identified business problems and use cases. Businesses can develop and track assets more efficiently, deploy the use of cryptographic smart contracts within business workflows to increase efficiency across enterprise systems, and accelerate innovation.
+The Dragonchain platform attempts to simplify integration of real business applications onto a blockchain. Providing features such as easy integration, protection of business data, fixed 5 second blocks, currency agnosticism, and interop features, Dragonchain shines a new and interesting light on blockchain technology.
 
-This platform will allow ease of integration for real business applications. There is a growing need for simplified blockchain integration. The decentralized and singular approach to blockchain implementation is sometimes at odds with the real business need to protect information and control business processes. The Dragonchain blockchain platform seeks to solve these needs.
+#### No blockchain expertise required!
 
 ## Project Goals
 
@@ -24,7 +23,7 @@ Group blockchain standardization​)
 
 
 ## Quick Links
-* [Dragonchain Organization](https://github.com/dragonchain/dragonchain.github.io)
+* [Dragonchain Organization](https://dragonchain.github.io/)
 * [Dragonchain Architecture Document](https://github.com/dragonchain/dragonchain.github.io/blob/master/DragonchainArchitecture.pdf)
 * [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
 
