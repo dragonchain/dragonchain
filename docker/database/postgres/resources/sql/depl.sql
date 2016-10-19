@@ -31,6 +31,6 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i schema/types.sql
-\i schema/txpool.sql
-\i schema/net.sql
+\i /docker-entrypoint-initdb.d/schema/types.sql
+\i /docker-entrypoint-initdb.d/schema/txpool.sql
+\i /docker-entrypoint-initdb.d/schema/net.sql

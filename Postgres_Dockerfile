@@ -1,5 +1,4 @@
 FROM postgres
 VOLUME ["/var/lib/pgsql"]
 
-ADD ./docker/database/postgres/resources/init-user-db.sh /docker-entrypoint-initdb.d/init-user-db.sh
-COPY ./sql /docker-entrypoint-initdb.d/
+ADD ./docker/database/postgres/resources/sql /docker-entrypoint-initdb.d/

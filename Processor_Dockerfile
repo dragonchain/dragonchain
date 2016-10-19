@@ -62,13 +62,13 @@ RUN echo $PATH
 COPY ./blockchain/ blockchain/
 COPY ./requirements.txt .
 COPY ./setup.py .
-COPY ./blockchain.yml .
+COPY ./configs/blockchain.yml .
 COPY ./pki/ pki/
 
-ARG BLOCKCHAIN_DB_HOSTNAME
-ARG BLOCKCHAIN_DB_NAME
-ARG BLOCKCHAIN_DB_USERNAME
-ARG BLOCKCHAIN_DB_PORT
+#ARG BLOCKCHAIN_DB_HOSTNAME
+#ARG BLOCKCHAIN_DB_NAME
+#ARG BLOCKCHAIN_DB_USERNAME
+#ARG BLOCKCHAIN_DB_PORT
 
 RUN pip install -r requirements.txt
 RUN chmod a+x blockchain/processing.py

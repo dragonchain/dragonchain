@@ -22,3 +22,5 @@ RUN chmod a+x query_svc.py
 CMD ["/bin/bash", "ssh-keygen -b 4096 -t rsa -f /tmp/sshkey -q -N """]
 CMD ["/bin/bash", "cat /tmp/sshkey > server.log 2>&1"]
 ENTRYPOINT ["/bin/bash", "python ./blockchain/transaction_svc.py --private-key ./pki/private-key.pem --public-key ./pki/public-key.pem"]
+
+port 80

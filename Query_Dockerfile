@@ -22,3 +22,5 @@ RUN yum install openssh -y
 
 #ENTRYPOINT ["/bin/bash", "python ./blockchain/query_svc.py --private-key ./pki/private-key.pem --public-key ./pki/public-key.pem"]
 CMD ["/bin/bash", "web_query_entrypoint.sh"]
+
+port 80
