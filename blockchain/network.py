@@ -46,7 +46,10 @@ from blockchain.db.postgres import network_db as net_dao
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
 
-from blockchain.util.thrift_conversions import convert_to_thrift_transaction, get_verification_record
+from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
+                                               get_verification_record, \
+                                               thrift_record_to_dict, \
+                                               thrift_transaction_to_dict
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -335,7 +338,6 @@ class ConnectionManager(object):
                     # peer.connection_attempts < MAX_CONNECTION_ATTEMPTS and \
                     # len(self.peers) < self.max_outbound_connections:
                     logger().info('attempting connect_thrift_node %s:%s', node_to_connect.host, node_to_connect.port)
-                    # self.peers.append(peer)
 
                     pass_phrase = str(uuid.uuid4())
 
@@ -518,13 +520,35 @@ class BlockchainServiceHandler:
 
     def phase_1_message(self, phase_1):
         """ submit phase_1 block for phase_2 validation_phase """
-        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1)
+        phase_1_info = {
+            'record': thrift_record_to_dict(phase_1.record),
+            'verification_info': map(thrift_transaction_to_dict, phase_1.transactions)
+        }
+        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
 
     def phase_2_message(self, phase_2):
-        self.connection_manager.processing_node.notify(3, phase_2_info=phase_2)
+        phase_2_info = {
+            'record': thrift_record_to_dict(phase_2.record),
+            'verification_info': {
+                'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
+                'invalid_txs': map(thrift_transaction_to_dict, phase_2.invalid_txs),
+                'business': phase_2.business,
+                'deploy_location': phase_2.deploy_location
+            }
+        }
+        self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
 
     def phase_3_message(self, phase_3):
-        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3)
+        phase_3_info = {
+            'record': thrift_record_to_dict(phase_3.record),
+            'verification_info': {
+                'lower_phase_hashes': phase_3.lower_phase_hashes,
+                'p2_count': phase_3.p2_count,
+                'business_list': phase_3.business_list,
+                'deploy_location_list': phase_3.deploy_loc_list
+            }
+        }
+        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
 
     def phase_4_message(self, phase_4):
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)

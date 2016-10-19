@@ -1,9 +1,8 @@
 # Dragonchain
-The Dragonchain blockchain platform encompasses the development of an internal blockchain platform that provides an secure foundation providing non-repudiation, an network wide common interface, cryptographic capabilities, and efficient distribution of data to the edge.
 
-Dragonchain architecture represents a fast-paced emerging technology foundation for businesses with which to integrate and apply toward identified business problems and use cases. Businesses can develop and track assets more efficiently, deploy the use of cryptographic smart contracts within business workflows to increase efficiency across enterprise systems, and accelerate innovation.
+The Dragonchain platform attempts to simplify integration of real business applications onto a blockchain. Providing features such as easy integration, protection of business data, fixed 5 second blocks, currency agnosticism, and interop features, Dragonchain shines a new and interesting light on blockchain technology.
 
-This platform will allow ease of integration for real business applications. There is a growing need for simplified blockchain integration. The decentralized and singular approach to blockchain implementation is sometimes at odds with the real business need to protect information and control business processes. The Dragonchain blockchain platform seeks to solve these needs.
+#### No blockchain expertise required!
 
 ## Project Goals
 
@@ -24,7 +23,7 @@ Group blockchain standardization​)
 
 
 ## Quick Links
-* [Dragonchain Organization](https://github.com/dragonchain/dragonchain.github.io)
+* [Dragonchain Organization](https://dragonchain.github.io/)
 * [Dragonchain Architecture Document](https://github.com/dragonchain/dragonchain.github.io/blob/master/DragonchainArchitecture.pdf)
 * [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
 
@@ -56,18 +55,22 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 ### Keys
 
-* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out sk.pem`
-* Verifying Key Generation `openssl ec -in sk.pem -pubout -out pk.pem`
-
+* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
+* Verifying Key Generation `openssl ec -in sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
 
 # Execution
 
-## Transaction && Query Service
-    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+## Transaction Service
+
+    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
+    
+## Query Service
+
+    python <Dragonchain Home>/blockchain/query_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
 ## Blockchain Processor
 
-    python <Dragonchain Home>/blockchain/processing.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+    python <Dragonchain Home>/blockchain/processing.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
     --private-key (required - signing key for transaction service and processing module)
     --public-key  (required)
@@ -81,7 +84,15 @@ Configuration within yaml files within configs directory.
 
 ### Environment Variables
 
-`BLOCKCHAIN_DB_NAME` = Blockchain database (also selects `.yaml` config and log file with same name)
+`BLOCKCHAIN_DB_HOSTNAME` = Hostname of the database instance (default localhost)
+
+`BLOCKCHAIN_DB_PORT` = Port of the database server (default 5432)
+
+`BLOCKCHAIN_DB_USERNAME` = Database username (default blocky)
+
+`BLOCKCHAIN_DB_PASSWORD` = Database password (default None)
+
+`BLOCKCHAIN_DB_NAME` = Blockchain database (default blockchain, also selects `.yaml` config and log file with same name)
 
 ## Docker
 
@@ -100,7 +111,6 @@ Building and running the Transaction_Dockerfile
 Building and running the Query_Dockerfile
 `docker build -t query_image -f Query_Dockerfile .`
 `docker run -p 80:80 --name query --link blockchain_database -d query_image`
-   
 
 # Contribution
 
