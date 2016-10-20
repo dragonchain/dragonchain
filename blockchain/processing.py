@@ -57,6 +57,9 @@ P2_COUNT_REQ = 1
 P2_BUS_COUNT_REQ = 1
 P2_LOC_COUNT_REQ = 1
 
+SIGNATURE = 'signature'
+HASH = 'hash'
+
 
 def logger(name="verifier-service"):
     return logging.getLogger(name)
@@ -197,7 +200,7 @@ class ProcessingNode(object):
             prior_block = verfication_db.get_prior_block(origin_id, phase)
 
             if prior_block:
-                prior_hash = prior_block['signature']['hash']
+                prior_hash = prior_block[SIGNATURE][HASH]
 
         return prior_hash
 
@@ -318,7 +321,7 @@ class ProcessingNode(object):
                 'deploy_location': self.network.deploy_location
             }
 
-            lower_phase_hash = phase_1_record['signature']['hash']
+            lower_phase_hash = phase_1_record[SIGNATURE][HASH]
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
@@ -368,13 +371,13 @@ class ProcessingNode(object):
 
     def check_tx_sig_existence(self, transaction):
         """ checks signature of given transaction """
-        signature = transaction['signature']
+        signature = transaction[SIGNATURE]
         valid = True
         if not signature:
             valid = False
-        elif not signature['signature']:
+        elif not signature[SIGNATURE]:
             valid = False
-        elif not signature['hash']:
+        elif not signature[HASH]:
             valid = False
 
         return valid
@@ -409,7 +412,7 @@ class ProcessingNode(object):
                 # updating record phase
                 phase_2_record['phase'] = phase
 
-                lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
+                lower_phase_hashes = [record[SIGNATURE][HASH] for record in phase_2_records]
                 # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
                 # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
@@ -464,7 +467,7 @@ class ProcessingNode(object):
         location_count = set()
 
         for record in records:
-            signatory = record['signature']['signatory']
+            signatory = record[SIGNATURE]['signatory']
             business = record['verification_info']['business']
             deploy_location = record['verification_info']['deploy_location']
 
@@ -493,7 +496,7 @@ class ProcessingNode(object):
             # updating record phase
             phase_3_record['phase'] = phase
 
-            lower_phase_hash = phase_3_record['signature']['hash']
+            lower_phase_hash = phase_3_record[SIGNATURE][HASH]
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
