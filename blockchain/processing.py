@@ -37,8 +37,6 @@ from blockchain.block import Block, \
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
-from blockchain.util.thrift_conversions import thrift_record_to_dict, thrift_transaction_to_dict
-
 from db.postgres import transaction_db
 from db.postgres import verfication_db
 from db.postgres import postgres
@@ -513,7 +511,7 @@ class ProcessingNode(object):
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
-    def _execute_phase_5(self, config, phase_4_info):
+    def _execute_phase_5(self, config, payload):
         """ public, Bitcoin bridge phase """
         print "phase 5 executed"
 
