@@ -37,8 +37,6 @@ from blockchain.block import Block, \
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
-from blockchain.util.thrift_conversions import thrift_record_to_dict, thrift_transaction_to_dict
-
 from db.postgres import transaction_db
 from db.postgres import verfication_db
 from db.postgres import postgres
