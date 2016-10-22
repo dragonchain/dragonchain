@@ -72,6 +72,7 @@ LOCATION_PROPERTY_KEY = 'deploy_location'
 INBOUND_TIMEOUT = 30  # seconds
 
 RECORD = 'record'
+VERIFICATION_RECORD = 'verification_record'
 VERIFICATION_INFO = 'verification_info'
 
 PHASE_1_NODE = 0b00001
@@ -399,7 +400,7 @@ class ConnectionManager(object):
 
     def phase_1_broadcast(self, block_info, phase_type):
         """ sends phase_1 information for phase_2 execution """
-        record = block_info['verification_record']
+        record = block_info[VERIFICATION_RECORD]
         transactions = map(convert_to_thrift_transaction, record[VERIFICATION_INFO])
         verification_record = get_verification_record(record)
 
@@ -416,7 +417,7 @@ class ConnectionManager(object):
 
     def phase_2_broadcast(self, block_info, phase_type):
         """ sends phase_2 information for phase_3 execution """
-        verification_record = block_info['verification_record']
+        verification_record = block_info[VERIFICATION_RECORD]
         verification_info = verification_record[VERIFICATION_INFO]
 
         phase_2_msg = message_types.Phase_2_msg()
@@ -435,7 +436,7 @@ class ConnectionManager(object):
 
     def phase_3_broadcast(self, block_info, phase_type):
         """ send phase_3 information for phase_4 execution """
-        verification_record = block_info['verification_record']
+        verification_record = block_info[VERIFICATION_RECORD]
         verification_info = verification_record[VERIFICATION_INFO]
 
         phase_3_msg = message_types.Phase_3_msg()
