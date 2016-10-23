@@ -201,7 +201,7 @@ def get_all(limit=None, offset=None, **params):
 
     if offset:
         query += """ OFFSET """ + str(offset)
-    print(query)
+
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
