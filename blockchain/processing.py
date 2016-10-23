@@ -278,7 +278,7 @@ class ProcessingNode(object):
             self.network.send_block(self.network.phase_1_broadcast, block_info, phase)
             print("Phase 1 signed " + str(len(approved_transactions)) + " transactions")
 
-        # update status of rejected transactions
+        # update status transactions that were rejected
         if len(rejected_transactions) > 0:
             for tx in rejected_transactions:
                 tx["header"]["status"] = "rejected"
