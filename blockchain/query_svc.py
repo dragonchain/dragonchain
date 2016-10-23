@@ -57,6 +57,7 @@ class QueryHandler(tornado.web.RequestHandler):
             'block_id': None,
             'transaction_type': None,
             'create_ts': None,
+            'transaction_ts': None,
             'business_unit': None,
             'family_of_business': None,
             'line_of_business': None,
