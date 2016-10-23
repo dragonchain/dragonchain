@@ -65,10 +65,13 @@ sys.path.append('gen')
 
 
 DEFAULT_PORT = 9080
+
 NODE_ID_PROPERTY_KEY = 'node_id'
 OWNER_PROPERTY_KEY = 'owner'
 BUSINESS_PROPERTY_KEY = 'business'
 LOCATION_PROPERTY_KEY = 'deploy_location'
+PUB_TRANS_PROPERTY_KEY = 'public_transmission'
+
 INBOUND_TIMEOUT = 30  # seconds
 
 PHASE_1_NODE = 0b00001
@@ -130,6 +133,7 @@ class ConnectionManager(object):
         self.port = port
         self.business = None
         self.deploy_location = None
+        self.public_transmission = None
         # phase_type => {nodes} (dictionary of connected nodes)
         self.peer_dict = {}
         self.config = None
@@ -148,6 +152,8 @@ class ConnectionManager(object):
 
         # BLOCKING
         logger().info('Starting RMI service handler...')
+
+        # if testing network only without processing
         if processing_node is None:
             self.start_service_handler()
 
@@ -157,6 +163,10 @@ class ConnectionManager(object):
 
         self.business = self.config[BUSINESS_PROPERTY_KEY]
         self.deploy_location = self.config[LOCATION_PROPERTY_KEY]
+
+        # set public_transmission dictionary from yml config
+        if self.processing_node:
+            self.processing_node.public_transmission = self.config[PUB_TRANS_PROPERTY_KEY]
 
         self.this_node.host = self.host
         self.this_node.port = int(self.port)

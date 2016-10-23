@@ -80,6 +80,9 @@ class ProcessingNode(object):
         self._configured_phases = []
         self._register_configs()
 
+        # dictionary of public transmission flags. set by network, obtained through yml config file.
+        self.public_transmission = None
+
         phase = self.phase_config[0]['phase']
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
 
