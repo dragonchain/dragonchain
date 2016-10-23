@@ -44,6 +44,7 @@ from postgres import get_connection_pool
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
 SQL_GET_BY_ID = """SELECT * FROM transactions WHERE transaction_id = %s"""
+# adding to test querying anything
 SQL_GET_ALL = """SELECT * FROM transactions"""
 SQL_INSERT = """INSERT into transactions (
                             transaction_id,
@@ -98,6 +99,35 @@ def get_all(limit=None, offset=None, **params):
         query += """ transaction_type = '""" + str(params["transaction_type"]) + """'"""
         multi_param = True
 
+    if "business_unit" in params:
+        if multi_param:
+            query += """ AND """
+        query += """ business_unit = '""" + str(params["business_unit"]) + """'"""
+        multi_param = True
+
+    if "family_of_business" in params:
+        if multi_param:
+            query += """ AND """
+        query+= """ family_of_business = '""" + str(params["family_of_business"]) + """'"""
+
+    if "line_of_business" in params:
+        if multi_param:
+            query += """ AND """
+        query += """ line_of_business = '""" + str(params["line_of_business"]) + """'"""
+        multi_param = True
+
+    if "signature" in params:
+        if multi_param:
+            query += """ AND """
+        query += """ signature = '""" + str(params["signature"]) + """'"""
+        multi_param = True
+
+    if "status" in params:
+        if multi_param:
+            query += """ AND """
+        query += """ status = '""" + str(params["status"]) + """'"""
+        multi_param = True
+
     if "owner" in params:
         if multi_param:
             query += """ AND """
@@ -115,7 +145,51 @@ def get_all(limit=None, offset=None, **params):
             query += """ AND """
         query += """ entity = '""" + str(params["entity"]) + """'"""
         multi_param = True
-        # not used but left in place to handle future params
+
+    if "create_ts" in params:
+        if multi_param:
+            query += """ AND """
+        if '-' in params["create_ts"]:
+            # if it is timestamp >= UNIX-epoch timecode
+            if params["create_ts"].index('-') == 0:
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][1:])))
+                query += """ create_ts >= '""" + start_time + """'"""
+            elif params["create_ts"].endswith('-'):
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:len(params["create_ts"])-1])))
+                query += """ create_ts <= '""" + end_time + """'"""
+            else:
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:params["create_ts"].index('-')])))
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"][params["create_ts"].index('-')+1:])))
+                query += """ create_ts >= '""" + start_time + """' AND create_ts <= '""" + end_time + """'"""
+        else:
+            cur_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"])))
+            query += """ create_ts = '""" + cur_time + """'"""
+        multi_param = True
+
+    if "transaction_ts" in params:
+        print("transaction_ts")
+        if multi_param:
+            query += """ AND """
+        if '-' in params["transaction_ts"]:
+             # if it is timestamp >= UNIX-epoch timecode
+            if params["transaction_ts"].index('-') == 0:
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"][1:])))
+                query += """ transaction_ts >= '""" + start_time + """'"""
+            elif params["transaction_ts"].endswith('-'):
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                             time.gmtime(float(params["create_ts"][:len(params["transaction_ts"]) - 1])))
+                query += """ transaction_ts <= '""" + end_time + """'"""
+            else:
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S',
+                                               time.gmtime(float(params["create_ts"][:params["transaction_ts"].index('-')])))
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(
+                        float(params["transaction_ts"][params["create_ts"].index('-') + 1:])))
+                query += """ transaction_ts >= '""" + start_time + """' AND transaction_ts <= '""" + end_time + """'"""
+        else:
+             cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"])))
+             query += """ transaction_ts = '""" + cur_time + """'"""
+             multi_param = True
+             # not used but left in place to handle future params
 
     query += """ ORDER BY transaction_ts DESC """
 

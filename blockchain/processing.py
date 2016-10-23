@@ -251,12 +251,12 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
-            lower_phase_hash = str(deep_hash(0))
+            lower_hash = str(deep_hash(0))
 
             # sign approved transactions
             block_info = sign_verification_record(signatory,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   current_block_id,
@@ -296,20 +296,20 @@ class ProcessingNode(object):
           - tx minus the payload
         """
         phase = 2
-        phase_1_record = phase_1_info["record"]
-        p1_verification_info = phase_1_info["verification_info"]
-        phase_1_record['verification_info'] = p1_verification_info
-        prior_block_hash = self.get_prior_hash(phase_1_record["origin_id"], phase)
+        prior_block_hash = self.get_prior_hash(phase_1_info.record.origin_id, phase)
+        p1_verification_info = map(thrift_transaction_to_dict, phase_1_info.transactions)
 
         # validate phase_1's verification record
-        if validate_verification_record(phase_1_record, p1_verification_info):
+        if validate_verification_record(phase_1_info, p1_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_1_record)
+            phase_1_record = thrift_record_to_dict(phase_1_info.record)
+            phase_1_record['verification_info'] = p1_verification_info
+            verfication_db.insert_verification(phase_1_record)  # works, just don't want to do this for the same block repeatedly
 
-            # updating record phase
+            phase_1_record = thrift_record_to_dict(phase_1_info.record)
             phase_1_record['phase'] = phase
 
-            valid_transactions, invalid_transactions = self.check_tx_requirements(p1_verification_info)
+            valid_transactions, invalid_transactions = self.check_tx_requirements(phase_1_info.transactions)
 
             verification_info = {
                 'valid_txs': valid_transactions,
@@ -318,12 +318,12 @@ class ProcessingNode(object):
                 'deploy_location': self.network.deploy_location
             }
 
-            lower_phase_hash = phase_1_record['signature']['hash']
+            lower_hash = phase_1_record['signature']['hash']
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_1_record['block_id'],
@@ -334,9 +334,10 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            # verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
             self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record['phase'])
 
+            print "block owner:", phase_1_info.record.origin_id
             print "phase_2 executed"
 
     def check_tx_requirements(self, transactions):
@@ -344,37 +345,38 @@ class ProcessingNode(object):
         valid = True
         valid_txs, invalid_txs = [], []
         for tx in transactions:
-            tx_header = tx['header']
-            if not tx_header['transaction_type']:
+            # check transaction signature using crypto service
+            tx_dict = thrift_transaction_to_dict(tx)
+
+            if not tx.tx_header.transaction_type:
                 valid = False
-            elif not tx_header['transaction_id']:
+            elif not tx.tx_header.transaction_id:
                 valid = False
-            elif not tx_header['transaction_ts']:
+            elif not tx.tx_header.transaction_ts:
                 valid = False
-            elif not tx_header['owner']:
+            elif not tx.tx_header.owner:
                 valid = False
             elif not self.check_tx_sig_existence(tx):
                 valid = False
-            elif not valid_transaction_sig(tx):
+            elif not valid_transaction_sig(tx_dict):
                 valid = False
 
             if valid:
-                valid_txs.append(tx)
+                valid_txs.append(tx_dict)
             else:
-                invalid_txs.append(tx)
+                invalid_txs.append(tx_dict)
                 valid = True
 
         return valid_txs, invalid_txs
 
     def check_tx_sig_existence(self, transaction):
         """ checks signature of given transaction """
-        signature = transaction['signature']
         valid = True
-        if not signature:
+        if not transaction.tx_signature:
             valid = False
-        elif not signature['signature']:
+        elif not transaction.tx_signature.signature:
             valid = False
-        elif not signature['hash']:
+        elif not transaction.tx_signature.hash:
             valid = False
 
         return valid
@@ -390,15 +392,20 @@ class ProcessingNode(object):
         * All signed "Phase 3 Signature Structures" will be grouped, concatenated, and cryptographically signed by the node.
         """
         phase = 3
-        phase_2_record = phase_2_info['record']
-        p2_verification_info = phase_2_info['verification_info']
-        phase_2_record['verification_info'] = p2_verification_info
+        phase_2_record = thrift_record_to_dict(phase_2_info.record)
         prior_block_hash = self.get_prior_hash(phase_2_record['origin_id'], phase)
 
-        # validate phase_2's verification record
-        if validate_verification_record(phase_2_record, p2_verification_info):
+        p2_verification_info = {
+            'valid_txs': map(thrift_transaction_to_dict, phase_2_info.valid_txs),
+            'invalid_txs': map(thrift_transaction_to_dict, phase_2_info.invalid_txs),
+            'business': phase_2_info.business,
+            'deploy_location': phase_2_info.deploy_location
+        }
+
+        if validate_verification_record(phase_2_info, p2_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_2_record)
+            phase_2_record['verification_info'] = p2_verification_info
+            verfication_db.insert_verification(phase_2_record)  # works, just don't want to do this for the same block repeatedly
 
             phase_2_records = self.get_sig_records(phase_2_record)
 
@@ -406,25 +413,25 @@ class ProcessingNode(object):
 
             # checking if passed requirements to move on to next phase
             if len(signatories) >= P2_COUNT_REQ and len(businesses) >= P2_BUS_COUNT_REQ and len(locations) >= P2_LOC_COUNT_REQ:
-                # updating record phase
+                phase_2_record = thrift_record_to_dict(phase_2_info.record)
                 phase_2_record['phase'] = phase
 
-                lower_phase_hashes = [record['signature']['hash'] for record in phase_2_records]
+                lower_hashes = [record['signature']['hash'] for record in phase_2_records]
                 # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
                 # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
-                    'lower_phase_hashes': lower_phase_hashes,
+                    'lower_hashes': lower_hashes,
                     'p2_count': len(signatories),
                     'business_list': list(businesses),
                     'deploy_location_list': list(locations)
                 }
 
-                lower_phase_hash = str(deep_hash(lower_phase_hashes))
+                lower_hash = str(deep_hash(lower_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
                                                       prior_block_hash,
-                                                      lower_phase_hash,
+                                                      lower_hash,
                                                       self.service_config['public_key'],
                                                       self.service_config['private_key'],
                                                       phase_2_record['block_id'],
@@ -435,7 +442,7 @@ class ProcessingNode(object):
                                                       )
 
                 # inserting verification info after signing
-                verfication_db.insert_verification(block_info['verification_record'])
+                verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
                 self.network.send_block(self.network.phase_3_broadcast, block_info, phase)
                 print "phase 3 executed"
 
@@ -480,25 +487,29 @@ class ProcessingNode(object):
     def _execute_phase_4(self, config, phase_3_info):
         """ external partner notary phase """
         phase = 4
-        phase_3_record = phase_3_info['record']
-        p3_verification_info = phase_3_info['verification_info']
+        prior_block_hash = self.get_prior_hash(phase_3_info.record.origin_id, phase)
+        phase_3_record = thrift_record_to_dict(phase_3_info.record)
+
+        p3_verification_info = {
+            'lower_hashes': phase_3_info.lower_hashes,
+            'p2_count': phase_3_info.p2_count,
+            'business_list': phase_3_info.business_list,
+            'deploy_location_list': phase_3_info.deploy_loc_list
+        }
+
         phase_3_record['verification_info'] = p3_verification_info
-        prior_block_hash = self.get_prior_hash(phase_3_record['origin_id'], phase)
 
-        # validate phase_3's verification record
-        if validate_verification_record(phase_3_record, p3_verification_info):
-            # storing valid verification record
-            verfication_db.insert_verification(phase_3_record)
+        if validate_verification_record(phase_3_info, p3_verification_info):
+            verfication_db.insert_verification(phase_3_record)  # works, just don't want to do this for the same block repeatedly
 
-            # updating record phase
             phase_3_record['phase'] = phase
 
-            lower_phase_hash = phase_3_record['signature']['hash']
+            lower_hash = phase_3_record['signature']['hash']
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_3_record['block_id'],
@@ -508,8 +519,7 @@ class ProcessingNode(object):
                                                   None
                                                   )
 
-            # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
