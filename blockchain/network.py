@@ -133,7 +133,6 @@ class ConnectionManager(object):
         self.port = port
         self.business = None
         self.deploy_location = None
-        self.public_transmission = None
         # phase_type => {nodes} (dictionary of connected nodes)
         self.peer_dict = {}
         self.config = None
@@ -406,6 +405,17 @@ class ConnectionManager(object):
 
     def phase_1_broadcast(self, block_info, phase_type):
         """ sends phase_1 information for phase_2 execution """
+        phase_1_msg = self.get_p1_message(block_info)
+
+        for node in self.peer_dict[phase_type]:
+            try:
+                node.client.phase_1_message(phase_1_msg)
+            except:
+                logger().warning('failed to submit to node %s', node.node_id)
+                continue
+
+    # returns thrift phase 1 message structure
+    def get_p1_message(self, block_info):
         record = block_info['verification_record']
         transactions = map(convert_to_thrift_transaction, record['verification_info'])
         verification_record = get_verification_record(record)
@@ -414,12 +424,7 @@ class ConnectionManager(object):
         phase_1_msg.record = verification_record
         phase_1_msg.transactions = transactions
 
-        for node in self.peer_dict[phase_type]:
-            try:
-                node.client.phase_1_message(phase_1_msg)
-            except:
-                logger().warning('failed to submit to node %s', node.node_id)
-                continue
+        return phase_1_msg
 
     def phase_2_broadcast(self, block_info, phase_type):
         """ sends phase_2 information for phase_3 execution """
@@ -462,6 +467,38 @@ class ConnectionManager(object):
     # TODO: implement this broadcast
     def phase_4_broadcast(self, block_info, phase_type):
         pass
+
+    # broadcast to phase 5 nodes for public transmission
+    def public_broadcast(self, block_info, phase):
+        if block_info and phase <= PHASE_5_NODE:
+            # being asked for public broadcast, connect to known phase 5 nodes at this point
+            try:
+                if self.phases:
+                    self.connect_nodes(PHASE_5_NODE)
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
+
+            phase_msg = None
+            verification_record = message_types.VerificationRecord()
+            phase_5_msg = message_types.Phase_5_msg()
+
+            if phase == 1:
+                phase_msg = self.get_p1_message(block_info)
+                verification_record.p1 = phase_msg
+
+            phase_5_msg.verification_record = verification_record
+
+            # send block to all known phase 5 nodes
+            if phase_msg:
+                for node in self.peer_dict[PHASE_5_NODE]:
+                    try:
+                        node.client.phase_5_message(phase_5_msg)
+                        logger().info('block sent for public transmission...')
+                    except:
+                        logger().warning('failed to submit to node %s', node.node_id)
+                        continue
 
 
 class BlockchainServiceHandler:
@@ -561,10 +598,16 @@ class BlockchainServiceHandler:
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
 
     def phase_4_message(self, phase_4):
+        # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)
 
     def phase_5_message(self, phase_5):
-        self.connection_manager.processing_node.notify(None, phase_5_info=phase_5)
+        # FIXME: hard coded to phase 1 data *** temp for testing
+        phase_info = {
+            'record': thrift_record_to_dict(phase_5.verification_record.p1.record),
+            'verification_info': map(thrift_transaction_to_dict, phase_5.verification_record.p1.transactions)
+        }
+        self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
 
     def get_peers(self):
         """ return list of connections from this node """

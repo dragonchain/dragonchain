@@ -1613,11 +1613,119 @@ class Phase_4_msg:
   def __ne__(self, other):
     return not (self == other)
 
+class VerificationRecord:
+  """
+  Attributes:
+   - p1
+   - p2
+   - p3
+   - p4
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'p1', (Phase_1_msg, Phase_1_msg.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'p2', (Phase_2_msg, Phase_2_msg.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'p3', (Phase_3_msg, Phase_3_msg.thrift_spec), None, ), # 3
+    (4, TType.STRUCT, 'p4', (Phase_4_msg, Phase_4_msg.thrift_spec), None, ), # 4
+  )
+
+  def __init__(self, p1=None, p2=None, p3=None, p4=None,):
+    self.p1 = p1
+    self.p2 = p2
+    self.p3 = p3
+    self.p4 = p4
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.p1 = Phase_1_msg()
+          self.p1.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.p2 = Phase_2_msg()
+          self.p2.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.p3 = Phase_3_msg()
+          self.p3.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRUCT:
+          self.p4 = Phase_4_msg()
+          self.p4.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('VerificationRecord')
+    if self.p1 is not None:
+      oprot.writeFieldBegin('p1', TType.STRUCT, 1)
+      self.p1.write(oprot)
+      oprot.writeFieldEnd()
+    if self.p2 is not None:
+      oprot.writeFieldBegin('p2', TType.STRUCT, 2)
+      self.p2.write(oprot)
+      oprot.writeFieldEnd()
+    if self.p3 is not None:
+      oprot.writeFieldBegin('p3', TType.STRUCT, 3)
+      self.p3.write(oprot)
+      oprot.writeFieldEnd()
+    if self.p4 is not None:
+      oprot.writeFieldBegin('p4', TType.STRUCT, 4)
+      self.p4.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.p1)
+    value = (value * 31) ^ hash(self.p2)
+    value = (value * 31) ^ hash(self.p3)
+    value = (value * 31) ^ hash(self.p4)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class Phase_5_msg:
   """
   Attributes:
    - transaction
-   - record
+   - verification_record
    - hash
    - misc
   """
@@ -1625,14 +1733,14 @@ class Phase_5_msg:
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'transaction', (Transaction, Transaction.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 2
+    (2, TType.STRUCT, 'verification_record', (VerificationRecord, VerificationRecord.thrift_spec), None, ), # 2
     (3, TType.STRING, 'hash', None, None, ), # 3
     (4, TType.STRING, 'misc', None, None, ), # 4
   )
 
-  def __init__(self, transaction=None, record=None, hash=None, misc=None,):
+  def __init__(self, transaction=None, verification_record=None, hash=None, misc=None,):
     self.transaction = transaction
-    self.record = record
+    self.verification_record = verification_record
     self.hash = hash
     self.misc = misc
 
@@ -1653,8 +1761,8 @@ class Phase_5_msg:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRUCT:
-          self.record = VerificationRecordCommonInfo()
-          self.record.read(iprot)
+          self.verification_record = VerificationRecord()
+          self.verification_record.read(iprot)
         else:
           iprot.skip(ftype)
       elif fid == 3:
@@ -1681,9 +1789,9 @@ class Phase_5_msg:
       oprot.writeFieldBegin('transaction', TType.STRUCT, 1)
       self.transaction.write(oprot)
       oprot.writeFieldEnd()
-    if self.record is not None:
-      oprot.writeFieldBegin('record', TType.STRUCT, 2)
-      self.record.write(oprot)
+    if self.verification_record is not None:
+      oprot.writeFieldBegin('verification_record', TType.STRUCT, 2)
+      self.verification_record.write(oprot)
       oprot.writeFieldEnd()
     if self.hash is not None:
       oprot.writeFieldBegin('hash', TType.STRING, 3)
@@ -1703,7 +1811,7 @@ class Phase_5_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.transaction)
-    value = (value * 31) ^ hash(self.record)
+    value = (value * 31) ^ hash(self.verification_record)
     value = (value * 31) ^ hash(self.hash)
     value = (value * 31) ^ hash(self.misc)
     return value

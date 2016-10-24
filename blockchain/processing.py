@@ -269,6 +269,9 @@ class ProcessingNode(object):
             # store signed phase specific data
             verfication_db.insert_verification(block_info['verification_record'])
 
+            if self.public_transmission['p1_pub_trans']:
+                self.network.public_broadcast(block_info, phase)
+
             # pass block info to network to send it to appropriate phase
             self.network.send_block(self.network.phase_1_broadcast, block_info, phase)
             print("Phase 1 signed " + str(len(approved_transactions)) + " transactions")
@@ -514,7 +517,7 @@ class ProcessingNode(object):
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
-    def _execute_phase_5(self, config, payload):
+    def _execute_phase_5(self, config, phase_5_info):
         """ public, Bitcoin bridge phase """
         print "phase 5 executed"
 
