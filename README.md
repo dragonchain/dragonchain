@@ -30,9 +30,9 @@ Group blockchain standardization​)
 ## Support
 [![Slack Status](https://dragon-chain-slack.herokuapp.com/badge.svg)](https://dragon-chain-slack.herokuapp.com)
 
-Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/)
-Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
-Email: support@dragonchain.org
+* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/)
+* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
+* Email: support@dragonchain.org
 
 ## Maintainer
 Joe Roets (j03)
