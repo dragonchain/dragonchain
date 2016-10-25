@@ -40,6 +40,15 @@ joe@dragonchain.org
 
 # Setup and Installation
 
+### Database Setup
+
+Requires Postgres 9.4+
+
+    cd <Dragonchain Home>/sql
+    createuser blocky
+    createdb -O blocky blockchain
+    psql -U blocky -d blockchain -a -f depl.sql
+
 ### Python Dependencies
 
 Dragonchain utilized Python 2.7
