@@ -104,7 +104,7 @@ def sign_transaction(signatory,
 
     # sign merged hash
     log.info("Signing merged hash")
-    signature = ecdsa_signing_key.sign(str(merged_hash))
+    signature = ecdsa_signing_key.sign_digest(str(merged_hash))
     log.info("Base64 encoding the signature")
     digest = signature.encode('base64')
 
@@ -170,7 +170,7 @@ def sign_verification_record(signatory,
 
     verification_hash = final_hash(hashed_items)
 
-    signature = ecdsa_signing_key.sign(verification_hash)
+    signature = ecdsa_signing_key.sign_digest(verification_hash)
     digest = signature.encode('base64')
 
     verification_record = {
@@ -262,9 +262,9 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
     # checking stripped hash if this is a transaction signature
     if "stripped_hash" in signature_block and signature_block['stripped_hash']:
         merged_hash = merge_hashes(signature_block["stripped_hash"], signature_block["hash"])
-        verifying_key.verify(decoded_digest, str(merged_hash))
+        verifying_key.verify_digest(decoded_digest, str(merged_hash))
     else:
-        verifying_key.verify(decoded_digest, str(signature_block["hash"]))
+        verifying_key.verify_digest(decoded_digest, str(signature_block["hash"]))
 
 
 def validate_verification_record(record, verification_info, log=logging.getLogger(__name__)):
