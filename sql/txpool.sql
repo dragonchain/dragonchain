@@ -49,10 +49,6 @@ end
 $body$
 ;
 
-BEGIN;
-/* Attempt to rename the table if it exists */
-ALTER TABLE IF EXISTS transaction RENAME TO transactions;
-COMMIT;
 
 BEGIN;
 /* Don't drop tables unless you really want to */
@@ -103,11 +99,6 @@ CREATE TABLE IF NOT EXISTS transactions (
 COMMIT;
 BEGIN;
 GRANT ALL ON transactions to blocky;
-COMMIT;
-
-BEGIN;
-/* Attempt to convert older tables before creating a new one */
-ALTER TABLE IF EXISTS block_verification RENAME TO block_verifications;
 COMMIT;
 
 BEGIN;
