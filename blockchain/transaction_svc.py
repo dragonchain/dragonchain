@@ -71,7 +71,7 @@ class TransactionHandler(tornado.web.RequestHandler):
         except:
             log.error("Failed to parse JSON.  Details: " + str(sys.exc_info()[1]))
             self.clear()
-            self.set_txn_status(log,400)
+            self.set_txn_status(log, 400)
             self.write(format_error("invalid input", "ERROR:  Failed to parse JSON\n"))
             return
 
@@ -87,26 +87,26 @@ class TransactionHandler(tornado.web.RequestHandler):
                                        self.application.public_key, txn)
 
                 tx_dao.insert_transaction(txn)
-                self.set_txn_status(log,201)
+                self.set_txn_status(log, 201)
                 self.write(json.dumps({
                     "transaction_id": txn["header"]["transaction_id"]
                 }))
                 return
             else:  # TODO: add status function accepts status code number and status string
-                self.set_txn_status(log,400)
+                self.set_txn_status(log, 400)
                 return
         except:
             log.error(str(sys.exc_info()))
             self.clear()
-            self.set_txn_status(log,500)
+            self.set_txn_status(log, 500)
             self.write(format_error("validation", str(sys.exc_info()[1])))
 
     def set_txn_status(self, log, status_code):
-        if(status_code == 400):
+        if status_code == 400:
             log.error("400: Bad Request. The request could not be understood by the server due to malformed syntax.")
-        elif(status_code == 201):
+        elif status_code == 201:
             log.info("201: Created. The request has been fulfilled and resulted in a new resource being created.")
-        elif(status_code == 500):
+        elif status_code == 500:
             log.error("500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
         self.set_status(status_code)
 
