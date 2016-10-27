@@ -191,7 +191,6 @@ def get_all(limit=None, offset=None, **params):
              multi_param = True
              # not used but left in place to handle future params
 
-
     query += """ ORDER BY transaction_ts DESC """
 
     if not limit:

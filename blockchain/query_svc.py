@@ -50,7 +50,6 @@ def format_error(category, msg):
     return json.dumps({"error": { "type": category, "details": msg } })
 
 
-
 class QueryHandler(tornado.web.RequestHandler):
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
