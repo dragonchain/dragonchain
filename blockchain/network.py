@@ -47,7 +47,7 @@ import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
 
 from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
-                                               get_verification_record, \
+                                               convert_to_thrift_record, \
                                                thrift_record_to_dict, \
                                                thrift_transaction_to_dict
 
@@ -418,7 +418,7 @@ class ConnectionManager(object):
         """ returns thrift phase 1 message structure """
         verification_record = block_info['verification_record']
         transactions = map(convert_to_thrift_transaction, verification_record['verification_info'])
-        verification_record = get_verification_record(verification_record)
+        verification_record = convert_to_thrift_record(verification_record)
 
         phase_1_msg = message_types.Phase_1_msg()
         phase_1_msg.record = verification_record
@@ -443,7 +443,7 @@ class ConnectionManager(object):
         verification_info = verification_record['verification_info']
 
         phase_2_msg = message_types.Phase_2_msg()
-        phase_2_msg.record = get_verification_record(verification_record)
+        phase_2_msg.record = convert_to_thrift_record(verification_record)
         phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
         phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
         phase_2_msg.business = verification_info['business']
@@ -468,7 +468,7 @@ class ConnectionManager(object):
         verification_info = verification_record['verification_info']
 
         phase_3_msg = message_types.Phase_3_msg()
-        phase_3_msg.record = get_verification_record(verification_record)
+        phase_3_msg.record = convert_to_thrift_record(verification_record)
         phase_3_msg.p2_count = verification_info['p2_count']
         phase_3_msg.business_list = verification_info['business_list']
         phase_3_msg.deploy_loc_list = verification_info['deploy_location_list']

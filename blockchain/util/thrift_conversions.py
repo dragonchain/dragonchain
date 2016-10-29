@@ -139,7 +139,7 @@ def convert_to_thrift_signature(tx_signature):
     return thrift_signature
 
 
-def get_verification_record(record):
+def convert_to_thrift_record(record):
     """ returns a thrift representation of a dictionary VerificationRecordCommonInfo """
     thrift_record = message_types.VerificationRecordCommonInfo()
     thrift_record.block_id = record['block_id']
