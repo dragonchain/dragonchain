@@ -422,7 +422,7 @@ class ProcessingNode(object):
                 verification_info = {
                     'lower_phase_hashes': lower_phase_hashes,
                     'p2_count': len(signatories),
-                    'business_list': list(businesses),
+                    'businesses': list(businesses),
                     'deploy_location_list': list(locations)
                 }
 

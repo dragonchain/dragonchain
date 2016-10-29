@@ -442,8 +442,8 @@ class ConnectionManager(object):
         phase_3_msg = message_types.Phase_3_msg()
         phase_3_msg.record = get_verification_record(verification_record)
         phase_3_msg.p2_count = verification_info['p2_count']
-        phase_3_msg.business_list = verification_info['business_list']
-        phase_3_msg.deploy_loc_list = verification_info['deploy_location_list']
+        phase_3_msg.businesses = verification_info['businesses']
+        phase_3_msg.deploy_locations = verification_info['deploy_location_list']
         phase_3_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
 
         for node in self.peer_dict[phase_type]:
@@ -548,8 +548,8 @@ class BlockchainServiceHandler:
             VERIFICATION_INFO: {
                 'lower_phase_hashes': phase_3.lower_phase_hashes,
                 'p2_count': phase_3.p2_count,
-                'business_list': phase_3.business_list,
-                'deploy_location_list': phase_3.deploy_loc_list
+                'businesses': phase_3.businesses,
+                'deploy_location_list': phase_3.deploy_locations
             }
         }
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
