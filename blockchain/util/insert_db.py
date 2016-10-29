@@ -33,11 +33,14 @@ __email__ = "joe@dragonchain.org"
 """ only used for manually inserting data into nodes table """
 from blockchain.db.postgres import network_db as net_dao
 from blockchain.network import Node
+
 import os
+
+import uuid
 
 
 def load_required_nodes():
-    node = Node('fb6985bc-31b0-4916-be2e-7417874da20d', 'TWDC', 'localhost', '8084', '10000')
+    node = Node(str(uuid.uuid4()), 'TWDC', 'localhost', '8084', '10000')
     net_dao.insert_node(node)
     print('inserted node into database ' + os.environ.get('BLOCKCHAIN_DB_NAME') + " " + node.node_id)
 

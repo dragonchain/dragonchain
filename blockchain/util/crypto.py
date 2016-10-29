@@ -123,6 +123,7 @@ def sign_verification_record(signatory,
                              phase,
                              origin_id,
                              verification_ts,
+                             public_transmission,
                              verification_info):
     """
     sign verification record (common and special info among each phase)
@@ -180,6 +181,7 @@ def sign_verification_record(signatory,
         "phase": int(phase),
         "prior_hash": prior_block_hash,
         "lower_phase_hash": lower_phase_hash,
+        "public_transmission": public_transmission,
         "verification_info": verification_info  # special phase info
     }
 

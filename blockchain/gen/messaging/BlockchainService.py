@@ -1659,11 +1659,11 @@ class get_peers_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype75, _size72) = iprot.readListBegin()
-          for _i76 in xrange(_size72):
-            _elem77 = Node()
-            _elem77.read(iprot)
-            self.success.append(_elem77)
+          (_etype84, _size81) = iprot.readListBegin()
+          for _i85 in xrange(_size81):
+            _elem86 = Node()
+            _elem86.read(iprot)
+            self.success.append(_elem86)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1686,8 +1686,8 @@ class get_peers_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter78 in self.success:
-        iter78.write(oprot)
+      for iter87 in self.success:
+        iter87.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unauthorized is not None:
