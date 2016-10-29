@@ -5,9 +5,9 @@ deploy_location: SEATTLE
 
 # dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
 public_transmission: 
-    p1_pub_trans: off
-    p2_pub_trans: off
-    p3_pub_trans: off
+    p1_pub_trans: on
+    p2_pub_trans: on
+    p3_pub_trans: on
     p4_pub_trans: off
 
 # host:port:id:phases
