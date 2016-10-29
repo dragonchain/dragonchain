@@ -151,4 +151,4 @@ def run():
 
 if __name__ == "__main__":
     run()
-    postgres.close_connection_pool()x
+    postgres.close_connection_pool()
