@@ -33,7 +33,6 @@ __email__ = "joe@dragonchain.org"
 
 import blockchain.gen.messaging.ttypes as message_types
 
-
 # functions below used for converting thrift types to some other structure #
 def thrift_record_to_dict(thrift_record):
     """ returns a dictionary representation of a thrift verification_record """
@@ -153,3 +152,5 @@ def get_verification_record(record):
     thrift_record.signature = convert_to_thrift_signature(record['signature'])
 
     return thrift_record
+
+print "it worked"
