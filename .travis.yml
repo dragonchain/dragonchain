@@ -7,7 +7,9 @@ python:
 install: "pip install -r requirements.txt"
 
 # command to run tests
-script: python blockchain/util/*.py
+script:
+  - python blockchain/*.py
+  - python blockchain/util/*.py
 
 # FIXME: restricting to this branch for testing purposes
 branches:
