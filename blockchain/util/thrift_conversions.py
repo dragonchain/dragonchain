@@ -152,5 +152,3 @@ def get_verification_record(record):
     thrift_record.signature = convert_to_thrift_signature(record['signature'])
 
     return thrift_record
-
-print "it worked"
