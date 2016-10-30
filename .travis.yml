@@ -7,12 +7,12 @@ python:
 # typo
 install: "pip install -r requirements.txt"
 # command to run tests
+
+before_script: export PYTHONPATH=$PYTHONPATH:$(pwd)
+
 script: python blockchain/util/thrift_conversions.py
 
 # FIXME: restricting to this branch for testing purposes
 branches:
   only:
     - travis-ci
-
-
-after_failure: "cat /home/travis/builds/evantahler/actionHero/npm-debug.log"
