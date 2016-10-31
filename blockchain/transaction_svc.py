@@ -154,8 +154,8 @@ def run():
     parser = argparse.ArgumentParser(description='Process some integers.', prog='python -m blockchain')
     parser.add_argument('-p', '--port', default=8000)
     parser.add_argument('--debug', default=True, action="store_true")
-    parser.add_argument('--private-key', dest="private_key", required=True, help="RSA private key for signing")
-    parser.add_argument('--public-key', dest="public_key", required=True, help="RSA private key for signing")
+    parser.add_argument('--private-key', dest="private_key", required=True, help="ECDSA private key for signing")
+    parser.add_argument('--public-key', dest="public_key", required=True, help="ECDSA private key for signing")
 
     log.info("Parsing arguments")
     args = parser.parse_args()

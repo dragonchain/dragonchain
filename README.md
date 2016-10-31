@@ -24,19 +24,29 @@ Group blockchain standardization​)
 
 ## Quick Links
 * [Dragonchain Organization](https://dragonchain.github.io/)
-* [Dragonchain Architecture Document](https://github.com/dragonchain/dragonchain.github.io/blob/master/DragonchainArchitecture.pdf)
+* [Dragonchain Architecture Document](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
 * [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
 
 ## Support
-Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/)
-Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
-Email: support@dragonchain.org
+
+* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/) sign up: [![Slack Status](https://dragonchain-slack.herokuapp.com/badge.svg)](https://dragonchain-slack.herokuapp.com)
+* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
+* Email: support@dragonchain.org
 
 ## Maintainer
 Joe Roets (j03)
 joe@dragonchain.org
 
 # Setup and Installation
+
+### Database Setup
+
+Requires Postgres 9.4+
+
+    cd <Dragonchain Home>/sql
+    createuser blocky
+    createdb -O blocky blockchain
+    psql -U blocky -d blockchain -a -f depl.sql
 
 ### Python Dependencies
 
