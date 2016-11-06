@@ -6,7 +6,9 @@ import blockchain.util.crypto as crypto
 
 class TestFinal_hash(unittest.TestCase):
     def test_final_hash(self):
-        pass
+        testval = crypto.final_hash("Hello World")
+        self.assertEquals(testval,"e63006bd9f35f06cd20582fc8b34ae76a15080297be886decd6dfd42f59e5174a537e8cd92ef577297f967beb6b758c1835f4c270c251e10c12331fcd8635c53")
+        self.assertFalse(crypto.final_hash("") == "")
 
 
 class TestBytes2long(unittest.TestCase):
