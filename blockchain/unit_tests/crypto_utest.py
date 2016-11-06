@@ -33,8 +33,8 @@ class TestDeterministicHash(TestCase):
         hashed_items = ["123456", "654321", "transaction-service", 1476664195, "xeKuS9t8A=\n-----END PUBLIC KEY-----\n",
                         "8885196", 1, "origin_id", 1476664210, "553412456235", None]
 
-        # calculate correct hash for hash_items
+        # calculate hash for hashed_items
         val = crypto.deterministic_hash(hashed_items)
 
-        # insure returning correct value from hashing hashed_items list
+        # insure the returned hash value of hashed_items matches what it should be
         self.assertEqual(val, 233888947446904696754100748358486582297006536790227845537678672765978391714164843162143)
