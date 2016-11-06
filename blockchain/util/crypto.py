@@ -37,8 +37,6 @@ import time
 import logging
 import hashlib
 
-from blockchain.util.thrift_conversions import thrift_record_to_dict
-
 try:
     import json
 except:
