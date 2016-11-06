@@ -1,10 +1,11 @@
-from unittest import TestCase
+import unittest
 import blockchain.util.crypto as crypto
 
 
-class TestFinal_hash(TestCase):
+class TestFinal_hash(unittest.TestCase):
     def test_final_hash(self):
         self.fail()
+
 
 class TestBytes2long(unittest.TestCase):
     def test_bytes2long(self):
