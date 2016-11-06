@@ -26,8 +26,13 @@ class TestDeterministicHash(TestCase):
         """ Mock list of prior_block_hash, lower_phase_hash, signatory, signature_ts, public key, block_id, phase,
             verification_ts, deep_hash(verification_info)
         """
+
+        # testing to insure that hashed items may contain a mix of strings, numbers or None types.
         hashed_items = ["123456", "654321", "transaction-service", 1476664195, "xeKuS9t8A=\n-----END PUBLIC KEY-----\n",
                         "8885196", 1, "origin_id", 1476664210, "553412456235", None]
 
+        # calculate correct hash for hash_items
         val = crypto.deterministic_hash(hashed_items)
+
+        # insure returning correct value from hashing hashed_items list
         self.assertEqual(val, 233888947446904696754100748358486582297006536790227845537678672765978391714164843162143)
