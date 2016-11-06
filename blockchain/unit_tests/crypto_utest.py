@@ -6,6 +6,8 @@ import blockchain.util.crypto as crypto
 
 class TestFinal_hash(unittest.TestCase):
     def test_final_hash(self):
+        """  Testing final_hash() with an arbitrary return value of Hello World to verify it is true
+             as well as testing that if you give function empty string, it still hashes properly """
         test_val = crypto.final_hash("Hello World")
         self.assertEquals(test_val, "e63006bd9f35f06cd20582fc8b34ae76a15080297be886decd6dfd42f59e5174a537e8cd92ef577297f967beb6b758c1835f4c270c251e10c12331fcd8635c53")
         self.assertFalse(crypto.final_hash("") == "")
