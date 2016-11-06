@@ -1,4 +1,4 @@
-xfrom unittest import TestCase
+from unittest import TestCase
 import blockchain.util.crypto as crypto
 
 
