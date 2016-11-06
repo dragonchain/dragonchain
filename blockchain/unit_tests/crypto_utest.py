@@ -6,6 +6,7 @@ import blockchain.util.crypto as crypto
 
 class TestFinal_hash(unittest.TestCase):
     def test_final_hash(self):
+        stuff = "stuff"
         pass
 
 
