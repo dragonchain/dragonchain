@@ -97,6 +97,9 @@ logs/
 # pki
 pki/
 
+# .DS_Store
+.DS_Store
+
 # config
 configs/blockchain1.yml
 configs/blockchain2.yml
