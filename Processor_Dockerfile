@@ -58,18 +58,18 @@ RUN yum -y install postgresql-devel
 RUN pip install psycopg2
 RUN echo $PATH
 
-#Start processing
-COPY ./blockchain/ blockchain/
-COPY ./requirements.txt .
 COPY ./setup.py .
-COPY ./configs/blockchain.yml .
-COPY ./pki/ pki/
-
-#ARG BLOCKCHAIN_DB_HOSTNAME
-#ARG BLOCKCHAIN_DB_NAME
-#ARG BLOCKCHAIN_DB_USERNAME
-#ARG BLOCKCHAIN_DB_PORT
-
+COPY ./requirements.txt .
+COPY ./blockchain/ blockchain/
 RUN pip install -r requirements.txt
-RUN chmod a+x blockchain/processing.py
-ENTRYPOINT ["python", "blockchain/processing.py --private-key pki/private-key.pem --public-key pki/public-key.pem --port 8080 --phase 1"]
+
+#Start processing
+COPY ./configs/ configs/
+COPY ./configs/blockchain.yml .
+COPY ./pki/private-key.pem /blockchain/private-key.pem
+COPY ./pki/public-key.pem blockchain/public-key.pem
+
+RUN mkdir logs
+
+CMD ["python", "/blockchain/processing.py --private-key /blockchain/private-key.pem --public-key /blockchain/public-key.pem --port 80 --phase 1"]
+#ENTRYPOINT ["python", "/blockchain/processing.py --private-key /blockchain/private-key.pem --public-key /blockchain/public-key.pem --port 80 --phase 1"]

@@ -97,12 +97,12 @@ Configuration within yaml files within configs directory.
 ## Docker
 
 Building and runnign the Prostgress_Dockerfile
-`docker build -t database_image -f Postgres_Dockerfile .`
-`docker run --name blockchain_database -e POSTGRES_PASSWORD=blocky -d database_image`
+`docker build -t bc_database_image -f Postgres_Dockerfile .`
+`docker run --name blockchain_database -d bc_database_image`
   
 Building and running the Processor_Dockerfile
-`docker build -t processor_image -f Processor_Dockerfile .`
-`docker run -p 80:80 --name processor --link blockchain_database -d processor_image`
+`docker build -t bc_processor_image -f Processor_Dockerfile .`
+`docker run -p 80:80 --name processor --env-file ./docker/env.list --link blockchain_database -d bc_processor_image`
 
 Building and running the Transaction_Dockerfile
 `docker build -t transaction_image -f Postgres_Dockerfile .`

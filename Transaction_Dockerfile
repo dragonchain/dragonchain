@@ -12,15 +12,18 @@ RUN yum -y install python-devel
 RUN pip install psycopg2
 RUN echo $PATH
 
-COPY ./blockchain .
-COPY ./pki .
+COPY ./setup.py .
 COPY ./requirements.txt .
-
+COPY ./blockchain/ blockchain/
 RUN pip install -r requirements.txt
+
+#Start processing
+COPY ./configs/ configs/
+COPY ./configs/blockchain.yml .
+COPY ./pki/private-key.pem /blockchain/private-key.pem
+COPY ./pki/public-key.pem blockchain/public-key.pem
+
 RUN chmod a+x query_svc.py
 #TODO Generate Keys
-CMD ["/bin/bash", "ssh-keygen -b 4096 -t rsa -f /tmp/sshkey -q -N """]
-CMD ["/bin/bash", "cat /tmp/sshkey > server.log 2>&1"]
+CMD ["python", "/blockchain/transaction_svc.py --private-key /blockchain/private-key.pem --public-key /blockchain/public-key.pem --port 80 --phase 1"]
 ENTRYPOINT ["/bin/bash", "python ./blockchain/transaction_svc.py --private-key ./pki/private-key.pem --public-key ./pki/public-key.pem"]
-
-port 80
