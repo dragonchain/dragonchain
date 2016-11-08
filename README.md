@@ -65,8 +65,10 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 ### Keys
 
+    mkdir pki
+
 * Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
-* Verifying Key Generation `openssl ec -in sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
+* Verifying Key Generation `openssl ec -in pki/sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
 
 # Execution
 
@@ -134,6 +136,8 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - [Paul Sonier - Developer / Reviewer](https://www.linkedin.com/in/paul-sonier-18135b2)
 - [Kevin Schumacher - Artist / Web Design](https://www.linkedin.com/in/schubox)
 - [Brian J Wilson - Architect](https://www.linkedin.com/in/brian-wilson-9325a776)
+- [Mike De'Shazer - Developer / Reviewer](https://kr.linkedin.com/in/mikedeshazer)
+- [Tai Kersten - Developer / Reviewer](https://kr.linkedin.com/in/tai-kersten-bb460412a/en)
 - Steve Owens - Reviewer
 - Mark LaPerriere - Reviewer
 - Kevin Duane - Reviewer
