@@ -90,6 +90,7 @@ class QueryHandler(tornado.web.RequestHandler):
 
                 for tx in tx_dao.get_all(limit=rows, offset=offset, **query):
                     results += [tx]
+            self.set_header("Content-Type", "application/json")
             self.write(json.dumps(results))
         except:
             log.error(str(sys.exc_info()))
