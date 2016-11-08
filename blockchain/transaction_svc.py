@@ -87,6 +87,7 @@ class TransactionHandler(tornado.web.RequestHandler):
                                        self.application.public_key, txn)
 
                 tx_dao.insert_transaction(txn)
+                self.set_header("Content-Type", "application/json")
                 self.set_txn_status(log,201)
                 self.write(json.dumps({
                     "transaction_id": txn["header"]["transaction_id"]
