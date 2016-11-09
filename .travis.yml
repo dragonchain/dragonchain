@@ -13,8 +13,3 @@ install: "pip install -r requirements.txt"
 script:
   - python blockchain/*.py
   - python blockchain/util/*.py
-
-# FIXME: restricting to this branch for testing purposes
-branches:
-  only:
-    - travis-ci
