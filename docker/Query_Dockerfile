@@ -1,0 +1,31 @@
+FROM centos:7
+
+RUN yum install -y epel-release
+RUN yum -y install make automake gcc gcc-c++ kernel-devel
+RUN yum -y install python34
+RUN yum -y install python-pip
+RUN pip install --upgrade pip
+RUN yum -y install postgresql-libs
+RUN yum -y install postgresql-devel
+RUN yum -y install python-devel
+RUN pip install psycopg2
+RUN yum install openssl -y
+
+RUN mkdir -p /opt/dragonchain
+WORKDIR /opt/dragonchain
+RUN mkdir logs
+COPY ./setup.py .
+COPY ./requirements.txt .
+RUN mkdir blockchain
+COPY ./blockchain/setup.py blockchain/setup.py
+# Install requirements before copying over blockchain sources
+RUN pip install -r requirements.txt
+COPY ./blockchain/ blockchain/
+
+#Start processing
+COPY ./configs/ configs/
+COPY ./configs/blockchain.yml .
+
+COPY ./docker/bootstrap.sh .
+
+CMD ["bash", "bootstrap.sh", "python query_svc.py --port 80"]

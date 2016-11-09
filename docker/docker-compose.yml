@@ -1,0 +1,51 @@
+version: '2'
+services:
+  db:
+    build:
+      dockerfile: docker/Postgres_Dockerfile
+      context: ../
+    ports:
+      - "5432:5432"
+
+  query_svc:
+    build:
+      dockerfile: docker/Query_Dockerfile
+      context: ../
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    environment:
+      - BLOCKCHAIN_DB_HOSTNAME=db
+    volumes:
+      - keyvolume:/opt/dragonchain/pki
+
+  txn_service:
+    build:
+      dockerfile: docker/Transaction_Dockerfile
+      context: ../
+    ports:
+      - "81:81"
+    depends_on:
+      - db
+    environment:
+      - BLOCKCHAIN_DB_HOSTNAME=db
+    volumes:
+      - keyvolume:/opt/dragonchain/pki
+
+  processor:
+    build:
+      dockerfile: docker/Processor_Dockerfile
+      context: ../
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - BLOCKCHAIN_DB_HOSTNAME=db
+    volumes:
+      - keyvolume:/opt/dragonchain/pki
+
+volumes:
+    keyvolume:
+        driver: local
