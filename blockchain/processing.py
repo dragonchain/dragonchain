@@ -143,6 +143,7 @@ class ProcessingNode(object):
 
             # schedule task using cron trigger
             self._scheduler.add_job(trigger_handler, trigger)
+            logger().info("Phase 1 configured")
         elif config[PHASE] == 2:
             self._add_registration(2, self._execute_phase_2, config)
 
@@ -563,7 +564,7 @@ def main():
         host = args["host"]
         port = args["port"]
         phase = args[PHASE]
-
+        
         ProcessingNode([{
             "type": PHASE,
             PHASE: phase
