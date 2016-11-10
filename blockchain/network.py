@@ -1,3 +1,4 @@
+
 """
 Copyright 2016 Disney Connected and Advanced Technologies
 
@@ -61,6 +62,7 @@ from thrift.server import TServer
 import logging
 import time
 import uuid
+import ntwk_constants
 
 sys.path.append('gen')
 
@@ -211,8 +213,8 @@ class ConnectionManager(object):
         """ Updates health of unregistered nodes  """
         logger().info('Refreshing unregistered nodes...')
         for node in net_dao.get_unregistered_nodes():
-            if node["host"] + node["port"] != self.host + str(self.port):
-                node = Node(node["node_id"], node["node_owner"], node["host"], node["port"], node["phases"])
+            if node[netHOST] + node[netPORT] != self.host + str(self.port):
+                node = Node(node[netNODE_ID], node[netNODE_OWNER], node[netHOST], node[netPORT], node[netPHASES])
                 if node not in self.connections:
                     self.discover_node(node)
 
@@ -291,8 +293,7 @@ class ConnectionManager(object):
     def load_nodes_by_phase(self, phase_type):
         """ return array of nodes to possibly connect to """
         candidates = []
-        for node in net_dao.get_by_phase(phase_type):
-            if node["host"] is not self.host and node["port"] is not int(self.port):
+        for node in net_dao.get_by_phase(phase_type):[netPORT]] is not int(self.port):
                 node = Node(node["node_id"], "TWDC", node["host"], node["port"], node["phases"])
                 self.peer_dict.setdefault(phase_type, [])
                 if node not in self.connections:
@@ -421,10 +422,10 @@ class ConnectionManager(object):
 
         phase_2_msg = message_types.Phase_2_msg()
         phase_2_msg.record = get_verification_record(verification_record)
-        phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
-        phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
-        phase_2_msg.business = verification_info['business']
-        phase_2_msg.deploy_location = verification_info['deploy_location']
+        phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info[VALID_TXS])
+        phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info[INVALID_TXS])
+        phase_2_msg.business = verification_info[BUSINESS]
+        phase_2_msg.deploy_location = verification_info[DEPLOY_LOCATION]
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -440,10 +441,10 @@ class ConnectionManager(object):
 
         phase_3_msg = message_types.Phase_3_msg()
         phase_3_msg.record = get_verification_record(verification_record)
-        phase_3_msg.p2_count = verification_info['p2_count']
-        phase_3_msg.business_list = verification_info['business_list']
-        phase_3_msg.deploy_loc_list = verification_info['deploy_location_list']
-        phase_3_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
+        phase_3_msg.p2_count = verification_info[P2_COUNT]
+        phase_3_msg.business_list = verification_info[BUSINESS_LIST]
+        phase_3_msg.deploy_loc_list = verification_info[DEPLOY_LOCATION_LIST]
+        phase_3_msg.lower_phase_hashes = verification_info[LOWER_PHASE_HASHES]
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -533,10 +534,10 @@ class BlockchainServiceHandler:
         phase_2_info = {
             RECORD: thrift_record_to_dict(phase_2.record),
             VERIFICATION_INFO: {
-                'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
-                'invalid_txs': map(thrift_transaction_to_dict, phase_2.invalid_txs),
-                'business': phase_2.business,
-                'deploy_location': phase_2.deploy_location
+                VALID_TXS: map(thrift_transaction_to_dict, phase_2.valid_txs),
+                INVALID_TXS: map(thrift_transaction_to_dict, phase_2.invalid_txs),
+                BUSINESS: phase_2.business,
+                DEPLOY_LOCATION: phase_2.deploy_location
             }
         }
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
@@ -545,10 +546,10 @@ class BlockchainServiceHandler:
         phase_3_info = {
             RECORD: thrift_record_to_dict(phase_3.record),
             VERIFICATION_INFO: {
-                'lower_phase_hashes': phase_3.lower_phase_hashes,
-                'p2_count': phase_3.p2_count,
-                'business_list': phase_3.business_list,
-                'deploy_location_list': phase_3.deploy_loc_list
+                LOWER_PHASE_HASHES: phase_3.lower_phase_hashes,
+                P2_COUNT: phase_3.p2_count,
+                BUSINESS_LIST: phase_3.business_list,
+                DEPLOY_LOCATION_LIST: phase_3.deploy_loc_list
             }
         }
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
