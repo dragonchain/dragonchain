@@ -90,10 +90,14 @@ def sign_transaction(signatory,
     # put hashed transaction payload back and append to hashed_items
     if transaction["payload"]:
         log.info("Hashing payload")
-        hashed_items.append(deep_hash(transaction["payload"]))
-        # generate hash with with hashed payload included
+        payload_hash = deep_hash(transaction["payload"])
+        hashed_items.append(payload_hash)
+        # generate hash with hashed payload included
         log.info("Generating hash")
         hash = final_hash(hashed_items)
+
+        # add payload hash to transaction so it can be stored in transaction table
+        transaction["payload_hash"] = payload_hash
     else:
         hash = stripped_hash
 

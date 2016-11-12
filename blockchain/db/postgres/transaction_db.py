@@ -54,13 +54,14 @@ SQL_INSERT = """INSERT into transactions (
                             family_of_business,
                             line_of_business,
                             payload,
+                            payload_hash,
                             signature,
                             owner,
                             transaction_type,
                             status,
                             actor,
                             entity
-                          ) VALUES  (%s, to_timestamp(%s), to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                          ) VALUES  (%s, to_timestamp(%s), to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 SQL_UPDATE = """UPDATE transactions SET status = %s, block_id = %s WHERE transaction_id = %s"""
 SQL_FIXATE_BLOCK = """UPDATE transactions SET status='pending', block_id=%i WHERE status = 'new' AND transaction_ts >= to_timestamp(%i) AND transaction_ts <= to_timestamp(%i)"""
 
@@ -228,6 +229,7 @@ def insert_transaction(txn):
         header["family_of_business"],
         header["line_of_business"],
         Json(txn["payload"]),
+        txn["payload_hash"],
         Json(txn["signature"]),
         header["owner"],
         header["transaction_type"],
