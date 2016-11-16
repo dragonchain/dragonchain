@@ -5,10 +5,10 @@ from unittest import TestCase
 import blockchain.util.crypto as crypto
 
 """ globals """
-
 PRIVATE_KEY = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
 
 PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
+
 
 class TestFinalHash(unittest.TestCase):
     def test_final_hash(self):
@@ -72,15 +72,30 @@ class TestSignVerificationRecord(TestCase):
                                                                                          '3d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624'},
                            'block_id': 9404771}
 
-        test_output = crypto.sign_verification_record(signatory, prior_block_hash, lower_phase_hash, PUBLIC_KEY, PRIVATE_KEY,block_id, phase, origin_id, verification_ts, verification_info)
+        test_output = crypto.sign_verification_record(signatory, prior_block_hash, lower_phase_hash, PUBLIC_KEY, PRIVATE_KEY, block_id, phase, origin_id,
+                                                      verification_ts, verification_info)
         self.assertEqual(expected_output['verification_record']['signature']['hash'], test_output['verification_record']['signature']['hash'])
 
 
 class TestSignTransaction(TestCase):
     def test_sign_transaction(self):
         signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
+        transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
+                                  'transaction_ts': 1479264525,
+                                  'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
+                                  'business_unit': 'a3e13076-8683-11e6-97a9-3c970e3bee11',
+                                  'create_ts': 1475180987,
+                                  'entity': 'c78f4526-8683-11e6-b1c6-3c970e3bee11',
+                                  'family_of_business': 'Test Business Family',
+                                  'line_of_business': 'My Business',
+                                  'owner': 'Test Node',
+                                  'transaction_type': 'TT_REQ'
+                                  },
+                       'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
+                                   'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
+                       }
 
-        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PRIVATE_KEY, TRANSACTION)
+        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PUBLIC_KEY, transaction)
 
         # check if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
@@ -88,6 +103,30 @@ class TestSignTransaction(TestCase):
         test_transaction.pop('header')
         self.assertRaises(KeyError, crypto.sign_transaction, signatory, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
 
+
+class TestValidTransactionSig(TestCase):
+    def test_valid_transaction_sig(self):
+        signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
+        transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
+                                  'transaction_ts': 1479264525,
+                                  'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
+                                  'business_unit': 'a3e13076-8683-11e6-97a9-3c970e3bee11',
+                                  'create_ts': 1475180987,
+                                  'entity': 'c78f4526-8683-11e6-b1c6-3c970e3bee11',
+                                  'family_of_business': 'Test Business Family',
+                                  'line_of_business': 'My Business',
+                                  'owner': 'Test Node',
+                                  'transaction_type': 'TT_REQ'
+                                  },
+                       'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
+                                   'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
+                       }
+
+        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PUBLIC_KEY, transaction)
+        sig_validation = crypto.valid_transaction_sig(test_transaction)
+
+        # check if valid_transaction_sig returned true
+        self.assertTrue(sig_validation, True)
 
 
 class TestAssemble_sig_block(TestCase):
@@ -114,3 +153,4 @@ class TestAssemble_sig_block(TestCase):
 
         crypto.assemble_sig_block(transaction, signatory, PUBLIC_KEY, digest, hash, sig_ts, stripped_hash)
         self.assertEqual(stripped_hash, transaction['signature']['stripped_hash'])
+
