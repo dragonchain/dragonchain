@@ -55,15 +55,12 @@ class TestSign_verification_record(TestCase):
         signature_ts = int(time.time())
         verification_ts = int(time.time())
         verification_info = ""
-        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': 1479266547, 'block_id': 9404771, 'lower_phase_hash': 0, 'origin_id': '31ce807a-868c-11e6-99f6-3c970e3bee11', 'signature': {'signatory': '31ce807a-868c-11e6-99f6-3c970e3bee11', 'hash': 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d98375402e9df52febe72c6fced1c59b59dcad41dde729e84962c2480ce4a4ecf9bd073f16', 'public_key': '-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----', 'signature_ts': 1479266547, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78nFUcIbW3TEIn9spiXRH1fDJehGRTfPBCjjs=\n'}, 'phase': 1, 'prior_hash': 'c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624'}, 'block_id': 9404771}
-        testoutput = crypto.sign_verification_record(signatory,prior_block_hash,lower_phase_hash,public_key,private_key,block_id,phase,origin_id,verification_ts,verification_info)
-        self.maxDiff = None
+        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': verification_ts, 'block_id': 9404771, 'lower_phase_hash': 0, 'origin_id': '31ce807a-868c-11e6-99f6-3c970e3bee11', 'signature': {'signatory': '31ce807a-868c-11e6-99f6-3c970e3bee11', 'hash': 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d98375402e9df52febe72c6fced1c59b59dcad41dde729e84962c2480ce4a4ecf9bd073f16', 'public_key': '-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----', 'signature_ts': signature_ts, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78nFUcIbW3TEIn9spiXRH1fDJehGRTfPBCjjs=\n'}, 'phase': 1, 'prior_hash': 'c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624'}, 'block_id': 9404771}
+        test_output = crypto.sign_verification_record(signatory,prior_block_hash,lower_phase_hash,public_key,private_key,block_id,phase,origin_id,verification_ts,verification_info)
         print()
         print(expected_output)
-        print(testoutput)
-        self.assertEqual(testoutput,expected_output)
-        #print(testinput)
-        #self.fail()
+        print(test_output)
+        self.assertEqual(test_output,expected_output)
 
 class TestSignTransaction(TestCase):
     def test_sign_transaction(self):
