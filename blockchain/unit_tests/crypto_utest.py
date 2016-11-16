@@ -58,7 +58,7 @@ class TestSignVerificationRecord(TestCase):
         verification_ts = int(time.time())
         verification_info = ""
 
-        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': 1479266547, 'block_id': 9404771,
+        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': verification_ts, 'block_id': 9404771,
                                                                'lower_phase_hash': 0, 'origin_id': '31ce807a-868c-11e6-99f6-3c970e3bee11',
                                                                'signature': {'signatory': '31ce807a-868c-11e6-99f6-3c970e3bee11',
                                                                              'hash': 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d9837'
