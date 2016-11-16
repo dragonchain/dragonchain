@@ -11,9 +11,9 @@ PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDV
 
 
 class TestFinalHash(unittest.TestCase):
+    """  testing final_hash() with an arbitrary return value of Hello World to verify it is true
+        as well as testing that if you give function empty string, it still hashes properly """
     def test_final_hash(self):
-        """  Testing final_hash() with an arbitrary return value of Hello World to verify it is true
-             as well as testing that if you give function empty string, it still hashes properly """
         test_val = crypto.final_hash("Hello World")
         self.assertEquals(test_val,
                           "e63006bd9f35f06cd20582fc8b34ae76a15080297be886decd6dfd42f59e5174a537e8cd92ef577297f967beb6b758c1835f4c270c251e10c12331fcd8635c53")
@@ -21,6 +21,7 @@ class TestFinalHash(unittest.TestCase):
 
 
 class TestBytes2long(unittest.TestCase):
+    """ test crypto bytes2long """
     def test_bytes2long(self):
         self.assertRaises(AttributeError, crypto.bytes2long, 123)
         self.assertRaises(ValueError, crypto.bytes2long, "")
@@ -31,6 +32,7 @@ class TestBytes2long(unittest.TestCase):
 
 
 class TestDeterministicHash(TestCase):
+    """ test crypto deterministic_hash """
     def test_deterministic_hash(self):
         """ Mock list of prior_block_hash, lower_phase_hash, signatory, signature_ts, public key, block_id, phase,
             verification_ts, deep_hash(verification_info)
@@ -48,6 +50,7 @@ class TestDeterministicHash(TestCase):
 
 
 class TestSignVerificationRecord(TestCase):
+    """ test crypto sign_verification_record """
     def test_sign_verification_record(self):
         signatory = "31ce807a-868c-11e6-99f6-3c970e3bee11"
         prior_block_hash = "c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624"
@@ -78,6 +81,7 @@ class TestSignVerificationRecord(TestCase):
 
 
 class TestSignTransaction(TestCase):
+    """ test crypto sign_transaction """
     def test_sign_transaction(self):
         signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
         transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
@@ -105,6 +109,7 @@ class TestSignTransaction(TestCase):
 
 
 class TestValidTransactionSig(TestCase):
+    """ test crypto valid_transaction_sig """
     def test_valid_transaction_sig(self):
         signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
         transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
@@ -122,14 +127,17 @@ class TestValidTransactionSig(TestCase):
                                    'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
                        }
 
+        # sign transaction (tested prior to this call)
         test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PUBLIC_KEY, transaction)
+        # test signature validation
         sig_validation = crypto.valid_transaction_sig(test_transaction)
 
         # check if valid_transaction_sig returned true
         self.assertTrue(sig_validation, True)
 
 
-class TestAssemble_sig_block(TestCase):
+class TestAssembleSigBlock(TestCase):
+    """ test crypto assemble_sig_block """
     def test_assemble_sig_block(self):
         transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
                                   'transaction_ts': 1479264525,
@@ -154,3 +162,7 @@ class TestAssemble_sig_block(TestCase):
         crypto.assemble_sig_block(transaction, signatory, PUBLIC_KEY, digest, hash, sig_ts, stripped_hash)
         self.assertEqual(stripped_hash, transaction['signature']['stripped_hash'])
 
+
+class TestValidateVerificationRecord(TestCase):
+    def test_validate_verification_record(self):
+        pass
