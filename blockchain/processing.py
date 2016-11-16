@@ -270,7 +270,6 @@ class ProcessingNode(object):
                                                   origin_id,
                                                   int(time.time()),
                                                   verification_info)
-
             # store signed phase specific data
             verfication_db.insert_verification(block_info['verification_record'])
 
