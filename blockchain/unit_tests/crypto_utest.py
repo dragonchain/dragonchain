@@ -68,3 +68,6 @@ class TestSignTransaction(TestCase):
 
         # check if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
+
+        test_transaction.pop('header')
+        self.assertRaises(KeyError, crypto.sign_transaction, signatory, private_key_string, public_key_string, test_transaction)
