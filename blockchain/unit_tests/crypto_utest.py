@@ -100,8 +100,8 @@ class TestSignTransaction(TestCase):
         # check if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
 
-        # test_transaction.pop('header')
-        # self.assertRaises(KeyError, crypto.sign_transaction, signatory, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
+        test_transaction.pop('header')
+        self.assertRaises(KeyError, crypto.sign_transaction, signatory, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
 
 
 class TestValidTransactionSig(TestCase):
@@ -127,3 +127,15 @@ class TestValidTransactionSig(TestCase):
 
         # check if valid_transaction_sig returned true
         self.assertTrue(sig_validation, True)
+
+
+class TestAssemble_sig_block(TestCase):
+    def test_assemble_sig_block(self):
+        signatory = "transaction-service"
+        digest = "tvyb6yj6TqmmbpwiCBz9WsGmx6sOJBCvcDkw1GW5jCRWgusILKDWgn5wieDsqWEoKQtfzEgNRI4="
+        hash = "e90f413edeef184eda42b6c02939da2c9150430400e4fde4b52f8d0fb9b9e503c6ea79e3af1d82859cd5b275b599b99b8df017bcda165d29a83956618514ab20"
+        sig_ts = int(time.time())
+        stripped_hash = "b3a739728d46a011ce9d05705e712044df455b5750ec28c4b08fb6bab689edd21ef9c00be80b872a48fe08e79dc3ebb12e4b6fd1f7278ecaa77cd7c67427edee"
+
+        crypto.assemble_sig_block(transaction, signatory, PUBLIC_KEY, digest, hash, sig_ts, stripped_hash)
+        self.assertEqual(stripped_hash, transaction['signature']['stripped_hash'])
