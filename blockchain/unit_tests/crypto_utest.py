@@ -4,8 +4,27 @@ from unittest import TestCase
 
 import blockchain.util.crypto as crypto
 
+""" globals """
+TRANSACTION = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
+                          'transaction_ts': 1479264525,
+                          'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
+                          'business_unit': 'a3e13076-8683-11e6-97a9-3c970e3bee11',
+                          'create_ts': 1475180987,
+                          'entity': 'c78f4526-8683-11e6-b1c6-3c970e3bee11',
+                          'family_of_business': 'Test Business Family',
+                          'line_of_business': 'My Business',
+                          'owner': 'Test Node',
+                          'transaction_type': 'TT_REQ'
+                          },
+               'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
+                           'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
+               }
 
-class TestFinal_hash(unittest.TestCase):
+PRIVATE_KEY = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
+
+PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
+
+class TestFinalHash(unittest.TestCase):
     def test_final_hash(self):
         """  Testing final_hash() with an arbitrary return value of Hello World to verify it is true
              as well as testing that if you give function empty string, it still hashes properly """
@@ -47,8 +66,6 @@ class TestSignVerificationRecord(TestCase):
         signatory = "31ce807a-868c-11e6-99f6-3c970e3bee11"
         prior_block_hash = "c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624"
         lower_phase_hash = 0
-        public_key = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
-        private_key = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
         block_id = 9404771
         phase = 1
         origin_id = "31ce807a-868c-11e6-99f6-3c970e3bee11"
@@ -69,7 +86,7 @@ class TestSignVerificationRecord(TestCase):
                                                                                          '3d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624'},
                            'block_id': 9404771}
 
-        test_output = crypto.sign_verification_record(signatory, prior_block_hash,lower_phase_hash, public_key,private_key,block_id, phase, origin_id, verification_ts, verification_info)
+        test_output = crypto.sign_verification_record(signatory, prior_block_hash, lower_phase_hash, PUBLIC_KEY, PRIVATE_KEY,block_id, phase, origin_id, verification_ts, verification_info)
         self.assertEqual(expected_output['verification_record']['signature']['hash'], test_output['verification_record']['signature']['hash'])
 
 
@@ -77,29 +94,10 @@ class TestSignTransaction(TestCase):
     def test_sign_transaction(self):
         signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
 
-        # simplified private and public keys
-        private_key_string = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
-
-        public_key_string = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
-
-        transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
-                                  'transaction_ts': 1479264525,
-                                  'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
-                                  'business_unit': 'a3e13076-8683-11e6-97a9-3c970e3bee11',
-                                  'create_ts': 1475180987,
-                                  'entity': 'c78f4526-8683-11e6-b1c6-3c970e3bee11',
-                                  'family_of_business': 'Test Business Family',
-                                  'line_of_business': 'My Business',
-                                  'owner': 'Test Node',
-                                  'transaction_type': 'TT_REQ'
-                                  },
-                       'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
-                                   'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
-                       }
-        test_transaction = crypto.sign_transaction(signatory, private_key_string, public_key_string, transaction)
+        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PRIVATE_KEY, TRANSACTION)
 
         # check if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
 
         test_transaction.pop('header')
-        self.assertRaises(KeyError, crypto.sign_transaction, signatory, private_key_string, public_key_string, test_transaction)
+        self.assertRaises(KeyError, crypto.sign_transaction, signatory, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
