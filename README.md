@@ -24,19 +24,29 @@ Group blockchain standardization​)
 
 ## Quick Links
 * [Dragonchain Organization](https://dragonchain.github.io/)
-* [Dragonchain Architecture Document](https://github.com/dragonchain/dragonchain.github.io/blob/master/DragonchainArchitecture.pdf)
+* [Dragonchain Architecture Document](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
 * [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
 
 ## Support
-Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/)
-Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
-Email: support@dragonchain.org
+
+* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/) sign up: [![Slack Status](https://dragonchain-slack.herokuapp.com/badge.svg)](https://dragonchain-slack.herokuapp.com)
+* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
+* Email: support@dragonchain.org
 
 ## Maintainer
 Joe Roets (j03)
 joe@dragonchain.org
 
 # Setup and Installation
+
+### Database Setup
+
+Requires Postgres 9.4+
+
+    cd <Dragonchain Home>/sql
+    createuser blocky
+    createdb -O blocky blockchain
+    psql -U blocky -d blockchain -a -f depl.sql
 
 ### Python Dependencies
 
@@ -55,8 +65,10 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 ### Keys
 
+    mkdir pki
+
 * Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
-* Verifying Key Generation `openssl ec -in sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
+* Verifying Key Generation `openssl ec -in pki/sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
 
 # Execution
 
@@ -108,27 +120,28 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 
 ## Contributors
 
-- Joe Roets - Principal Architect / Vision
-- Eileen Quenin - Product Manager / Evangelist
-- Brandon Kite - Lead Developer
-- Dylan Yelton - Developer
-- Michael Bachtel - DevOps / Developer
-- Lucas Ontivero - Developer
-- Adam Bronfin - Developer / Reviewer
-- Benjamin Israelson - Developer / Reviewer
-- Forrest Fisher - Program Manager
-- Robbin Schill - Program Manager
-- Krassi Krustev - Developer
-- Rob Eickmann - iOS Developer
-- Sean Ochoa - DevOps / Sysadmin
-- Paul Sonier - Developer / Reviewer
+- [Joe Roets - Principal Architect / Vision](https://www.linkedin.com/in/j0j0r0)
+- [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
+- [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
+- [Dylan Yelton - Developer](https://www.linkedin.com/in/dylan-yelton-b11ba5aa)
+- [Michael Bachtel - DevOps / Developer](https://www.linkedin.com/in/michael-bachtel-617b7b2)
+- [Lucas Ontivero - Developer](https://ar.linkedin.com/in/lucasontivero)
+- [Adam Bronfin - Developer / Reviewer](https://www.linkedin.com/in/adam-bronfin-694a7440)
+- [Benjamin Israelson - Developer / Reviewer](https://www.linkedin.com/in/benjaminisraelson)
+- [Forrest Fisher - Program Manager](https://www.linkedin.com/in/forrestfisher)
+- [Robbin Schill - Program Manager](https://www.linkedin.com/in/robbin-schill-a798044)
+- [Krassi Krustev - Developer](https://www.linkedin.com/in/krassimir-krustev-252483ab)
+- [Rob Eickmann - iOS Developer](https://www.linkedin.com/in/roberte3)
+- [Sean Ochoa - DevOps / Sysadmin](https://www.linkedin.com/in/seanochoa)
+- [Paul Sonier - Developer / Reviewer](https://www.linkedin.com/in/paul-sonier-18135b2)
+- [Kevin Schumacher - Artist / Web Design](https://www.linkedin.com/in/schubox)
+- [Brian J Wilson - Architect](https://www.linkedin.com/in/brian-wilson-9325a776)
+- [Mike De'Shazer - Developer / Reviewer](https://kr.linkedin.com/in/mikedeshazer)
+- [Tai Kersten - Developer / Reviewer](https://kr.linkedin.com/in/tai-kersten-bb460412a/en)
 - Steve Owens - Reviewer
 - Mark LaPerriere - Reviewer
 - Kevin Duane - Reviewer
 - Chris Moore - Reviewer
-- Brian J Wilson - Architect
-
-
 
 
 # License

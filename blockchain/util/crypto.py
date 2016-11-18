@@ -70,7 +70,6 @@ def sign_transaction(signatory,
     signature_ts = int(time.time())
 
     log.info("Loading private key from string")
-    log.debug("priv:  %s" % private_key_string)
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
 
     # add transaction header info to hashed_items
