@@ -274,7 +274,7 @@ def validate_verification_record(record, verification_info, log=logging.getLogge
     try:
         signature_block = record['signature']
 
-        # validate_signature(signature_block)
+        validate_signature(signature_block)
 
         hashed_items.append(record['prior_hash'])
         hashed_items.append(record['lower_phase_hash'])
