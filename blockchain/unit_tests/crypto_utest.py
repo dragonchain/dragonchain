@@ -9,6 +9,12 @@ PRIVATE_KEY = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETE
 
 PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
 
+SIGNATORY = "31ce807a-868c-11e6-99f6-3c970e3bee11"
+DIGEST = "tvyb6yj6TqmmbpwiCBz9WsGmx6sOJBCvcDkw1GW5jCRWgusILKDWgn5wieDsqWEoKQtfzEgNRI4="
+HASH = 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d98375402e9df52febe72c6fced1c59b59dcad41dde729e84962c2480ce4a4ecf9bd073f16'
+SIG_TS = int(time.time())
+STRIPPED_HASH = "b3a739728d46a011ce9d05705e712044df455b5750ec28c4b08fb6bab689edd21ef9c00be80b872a48fe08e79dc3ebb12e4b6fd1f7278ecaa77cd7c67427edee"
+
 
 class TestFinalHash(unittest.TestCase):
     """  testing final_hash() with an arbitrary return value of Hello World to verify it is true
@@ -52,7 +58,6 @@ class TestDeterministicHash(TestCase):
 class TestSignVerificationRecord(TestCase):
     """ test crypto sign_verification_record """
     def test_sign_verification_record(self):
-        signatory = "31ce807a-868c-11e6-99f6-3c970e3bee11"
         prior_block_hash = "c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624"
         lower_phase_hash = 0
         block_id = 9404771
@@ -61,21 +66,15 @@ class TestSignVerificationRecord(TestCase):
         verification_ts = int(time.time())
         verification_info = ""
 
-        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': verification_ts, 'block_id': 9404771,
-                                                               'lower_phase_hash': 0, 'origin_id': '31ce807a-868c-11e6-99f6-3c970e3bee11',
-                                                               'signature': {'signatory': '31ce807a-868c-11e6-99f6-3c970e3bee11',
-                                                                             'hash': 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d9837'
-                                                                                     '5402e9df52febe72c6fced1c59b59dcad41dde729e84962c2480ce4a4ecf9bd073f16',
-                                                                             'public_key': '-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDV'
-                                                                                           'gIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/'
-                                                                                           'D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----',
+        expected_output = {'phase': 1, 'verification_record': {'verification_info': '', 'verification_ts': verification_ts, 'block_id': block_id,
+                                                               'lower_phase_hash': lower_phase_hash, 'origin_id': origin_id,
+                                                               'signature': {'signatory': SIGNATORY, 'hash': HASH, 'public_key': PUBLIC_KEY,
                                                                              'signature_ts': 1479266547, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78'
                                                                                                                       'nFUcIbW3TEIn9spiXRH1fDJehGRTfPBCjjs=\n'},
-                                                               'phase': 1, 'prior_hash': 'c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f72'
-                                                                                         '3d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624'},
-                           'block_id': 9404771}
+                                                               'phase': phase, 'prior_hash': prior_block_hash},
+                           'block_id': block_id}
 
-        test_output = crypto.sign_verification_record(signatory, prior_block_hash, lower_phase_hash, PUBLIC_KEY, PRIVATE_KEY, block_id, phase, origin_id,
+        test_output = crypto.sign_verification_record(SIGNATORY, prior_block_hash, lower_phase_hash, PUBLIC_KEY, PRIVATE_KEY, block_id, phase, origin_id,
                                                       verification_ts, verification_info)
         self.assertEqual(expected_output['verification_record']['signature']['hash'], test_output['verification_record']['signature']['hash'])
 
@@ -83,7 +82,6 @@ class TestSignVerificationRecord(TestCase):
 class TestSignTransaction(TestCase):
     """ test crypto sign_transaction """
     def test_sign_transaction(self):
-        signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
         transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
                                   'transaction_ts': 1479264525,
                                   'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
@@ -99,19 +97,18 @@ class TestSignTransaction(TestCase):
                                    'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
                        }
 
-        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PUBLIC_KEY, transaction)
+        test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
 
         # check if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
 
         test_transaction.pop('header')
-        self.assertRaises(KeyError, crypto.sign_transaction, signatory, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
+        self.assertRaises(KeyError, crypto.sign_transaction, SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
 
 
 class TestValidTransactionSig(TestCase):
     """ test crypto valid_transaction_sig """
     def test_valid_transaction_sig(self):
-        signatory = "18d956e7-bc61-4f70-8f72-3f0bb25f01a6"
         transaction = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
                                   'transaction_ts': 1479264525,
                                   'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
@@ -128,7 +125,7 @@ class TestValidTransactionSig(TestCase):
                        }
 
         # sign transaction (tested prior to this call)
-        test_transaction = crypto.sign_transaction(signatory, PRIVATE_KEY, PUBLIC_KEY, transaction)
+        test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
         # test signature validation
         sig_validation = crypto.valid_transaction_sig(test_transaction)
 
@@ -153,13 +150,8 @@ class TestAssembleSigBlock(TestCase):
                        'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
                                    'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
                        }
-        signatory = "transaction-service"
-        digest = "tvyb6yj6TqmmbpwiCBz9WsGmx6sOJBCvcDkw1GW5jCRWgusILKDWgn5wieDsqWEoKQtfzEgNRI4="
-        hash = "e90f413edeef184eda42b6c02939da2c9150430400e4fde4b52f8d0fb9b9e503c6ea79e3af1d82859cd5b275b599b99b8df017bcda165d29a83956618514ab20"
-        sig_ts = int(time.time())
-        stripped_hash = "b3a739728d46a011ce9d05705e712044df455b5750ec28c4b08fb6bab689edd21ef9c00be80b872a48fe08e79dc3ebb12e4b6fd1f7278ecaa77cd7c67427edee"
 
-        crypto.assemble_sig_block(transaction, signatory, PUBLIC_KEY, digest, hash, sig_ts, stripped_hash)
+        crypto.assemble_sig_block(transaction, SIGNATORY, PUBLIC_KEY, DIGEST, HASH, SIG_TS, STRIPPED_HASH)
 
         self.assertTrue('signature' in transaction and transaction['signature'] is not None, True)
         signature_block = transaction['signature']
@@ -171,8 +163,8 @@ class TestAssembleSigBlock(TestCase):
         self.assertTrue('signature_ts' in signature_block and signature_block['signature_ts'] is not None, True)
         self.assertTrue('stripped_hash' in signature_block, True)
 
-        self.assertEqual(hash, signature_block['hash'])
-        self.assertEqual(stripped_hash, signature_block['stripped_hash'])
+        self.assertEqual(HASH, signature_block['hash'])
+        self.assertEqual(STRIPPED_HASH, signature_block['stripped_hash'])
 
 
 class TestValidateVerificationRecord(TestCase):
