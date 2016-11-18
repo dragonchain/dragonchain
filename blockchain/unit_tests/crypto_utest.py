@@ -160,7 +160,19 @@ class TestAssembleSigBlock(TestCase):
         stripped_hash = "b3a739728d46a011ce9d05705e712044df455b5750ec28c4b08fb6bab689edd21ef9c00be80b872a48fe08e79dc3ebb12e4b6fd1f7278ecaa77cd7c67427edee"
 
         crypto.assemble_sig_block(transaction, signatory, PUBLIC_KEY, digest, hash, sig_ts, stripped_hash)
-        self.assertEqual(stripped_hash, transaction['signature']['stripped_hash'])
+
+        self.assertTrue('signature' in transaction and transaction['signature'] is not None, True)
+        signature_block = transaction['signature']
+
+        self.assertTrue('hash' in signature_block and signature_block['hash'] is not None, True)
+        self.assertTrue('public_key' in signature_block and signature_block['public_key'] is not None, True)
+        self.assertTrue('signatory' in signature_block and signature_block['signatory'] is not None, True)
+        self.assertTrue('signature' in signature_block and signature_block['signature'] is not None, True)
+        self.assertTrue('signature_ts' in signature_block and signature_block['signature_ts'] is not None, True)
+        self.assertTrue('stripped_hash' in signature_block, True)
+
+        self.assertEqual(hash, signature_block['hash'])
+        self.assertEqual(stripped_hash, signature_block['stripped_hash'])
 
 
 class TestValidateVerificationRecord(TestCase):
