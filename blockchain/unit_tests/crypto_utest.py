@@ -67,9 +67,9 @@ class TestSignVerificationRecord(TestCase):
         verification_info = ""
 
         expected_output = {'phase': PHASE, 'verification_record': {'verification_info': '', 'verification_ts': VERIFICATION_TS, 'block_id': BLOCK_ID,
-                                                               'lower_phase_hash': LOWER_PHASE_HASH, 'origin_id': ORIGIN_ID,
-                                                               'signature': {'signatory': SIGNATORY, 'hash': HASH, 'public_key': PUBLIC_KEY,
-                                                                             'signature_ts': 1479266547, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78'
+                                                                   'lower_phase_hash': LOWER_PHASE_HASH, 'origin_id': ORIGIN_ID,
+                                                                   'signature': {'signatory': SIGNATORY, 'hash': HASH, 'public_key': PUBLIC_KEY,
+                                                                                 'signature_ts': 1479266547, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78'
                                                                                                                       'nFUcIbW3TEIn9spiXRH1fDJehGRTfPBCjjs=\n'},
                                                                    'phase': PHASE, 'prior_hash': PRIOR_BLOCK_HASH},
                            'block_id': BLOCK_ID}
