@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS block_transfers (
     origin_id VARCHAR(256),
     /* The node to transmit this record to */
     transfer_to VARCHAR(256),
+    /* verification record id */
     verification_id UUID,
     /* Indicates whether a record has been transmitted or not */
     sent BIT(1) DEFAULT b'0'
