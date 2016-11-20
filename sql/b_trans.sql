@@ -31,7 +31,36 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i b_trans.sql
+/* Create a blocky user if it doesn't exist */
+do
+$body$
+declare
+  num_users integer;
+begin
+   SELECT count(*)
+     into num_users
+   FROM pg_user
+   WHERE usename = 'blocky';
+
+   IF num_users = 0 THEN
+      CREATE ROLE blocky WITH LOGIN;
+   END IF;
+end
+$body$
+;
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+CREATE TABLE IF NOT EXISTS block_transfers (
+    /* Original owner of the transaction data (Blockchain ID) */
+    origin_id VARCHAR(256),
+    /* The node to transmit this record to */
+    transfer_to VARCHAR(256),
+    verification_id UUID,
+    /* Indicates whether a record has been transmitted or not */
+    sent BIT(1) DEFAULT b'0'
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON block_transfers to blocky;
+COMMIT;
