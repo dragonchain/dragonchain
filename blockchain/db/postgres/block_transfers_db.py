@@ -32,15 +32,16 @@ from postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-GET_VERIFIED_RECORDS = """SELECT verification_id from block_transfers"""
-SET_MARK_RECORD = """UPDATE block_transfers SET sent = %s"""
+GET_VERIFIED_RECORDS = """SELECT * FROM block_transfers"""
+SQL_MARK_RECORD = """UPDATE block_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
 
 
-def get_verification_records(ver_id):
+def get_verification_records(ver_id, node_transmit_id):
+    """ retrieve validated records that have not already been sent back to node with node_transmit_id """
+    query = GET_VERIFIED_RECORDS
     if ver_id:
-        query = GET_VERIFIED_RECORDS
-        query += """ WHERE verification_id = """ + ver_id
-        query += """ AND sent = 0 """
+        query += """ WHERE verification_id = '""" + ver_id
+        query += """' AND sent = b'0' """
         conn = get_connection_pool().getconn()
         try:
             cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
@@ -57,11 +58,25 @@ def get_verification_records(ver_id):
             get_connection_pool().putconn(conn)
 
 
-def set_verfication_sent(ver_id, transfer_to):
-    query = SET_MARK_RECORD
-    query += """"WHERE verification_id = """ + ver_id
-    query += """ transfer_to = """"" + transfer_to
-    query += """ send = B'1' """
+def set_verification_sent(ver_id, transfer_to):
+    """ set verifications sent field to true with ver_id and transfer_to """
+    sql_args = (
+        ver_id,
+        transfer_to)
+    execute_db_args(sql_args, SQL_MARK_RECORD)
+
 
 def get_cursor_name():
     return str(uuid.uuid4())
+
+
+def execute_db_args(sql_args, query_type):
+    # establish database connection with given args
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query_type, sql_args)
+        conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
