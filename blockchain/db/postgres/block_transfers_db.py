@@ -33,6 +33,7 @@ from postgres import get_connection_pool
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT verification_id from block_transfers"""
+SET_MARK_RECORD = """UPDATE block_transfers SET sent = %s"""
 
 
 def get_verification_records(ver_id):
@@ -55,6 +56,12 @@ def get_verification_records(ver_id):
         finally:
             get_connection_pool().putconn(conn)
 
+
+def set_verfication_sent(ver_id, transfer_to):
+    query = SET_MARK_RECORD
+    query += """"WHERE verification_id = """ + ver_id
+    query += """ transfer_to = """"" + transfer_to
+    query += """ send = B'1' """
 
 def get_cursor_name():
     return str(uuid.uuid4())
