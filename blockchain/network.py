@@ -45,6 +45,7 @@ from blockchain.db.postgres import network_db as net_dao
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
+import db.postgres.postgres as pg
 
 from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
                                                get_verification_record, \
@@ -81,13 +82,11 @@ PHASE_3_NODE = 0b00100
 PHASE_4_NODE = 0b01000
 PHASE_5_NODE = 0b10000
 
-DATABASE_NAME = os.environ.get('BLOCKCHAIN_DB_NAME')
+DATABASE_NAME = os.getenv(pg.ENV_DATABASE_NAME, pg.DEFAULT_DB_NAME)
 
 CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
-open(LOG_FILE, 'w').close()  # reset log file
-
 
 def logger(name="network-manager"):
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
