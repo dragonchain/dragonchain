@@ -423,8 +423,8 @@ class ProcessingNode(object):
                 verification_info = {
                     'lower_hashes': lower_hashes,
                     'p2_count': len(signatories),
-                    'business_list': list(businesses),
-                    'deploy_location_list': list(locations)
+                    'businesses': list(businesses),
+                    'deploy_locations': list(locations)
                 }
 
                 lower_hash = str(deep_hash(lower_hashes))
