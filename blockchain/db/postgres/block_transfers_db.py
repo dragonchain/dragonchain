@@ -22,26 +22,39 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
+import psycopg2
+import psycopg2.extras
+import uuid
+
+from blockchain.qry import format_verification_record
+
+from postgres import get_connection_pool
+
+""" CONSTANTS """
+DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT verification_id from block_transfers"""
 
-query = GET_VERIFIED_RECORDS
-        query += """ WHERE verfication_id = """ + ver_id
-        query += """ AND sent = 0 """
 
 def get_verification_records(ver_id):
     if ver_id:
+        query = GET_VERIFIED_RECORDS
+        query += """ WHERE verification_id = """ + ver_id
+        query += """ AND sent = 0 """
+        conn = get_connection_pool().getconn()
+        try:
+            cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+            cur.execute(query)
+            'An iterator that uses fetchmany to keep memory usage down'
+            while True:
+                results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+                if not results:
+                    break
+                for result in results:
+                    yield format_verification_record(result)
+            cur.close()
+        finally:
+            get_connection_pool().putconn(conn)
 
-     conn = get_connection_pool().getconn()
-     try:
-         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-         cur.execute(query)
-     'An iterator that uses fetchmany to keep memory usage down'
-     while True:
-         results = cur.fetchmany(DEFAULT_PAGE_SIZE)
-        if not results:
-           break
-        for result in results:
-           yield format_node(result)
-        cur.close()
-      finally:
-       get_connection_pool().putconn(conn)
+
+def get_cursor_name():
+    return str(uuid.uuid4())
