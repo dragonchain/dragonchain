@@ -60,9 +60,7 @@ Setup database connection pool parameters
 min_connections = os.getenv(ENV_MIN_CONNECTIONS, DEFAULT_MIN_CONNECTIONS)
 max_connections = os.getenv(ENV_MAX_CONNECTIONS, DEFAULT_MAX_CONNECTIONS)
 
-database = os.environ.get(ENV_DATABASE_NAME)
-
-# database = os.getenv(ENV_DATABASE_NAME, DEFAULT_DB_NAME)
+database = os.getenv(ENV_DATABASE_NAME, DEFAULT_DB_NAME)
 host = os.getenv(ENV_HOSTNAME, DEFAULT_DB_HOST)
 port = os.getenv(ENV_DB_PORT, DEFAULT_DB_PORT)
 username = os.getenv(ENV_DB_USERNAME, DEFAULT_DB_USERNAME)

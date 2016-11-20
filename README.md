@@ -1,9 +1,8 @@
 # Dragonchain
-The Dragonchain blockchain platform encompasses the development of an internal blockchain platform that provides an secure foundation providing non-repudiation, an network wide common interface, cryptographic capabilities, and efficient distribution of data to the edge.
 
-Dragonchain architecture represents a fast-paced emerging technology foundation for businesses with which to integrate and apply toward identified business problems and use cases. Businesses can develop and track assets more efficiently, deploy the use of cryptographic smart contracts within business workflows to increase efficiency across enterprise systems, and accelerate innovation.
+The Dragonchain platform attempts to simplify integration of real business applications onto a blockchain. Providing features such as easy integration, protection of business data, fixed 5 second blocks, currency agnosticism, and interop features, Dragonchain shines a new and interesting light on blockchain technology.
 
-This platform will allow ease of integration for real business applications. There is a growing need for simplified blockchain integration. The decentralized and singular approach to blockchain implementation is sometimes at odds with the real business need to protect information and control business processes. The Dragonchain blockchain platform seeks to solve these needs.
+#### No blockchain expertise required!
 
 ## Project Goals
 
@@ -24,20 +23,30 @@ Group blockchain standardization​)
 
 
 ## Quick Links
-* [Dragonchain Organization](https://github.com/dragonchain/dragonchain.github.io)
-* [Dragonchain Architecture Document](https://github.com/dragonchain/dragonchain.github.io/blob/master/DragonchainArchitecture.pdf)
+* [Dragonchain Organization](https://dragonchain.github.io/)
+* [Dragonchain Architecture Document](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
 * [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
 
 ## Support
-Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/)
-Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
-Email: support@dragonchain.org
+
+* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/) sign up: [![Slack Status](https://dragonchain-slack.herokuapp.com/badge.svg)](https://dragonchain-slack.herokuapp.com)
+* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
+* Email: support@dragonchain.org
 
 ## Maintainer
 Joe Roets (j03)
 joe@dragonchain.org
 
 # Setup and Installation
+
+### Database Setup
+
+Requires Postgres 9.4+
+
+    cd <Dragonchain Home>/sql
+    createuser blocky
+    createdb -O blocky blockchain
+    psql -U blocky -d blockchain -a -f depl.sql
 
 ### Python Dependencies
 
@@ -56,18 +65,24 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 ### Keys
 
-* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out sk.pem`
-* Verifying Key Generation `openssl ec -in sk.pem -pubout -out pk.pem`
+    mkdir pki
 
+* Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
+* Verifying Key Generation `openssl ec -in pki/sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
 
 # Execution
 
-## Transaction && Query Service
-    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+## Transaction Service
+
+    python <Dragonchain Home>/blockchain/transaction_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
+    
+## Query Service
+
+    python <Dragonchain Home>/blockchain/query_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
 ## Blockchain Processor
 
-    python <Dragonchain Home>/blockchain/processing.py --private-key pki/private-key.pem --public-key pki/public-key.pem
+    python <Dragonchain Home>/blockchain/processing.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
 
     --private-key (required - signing key for transaction service and processing module)
     --public-key  (required)
@@ -81,9 +96,15 @@ Configuration within yaml files within configs directory.
 
 ### Environment Variables
 
-`BLOCKCHAIN_DB_NAME` = Blockchain database (also selects `.yaml` config and log file with same name)
+`BLOCKCHAIN_DB_HOSTNAME` = Hostname of the database instance (default localhost)
 
+`BLOCKCHAIN_DB_PORT` = Port of the database server (default 5432)
 
+`BLOCKCHAIN_DB_USERNAME` = Database username (default blocky)
+
+`BLOCKCHAIN_DB_PASSWORD` = Database password (default None)
+
+`BLOCKCHAIN_DB_NAME` = Blockchain database (default blockchain, also selects `.yaml` config and log file with same name)
 
 # Contribution
 
@@ -99,27 +120,28 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 
 ## Contributors
 
-- Joe Roets - Principal Architect / Vision
-- Eileen Quenin - Product Manager / Evangelist
-- Brandon Kite - Lead Developer
-- Dylan Yelton - Developer
-- Michael Bachtel - DevOps / Developer
-- Lucas Ontivero - Developer
-- Adam Bronfin - Developer / Reviewer
-- Benjamin Israelson - Developer / Reviewer
-- Forrest Fisher - Program Manager
-- Robbin Schill - Program Manager
-- Krassi Krustev - Developer
-- Rob Eickmann - iOS Developer
-- Sean Ochoa - DevOps / Sysadmin
-- Paul Sonier - Developer / Reviewer
+- [Joe Roets - Principal Architect / Vision](https://www.linkedin.com/in/j0j0r0)
+- [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
+- [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
+- [Dylan Yelton - Developer](https://www.linkedin.com/in/dylan-yelton-b11ba5aa)
+- [Michael Bachtel - DevOps / Developer](https://www.linkedin.com/in/michael-bachtel-617b7b2)
+- [Lucas Ontivero - Developer](https://ar.linkedin.com/in/lucasontivero)
+- [Adam Bronfin - Developer / Reviewer](https://www.linkedin.com/in/adam-bronfin-694a7440)
+- [Benjamin Israelson - Developer / Reviewer](https://www.linkedin.com/in/benjaminisraelson)
+- [Forrest Fisher - Program Manager](https://www.linkedin.com/in/forrestfisher)
+- [Robbin Schill - Program Manager](https://www.linkedin.com/in/robbin-schill-a798044)
+- [Krassi Krustev - Developer](https://www.linkedin.com/in/krassimir-krustev-252483ab)
+- [Rob Eickmann - iOS Developer](https://www.linkedin.com/in/roberte3)
+- [Sean Ochoa - DevOps / Sysadmin](https://www.linkedin.com/in/seanochoa)
+- [Paul Sonier - Developer / Reviewer](https://www.linkedin.com/in/paul-sonier-18135b2)
+- [Kevin Schumacher - Artist / Web Design](https://www.linkedin.com/in/schubox)
+- [Brian J Wilson - Architect](https://www.linkedin.com/in/brian-wilson-9325a776)
+- [Mike De'Shazer - Developer / Reviewer](https://kr.linkedin.com/in/mikedeshazer)
+- [Tai Kersten - Developer / Reviewer](https://kr.linkedin.com/in/tai-kersten-bb460412a/en)
 - Steve Owens - Reviewer
 - Mark LaPerriere - Reviewer
 - Kevin Duane - Reviewer
 - Chris Moore - Reviewer
-- Brian J Wilson - Architect
-
-
 
 
 # License

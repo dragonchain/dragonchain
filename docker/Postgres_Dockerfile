@@ -1,0 +1,6 @@
+FROM postgres:9.6
+VOLUME ["/var/lib/pgsql"]
+
+COPY ./docker/postgres-init.sh /docker-entrypoint-initdb.d/postgres-init.sh
+RUN mkdir -p /usr/share/sql
+ADD ./sql /usr/share/sql

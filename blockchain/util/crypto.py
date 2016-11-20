@@ -70,7 +70,6 @@ def sign_transaction(signatory,
     signature_ts = int(time.time())
 
     log.info("Loading private key from string")
-    log.debug("priv:  %s" % private_key_string)
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
 
     # add transaction header info to hashed_items
@@ -267,7 +266,7 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
         verifying_key.verify(decoded_digest, str(signature_block["hash"]))
 
 
-def validate_verification_record(verification_record, verification_info, log=logging.getLogger(__name__)):
+def validate_verification_record(record, verification_info, log=logging.getLogger(__name__)):
     """
     validate verification record signature
     * verification_record - general info per phase - signing name, timestamp, pub_key, block_id, etc.
@@ -275,7 +274,6 @@ def validate_verification_record(verification_record, verification_info, log=log
     """
     hashed_items = []
     try:
-        record = thrift_record_to_dict(verification_record.record)
         signature_block = record['signature']
 
         validate_signature(signature_block)

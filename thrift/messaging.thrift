@@ -138,8 +138,8 @@ struct Phase_3_msg {
     1: VerificationRecordCommonInfo record,
     2: list<string> lower_hashes,
     3: i32 p2_count,
-    4: list<string> business_list,
-    5: list<string> deploy_loc_list
+    4: list<string> businesses,
+    5: list<string> deploy_locations
 }
 
 struct Phase_4_msg {

@@ -56,6 +56,13 @@ class QueryHandler(tornado.web.RequestHandler):
         self.query_fields = {
             'block_id': None,
             'transaction_type': None,
+            'create_ts': None,
+            'transaction_ts': None,
+            'business_unit': None,
+            'family_of_business': None,
+            'line_of_business': None,
+            'signature': None,
+            'status': None,
             'actor': None,
             'entity': None,
             'owner': None
@@ -83,6 +90,7 @@ class QueryHandler(tornado.web.RequestHandler):
 
                 for tx in tx_dao.get_all(limit=rows, offset=offset, **query):
                     results += [tx]
+            self.set_header("Content-Type", "application/json")
             self.write(json.dumps(results))
         except:
             log.error(str(sys.exc_info()))
@@ -120,7 +128,7 @@ def run():
     log = logging.getLogger("txn-service")
     log.info("Setting up argparse")
     parser = argparse.ArgumentParser(description='Process query info.', prog='python -m blockchain')
-    parser.add_argument('-p', '--port', default = 8000)
+    parser.add_argument('-p', '--port', default = 8080)
     parser.add_argument('--debug', default = True, action = "store_true")
 
     log.info("Parsing arguments")
