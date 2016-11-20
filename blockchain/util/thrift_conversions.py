@@ -33,6 +33,7 @@ __email__ = "joe@dragonchain.org"
 
 import blockchain.gen.messaging.ttypes as message_types
 
+
 # functions below used for converting thrift types to some other structure #
 def thrift_record_to_dict(thrift_record):
     """ returns a dictionary representation of a thrift verification_record """
@@ -43,7 +44,7 @@ def thrift_record_to_dict(thrift_record):
         'verification_ts': thrift_record.verification_ts,
         'signature': convert_thrift_signature(thrift_record.signature),
         'prior_hash': thrift_record.prior_hash,
-        'lower_phase_hash': thrift_record.lower_phase_hash
+        'lower_hash': thrift_record.lower_hash
     }
 
 
@@ -144,7 +145,7 @@ def get_verification_record(record):
     thrift_record.origin_id = record['origin_id']
     thrift_record.phase = record['phase']
     thrift_record.verification_ts = record['verification_ts']
-    thrift_record.lower_phase_hash = record['lower_phase_hash']
+    thrift_record.lower_hash = record['lower_hash']
 
     if record['prior_hash']:
         thrift_record.prior_hash = record['prior_hash']
