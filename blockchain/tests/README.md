@@ -12,7 +12,7 @@ Run unit tests
 
 2) Navigate to dragonchain/blockchain/tests folder and run
     
-    python ./crypto_utest.py
+    python crypto_utest.py
 
 3) If Ok prints out at the end of the script, all tests passed.
    If Failed, the error is displayed where it failed.
