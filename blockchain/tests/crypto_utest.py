@@ -195,3 +195,6 @@ class TestValidateVerificationRecord(TestCase):
         for key in record.keys():
             record.pop(key)
             self.assertRaises(KeyError, crypto.validate_verification_record, record, "")
+
+if __name__ == "__main__":
+    unittest.main()
