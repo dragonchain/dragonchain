@@ -6,12 +6,13 @@ python:
   - "3.4"
   - "3.5"
 
+evn:
+  - PYTHONPATH=$TRAVIS_BUILD_DIR
+
 sudo: required
 
 # command to install dependencies
 install: "pip install -r requirements.txt"
-
-before_script: export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 # command to run tests
 script:
