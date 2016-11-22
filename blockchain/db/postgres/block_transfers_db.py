@@ -36,7 +36,7 @@ GET_VERIFIED_RECORDS = """SELECT * FROM block_transfers"""
 SQL_MARK_RECORD = """UPDATE block_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
 
 
-def get_verification_records(ver_id, node_transmit_id):
+def get_unsent_verification_records(ver_id, node_transmit_id):
     """ retrieve validated records that have not already been sent back to node with node_transmit_id """
     query = GET_VERIFIED_RECORDS
     if ver_id:

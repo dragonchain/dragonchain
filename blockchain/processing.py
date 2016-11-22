@@ -39,7 +39,6 @@ from blockchain.util.crypto import valid_transaction_sig, sign_verification_reco
 
 from db.postgres import transaction_db
 from db.postgres import verfication_db
-from db.postgres import block_transfers_db
 from db.postgres import postgres
 
 import network
