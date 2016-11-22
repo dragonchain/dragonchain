@@ -11,6 +11,8 @@ sudo: required
 # command to install dependencies
 install: "pip install -r requirements.txt"
 
+before_script: export PYTHONPATH=$PYTHONPATH:$(pwd)
+
 # command to run tests
 script:
   - python blockchain/tests/*.py
