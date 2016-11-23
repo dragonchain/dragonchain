@@ -6,8 +6,8 @@ python:
   - "3.4"
   - "3.5"
 
-evn:
-  - PYTHONPATH=$TRAVIS_BUILD_DIR/dragonchain
+env:
+  - PYTHONPATH=$TRAVIS_BUILD_DIR
 
 sudo: required
 
