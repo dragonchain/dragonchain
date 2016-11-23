@@ -9,6 +9,9 @@ python:
 env:
   - PYTHONPATH=/home/travis/build/dragonchain/dragonchain
 
+virtualenv:
+    system_site_packages: true
+
 sudo: required
 
 # command to install dependencies
