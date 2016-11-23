@@ -30,6 +30,7 @@ __email__ = "joe@dragonchain.org"
 
 import unittest
 import time
+import os
 from unittest import TestCase
 
 import blockchain.util.crypto as crypto
@@ -197,4 +198,5 @@ class TestValidateVerificationRecord(TestCase):
             self.assertRaises(KeyError, crypto.validate_verification_record, record, "")
 
 if __name__ == "__main__":
+    print os.environ['TRAVIS_BUILD_DIR']
     unittest.main()
