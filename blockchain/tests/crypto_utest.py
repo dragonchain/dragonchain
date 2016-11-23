@@ -197,6 +197,8 @@ class TestValidateVerificationRecord(TestCase):
             record.pop(key)
             self.assertRaises(KeyError, crypto.validate_verification_record, record, "")
 
-if __name__ == "__main__":
-    print os.environ['TRAVIS_BUILD_DIR']
+def main():
     unittest.main()
+
+if __name__ == "__main__":
+    main()
