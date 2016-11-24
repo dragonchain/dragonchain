@@ -51,7 +51,7 @@ $body$
 
 BEGIN;
 /* Don't drop tables unless you really want to */
-CREATE TABLE IF NOT EXISTS block_transfers (
+CREATE TABLE IF NOT EXISTS vr_transfers (
     /* Original owner of the transaction data (Blockchain ID) */
     origin_id VARCHAR(256),
     /* The node to transmit this record to */
@@ -63,5 +63,5 @@ CREATE TABLE IF NOT EXISTS block_transfers (
 );
 COMMIT;
 BEGIN;
-GRANT ALL ON block_transfers to blocky;
+GRANT ALL ON vr_transfers to blocky;
 COMMIT;
