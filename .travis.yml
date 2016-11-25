@@ -7,10 +7,7 @@ python:
   - "3.5"
 
 env:
-  - PYTHONPATH=/home/travis/build/dragonchain/dragonchain
-
-#virtualenv:
-#    system_site_packages: true
+  - PYTHONPATH=~/build/dragonchain/dragonchain
 
 sudo: required
 
