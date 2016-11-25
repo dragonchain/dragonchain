@@ -45,6 +45,7 @@ from blockchain.db.postgres import network_db as net_dao
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
+import db.postgres.postgres as pg
 
 from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
                                                get_verification_record, \
@@ -81,13 +82,11 @@ PHASE_3_NODE = 0b00100
 PHASE_4_NODE = 0b01000
 PHASE_5_NODE = 0b10000
 
-DATABASE_NAME = os.environ.get('BLOCKCHAIN_DB_NAME')
+DATABASE_NAME = os.getenv(pg.ENV_DATABASE_NAME, pg.DEFAULT_DB_NAME)
 
 CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
-open(LOG_FILE, 'w').close()  # reset log file
-
 
 def logger(name="network-manager"):
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
@@ -443,8 +442,8 @@ class ConnectionManager(object):
         phase_3_msg.record = get_verification_record(verification_record)
         phase_3_msg.p2_count = verification_info['p2_count']
         phase_3_msg.businesses = verification_info['businesses']
-        phase_3_msg.deploy_locations = verification_info['deploy_location_list']
-        phase_3_msg.lower_phase_hashes = verification_info['lower_phase_hashes']
+        phase_3_msg.deploy_locations = verification_info['deploy_locations']
+        phase_3_msg.lower_hashes = verification_info['lower_hashes']
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -546,10 +545,10 @@ class BlockchainServiceHandler:
         phase_3_info = {
             RECORD: thrift_record_to_dict(phase_3.record),
             VERIFICATION_INFO: {
-                'lower_phase_hashes': phase_3.lower_phase_hashes,
+                'lower_hashes': phase_3.lower_hashes,
                 'p2_count': phase_3.p2_count,
                 'businesses': phase_3.businesses,
-                'deploy_location_list': phase_3.deploy_locations
+                'deploy_locations': phase_3.deploy_locations
             }
         }
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
