@@ -1424,7 +1424,6 @@ class Phase_3_msg:
     (5, TType.LIST, 'deploy_locations', (TType.STRING,None), None, ), # 5
   )
 
-
   def __init__(self, record=None, lower_hashes=None, p2_count=None, businesses=None, deploy_locations=None,):
     self.record = record
     self.lower_hashes = lower_hashes
