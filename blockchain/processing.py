@@ -261,12 +261,12 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
-            lower_phase_hash = str(deep_hash(0))
+            lower_hash = str(deep_hash(0))
 
             # sign approved transactions
             block_info = sign_verification_record(signatory,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   current_block_id,
@@ -333,12 +333,12 @@ class ProcessingNode(object):
                 'deploy_location': self.network.deploy_location
             }
 
-            lower_phase_hash = phase_1_record[SIGNATURE][HASH]
+            lower_hash = phase_1_record[SIGNATURE][HASH]
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_1_record[BLOCK_ID],
@@ -430,22 +430,22 @@ class ProcessingNode(object):
             if len(signatories) >= P2_COUNT_REQ and len(businesses) >= P2_BUS_COUNT_REQ and len(locations) >= P2_LOC_COUNT_REQ:
                 # updating record phase
                 phase_2_record[PHASE] = phase
-                lower_phase_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH]
+                lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH]
                                       for record in phase_2_records]
 
                 verification_info = {
-                    'lower_phase_hashes': lower_phase_hashes,
+                    'lower_hashes': lower_hashes,
                     'p2_count': len(signatories),
-                    'business_list': list(businesses),
-                    'deploy_location_list': list(locations)
+                    'businesses': list(businesses),
+                    'deploy_locations': list(locations)
                 }
 
-                lower_phase_hash = str(deep_hash(lower_phase_hashes))
+                lower_hash = str(deep_hash(lower_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
                                                       prior_block_hash,
-                                                      lower_phase_hash,
+                                                      lower_hash,
                                                       self.service_config['public_key'],
                                                       self.service_config['private_key'],
                                                       phase_2_record[BLOCK_ID],
@@ -521,12 +521,12 @@ class ProcessingNode(object):
             # updating record phase
             phase_3_record[PHASE] = phase
 
-            lower_phase_hash = phase_3_record[SIGNATURE][HASH]
+            lower_hash = phase_3_record[SIGNATURE][HASH]
 
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
-                                                  lower_phase_hash,
+                                                  lower_hash,
                                                   self.service_config['public_key'],
                                                   self.service_config['private_key'],
                                                   phase_3_record[BLOCK_ID],
