@@ -48,7 +48,7 @@ import gen.messaging.ttypes as message_types
 import db.postgres.postgres as pg
 
 from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
-                                               get_verification_record, \
+                                               convert_to_thrift_record, \
                                                thrift_record_to_dict, \
                                                thrift_transaction_to_dict
 
@@ -66,10 +66,12 @@ sys.path.append('gen')
 
 
 DEFAULT_PORT = 9080
+
 NODE_ID_PROPERTY_KEY = 'node_id'
 OWNER_PROPERTY_KEY = 'owner'
 BUSINESS_PROPERTY_KEY = 'business'
 LOCATION_PROPERTY_KEY = 'deploy_location'
+PUB_TRANS_PROPERTY_KEY = 'public_transmission'
 INBOUND_TIMEOUT = 30  # seconds
 
 RECORD = 'record'
@@ -87,6 +89,8 @@ DATABASE_NAME = os.getenv(pg.ENV_DATABASE_NAME, pg.DEFAULT_DB_NAME)
 CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
+open(LOG_FILE, 'w').close()  # reset log file
+
 
 def logger(name="network-manager"):
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
@@ -151,6 +155,8 @@ class ConnectionManager(object):
 
         # BLOCKING
         logger().info('Starting RMI service handler...')
+
+        # if testing network only without processing
         if processing_node is None:
             self.start_service_handler()
 
@@ -160,6 +166,10 @@ class ConnectionManager(object):
 
         self.business = self.config[BUSINESS_PROPERTY_KEY]
         self.deploy_location = self.config[LOCATION_PROPERTY_KEY]
+
+        # set public_transmission dictionary from yml config
+        if self.processing_node:
+            self.processing_node.public_transmission = self.config[PUB_TRANS_PROPERTY_KEY]
 
         self.this_node.host = self.host
         self.this_node.port = int(self.port)
@@ -399,13 +409,7 @@ class ConnectionManager(object):
 
     def phase_1_broadcast(self, block_info, phase_type):
         """ sends phase_1 information for phase_2 execution """
-        record = block_info[VERIFICATION_RECORD]
-        transactions = map(convert_to_thrift_transaction, record[VERIFICATION_INFO])
-        verification_record = get_verification_record(record)
-
-        phase_1_msg = message_types.Phase_1_msg()
-        phase_1_msg.record = verification_record
-        phase_1_msg.transactions = transactions
+        phase_1_msg = self.get_p1_message(block_info)
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -414,17 +418,21 @@ class ConnectionManager(object):
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
+    def get_p1_message(self, block_info):
+        """ returns thrift phase 1 message structure """
+        verification_record = block_info['verification_record']
+        transactions = map(convert_to_thrift_transaction, verification_record['verification_info'])
+        verification_record = convert_to_thrift_record(verification_record)
+
+        phase_1_msg = message_types.Phase_1_msg()
+        phase_1_msg.record = verification_record
+        phase_1_msg.transactions = transactions
+
+        return phase_1_msg
+
     def phase_2_broadcast(self, block_info, phase_type):
         """ sends phase_2 information for phase_3 execution """
-        verification_record = block_info[VERIFICATION_RECORD]
-        verification_info = verification_record[VERIFICATION_INFO]
-
-        phase_2_msg = message_types.Phase_2_msg()
-        phase_2_msg.record = get_verification_record(verification_record)
-        phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
-        phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
-        phase_2_msg.business = verification_info['business']
-        phase_2_msg.deploy_location = verification_info['deploy_location']
+        phase_2_msg = self.get_p2_message(block_info)
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -433,17 +441,23 @@ class ConnectionManager(object):
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
+    def get_p2_message(self, block_info):
+        """returns thrift phase 2 message structure """
+        verification_record = block_info['verification_record']
+        verification_info = verification_record['verification_info']
+
+        phase_2_msg = message_types.Phase_2_msg()
+        phase_2_msg.record = convert_to_thrift_record(verification_record)
+        phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
+        phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
+        phase_2_msg.business = verification_info['business']
+        phase_2_msg.deploy_location = verification_info['deploy_location']
+
+        return phase_2_msg
+
     def phase_3_broadcast(self, block_info, phase_type):
         """ send phase_3 information for phase_4 execution """
-        verification_record = block_info[VERIFICATION_RECORD]
-        verification_info = verification_record[VERIFICATION_INFO]
-
-        phase_3_msg = message_types.Phase_3_msg()
-        phase_3_msg.record = get_verification_record(verification_record)
-        phase_3_msg.p2_count = verification_info['p2_count']
-        phase_3_msg.businesses = verification_info['businesses']
-        phase_3_msg.deploy_locations = verification_info['deploy_locations']
-        phase_3_msg.lower_hashes = verification_info['lower_hashes']
+        phase_3_msg = self.get_p3_message(block_info)
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -452,9 +466,63 @@ class ConnectionManager(object):
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
+    def get_p3_message(self, block_info):
+        """returns thrift phase 3 message structure """
+        verification_record = block_info['verification_record']
+        verification_info = verification_record['verification_info']
+
+        phase_3_msg = message_types.Phase_3_msg()
+        phase_3_msg.record = convert_to_thrift_record(verification_record)
+        phase_3_msg.p2_count = verification_info['p2_count']
+        phase_3_msg.businesses = verification_info['businesses']
+        phase_3_msg.deploy_locations = verification_info['deploy_locations']
+        phase_3_msg.lower_hashes = verification_info['lower_hashes']
+
+        return phase_3_msg
+
     # TODO: implement this broadcast
     def phase_4_broadcast(self, block_info, phase_type):
         pass
+
+    def public_broadcast(self, block_info, phase):
+        """ broadcast to phase 5 nodes for public transmission """
+        if block_info and phase <= PHASE_5_NODE:
+            # being asked for public broadcast, connect to known phase 5 nodes at this point
+            try:
+                if self.phases:
+                    self.connect_nodes(PHASE_5_NODE)
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
+
+            phase_msg = None
+            verification_record = message_types.VerificationRecord()
+            phase_5_msg = message_types.Phase_5_msg()
+
+            if phase == 1:
+                phase_msg = self.get_p1_message(block_info)
+                verification_record.p1 = phase_msg
+            elif phase == 2:
+                phase_msg = self.get_p2_message(block_info)
+                verification_record.p2 = phase_msg
+            elif phase == 3:
+                phase_msg = self.get_p3_message(block_info)
+                verification_record.p3 = phase_msg
+            elif phase == 4:
+                pass
+
+            phase_5_msg.verification_record = verification_record
+
+            # send block to all known phase 5 nodes
+            if phase_msg:
+                for node in self.peer_dict[PHASE_5_NODE]:
+                    try:
+                        node.client.phase_5_message(phase_5_msg)
+                        logger().info('block sent for public transmission...')
+                    except:
+                        logger().warning('failed to submit to node %s', node.node_id)
+                        continue
 
 
 class BlockchainServiceHandler:
@@ -523,14 +591,23 @@ class BlockchainServiceHandler:
 
     def phase_1_message(self, phase_1):
         """ submit phase_1 block for phase_2 validation_phase """
-        phase_1_info = {
+        phase_1_info = self.get_phase_1_info(phase_1)
+        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
+
+    def get_phase_1_info(self, phase_1):
+        """ return dictionary representation of thrift phase 1 """
+        return {
             RECORD: thrift_record_to_dict(phase_1.record),
             VERIFICATION_INFO: map(thrift_transaction_to_dict, phase_1.transactions)
         }
-        self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
 
     def phase_2_message(self, phase_2):
-        phase_2_info = {
+        phase_2_info = self.get_phase_2_info(phase_2)
+        self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
+
+    def get_phase_2_info(self, phase_2):
+        """ return dictionary representation of thrift phase 2 """
+        return {
             RECORD: thrift_record_to_dict(phase_2.record),
             VERIFICATION_INFO: {
                 'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
@@ -539,10 +616,14 @@ class BlockchainServiceHandler:
                 'deploy_location': phase_2.deploy_location
             }
         }
-        self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
 
     def phase_3_message(self, phase_3):
-        phase_3_info = {
+        phase_3_info = self.get_phase_3_info(phase_3)
+        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
+
+    def get_phase_3_info(self, phase_3):
+        """ return dictionary representation of thrift phase 3 """
+        return {
             RECORD: thrift_record_to_dict(phase_3.record),
             VERIFICATION_INFO: {
                 'lower_hashes': phase_3.lower_hashes,
@@ -551,13 +632,30 @@ class BlockchainServiceHandler:
                 'deploy_locations': phase_3.deploy_locations
             }
         }
-        self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
 
     def phase_4_message(self, phase_4):
+        # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)
 
+    def get_phase_4_info(self, phase_4):
+        """ return dictionary representation of thrift phase 4 """
+        pass
+
     def phase_5_message(self, phase_5):
-        self.connection_manager.processing_node.notify(None, phase_5_info=phase_5)
+        """ determine which phase type being dealt with, convert thrift to dictionary
+            and send off for phase 5 (public transmission)
+        """
+        phase_info = None
+        if phase_5.verification_record.p1:
+            phase_info = self.get_phase_1_info(phase_5.verification_record.p1)
+        elif phase_5.verification_record.p2:
+            phase_info = self.get_phase_2_info(phase_5.verification_record.p2)
+        elif phase_5.verification_record.p3:
+            phase_info = self.get_phase_3_info(phase_5.verification_record.p3)
+        elif phase_5.verification_record.p4:
+            pass
+
+        self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
 
     def get_peers(self):
         """ return list of connections from this node """
