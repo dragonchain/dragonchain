@@ -3,6 +3,13 @@ owner: OWNER
 business: BUSINESS
 deploy_location: SEATTLE
 
+# dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
+public_transmission: 
+    p1_pub_trans: off
+    p2_pub_trans: on
+    p3_pub_trans: off
+    p4_pub_trans: off
+
 # host:port:id:phases
 # phase 1 = 00001
 # phase 2 = 00011 ...

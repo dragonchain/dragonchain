@@ -117,7 +117,8 @@ struct VerificationRecordCommonInfo {
     4: i32 verification_ts,
     5: Signature signature,
     6: string prior_hash,
-    7: string lower_hash
+    7: string lower_hash,
+    8: map<string, bool> public_transmission
 }
 
 struct Phase_1_msg {
@@ -146,9 +147,16 @@ struct Phase_4_msg {
     1: VerificationRecordCommonInfo record
 }
 
+union VerificationRecord {
+    1: Phase_1_msg p1,
+    2: Phase_2_msg p2,
+    3: Phase_3_msg p3,
+    4: Phase_4_msg p4
+}
+
 union Phase_5_msg {
     1: Transaction transaction,
-    2: VerificationRecordCommonInfo record,
+    2: VerificationRecord verification_record,
     /* Level 5 node will NOT hash this field */
     3: string hash,
     /* Level 5 node WILL hash this field */

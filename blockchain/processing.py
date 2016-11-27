@@ -88,13 +88,16 @@ class ProcessingNode(object):
         self._configured_phases = []
         self._register_configs()
 
+        # dictionary of public transmission flags. set by network, obtained through yml config file.
+        self.public_transmission = None
+
         phase = self.phase_config[0][PHASE]
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
 
     def start(self):
         """ Start the NON-blocking scheduler """
 
-        # if network not available, we will need a daemon running to rebroadcast records that haven't moved forward
+        # TODO: if network not available, we will need a daemon running to rebroadcast records that haven't moved forward
         self._scheduler.start()
         self._init_networking()
 
@@ -270,12 +273,17 @@ class ProcessingNode(object):
                                                   phase,
                                                   origin_id,
                                                   int(time.time()),
+                                                  self.public_transmission,
                                                   verification_info)
 
             # store signed phase specific data
             verfication_db.insert_verification(block_info['verification_record'])
 
-            # pass block info to network to send it to appropriate phase
+            # send block info off for public transmission if configured to do so
+            if block_info['verification_record']['public_transmission']['p1_pub_trans']:
+                self.network.public_broadcast(block_info, phase)
+
+            # send block info for phase 2 validation
             self.network.send_block(self.network.phase_1_broadcast, block_info, phase)
             print("Phase 1 signed " + str(len(approved_transactions)) + " transactions")
 
@@ -337,12 +345,19 @@ class ProcessingNode(object):
                                                   phase_1_record[PHASE],
                                                   phase_1_record[ORIGIN_ID],
                                                   int(time.time()),
+                                                  phase_1_record['public_transmission'],
                                                   verification_info
                                                   )
 
             # inserting verification info after signing
             verfication_db.insert_verification(block_info['verification_record'])
-            self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
+
+            # send block info off for public transmission if configured to do so
+            if phase_1_record['public_transmission']['p2_pub_trans']:
+                self.network.public_broadcast(block_info, phase)
+
+            # send block info for phase 3 validation
+                self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
 
             print "phase_2 executed"
 
@@ -418,8 +433,6 @@ class ProcessingNode(object):
                 lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH]
                                       for record in phase_2_records]
 
-                # TODO: add a structure such as a tuple to pair signatory with it's appropriate hash (signatory, hash)
-                # TODO: and store that instead of lower_phase_hashes also add said structure to phase_3_msg in thrift
                 verification_info = {
                     'lower_hashes': lower_hashes,
                     'p2_count': len(signatories),
@@ -439,11 +452,18 @@ class ProcessingNode(object):
                                                       phase_2_record[PHASE],
                                                       phase_2_record[ORIGIN_ID],
                                                       int(time.time()),
+                                                      phase_2_record['public_transmission'],
                                                       verification_info
                                                       )
 
                 # inserting verification info after signing
                 verfication_db.insert_verification(block_info['verification_record'])
+
+                # send block info off for public transmission if configured to do so
+                if phase_2_record['public_transmission']['p3_pub_trans']:
+                    self.network.public_broadcast(block_info, phase)
+
+                # send block info for phase 4 validation
                 self.network.send_block(self.network.phase_3_broadcast, block_info, phase)
                 print "phase 3 executed"
 
@@ -513,14 +533,21 @@ class ProcessingNode(object):
                                                   phase_3_record[PHASE],
                                                   phase_3_record[ORIGIN_ID],
                                                   int(time.time()),
+                                                  phase_3_record['public_transmission'],
                                                   None
                                                   )
 
-            verfication_db.insert_verification(block_info['verification_record'])  # commented out so we don't continuously add same block
-            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
+            # inserting verification info after signing
+            verfication_db.insert_verification(block_info['verification_record'])
+
+            # send block info off for public transmission if configured to do so
+            if phase_3_record['public_transmission']['p4_pub_trans']:
+                self.network.public_broadcast(block_info, phase)
+
+            # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
-    def _execute_phase_5(self, config, phase_4_info):
+    def _execute_phase_5(self, config, phase_5_info):
         """ public, Bitcoin bridge phase """
         print "phase 5 executed"
 
