@@ -160,9 +160,11 @@ def get_all(block_id, limit=None, offset=None, phase=None):
         get_connection_pool().putconn(conn)
 
 
-def insert_verification(verification_record):
+def insert_verification(verification_record, verification_id=None):
+    if not verification_id:
+        verification_id = str(uuid.uuid4())
     values = (
-        str(uuid.uuid4()),
+        verification_id,
         verification_record['verification_ts'],
         verification_record["block_id"],
         psycopg2.extras.Json(verification_record["signature"]),

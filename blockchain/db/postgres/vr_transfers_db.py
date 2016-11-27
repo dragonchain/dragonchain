@@ -41,14 +41,13 @@ from postgres import get_connection_pool
 DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
 SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
-SQL_INSERT_QUERY = """
-    INSERT INTO vr_transfers (
-        origin_id,
-        transfer_to,
-        verification_id
-    ) VALUES (%s, %s, %s)"""
 GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
 SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
+SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
+                                  origin_id,
+                                  transfer_to,
+                                  verification_id
+                                ) VALUES (%s, %s, %s)"""
 
 
 def get_unsent_verification_records(ver_id, node_transmit_id):

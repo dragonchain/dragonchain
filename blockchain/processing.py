@@ -50,6 +50,7 @@ from apscheduler.triggers.cron import CronTrigger
 import logging
 import argparse
 import time
+import uuid
 
 # TODO increase these for network sizing and later deliver via blockchain
 P2_COUNT_REQ = 1
@@ -278,7 +279,8 @@ class ProcessingNode(object):
                                                   verification_info)
 
             # store signed phase specific data
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verfication_db.insert_verification(block_info['verification_record'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if block_info['verification_record']['public_transmission']['p1_pub_trans']:
@@ -351,7 +353,11 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verfication_db.insert_verification(block_info['verification_record'], verification_id)
+
+            # inserting receipt of signed verification for data transfer
+            vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
@@ -431,8 +437,7 @@ class ProcessingNode(object):
             if len(signatories) >= P2_COUNT_REQ and len(businesses) >= P2_BUS_COUNT_REQ and len(locations) >= P2_LOC_COUNT_REQ:
                 # updating record phase
                 phase_2_record[PHASE] = phase
-                lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH]
-                                      for record in phase_2_records]
+                lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH] for record in phase_2_records]
 
                 verification_info = {
                     'lower_hashes': lower_hashes,
@@ -458,7 +463,11 @@ class ProcessingNode(object):
                                                       )
 
                 # inserting verification info after signing
-                verfication_db.insert_verification(block_info['verification_record'])
+                verification_id = str(uuid.uuid4())
+                verfication_db.insert_verification(block_info['verification_record'], verification_id)
+
+                # inserting receipt of signed verification for data transfer
+                vr_transfers_db.insert_transfer(phase_2_record['origin_id'], phase_2_record['signature']['signatory'], verification_id)
 
                 # send block info off for public transmission if configured to do so
                 if phase_2_record['public_transmission']['p3_pub_trans']:
@@ -539,7 +548,11 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verfication_db.insert_verification(block_info['verification_record'], verification_id)
+
+            # inserting receipt of signed verification for data transfer
+            vr_transfers_db.insert_transfer(phase_3_record['origin_id'], phase_3_record['signature']['signatory'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if phase_3_record['public_transmission']['p4_pub_trans']:
