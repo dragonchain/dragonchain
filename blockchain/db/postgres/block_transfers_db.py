@@ -22,6 +22,13 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
+__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel, Alex Benedetto"
+__copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
+__license__ = "Apache"
+__version__ = "2.0"
+__maintainer__ = "Joe Roets"
+__email__ = "joe@dragonchain.org"
+
 import psycopg2
 import psycopg2.extras
 import uuid
@@ -32,14 +39,16 @@ from postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-GET_VERIFIED_RECORDS = """SELECT * FROM block_transfers"""
-SQL_MARK_RECORD = """UPDATE block_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
+GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
+SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
 SQL_INSERT_QUERY = """
-    INSERT INTO block_transfers (
+    INSERT INTO vr_transfers (
         origin_id,
         transfer_to,
         verification_id
     ) VALUES (%s, %s, %s)"""
+GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
+SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
 
 
 def get_unsent_verification_records(ver_id, node_transmit_id):
