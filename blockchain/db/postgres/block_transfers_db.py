@@ -34,6 +34,12 @@ from postgres import get_connection_pool
 DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT * FROM block_transfers"""
 SQL_MARK_RECORD = """UPDATE block_transfers SET sent = B'1' WHERE verification_id = %s AND transfer_to = %s"""
+SQL_INSERT_QUERY = """
+    INSERT INTO block_transfers (
+        origin_id,
+        transfer_to,
+        verification_id
+    ) VALUES (%s, %s, %s)"""
 
 
 def get_unsent_verification_records(ver_id, node_transmit_id):
@@ -56,6 +62,22 @@ def get_unsent_verification_records(ver_id, node_transmit_id):
             cur.close()
         finally:
             get_connection_pool().putconn(conn)
+
+
+def insert_transfer(origin_id, transfer_to, verification_id):
+    values = (
+        origin_id,
+        transfer_to,
+        verification_id
+    )
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute(SQL_INSERT_QUERY, values)
+        conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
 
 
 def set_verification_sent(ver_id, transfer_to):
