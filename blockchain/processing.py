@@ -38,7 +38,7 @@ from blockchain.block import Block, \
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
 from db.postgres import transaction_db
-from db.postgres import verfication_db
+from db.postgres import verification_db
 from db.postgres import vr_transfers_db
 from db.postgres import postgres
 
@@ -206,7 +206,7 @@ class ProcessingNode(object):
         """
         prior_hash = None
         if phase:
-            prior_block = verfication_db.get_prior_block(origin_id, phase)
+            prior_block = verification_db.get_prior_block(origin_id, phase)
 
             if prior_block:
                 prior_hash = prior_block[SIGNATURE][HASH]
@@ -280,7 +280,7 @@ class ProcessingNode(object):
 
             # store signed phase specific data
             verification_id = str(uuid.uuid4())
-            verfication_db.insert_verification(block_info['verification_record'], verification_id)
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if block_info['verification_record']['public_transmission']['p1_pub_trans']:
@@ -322,7 +322,7 @@ class ProcessingNode(object):
         # validate phase_1's verification record
         if validate_verification_record(phase_1_record, p1_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_1_record)
+            verification_db.insert_verification(phase_1_record)
 
             # updating record phase
             phase_1_record[PHASE] = phase
@@ -354,7 +354,7 @@ class ProcessingNode(object):
 
             # inserting verification info after signing
             verification_id = str(uuid.uuid4())
-            verfication_db.insert_verification(block_info['verification_record'], verification_id)
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
 
             # inserting receipt of signed verification for data transfer
             vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
@@ -427,7 +427,7 @@ class ProcessingNode(object):
         # validate phase_2's verification record
         if validate_verification_record(phase_2_record, p2_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_2_record)
+            verification_db.insert_verification(phase_2_record)
 
             phase_2_records = self.get_sig_records(phase_2_record)
 
@@ -464,7 +464,7 @@ class ProcessingNode(object):
 
                 # inserting verification info after signing
                 verification_id = str(uuid.uuid4())
-                verfication_db.insert_verification(block_info['verification_record'], verification_id)
+                verification_db.insert_verification(block_info['verification_record'], verification_id)
 
                 # inserting receipt of signed verification for data transfer
                 vr_transfers_db.insert_transfer(phase_2_record['origin_id'], phase_2_record['signature']['signatory'], verification_id)
@@ -487,7 +487,7 @@ class ProcessingNode(object):
         phase = verification_record[PHASE]
 
         # get number of phase validations received
-        records = verfication_db.get_records(block_id, origin_id, phase)
+        records = verification_db.get_records(block_id, origin_id, phase)
 
         return records
 
@@ -526,7 +526,7 @@ class ProcessingNode(object):
         # validate phase_3's verification record
         if validate_verification_record(phase_3_record, p3_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_3_record)
+            verification_db.insert_verification(phase_3_record)
 
             # updating record phase
             phase_3_record[PHASE] = phase
@@ -549,7 +549,7 @@ class ProcessingNode(object):
 
             # inserting verification info after signing
             verification_id = str(uuid.uuid4())
-            verfication_db.insert_verification(block_info['verification_record'], verification_id)
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
 
             # inserting receipt of signed verification for data transfer
             vr_transfers_db.insert_transfer(phase_3_record['origin_id'], phase_3_record['signature']['signatory'], verification_id)
@@ -576,6 +576,13 @@ class ProcessingNode(object):
                 rejected += [item]
         return accepted, rejected
 
+    def getTransferRecords(self,list_verification_id):
+        verification_id_list = []
+        for verification_id in list_verification_id:
+            for value in verification_db.get(verification_id):
+                if value:
+                    verification_id_list.append(value)
+        return verification_id_list
 
 def main():
     try:
@@ -618,7 +625,6 @@ def main():
 
     finally:
         postgres.cleanup()
-
 
 # start calling f now and every 60 sec thereafter
 

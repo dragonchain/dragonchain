@@ -43,7 +43,7 @@ import tornado.ioloop
 from db.postgres import postgres
 
 from blockchain.db.postgres import transaction_db as tx_dao
-from blockchain.db.postgres import verfication_db
+from blockchain.db.postgres import verification_db
 
 
 def format_error(category, msg):
@@ -119,7 +119,7 @@ class BlockVerificationHandler(tornado.web.RequestHandler):
             rows = None
         if offset < 1:
             offset = None
-        results = [verification for verification in verfication_db.get_all(limit=rows, offset=offset, block_id=block_id)]
+        results = [verification for verification in verification_db.get_all(limit=rows, offset=offset, block_id=block_id)]
         self.write(json.dumps(results))
 
 def run():
