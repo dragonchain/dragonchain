@@ -30,7 +30,6 @@ __email__ = "joe@dragonchain.org"
 
 import unittest
 import time
-import os
 from unittest import TestCase
 
 import blockchain.util.crypto as crypto
@@ -102,21 +101,33 @@ class TestDeterministicHash(TestCase):
         self.assertEqual(val, 233888947446904696754100748358486582297006536790227845537678672765978391714164843162143)
 
 
+# FIXME: currently causing test to break 2/3 tests ran.
 class TestSignVerificationRecord(TestCase):
     def test_sign_verification_record(self):
         """ test crypto sign_verification_record """
         verification_info = ""
+        verification_ts = 1479266546
+        """ DISCLAIMER: mock global data for testing purposes. Do not use these keys for anything other than testing. """
+        private_key = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
 
-        expected_output = {'phase': PHASE, 'verification_record': {'verification_info': '', 'verification_ts': VERIFICATION_TS, 'block_id': BLOCK_ID,
-                                                                   'lower_phase_hash': LOWER_PHASE_HASH, 'origin_id': ORIGIN_ID,
-                                                                   'signature': {'signatory': SIGNATORY, 'hash': HASH, 'public_key': PUBLIC_KEY,
-                                                                                 'signature_ts': 1479266547, 'signature': 'DFuKdobLwr53cg2shQtiGw+W7mK6ikAJ8TtAOj78'
-                                                                                                                      'nFUcIbW3TEIn9spiXRH1fDJehGRTfPBCjjs=\n'},
-                                                                   'phase': PHASE, 'prior_hash': PRIOR_BLOCK_HASH},
+        public_key = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
+        signatory = "31ce807a-868c-11e6-99f6-3c970e3bee11"
+        hash = '6ece0db83938d3f234a02292f39cf91db554de155de42ae3a8cdfb49be4812fc8d096687fc6df128ab26620ed80adeccbfce482bfa3a85b6ef87af2c411d6ff9'
+        prior_block_hash = "c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624"
+        lower_phase_hash = 0
+        block_id = 9404771
+        phase = 1
+        origin_id = "31ce807a-868c-11e6-99f6-3c970e3bee11"
+
+        expected_output = {'phase': PHASE, 'verification_record': {'verification_info': verification_info, 'verification_ts': verification_ts, 'block_id': block_id,
+                                                                   'lower_phase_hash': lower_phase_hash, 'origin_id': origin_id,
+                                                                   'signature': {'signatory': signatory, 'hash': HASH, 'public_key': public_key,
+                                                                                 'signature_ts': 1479266547, 'signature': 'yPGFJZ7SoQDKEJP2DbnecpP061Fa12N2kHvozqgopZneKPVwt4CBy7eVPqM3wpGIba7lHrJofhQ=\n'},
+                                                                   'phase': phase, 'prior_hash': PRIOR_BLOCK_HASH},
                            'block_id': BLOCK_ID}
 
-        test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_PHASE_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
-                                                      VERIFICATION_TS, verification_info)
+        test_output = crypto.sign_verification_record(signatory, prior_block_hash, lower_phase_hash, public_key, private_key, block_id, phase, origin_id,
+                                                      verification_ts, verification_info)
         self.assertEqual(expected_output['verification_record']['signature']['hash'], test_output['verification_record']['signature']['hash'])
 
 
