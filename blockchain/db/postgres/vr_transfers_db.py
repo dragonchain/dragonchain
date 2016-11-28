@@ -50,11 +50,11 @@ SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
                                 ) VALUES (%s, %s, %s)"""
 
 
-def get_unsent_verification_records(ver_id, node_transmit_id):
+def get_unsent_verification_records(node_transmit_id):
     """ retrieve validated records that have not already been sent back to node with node_transmit_id """
     query = GET_VERIFIED_RECORDS
-    if ver_id:
-        query += """ WHERE verification_id = '""" + ver_id
+    if node_transmit_id:
+        query += """ WHERE transfer_to = '""" + node_transmit_id
         query += """' AND sent = b'0' """
         conn = get_connection_pool().getconn()
         try:

@@ -359,6 +359,8 @@ class ProcessingNode(object):
             # inserting receipt of signed verification for data transfer
             vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
 
+            unsent_transfer_records = self.get_unsent_transfer_ids(phase_1_record['signature']['signatory'])
+
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
@@ -564,6 +566,14 @@ class ProcessingNode(object):
     def _execute_phase_5(self, config, phase_5_info):
         """ public, Bitcoin bridge phase """
         print "phase 5 executed"
+
+    def get_unsent_transfer_ids(self, transfer_to):
+        """ retrieve unsent transfer record info (data used for querying block_verification database) """
+        unsent_transfer_records = []
+        for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
+            unsent_transfer_records.append(transfer_record)
+
+        return unsent_transfer_records
 
     @staticmethod
     def split_items(filter_func, items):
