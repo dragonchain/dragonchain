@@ -361,6 +361,8 @@ class ProcessingNode(object):
 
             unsent_transfer_records = self.get_unsent_transfer_ids(phase_1_record['signature']['signatory'])
 
+            transfer_records = self.get_transfer_records(unsent_transfer_records)
+
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
@@ -575,6 +577,14 @@ class ProcessingNode(object):
 
         return unsent_transfer_records
 
+    def get_transfer_records(self, unsent_transfer_records):
+        verification_records = []
+        for unsent_transfer_record in unsent_transfer_records:
+            for value in verification_db.get(unsent_transfer_record['verification_id']):
+                if value:
+                    verification_records.append(value)
+        return verification_records
+
     @staticmethod
     def split_items(filter_func, items):
         accepted = []
@@ -586,13 +596,6 @@ class ProcessingNode(object):
                 rejected += [item]
         return accepted, rejected
 
-    def getTransferRecords(self,list_verification_id):
-        verification_id_list = []
-        for verification_id in list_verification_id:
-            for value in verification_db.get(verification_id):
-                if value:
-                    verification_id_list.append(value)
-        return verification_id_list
 
 def main():
     try:
