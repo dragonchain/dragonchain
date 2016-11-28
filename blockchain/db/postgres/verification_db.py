@@ -64,11 +64,14 @@ def get(verification_id):
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(SQL_GET_BY_ID, (verification_id,))
-        result = cur.fetchone()
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_block_verification(result)
         cur.close()
-        if result:
-            result = format_block_verification(result)
-        return result
     finally:
         get_connection_pool().putconn(conn)
 
