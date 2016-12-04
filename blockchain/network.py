@@ -89,7 +89,6 @@ DATABASE_NAME = os.getenv(pg.ENV_DATABASE_NAME, pg.DEFAULT_DB_NAME)
 CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
-open(LOG_FILE, 'w').close()  # reset log file
 
 
 def logger(name="network-manager"):
