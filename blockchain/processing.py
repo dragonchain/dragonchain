@@ -357,7 +357,7 @@ class ProcessingNode(object):
                 self.network.public_broadcast(block_info, phase)
 
             # send block info for phase 3 validation
-                self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
+            self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
 
             print "phase_2 executed"
 
