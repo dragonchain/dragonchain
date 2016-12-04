@@ -88,6 +88,7 @@ CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
 
+
 def logger(name="network-manager"):
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
     logging.getLogger("apscheduler.scheduler").setLevel('WARNING')

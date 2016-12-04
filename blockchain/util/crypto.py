@@ -250,6 +250,7 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
 
 def validate_signature(signature_block, log=logging.getLogger(__name__)):
     """ validate signature using provided stripped and full hashes """
+
     verifying_key = VerifyingKey.from_pem(signature_block["public_key"])
 
     log.info("Decoding the digest")
@@ -262,6 +263,8 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
         verifying_key.verify(decoded_digest, str(merged_hash))
     else:
         verifying_key.verify(decoded_digest, str(signature_block["hash"]))
+    # signature hash is valid
+    return True
 
 
 def validate_verification_record(record, verification_info, log=logging.getLogger(__name__)):
