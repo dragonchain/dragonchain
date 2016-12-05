@@ -32,7 +32,7 @@ import time
 import unittest
 from unittest import TestCase
 from ecdsa import BadSignatureError
-import blockchain.util.crypto as crypto
+import blockchain.util.crypto as crypt
 
 """ DISCLAIMER: mock global data for testing purposes. Do not use these keys for anything other than testing. """
 PRIVATE_KEY = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETERS-----\n-----BEGIN EC PRIVATE KEY-----\nMGgCAQEEHGLBg95ayw1hDWUMsfTdqnlQmVpz3n1vTzr7yhmgBwYFK4EEACGhPAM6\nAATulxsNWAjGOO9hLgJ75xHni8f6aBvk68rA1B+HiIfwbIuMzQultm64qHT3T8Pu\nM4137F4q5L23wA==\n-----END EC PRIVATE KEY-----"
