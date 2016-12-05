@@ -24,8 +24,9 @@ Group blockchain standardization​)
 
 ## Quick Links
 * [Dragonchain Organization](https://dragonchain.github.io/)
-* [Dragonchain Architecture Document](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
-* [Dragonchain Architecture Document DRAFT for comment](https://docs.google.com/document/d/1SRhBUeGN1dpm9sZsxTrqEHx0qL3_R3DPg-fcMUhUKWs)
+* [Dragonchain Architecture Document](https://dragonchain.github.io/architecture) - [PDF](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
+* [Use Cases](https://dragonchain.github.io/blockchain-use-cases)
+* [Disney Blockchain Standardization Notes](https://dragonchain.github.io/blockchain-standardization) - [W3C](https://github.com/w3c/blockchain/blob/master/standards.md)
 
 ## Support
 
