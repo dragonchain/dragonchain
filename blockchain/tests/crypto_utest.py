@@ -59,7 +59,7 @@ HASH = 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d98375402e9df52feb
 SIG_TS = int(time.time())
 STRIPPED_HASH = "b3a739728d46a011ce9d05705e712044df455b5750ec28c4b08fb6bab689edd21ef9c00be80b872a48fe08e79dc3ebb12e4b6fd1f7278ecaa77cd7c67427edee"
 PRIOR_BLOCK_HASH = "c26a38fefb2140ac36163b79c31050eaa4021d44fa121e521a43e0283b3fba3cb6f723d57cb9ae4108603942ad38d4ebfd2a0325f6c19e580627e063188a1624"
-LOWER_PHASE_HASH = 0
+LOWER_HASH = 0
 BLOCK_ID = 9404771
 PHASE = 1
 ORIGIN_ID = "31ce807a-868c-11e6-99f6-3c970e3bee11"
@@ -71,44 +71,43 @@ class TestFinalHash(unittest.TestCase):
         """  testing final_hash() with an arbitrary return value of Hello World to verify it is true
             as well as testing that if you give function empty string, it still hashes properly """
         test_val = crypto.final_hash("Hello World")
-        self.assertEquals(test_val,
-                          "e63006bd9f35f06cd20582fc8b34ae76a15080297be886decd6dfd42f59e5174a537e8cd92ef577297f967beb6b758c1835f4c270c251e10c12331fcd8635c53")
+        expected_hash = "e63006bd9f35f06cd20582fc8b34ae76a15080297be886decd6dfd42f59e5174a537e8cd92ef577297f967beb6b758c1835f4c270c251e10c12331fcd8635c53"
+        self.assertEquals(test_val, expected_hash)
         self.assertFalse(crypto.final_hash("") == "")
 
 
 class TestBytes2long(unittest.TestCase):
     def test_bytes2long(self):
-        """ test crypto bytes2long """
+        """ testing crypto bytes2long """
         self.assertRaises(AttributeError, crypto.bytes2long, 123)
         self.assertRaises(ValueError, crypto.bytes2long, "")
 
         test_val = crypto.bytes2long("111233345556@")
-        self.assertEqual(test_val, 3897404203108157008445053417024)
+        expected_val = 3897404203108157008445053417024
+        self.assertEqual(test_val, expected_val)
         self.assertTrue(isinstance(test_val, long))
 
 
 class TestDeterministicHash(TestCase):
     def test_deterministic_hash(self):
-        """ test crypto deterministic_hash """
+        """ testing crypto deterministic_hash """
         # testing to insure that hashed items may contain a mix of strings, numbers or None types.
         hashed_items = ["123456", "654321", "transaction-service", 1476664195, "xeKuS9t8A=\n-----END PUBLIC KEY-----\n",
                         "8885196", 1, "origin_id", 1476664210, "553412456235", None]
 
         # calculate hash for hashed_items
         val = crypto.deterministic_hash(hashed_items)
+        expected_hash = 233888947446904696754100748358486582297006536790227845537678672765978391714164843162143
 
         # insure the returned hash value of hashed_items matches what it should be
-        self.assertEqual(val, 233888947446904696754100748358486582297006536790227845537678672765978391714164843162143)
+        self.assertEqual(val, expected_hash)
 
 
-# FIXME: currently causing test to break 2/3 tests ran.
 class TestSignVerificationRecord(TestCase):
     def test_sign_verification_record(self):
-        """ test crypto sign_verification_record """
-        verification_info = ""
-
-        test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_PHASE_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
-                                                      VERIFICATION_TS, verification_info)
+        """ testing crypto sign_verification_record """
+        test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
+                                                      VERIFICATION_TS, public_transmission=None, verification_info=None)
 
         # testing that the generated hash from crypto.sign_verification_record is valid
         test_signature = crypto.validate_signature(test_output['verification_record']['signature'])
@@ -120,7 +119,7 @@ class TestSignVerificationRecord(TestCase):
 
 class TestAssembleSigBlock(TestCase):
     def test_assemble_sig_block(self):
-        """ test crypto assemble_sig_block """
+        """ testing crypto assemble_sig_block """
         digest = "tvyb6yj6TqmmbpwiCBz9WsGmx6sOJBCvcDkw1GW5jCRWgusILKDWgn5wieDsqWEoKQtfzEgNRI4="
         transaction = TRANSACTION.copy()
 
@@ -141,15 +140,16 @@ class TestAssembleSigBlock(TestCase):
 
 
 class TestSignTransaction(TestCase):
-    """ test crypto sign_transaction """
+    """ testing crypto sign_transaction """
     def test_sign_transaction(self):
         transaction = TRANSACTION.copy()
 
         test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
 
-        # check if signature made it into transaction
+        # checking if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
 
+        # testing that KeyError is appropriately raised
         for key in test_transaction.keys():
             test_transaction.pop(key)
             self.assertRaises(KeyError, crypto.sign_transaction, SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, test_transaction)
@@ -157,12 +157,12 @@ class TestSignTransaction(TestCase):
 
 class TestValidTransactionSig(TestCase):
     def test_valid_transaction_sig(self):
-        """ test crypto valid_transaction_sig """
+        """ testing crypto valid_transaction_sig """
         transaction = TRANSACTION.copy()
 
         # sign transaction (tested prior to this call)
         test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
-        # test signature validation
+        # testing signature validation
         sig_validation = crypto.valid_transaction_sig(test_transaction)
 
         # check if valid_transaction_sig returned true
@@ -171,29 +171,21 @@ class TestValidTransactionSig(TestCase):
 
 class TestValidateVerificationRecord(TestCase):
     def test_validate_verification_record(self):
-        """ test crypto validate_verification_record """
-        test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_PHASE_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
-                                                      1479435043, "")
-        test_signature = test_output['verification_record']['signature']
-        expected_hash = test_signature['hash']
-        expected_signature = test_signature['signature']
-        record = {'signature': {'signatory': SIGNATORY, 'signature_ts': int(time.time()), 'public_key': PUBLIC_KEY, 'hash': expected_hash,
-                                'signature': expected_signature},
-                  'prior_hash': PRIOR_BLOCK_HASH,
-                  'lower_phase_hash': LOWER_PHASE_HASH,
-                  'block_id': BLOCK_ID,
-                  'phase': PHASE,
-                  'origin_id': ORIGIN_ID,
-                  'verification_ts': 1479435043
-                  }
+        verification_ts = 1479435043
+        """ testing crypto validate_verification_record """
+        test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
+                                                      verification_ts, public_transmission=None, verification_info=None)
+        record = test_output['verification_record']
+        record['verification_ts'] = verification_ts
 
-        # test if validate_verification_record passes
-        self.assertEqual(crypto.validate_verification_record(record, ""), True)
+        # testing if validate_verification_record passes
+        self.assertEqual(crypto.validate_verification_record(record, None), True)
 
-        # test for key errors
+        # testing that KeyError is appropriately raised
         for key in record.keys():
-            record.pop(key)
-            self.assertRaises(KeyError, crypto.validate_verification_record, record, "")
+            if key is not "verification_info":
+                record.pop(key)
+                self.assertRaises(KeyError, crypto.validate_verification_record, record, None, test_mode=True)
 
 if __name__ == '__main__':
     unittest.main()
