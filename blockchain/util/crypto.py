@@ -35,9 +35,8 @@ Utility library for transaction operations
 
 import time
 import logging
+logging.basicConfig()
 import hashlib
-
-from blockchain.util.thrift_conversions import thrift_record_to_dict
 
 try:
     import json
@@ -193,7 +192,7 @@ def sign_verification_record(signatory,
     return block_info
 
 
-def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
+def valid_transaction_sig(transaction, test_mode=False, log=logging.getLogger(__name__)):
     """ returns true on valid transaction signature, false otherwise """
     hashed_items = []
 
@@ -244,9 +243,12 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
                     signature_block = None
 
         except BadSignatureError:
+            if not test_mode:
+                log.error("BadSignatureError detected.")
             return False
         except:
-            log.warning("An unexpected error has occurred")
+            if not test_mode:
+                log.warning("An unexpected error has occurred. Possible causes: KeyError")
             raise  # re-raise the exception
 
     return True
@@ -254,6 +256,7 @@ def valid_transaction_sig(transaction, log=logging.getLogger(__name__)):
 
 def validate_signature(signature_block, log=logging.getLogger(__name__)):
     """ validate signature using provided stripped and full hashes """
+
     verifying_key = VerifyingKey.from_pem(signature_block["public_key"])
 
     log.info("Decoding the digest")
@@ -266,9 +269,11 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
         verifying_key.verify(decoded_digest, str(merged_hash))
     else:
         verifying_key.verify(decoded_digest, str(signature_block["hash"]))
+    # signature hash is valid
+    return True
 
 
-def validate_verification_record(record, verification_info, log=logging.getLogger(__name__)):
+def validate_verification_record(record, verification_info, test_mode=False, log=logging.getLogger(__name__)):
     """
     validate verification record signature
     * verification_record - general info per phase - signing name, timestamp, pub_key, block_id, etc.
@@ -301,9 +306,12 @@ def validate_verification_record(record, verification_info, log=logging.getLogge
             return False
 
     except BadSignatureError:
+        if not test_mode:
+            log.error("BadSignatureError detected.")
         return False
     except:
-        log.warning("An unexpected error has occurred")
+        if not test_mode:
+            log.warning("An unexpected error has occurred. Possible causes: KeyError")
         raise  # re-raise the exception
 
     return True

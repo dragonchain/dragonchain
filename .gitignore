@@ -101,7 +101,4 @@ pki/
 .DS_Store
 
 # config
-configs/blockchain1.yml
-configs/blockchain2.yml
-configs/blockchain3.yml
-configs/blockchain4.yml
+configs/
