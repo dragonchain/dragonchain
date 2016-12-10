@@ -484,6 +484,10 @@ class ConnectionManager(object):
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
+    def broadcast_receipt(self):
+        """ broadcast receipt to calling node """
+        pass
+
     def public_broadcast(self, block_info, phase):
         """ broadcast to phase 5 nodes for public transmission """
         if block_info and phase <= PHASE_5_NODE:

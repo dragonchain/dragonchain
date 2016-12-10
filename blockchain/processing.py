@@ -135,6 +135,9 @@ class ProcessingNode(object):
         else:
             raise Exception("Phase " + config[PHASE] + " has already been registered.")
 
+        # register verification receipt callback
+        self._add_registration('verification_receipt', self._verification_receipt, config)
+
         if config[PHASE] == 1:
             # Register the primary phase observer
             self._add_registration(1, self._execute_phase_1, config)
@@ -203,6 +206,7 @@ class ProcessingNode(object):
 
         Args:
             origin_id:
+            phase
         """
         prior_hash = None
         if phase:
@@ -367,7 +371,7 @@ class ProcessingNode(object):
                 self.network.public_broadcast(block_info, phase)
 
             # send block info for phase 3 validation
-            self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
+            self.network.send_block(self.network.phase_2_broadcast, block_info, phase)
 
             print "phase_2 executed"
 
@@ -583,6 +587,9 @@ class ProcessingNode(object):
                 if value:
                     verification_records.append(value)
         return verification_records
+
+    def _verification_receipt(self):
+        pass
 
     @staticmethod
     def split_items(filter_func, items):
