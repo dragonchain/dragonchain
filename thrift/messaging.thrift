@@ -134,7 +134,6 @@ struct Phase_2_msg {
     5: string deploy_location
 }
 
-/* TODO: rename business_list and deploy_loc_list to businesses and deploy_locations respectively */
 struct Phase_3_msg {
     1: VerificationRecordCommonInfo record,
     2: list<string> lower_hashes,

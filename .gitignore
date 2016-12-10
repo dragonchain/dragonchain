@@ -102,3 +102,6 @@ pki/
 
 # config
 configs/
+
+#docker
+docker/custom*compose.yml

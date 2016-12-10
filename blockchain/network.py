@@ -484,9 +484,43 @@ class ConnectionManager(object):
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
-    def broadcast_receipt(self):
-        """ broadcast receipt to calling node """
-        pass
+    def broadcast_receipts(self, verifications, transfer_to):
+        """ broadcast list of thrift verification records """
+        thrift_verifications = map(self.get_verification_type, verifications)
+        # send verifications
+        if thrift_verifications:
+            for node in self.connections:
+                if transfer_to is node.node_id:
+                    try:
+                        node.client.receipt_message(thrift_verifications)
+                        logger().info('verification receipts sent...')
+                    except:
+                        logger().warning('failed to submit to node %s', node.node_id)
+                        continue
+
+    def get_verification_type(self, verification):
+        """ construct a thrift friendly verification record for broadcast receipt """
+        record = {'block_id': verification['block_id'],
+                  'origin_id': verification['origin_id'],
+                  'phase': verification['phase'],
+                  'verification_ts': verification['verified_ts'],
+                  'lower_hash': None,
+                  'public_transmission': None,
+                  'signature': verification['signature']
+                  }
+        info = {'verification_record': record, 'verification_info': verification['verification_info']}
+        phase = verification['phase']
+        verification_record = message_types.VerificationRecord()
+
+        if phase == 1:
+            verification_record.p1 = self.get_p1_message(info)
+        elif phase == 2:
+            verification_record.p2 = self.get_p2_message(info)
+        elif phase == 3:
+            verification_record.p3 = self.get_p3_message(info)
+        elif phase == 4:
+            pass
+        return verification_record
 
     def public_broadcast(self, block_info, phase):
         """ broadcast to phase 5 nodes for public transmission """
@@ -660,6 +694,9 @@ class BlockchainServiceHandler:
             pass
 
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
+
+    def receipt_message(self, verifications):
+        pass
 
     def get_peers(self):
         """ return list of connections from this node """

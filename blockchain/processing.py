@@ -362,7 +362,9 @@ class ProcessingNode(object):
             # inserting receipt of signed verification for data transfer
             vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
 
-            unsent_transfer_records = self.get_unsent_transfer_ids(phase_1_record['signature']['signatory'])
+            transfer_to = phase_1_record['signature']['signatory']
+
+            unsent_transfer_records = self.get_unsent_transfer_ids(transfer_to)
 
             transfer_records = self.get_transfer_records(unsent_transfer_records)
 
@@ -589,6 +591,9 @@ class ProcessingNode(object):
         return verification_records
 
     def _verification_receipt(self):
+        pass
+
+    def get_transfer_block_info(self):
         pass
 
     @staticmethod
