@@ -577,24 +577,39 @@ class ProcessingNode(object):
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
         unsent_transfer_records = []
-        for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
-            unsent_transfer_records.append(transfer_record)
+        try:
+            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
+                unsent_transfer_records.append(transfer_record)
+        except:
+            logger().warning("An SQL error has occurred.")
 
         return unsent_transfer_records
 
     def get_transfer_records(self, unsent_transfer_records):
+        """ retrieve verification records that match the ids of given unsent record ids. """
         verification_records = []
+        logger().info("Retrieving unsent verification records...")
         for unsent_transfer_record in unsent_transfer_records:
-            for value in verification_db.get(unsent_transfer_record['verification_id']):
-                if value:
-                    verification_records.append(value)
+            try:
+                for value in verification_db.get(unsent_transfer_record['verification_id']):
+                    if value:
+                        verification_records.append(value)
+            except:
+                logger().warning("An SQL error has occurred")
+
         return verification_records
 
-    def _verification_receipt(self):
-        pass
-
-    def get_transfer_block_info(self):
-        pass
+    def _verification_receipt(self, receipts):
+        """ store received verification receipts in database """
+        if receipts:
+            logger().info("Storing verification receipts...")
+            try:
+                for verification in receipts:
+                    verification_db.insert_verification(verification)
+            except:
+                logger().warning("An SQL error has occurred.")
+        else:
+            logger().warning("Empty set of verification receipts received.")
 
     @staticmethod
     def split_items(filter_func, items):

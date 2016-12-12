@@ -127,8 +127,7 @@ def get_by_phase(phases, limit=None):
 
 def get_unregistered_nodes(limit=None):
     query = SQL_GET_ALL
-    # TODO: change to (or lost_conn_attempt_ts < 7 days ago and last_activity < 7 days ago) (5 minutes right now)
-    #       should possibly be based upon total unregistered/non-connected nodes and how often this is executed
+    #  should possibly be based upon total unregistered/non-connected nodes and how often this is executed
     # TODO: base time interval based on number of attempts (fibonacci series?)
     query += """ WHERE last_conn_attempt_ts IS NULL OR last_conn_attempt_ts < NOW() - INTERVAL '7 days' """
     query += """ AND start_conn_ts IS NULL AND last_activity_ts < NOW() - INTERVAL '7 days' """

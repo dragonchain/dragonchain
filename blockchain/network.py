@@ -484,16 +484,15 @@ class ConnectionManager(object):
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
-    def broadcast_receipts(self, verifications, transfer_to):
+    def receipt_broadcast(self, verifications, transfer_to):
         """ broadcast list of thrift verification records """
         thrift_verifications = map(self.get_verification_type, verifications)
-        # send verifications
         if thrift_verifications:
             for node in self.connections:
                 if transfer_to is node.node_id:
                     try:
                         node.client.receipt_message(thrift_verifications)
-                        logger().info('verification receipts sent...')
+                        logger().info('verification receipts sent.')
                     except:
                         logger().warning('failed to submit to node %s', node.node_id)
                         continue
@@ -605,6 +604,7 @@ class BlockchainServiceHandler:
         return True
 
     def register_node(self, node_to_register, pass_phrase):
+        """ register(store) node connecting to this node """
         logger().info('a node is attempting to register')
         connection_authorized = False
         if self.incoming_connections < self.connection_manager.max_inbound_connections:
@@ -673,11 +673,15 @@ class BlockchainServiceHandler:
 
     def phase_4_message(self, phase_4):
         # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
-        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)
+        phase_4_info = self.get_phase_4_info(phase_4)
+        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
 
     def get_phase_4_info(self, phase_4):
         """ return dictionary representation of thrift phase 4 """
-        pass
+        return {
+            RECORD: thrift_record_to_dict(phase_4.record),
+            VERIFICATION_INFO: None
+        }
 
     def phase_5_message(self, phase_5):
         """ determine which phase type being dealt with, convert thrift to dictionary
@@ -696,7 +700,21 @@ class BlockchainServiceHandler:
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
 
     def receipt_message(self, verifications):
-        pass
+        """ send verification receipts """
+        receipts = []
+        for verification in verifications:
+            record = verification.record
+            if record.phase == 1:
+                receipts.append(self.get_phase_1_info(record))
+            elif record.phase == 2:
+                receipts.append(self.get_phase_2_info(record))
+            elif record.phase == 3:
+                receipts.append(self.get_phase_3_info(record))
+            elif record.phase == 4:
+                receipts.append(self.get_phase_4_info(record))
+        if receipts:
+            logger().info("Broadcasting receipts...")
+            self.connection_manager.processing_node.notify("verification_receipt", receipts=receipts)
 
     def get_peers(self):
         """ return list of connections from this node """
