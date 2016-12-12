@@ -36,9 +36,11 @@ from blockchain.block import Block, \
     get_current_block_id
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
+from blockchain.util.thrift_conversions import thrift_record_to_dict
 
 from db.postgres import transaction_db
 from db.postgres import verfication_db
+from db.postgres import timestamp_db
 from db.postgres import postgres
 
 import network
@@ -46,9 +48,13 @@ import network
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from merkleproof import MerkleTree
+from blockchain.timestamping import BitcoinTimestamper, BitcoinFeeProvider
+
 import logging
 import argparse
 import time
+import hashlib
 
 # TODO increase these for network sizing and later deliver via blockchain
 P2_COUNT_REQ = 1
@@ -158,6 +164,18 @@ class ProcessingNode(object):
 
         elif config[PHASE] == 5:
             self._add_registration(5, self._execute_phase_5, config)
+            self._add_registration("timestamp", self._execute_timestamping, config)
+
+            # Setup phase 5 cron
+            trigger = CronTrigger(second='*/30')
+
+            # setup the scheduler task
+            def trigger_handler():
+                self.notify(event_name="timestamp")
+
+            # schedule task using cron trigger
+            self._scheduler.add_job(trigger_handler, trigger)
+
 
     def _cron_type_config_handler(self, config):
         """
@@ -546,9 +564,41 @@ class ProcessingNode(object):
             # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
-    def _execute_phase_5(self, config, phase_5_info):
+    def _execute_phase_5(self, config, phase_4_info):
         """ public, Bitcoin bridge phase """
+        phase = 5
+        phase_4_record = thrift_record_to_dict(phase_4_info.record)
+
+        p4_verification_info = {
+            'lower_hashes': phase_4_info.lower_phase_hashes,
+        }
+
+        phase_4_record['verification_info'] = p4_verification_info
+
+        valid_record = validate_verification_record(phase_4_info, p4_verification_info)
+        if not valid_record:
+            return
+
+        timestamp_db.insert_verification(phase_4_record)
         print "phase 5 executed"
+
+    def _execute_timestamping(self, config):
+        pending_records = timestamp_db.get_pending_timestamp()
+
+        pending_records_hash = [hashlib.sha256(r).hexdigest() for r in pending_records]
+        merkle_tree = MerkleTree()
+        merkle_tree.add_leaves(pending_records_hash)
+        merkle_tree.make_tree()
+
+        merkle_root = merkle_tree.get_merkle_root()
+        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
+        bitcoin_tx_id = stamper.persist(merkle_root)
+
+        for index, pr in pending_records:
+            receipt = merkle_tree.make_receipt(index, bitcoin_tx_id)
+            pr["timestamp_receipt"] = receipt
+            timestamp_db.set_transaction_timestamp_proof(pr)
+
 
     @staticmethod
     def split_items(filter_func, items):
@@ -572,6 +622,7 @@ def main():
         parser.add_argument('--debug', default=True, action="store_true")
         parser.add_argument('--private-key', dest="private_key", required=True, help="ECDSA private key for signing")
         parser.add_argument('--public-key', dest="public_key", required=True, help="ECDSA public key for signing")
+        parser.add_argument('--bitcoin-network', dest="bitcoin_network", required=False, help="Bitcoin network (mainnet, testnet, regtest)")
 
         logger().info("Parsing arguments")
         args = vars(parser.parse_args())
@@ -589,6 +640,7 @@ def main():
         host = args["host"]
         port = args["port"]
         phase = args[PHASE]
+        bitcoin_network = args["bitcoin_network"]
 
         ProcessingNode([{
             "type": PHASE,
@@ -598,7 +650,8 @@ def main():
             "public_key": public_key,
             "owner": "DTSS",
             "host": host,
-            "port": port
+            "port": port,
+            "bitcoin_network": bitcoin_network
         }).start()
 
     finally:

@@ -31,7 +31,29 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i timestamp.sql
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+--DROP TABLE transactions;
+CREATE TABLE IF NOT EXISTS timestamps (
+
+    timestamp_id UUID PRIMARY KEY,
+
+    block_id INT,
+
+    /* confirm: when the transaction record was created */
+    create_ts timestamptz,
+
+    /* chainpoint receipt containing the required data for verifying the timestamp */
+    timestamp_receipt JSON
+
+    /* Signature block - includes public key */
+    signature JSON,
+
+    /* arbitrary info per phase */
+    verification_info JSON,
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON timestamps to blocky;
+COMMIT;
