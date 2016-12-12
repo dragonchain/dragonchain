@@ -704,13 +704,14 @@ class BlockchainServiceHandler:
         receipts = []
         for verification in verifications:
             record = verification.record
-            if record.phase == 1:
+            phase = record.phase
+            if phase == 1:
                 receipts.append(self.get_phase_1_info(record))
-            elif record.phase == 2:
+            elif phase == 2:
                 receipts.append(self.get_phase_2_info(record))
-            elif record.phase == 3:
+            elif phase == 3:
                 receipts.append(self.get_phase_3_info(record))
-            elif record.phase == 4:
+            elif phase == 4:
                 receipts.append(self.get_phase_4_info(record))
         if receipts:
             logger().info("Broadcasting receipts...")
