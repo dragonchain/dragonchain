@@ -225,3 +225,40 @@ def get_verification_type(verification):
     elif phase == 4:
         pass
     return verification_record
+
+
+def convert_thrift_verification(verification):
+    """ convert thrift verification record to dict """
+    record = None
+    verification_info = None
+    if verification.p1:
+        record = verification.p1.record
+        verification_info = map(thrift_transaction_to_dict, verification.p1.transactions)
+    elif verification.p2:
+        record = verification.p2.record
+        verification_info = {'valid_txs': map(thrift_transaction_to_dict, verification.p2.valid_txs),
+                             'invalid_txs': map(thrift_transaction_to_dict, verification.p2.invalid_txs),
+                             'business': verification.p2.business,
+                             'deploy_location': verification.p2.deploy_location
+                             }
+    elif verification.p3:
+        record = verification.p3.record
+        verification_info = {'lower_hashes': verification.p3.lower_hashes,
+                             'p2_count': verification.p3.p2_count,
+                             'businesses': verification.p3.businesses,
+                             'deploy_locations': verification.p3.deploy_locations
+                             }
+    elif verification.p4:
+        record = verification.p4.record
+
+    verification_record = {'block_id': record.block_id,
+                           'origin_id': record.origin_id,
+                           'phase': record.phase,
+                           'verification_ts': record.verification_ts,
+                           'lower_hash': None,
+                           'prior_hash': None,
+                           'public_transmission': None,
+                           'signature': convert_thrift_signature(record.signature),
+                           'verification_info': verification_info
+                           }
+    return verification_record

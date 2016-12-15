@@ -453,10 +453,13 @@ class ConnectionManager(object):
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
         verifications = node.client.transfer_data(received, unreceived)
         for verification in verifications:
-            verification_db.insert_verification(verification)
-            # insert into db
+            try:
+                verification_db.insert_verification(thrift_converter.convert_thrift_verification(verification))
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
             # insert transfer record
-            pass
 
     @staticmethod
     def split_items(filter_func, items):
