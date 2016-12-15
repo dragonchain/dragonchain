@@ -177,17 +177,17 @@ service BlockchainService {
 
    oneway void unregister_node(1: string pass_phrase),
 
-   void phase_1_message(1: Phase_1_msg p1),
+   list<string> phase_1_message(1: Phase_1_msg p1),
 
-   void phase_2_message(1: Phase_2_msg p2),
+   list<string> phase_2_message(1: Phase_2_msg p2),
 
-   void phase_3_message(1: Phase_3_msg p3),
+   list<string> phase_3_message(1: Phase_3_msg p3),
 
    /* external partner notary phase */
-   void phase_4_message(1: Phase_4_msg p4),
+   list<string> phase_4_message(1: Phase_4_msg p4),
 
    /* public, Bitcoin bridge phase */
-   void phase_5_message(1: Phase_5_msg p5),
+   list<string> phase_5_message(1: Phase_5_msg p5),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

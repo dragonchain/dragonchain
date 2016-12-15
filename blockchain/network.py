@@ -410,10 +410,11 @@ class ConnectionManager(object):
     def phase_1_broadcast(self, block_info, phase_type):
         """ sends phase_1 information for phase_2 execution """
         phase_1_msg = self.get_p1_message(block_info)
+        ver_ids = []
 
         for node in self.peer_dict[phase_type]:
             try:
-                node.client.phase_1_message(phase_1_msg)
+                ver_ids += node.client.phase_1_message(phase_1_msg)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
@@ -631,6 +632,7 @@ class BlockchainServiceHandler:
         """ submit phase_1 block for phase_2 validation_phase """
         phase_1_info = self.get_phase_1_info(phase_1)
         self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
+        return []
 
     def get_phase_1_info(self, phase_1):
         """ return dictionary representation of thrift phase 1 """
@@ -642,6 +644,7 @@ class BlockchainServiceHandler:
     def phase_2_message(self, phase_2):
         phase_2_info = self.get_phase_2_info(phase_2)
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
+        return []
 
     def get_phase_2_info(self, phase_2):
         """ return dictionary representation of thrift phase 2 """
@@ -658,6 +661,7 @@ class BlockchainServiceHandler:
     def phase_3_message(self, phase_3):
         phase_3_info = self.get_phase_3_info(phase_3)
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
+        return []
 
     def get_phase_3_info(self, phase_3):
         """ return dictionary representation of thrift phase 3 """
@@ -675,6 +679,7 @@ class BlockchainServiceHandler:
         # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
         phase_4_info = self.get_phase_4_info(phase_4)
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
+        return []
 
     def get_phase_4_info(self, phase_4):
         """ return dictionary representation of thrift phase 4 """
@@ -698,6 +703,7 @@ class BlockchainServiceHandler:
             pass
 
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
+        return []
 
     def receipt_message(self, verifications):
         """ send verification receipts """
