@@ -570,7 +570,7 @@ class ProcessingNode(object):
         phase_4_record = thrift_record_to_dict(phase_4_info.record)
 
         p4_verification_info = {
-            'lower_hashes': phase_4_info.lower_phase_hashes,
+            'lower_hashes': phase_4_info.lower_hashes,
         }
 
         phase_4_record['verification_info'] = p4_verification_info
