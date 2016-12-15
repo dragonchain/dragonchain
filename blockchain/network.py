@@ -458,7 +458,6 @@ class ConnectionManager(object):
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 verification_db.insert_verification(verification, verification['verification_id'])
-                # FIXME: wrong phase passed
                 replicated_verifications = verification_db.get_all_replication(verification['block_id'], self.phases, verification['origin_id'])
                 for replicated_ver in replicated_verifications:
                     vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
