@@ -115,10 +115,11 @@ struct VerificationRecordCommonInfo {
     2: string origin_id,
     3: i32 phase,
     4: i32 verification_ts,
-    5: Signature signature,
-    6: string prior_hash,
-    7: string lower_hash,
-    8: map<string, bool> public_transmission
+    5: string verification_id,
+    6: Signature signature,
+    7: string prior_hash,
+    8: string lower_hash,
+    9: map<string, bool> public_transmission
 }
 
 struct Phase_1_msg {

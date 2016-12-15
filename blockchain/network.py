@@ -450,16 +450,23 @@ class ConnectionManager(object):
         pass
 
     def resolve_data(self, node, guids):
+        """ request unreceived verifications from node, notify node of already received verifications,
+            store received verifications from node, find replications and store them in transfers table """
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
         verifications = node.client.transfer_data(received, unreceived)
         for verification in verifications:
             try:
-                verification_db.insert_verification(thrift_converter.convert_thrift_verification(verification))
+                verification = thrift_converter.convert_thrift_verification(verification)
+                verification_db.insert_verification(verification, verification['verification_id'])
+                # FIXME: wrong phase passed
+                replicated_verifications = verification_db.get_all_replication(verification['block_id'], self.phases, verification['origin_id'])
+                for replicated_ver in replicated_verifications:
+                    vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
             except Exception as ex:
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
-            # insert transfer record
+
 
     @staticmethod
     def split_items(filter_func, items):

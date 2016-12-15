@@ -137,7 +137,7 @@ def get_records(block_id, origin_id, phase):
         get_connection_pool().putconn(conn)
 
 
-def get_all(block_id, limit=None, offset=None, phase=None):
+def get_all(block_id, limit=None, offset=None, phase=None, origin_id=None):
     # Build query
     query = SQL_GET_ALL
     if block_id:
@@ -149,6 +149,13 @@ def get_all(block_id, limit=None, offset=None, phase=None):
         else:
             query += """ AND """
         query += """ phase = """ + str(phase)
+
+    if origin_id:
+        if not block_id and not phase:
+            query += """ WHERE """
+        else:
+            query += """ AND """
+        query += """ origin_id = """ + origin_id
 
     query += """ ORDER BY block_id DESC """
 
@@ -173,6 +180,33 @@ def get_all(block_id, limit=None, offset=None, phase=None):
             for result in results:
                 yield format_block_verification(result)
         cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def get_all_replication(block_id, phase, origin_id):
+    query = SQL_GET_ALL
+    query += """ WHERE block_id = """ + str(block_id)
+    query += """ AND phase < """ + str(phase)
+    query += """ AND origin_id = '""" + str(origin_id)
+    query += """' ORDER BY block_id DESC """
+
+    records = []
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                records.append(format_block_verification(result))
+
+        cur.close()
+        return records
     finally:
         get_connection_pool().putconn(conn)
 

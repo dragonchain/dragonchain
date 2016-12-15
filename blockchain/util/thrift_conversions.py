@@ -42,6 +42,7 @@ def thrift_record_to_dict(thrift_record):
         'origin_id': thrift_record.origin_id,
         'phase': thrift_record.phase,
         'verification_ts': thrift_record.verification_ts,
+        'verification_id': None,
         'signature': convert_thrift_signature(thrift_record.signature),
         'prior_hash': thrift_record.prior_hash,
         'lower_hash': thrift_record.lower_hash,
@@ -141,11 +142,15 @@ def convert_to_thrift_signature(tx_signature):
 
 def convert_to_thrift_record(record):
     """ returns a thrift representation of a dictionary VerificationRecordCommonInfo """
+    verification_id = None
+    if 'verification_id' in record:
+        verification_id = record['verification_id']
     thrift_record = message_types.VerificationRecordCommonInfo()
     thrift_record.block_id = record['block_id']
     thrift_record.origin_id = record['origin_id']
     thrift_record.phase = record['phase']
     thrift_record.verification_ts = record['verification_ts']
+    thrift_record.verification_id = verification_id
     thrift_record.lower_hash = record['lower_hash']
     thrift_record.public_transmission = record['public_transmission']
 
@@ -206,6 +211,7 @@ def get_verification_type(verification):
               'origin_id': verification['origin_id'],
               'phase': verification['phase'],
               'verification_ts': verification['verified_ts'],
+              'verification_id': verification['verification_id'],
               'lower_hash': None,
               'prior_hash': None,
               'public_transmission': None,
@@ -255,6 +261,7 @@ def convert_thrift_verification(verification):
                            'origin_id': record.origin_id,
                            'phase': record.phase,
                            'verification_ts': record.verification_ts,
+                           'verification_id': record.verification_id,
                            'lower_hash': None,
                            'prior_hash': None,
                            'public_transmission': None,
