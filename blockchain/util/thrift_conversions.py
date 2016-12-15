@@ -155,3 +155,73 @@ def convert_to_thrift_record(record):
     thrift_record.signature = convert_to_thrift_signature(record['signature'])
 
     return thrift_record
+
+
+def get_p1_message(block_info):
+    """ returns thrift phase 1 message structure """
+    verification_record = block_info['verification_record']
+    transactions = map(convert_to_thrift_transaction, verification_record['verification_info'])
+    verification_record = convert_to_thrift_record(verification_record)
+
+    phase_1_msg = message_types.Phase_1_msg()
+    phase_1_msg.record = verification_record
+    phase_1_msg.transactions = transactions
+
+    return phase_1_msg
+
+
+def get_p2_message(block_info):
+    """returns thrift phase 2 message structure """
+    verification_record = block_info['verification_record']
+    verification_info = verification_record['verification_info']
+
+    phase_2_msg = message_types.Phase_2_msg()
+    phase_2_msg.record = convert_to_thrift_record(verification_record)
+    phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
+    phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
+    phase_2_msg.business = verification_info['business']
+    phase_2_msg.deploy_location = verification_info['deploy_location']
+
+    return phase_2_msg
+
+
+def get_p3_message(block_info):
+    """returns thrift phase 3 message structure """
+    verification_record = block_info['verification_record']
+    verification_info = verification_record['verification_info']
+
+    phase_3_msg = message_types.Phase_3_msg()
+    phase_3_msg.record = convert_to_thrift_record(verification_record)
+    phase_3_msg.p2_count = verification_info['p2_count']
+    phase_3_msg.businesses = verification_info['businesses']
+    phase_3_msg.deploy_locations = verification_info['deploy_locations']
+    phase_3_msg.lower_hashes = verification_info['lower_hashes']
+
+    return phase_3_msg
+
+
+def get_verification_type(verification):
+    """ construct a thrift friendly verification record for broadcast receipt """
+    record = {'block_id': verification['block_id'],
+              'origin_id': verification['origin_id'],
+              'phase': verification['phase'],
+              'verification_ts': verification['verified_ts'],
+              'lower_hash': None,
+              'prior_hash': None,
+              'public_transmission': None,
+              'signature': verification['signature'],
+              'verification_info': verification['verification_info']
+              }
+    info = {'verification_record': record}
+    phase = verification['phase']
+    verification_record = message_types.VerificationRecord()
+
+    if phase == 1:
+        verification_record.p1 = get_p1_message(info)
+    elif phase == 2:
+        verification_record.p2 = get_p2_message(info)
+    elif phase == 3:
+        verification_record.p3 = get_p3_message(info)
+    elif phase == 4:
+        pass
+    return verification_record

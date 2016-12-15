@@ -495,7 +495,7 @@ class ProcessingNode(object):
         origin_id = verification_record[ORIGIN_ID]
         phase = verification_record[PHASE]
 
-        # get number of phase validations received
+        # get_verifications number of phase validations received
         records = verification_db.get_records(block_id, origin_id, phase)
 
         return records
@@ -591,7 +591,7 @@ class ProcessingNode(object):
         logger().info("Retrieving unsent verification records...")
         for unsent_transfer_record in unsent_transfer_records:
             try:
-                for value in verification_db.get(unsent_transfer_record['verification_id']):
+                for value in verification_db.get_verifications(unsent_transfer_record['verification_id']):
                     if value:
                         verification_records.append(value)
             except:

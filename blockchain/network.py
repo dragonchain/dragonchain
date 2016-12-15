@@ -43,15 +43,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from blockchain.db.postgres import network_db as net_dao
 from blockchain.db.postgres import vr_transfers_db
+from blockchain.db.postgres import verification_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
 import db.postgres.postgres as pg
 
-from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
-                                               convert_to_thrift_record, \
-                                               thrift_record_to_dict, \
-                                               thrift_transaction_to_dict
+from blockchain.util import thrift_conversions as thrift_converter
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -90,7 +88,6 @@ DATABASE_NAME = os.getenv(pg.ENV_DATABASE_NAME, pg.DEFAULT_DB_NAME)
 CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
-
 
 
 def logger(name="network-manager"):
@@ -249,7 +246,7 @@ class ConnectionManager(object):
             logger().warning(message)
 
     def discover_node(self, node_to_discover):
-        """ discover node, get node info from unregistered nodes (updating unregistered nodes) """
+        """ discover node, get_verifications node info from unregistered nodes (updating unregistered nodes) """
         if self.connect_thrift_node(node_to_discover):
             logger().info('successfully connected to unregistered node port: %s', node_to_discover.port)
             try:  # if able to connect to unregistered node
@@ -410,120 +407,67 @@ class ConnectionManager(object):
 
     def phase_1_broadcast(self, block_info, phase_type):
         """ sends phase_1 information for phase_2 execution """
-        phase_1_msg = self.get_p1_message(block_info)
+        phase_1_msg = thrift_converter.get_p1_message(block_info)
         ver_ids = []
 
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_1_message(phase_1_msg)
-            except:
-                logger().warning('failed to submit to node %s', node.node_id)
-                continue
-
-    def get_p1_message(self, block_info):
-        """ returns thrift phase 1 message structure """
-        verification_record = block_info['verification_record']
-        transactions = map(convert_to_thrift_transaction, verification_record['verification_info'])
-        verification_record = convert_to_thrift_record(verification_record)
-
-        phase_1_msg = message_types.Phase_1_msg()
-        phase_1_msg.record = verification_record
-        phase_1_msg.transactions = transactions
-
-        return phase_1_msg
+                self.resolve_data(node, ver_ids)
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
 
     def phase_2_broadcast(self, block_info, phase_type):
         """ sends phase_2 information for phase_3 execution """
-        phase_2_msg = self.get_p2_message(block_info)
+        phase_2_msg = thrift_converter.get_p2_message(block_info)
         ver_ids = []
 
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_2_message(phase_2_msg)
+                self.resolve_data(node, ver_ids)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
-    def get_p2_message(self, block_info):
-        """returns thrift phase 2 message structure """
-        verification_record = block_info['verification_record']
-        verification_info = verification_record['verification_info']
-
-        phase_2_msg = message_types.Phase_2_msg()
-        phase_2_msg.record = convert_to_thrift_record(verification_record)
-        phase_2_msg.valid_txs = map(convert_to_thrift_transaction, verification_info['valid_txs'])
-        phase_2_msg.invalid_txs = map(convert_to_thrift_transaction, verification_info['invalid_txs'])
-        phase_2_msg.business = verification_info['business']
-        phase_2_msg.deploy_location = verification_info['deploy_location']
-
-        return phase_2_msg
-
     def phase_3_broadcast(self, block_info, phase_type):
         """ send phase_3 information for phase_4 execution """
-        phase_3_msg = self.get_p3_message(block_info)
+        phase_3_msg = thrift_converter.get_p3_message(block_info)
         ver_ids = []
 
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_3_message(phase_3_msg)
+                self.resolve_data(node, ver_ids)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
-
-    def get_p3_message(self, block_info):
-        """returns thrift phase 3 message structure """
-        verification_record = block_info['verification_record']
-        verification_info = verification_record['verification_info']
-
-        phase_3_msg = message_types.Phase_3_msg()
-        phase_3_msg.record = convert_to_thrift_record(verification_record)
-        phase_3_msg.p2_count = verification_info['p2_count']
-        phase_3_msg.businesses = verification_info['businesses']
-        phase_3_msg.deploy_locations = verification_info['deploy_locations']
-        phase_3_msg.lower_hashes = verification_info['lower_hashes']
-
-        return phase_3_msg
 
     # TODO: implement this broadcast
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
-    # def receipt_broadcast(self, verifications, transfer_to):
-    #     """ broadcast list of thrift verification records """
-    #     thrift_verifications = map(self.get_verification_type, verifications)
-    #     if thrift_verifications:
-    #         for node in self.connections:
-    #             if transfer_to is node.node_id:
-    #                 try:
-    #                     node.client.receipt_message(thrift_verifications)
-    #                     logger().info('verification receipts sent.')
-    #                 except:
-    #                     logger().warning('failed to submit to node %s', node.node_id)
-    #                     continue
-
-    def get_verification_type(self, verification):
-        """ construct a thrift friendly verification record for broadcast receipt """
-        record = {'block_id': verification['block_id'],
-                  'origin_id': verification['origin_id'],
-                  'phase': verification['phase'],
-                  'verification_ts': verification['verified_ts'],
-                  'lower_hash': None,
-                  'public_transmission': None,
-                  'signature': verification['signature']
-                  }
-        info = {'verification_record': record, 'verification_info': verification['verification_info']}
-        phase = verification['phase']
-        verification_record = message_types.VerificationRecord()
-
-        if phase == 1:
-            verification_record.p1 = self.get_p1_message(info)
-        elif phase == 2:
-            verification_record.p2 = self.get_p2_message(info)
-        elif phase == 3:
-            verification_record.p3 = self.get_p3_message(info)
-        elif phase == 4:
+    def resolve_data(self, node, guids):
+        received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
+        verifications = node.client.transfer_data(received, unreceived)
+        for verification in verifications:
+            verification_db.insert_verification(verification)
+            # insert into db
+            # insert transfer record
             pass
-        return verification_record
+
+    @staticmethod
+    def split_items(filter_func, items):
+        accepted = []
+        rejected = []
+        for item in items:
+            if filter_func(item):
+                accepted += [item]
+            else:
+                rejected += [item]
+        return accepted, rejected
 
     def public_broadcast(self, block_info, phase):
         """ broadcast to phase 5 nodes for public transmission """
@@ -542,13 +486,13 @@ class ConnectionManager(object):
             phase_5_msg = message_types.Phase_5_msg()
 
             if phase == 1:
-                phase_msg = self.get_p1_message(block_info)
+                phase_msg = thrift_converter.get_p1_message(block_info)
                 verification_record.p1 = phase_msg
             elif phase == 2:
-                phase_msg = self.get_p2_message(block_info)
+                phase_msg = thrift_converter.get_p2_message(block_info)
                 verification_record.p2 = phase_msg
             elif phase == 3:
-                phase_msg = self.get_p3_message(block_info)
+                phase_msg = thrift_converter.get_p3_message(block_info)
                 verification_record.p3 = phase_msg
             elif phase == 4:
                 pass
@@ -635,27 +579,27 @@ class BlockchainServiceHandler:
         """ submit phase_1 block for phase_2 validation_phase """
         phase_1_info = self.get_phase_1_info(phase_1)
         self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
-        return self.get_unsent_transfer_ids(phase_1_info[RECORD]['signature']['signatory'])
+        return self.get_unsent_transfer_ids(transfer_to=phase_1_info[RECORD]['signature']['signatory'])
 
     def get_phase_1_info(self, phase_1):
         """ return dictionary representation of thrift phase 1 """
         return {
-            RECORD: thrift_record_to_dict(phase_1.record),
-            VERIFICATION_INFO: map(thrift_transaction_to_dict, phase_1.transactions)
+            RECORD: thrift_converter.thrift_record_to_dict(phase_1.record),
+            VERIFICATION_INFO: map(thrift_converter.thrift_transaction_to_dict, phase_1.transactions)
         }
 
     def phase_2_message(self, phase_2):
         phase_2_info = self.get_phase_2_info(phase_2)
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
-        return self.get_unsent_transfer_ids(phase_2_info[RECORD]['signature']['signatory'])
+        return self.get_unsent_transfer_ids(transfer_to=phase_2_info[RECORD]['signature']['signatory'])
 
     def get_phase_2_info(self, phase_2):
         """ return dictionary representation of thrift phase 2 """
         return {
-            RECORD: thrift_record_to_dict(phase_2.record),
+            RECORD: thrift_converter.thrift_record_to_dict(phase_2.record),
             VERIFICATION_INFO: {
-                'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
-                'invalid_txs': map(thrift_transaction_to_dict, phase_2.invalid_txs),
+                'valid_txs': map(thrift_converter.thrift_transaction_to_dict, phase_2.valid_txs),
+                'invalid_txs': map(thrift_converter.thrift_transaction_to_dict, phase_2.invalid_txs),
                 'business': phase_2.business,
                 'deploy_location': phase_2.deploy_location
             }
@@ -664,12 +608,12 @@ class BlockchainServiceHandler:
     def phase_3_message(self, phase_3):
         phase_3_info = self.get_phase_3_info(phase_3)
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
-        return self.get_unsent_transfer_ids(phase_3_info[RECORD]['signature']['signatory'])
+        return self.get_unsent_transfer_ids(transfer_to=phase_3_info[RECORD]['signature']['signatory'])
 
     def get_phase_3_info(self, phase_3):
         """ return dictionary representation of thrift phase 3 """
         return {
-            RECORD: thrift_record_to_dict(phase_3.record),
+            RECORD: thrift_converter.thrift_record_to_dict(phase_3.record),
             VERIFICATION_INFO: {
                 'lower_hashes': phase_3.lower_hashes,
                 'p2_count': phase_3.p2_count,
@@ -682,12 +626,12 @@ class BlockchainServiceHandler:
         # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
         phase_4_info = self.get_phase_4_info(phase_4)
         self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
-        return self.get_unsent_transfer_ids(phase_4_info[RECORD]['signature']['signatory'])
+        return self.get_unsent_transfer_ids(transfer_to=phase_4_info[RECORD]['signature']['signatory'])
 
     def get_phase_4_info(self, phase_4):
         """ return dictionary representation of thrift phase 4 """
         return {
-            RECORD: thrift_record_to_dict(phase_4.record),
+            RECORD: thrift_converter.thrift_record_to_dict(phase_4.record),
             VERIFICATION_INFO: None
         }
 
@@ -708,24 +652,6 @@ class BlockchainServiceHandler:
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
         return []
 
-    def receipt_message(self, verifications):
-        """ send verification receipts """
-        receipts = []
-        for verification in verifications:
-            record = verification.record
-            phase = record.phase
-            if phase == 1:
-                receipts.append(self.get_phase_1_info(record))
-            elif phase == 2:
-                receipts.append(self.get_phase_2_info(record))
-            elif phase == 3:
-                receipts.append(self.get_phase_3_info(record))
-            elif phase == 4:
-                receipts.append(self.get_phase_4_info(record))
-        if receipts:
-            logger().info("Broadcasting receipts...")
-            self.connection_manager.processing_node.notify("verification_receipt", receipts=receipts)
-
     def get_peers(self):
         """ return list of connections from this node """
         def create_node_from_peer(peer):
@@ -739,16 +665,41 @@ class BlockchainServiceHandler:
 
         return map(create_node_from_peer, self.connection_manager.connections)
 
-    def get_unsent_transfer_ids(self, transfer_to):
+    def get_unsent_transfer_ids(self, transfer_to=None, verification_id=None):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
         unsent_transfer_ids = []
         try:
-            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
+            logger().info("Retrieving unsent transfer ids...")
+            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to, verification_id):
                 unsent_transfer_ids.append(transfer_record['verification_id'])
         except:
             logger().warning("An SQL error has occurred.")
 
         return unsent_transfer_ids
+
+    def transfer_data(self, received, unreceived):
+        """ mark verifications as sent and return unsent verifications """
+        verifications = []
+        node_unreceived = []
+        thrift_verifications = []
+        all_guids = received + unreceived
+
+        # retrieve ids that calling node is claiming as unreceived
+        for guid in unreceived:
+            node_unreceived += self.get_unsent_transfer_ids(transfer_to=None, verification_id=guid)
+
+        # mark all verifications received as sent
+        for guid in all_guids:
+            vr_transfers_db.set_verification_sent(guid)
+        # retrieve unreceived records
+        for guid in node_unreceived:
+            verifications += verification_db.get_verifications(guid)
+
+        # format verifications to list of thrift structs for returning
+        thrift_verifications = map(thrift_converter.get_verification_type, verifications)
+
+        return thrift_verifications
+
 
 if __name__ == '__main__':
     net_dao.reset_data()
