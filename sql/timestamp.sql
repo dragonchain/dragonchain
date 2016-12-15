@@ -45,13 +45,13 @@ CREATE TABLE IF NOT EXISTS timestamps (
     create_ts timestamptz,
 
     /* chainpoint receipt containing the required data for verifying the timestamp */
-    timestamp_receipt JSON
+    timestamp_receipt JSON,
 
     /* Signature block - includes public key */
     signature JSON,
 
     /* arbitrary info per phase */
-    verification_info JSON,
+    verification_info JSON
 );
 COMMIT;
 BEGIN;
