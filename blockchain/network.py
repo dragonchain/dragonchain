@@ -466,7 +466,6 @@ class ConnectionManager(object):
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
-
     @staticmethod
     def split_items(filter_func, items):
         accepted = []
