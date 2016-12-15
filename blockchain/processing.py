@@ -135,9 +135,6 @@ class ProcessingNode(object):
         else:
             raise Exception("Phase " + config[PHASE] + " has already been registered.")
 
-        # register verification receipt callback
-        self._add_registration('verification_receipt', self._verification_receipt, config)
-
         if config[PHASE] == 1:
             # Register the primary phase observer
             self._add_registration(1, self._execute_phase_1, config)
@@ -362,12 +359,6 @@ class ProcessingNode(object):
             # inserting receipt of signed verification for data transfer
             vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
 
-            transfer_to = phase_1_record['signature']['signatory']
-
-            unsent_transfer_records = self.get_unsent_transfer_ids(transfer_to)
-
-            transfer_records = self.get_transfer_records(unsent_transfer_records)
-
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
@@ -573,43 +564,6 @@ class ProcessingNode(object):
     def _execute_phase_5(self, config, phase_5_info):
         """ public, Bitcoin bridge phase """
         print "phase 5 executed"
-
-    def get_unsent_transfer_ids(self, transfer_to):
-        """ retrieve unsent transfer record info (data used for querying block_verification database) """
-        unsent_transfer_records = []
-        try:
-            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
-                unsent_transfer_records.append(transfer_record)
-        except:
-            logger().warning("An SQL error has occurred.")
-
-        return unsent_transfer_records
-
-    def get_transfer_records(self, unsent_transfer_records):
-        """ retrieve verification records that match the ids of given unsent record ids. """
-        verification_records = []
-        logger().info("Retrieving unsent verification records...")
-        for unsent_transfer_record in unsent_transfer_records:
-            try:
-                for value in verification_db.get_verifications(unsent_transfer_record['verification_id']):
-                    if value:
-                        verification_records.append(value)
-            except:
-                logger().warning("An SQL error has occurred")
-
-        return verification_records
-
-    def _verification_receipt(self, receipts):
-        """ store received verification receipts in database """
-        if receipts:
-            logger().info("Storing verification receipts...")
-            try:
-                for verification in receipts:
-                    verification_db.insert_verification(verification)
-            except:
-                logger().warning("An SQL error has occurred.")
-        else:
-            logger().warning("Empty set of verification receipts received.")
 
     @staticmethod
     def split_items(filter_func, items):

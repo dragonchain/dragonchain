@@ -681,7 +681,6 @@ class BlockchainServiceHandler:
         """ mark verifications as sent and return unsent verifications """
         verifications = []
         node_unreceived = []
-        thrift_verifications = []
         all_guids = received + unreceived
 
         # retrieve ids that calling node is claiming as unreceived
