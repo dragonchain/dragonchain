@@ -192,6 +192,7 @@ class BitcoinFeeProvider(object):
     """
     Provides estimated bitcoin fee using a 3rd party service.
     """
+    fee_url = "https://bitcoinfees.21.co/api/v1/fees/recommended"
     def recommended(self):
         """
         provides an recommended fee per byte
@@ -199,7 +200,7 @@ class BitcoinFeeProvider(object):
         Return: the avg value between the estimated fastestFee value and the estimated
         halfHourFee value.
         """
-        response = requests.get("https://bitcoinfees.21.co/api/v1/fees/recommended")
+        response = requests.get(self.fee_url)
         fees = response.json()
         calculated_fee = 0.5 * (int(fees["fastestFee"]) + int(fees["halfHourFee"]))
         return int(calculated_fee)
