@@ -118,6 +118,7 @@ class Node(object):
         # TODO: enter as cmd line arg
         self.public_key = None
         self.proof = None
+        self.last_transfer_time = 0
 
     def __eq__(self, other):
             return hash(self.node_id) == hash(other.node_id)
@@ -138,7 +139,7 @@ class ConnectionManager(object):
         # phase_type => {nodes} (dictionary of connected nodes)
         self.peer_dict = {}
         self.config = None
-        # list of connected nodes
+        # set of connected nodes
         self.connections = set()
         self.phases = int(phases)
         self.processing_node = processing_node
@@ -187,11 +188,13 @@ class ConnectionManager(object):
         logger().info('server started.')
 
     def schedule_tasks(self):
+        """ scheduled tasks that run every x seconds """
         scheduler = BackgroundScheduler()
 
         scheduler.add_job(self.refresh_registered, CronTrigger(second='*/5'))
         scheduler.add_job(self.refresh_unregistered, CronTrigger(second='*/60'))
         scheduler.add_job(self.connect, CronTrigger(second='*/5'))
+        scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
         scheduler.start()
 
     def refresh_registered(self):
@@ -449,11 +452,19 @@ class ConnectionManager(object):
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
+    def timed_receipt_request(self):
+        """ time based receipt request """
+        for node in self.connections:
+            if int(time.time()) - node.last_transfer_time >= 900:
+                ver_ids = node.client.receipt_request(self.this_node.node_id)
+                self.resolve_data(node, ver_ids)
+
     def resolve_data(self, node, guids):
         """ request unreceived verifications from node, notify node of already received verifications,
             store received verifications from node, find replications and store them in transfers table """
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
         verifications = node.client.transfer_data(received, unreceived)
+        node.last_transfer_time = int(time.time())
         for verification in verifications:
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
@@ -659,6 +670,10 @@ class BlockchainServiceHandler:
 
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
         return []
+
+    def receipt_request(self, signatory):
+        """ return unsent transfer ids to calling node """
+        return self.get_unsent_transfer_ids(transfer_to=signatory)
 
     def get_peers(self):
         """ return list of connections from this node """

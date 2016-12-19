@@ -33,6 +33,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('   phase_3_message(Phase_3_msg p3)')
   print('   phase_4_message(Phase_4_msg p4)')
   print('   phase_5_message(Phase_5_msg p5)')
+  print('   receipt_request(string signatory)')
   print('   transfer_data( received,  unreceived)')
   print('   get_peers()')
   print('')
@@ -144,6 +145,12 @@ elif cmd == 'phase_5_message':
     print('phase_5_message requires 1 args')
     sys.exit(1)
   pp.pprint(client.phase_5_message(eval(args[0]),))
+
+elif cmd == 'receipt_request':
+  if len(args) != 1:
+    print('receipt_request requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.receipt_request(args[0],))
 
 elif cmd == 'transfer_data':
   if len(args) != 2:

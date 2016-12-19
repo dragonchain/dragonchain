@@ -75,6 +75,13 @@ class Iface:
     """
     pass
 
+  def receipt_request(self, signatory):
+    """
+    Parameters:
+     - signatory
+    """
+    pass
+
   def transfer_data(self, received, unreceived):
     """
     Parameters:
@@ -350,6 +357,37 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "phase_5_message failed: unknown result")
 
+  def receipt_request(self, signatory):
+    """
+    Parameters:
+     - signatory
+    """
+    self.send_receipt_request(signatory)
+    return self.recv_receipt_request()
+
+  def send_receipt_request(self, signatory):
+    self._oprot.writeMessageBegin('receipt_request', TMessageType.CALL, self._seqid)
+    args = receipt_request_args()
+    args.signatory = signatory
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_receipt_request(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = receipt_request_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "receipt_request failed: unknown result")
+
   def transfer_data(self, received, unreceived):
     """
     Parameters:
@@ -425,6 +463,7 @@ class Processor(Iface, TProcessor):
     self._processMap["phase_3_message"] = Processor.process_phase_3_message
     self._processMap["phase_4_message"] = Processor.process_phase_4_message
     self._processMap["phase_5_message"] = Processor.process_phase_5_message
+    self._processMap["receipt_request"] = Processor.process_receipt_request
     self._processMap["transfer_data"] = Processor.process_transfer_data
     self._processMap["get_peers"] = Processor.process_get_peers
 
@@ -609,6 +648,25 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("phase_5_message", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_receipt_request(self, seqid, iprot, oprot):
+    args = receipt_request_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = receipt_request_result()
+    try:
+      result.success = self._handler.receipt_request(args.signatory)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("receipt_request", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -1786,6 +1844,143 @@ class phase_5_message_result:
   def __ne__(self, other):
     return not (self == other)
 
+class receipt_request_args:
+  """
+  Attributes:
+   - signatory
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'signatory', None, None, ), # 1
+  )
+
+  def __init__(self, signatory=None,):
+    self.signatory = signatory
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.signatory = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('receipt_request_args')
+    if self.signatory is not None:
+      oprot.writeFieldBegin('signatory', TType.STRING, 1)
+      oprot.writeString(self.signatory)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.signatory)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class receipt_request_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRING,None), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype119, _size116) = iprot.readListBegin()
+          for _i120 in xrange(_size116):
+            _elem121 = iprot.readString()
+            self.success.append(_elem121)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('receipt_request_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRING, len(self.success))
+      for iter122 in self.success:
+        oprot.writeString(iter122)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class transfer_data_args:
   """
   Attributes:
@@ -1815,20 +2010,20 @@ class transfer_data_args:
       if fid == 1:
         if ftype == TType.LIST:
           self.received = []
-          (_etype119, _size116) = iprot.readListBegin()
-          for _i120 in xrange(_size116):
-            _elem121 = iprot.readString()
-            self.received.append(_elem121)
+          (_etype126, _size123) = iprot.readListBegin()
+          for _i127 in xrange(_size123):
+            _elem128 = iprot.readString()
+            self.received.append(_elem128)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.LIST:
           self.unreceived = []
-          (_etype125, _size122) = iprot.readListBegin()
-          for _i126 in xrange(_size122):
-            _elem127 = iprot.readString()
-            self.unreceived.append(_elem127)
+          (_etype132, _size129) = iprot.readListBegin()
+          for _i133 in xrange(_size129):
+            _elem134 = iprot.readString()
+            self.unreceived.append(_elem134)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1845,15 +2040,15 @@ class transfer_data_args:
     if self.received is not None:
       oprot.writeFieldBegin('received', TType.LIST, 1)
       oprot.writeListBegin(TType.STRING, len(self.received))
-      for iter128 in self.received:
-        oprot.writeString(iter128)
+      for iter135 in self.received:
+        oprot.writeString(iter135)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unreceived is not None:
       oprot.writeFieldBegin('unreceived', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.unreceived))
-      for iter129 in self.unreceived:
-        oprot.writeString(iter129)
+      for iter136 in self.unreceived:
+        oprot.writeString(iter136)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1905,11 +2100,11 @@ class transfer_data_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype133, _size130) = iprot.readListBegin()
-          for _i134 in xrange(_size130):
-            _elem135 = VerificationRecord()
-            _elem135.read(iprot)
-            self.success.append(_elem135)
+          (_etype140, _size137) = iprot.readListBegin()
+          for _i141 in xrange(_size137):
+            _elem142 = VerificationRecord()
+            _elem142.read(iprot)
+            self.success.append(_elem142)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1926,8 +2121,8 @@ class transfer_data_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter136 in self.success:
-        iter136.write(oprot)
+      for iter143 in self.success:
+        iter143.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2027,11 +2222,11 @@ class get_peers_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype140, _size137) = iprot.readListBegin()
-          for _i141 in xrange(_size137):
-            _elem142 = Node()
-            _elem142.read(iprot)
-            self.success.append(_elem142)
+          (_etype147, _size144) = iprot.readListBegin()
+          for _i148 in xrange(_size144):
+            _elem149 = Node()
+            _elem149.read(iprot)
+            self.success.append(_elem149)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2054,8 +2249,8 @@ class get_peers_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter143 in self.success:
-        iter143.write(oprot)
+      for iter150 in self.success:
+        iter150.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unauthorized is not None:
