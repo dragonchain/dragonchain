@@ -192,7 +192,7 @@ service BlockchainService {
 
    list<string> receipt_request(1: string signatory),
 
-   list<VerificationRecord> transfer_data(1: list<string> received, 2: list<string> unreceived),
+   list<VerificationRecord> transfer_data(1: string transfer_to, 2: list<string> received, 3: list<string> unreceived),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

@@ -82,9 +82,10 @@ class Iface:
     """
     pass
 
-  def transfer_data(self, received, unreceived):
+  def transfer_data(self, transfer_to, received, unreceived):
     """
     Parameters:
+     - transfer_to
      - received
      - unreceived
     """
@@ -388,18 +389,20 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "receipt_request failed: unknown result")
 
-  def transfer_data(self, received, unreceived):
+  def transfer_data(self, transfer_to, received, unreceived):
     """
     Parameters:
+     - transfer_to
      - received
      - unreceived
     """
-    self.send_transfer_data(received, unreceived)
+    self.send_transfer_data(transfer_to, received, unreceived)
     return self.recv_transfer_data()
 
-  def send_transfer_data(self, received, unreceived):
+  def send_transfer_data(self, transfer_to, received, unreceived):
     self._oprot.writeMessageBegin('transfer_data', TMessageType.CALL, self._seqid)
     args = transfer_data_args()
+    args.transfer_to = transfer_to
     args.received = received
     args.unreceived = unreceived
     args.write(self._oprot)
@@ -677,7 +680,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = transfer_data_result()
     try:
-      result.success = self._handler.transfer_data(args.received, args.unreceived)
+      result.success = self._handler.transfer_data(args.transfer_to, args.received, args.unreceived)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -1984,17 +1987,20 @@ class receipt_request_result:
 class transfer_data_args:
   """
   Attributes:
+   - transfer_to
    - received
    - unreceived
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.LIST, 'received', (TType.STRING,None), None, ), # 1
-    (2, TType.LIST, 'unreceived', (TType.STRING,None), None, ), # 2
+    (1, TType.STRING, 'transfer_to', None, None, ), # 1
+    (2, TType.LIST, 'received', (TType.STRING,None), None, ), # 2
+    (3, TType.LIST, 'unreceived', (TType.STRING,None), None, ), # 3
   )
 
-  def __init__(self, received=None, unreceived=None,):
+  def __init__(self, transfer_to=None, received=None, unreceived=None,):
+    self.transfer_to = transfer_to
     self.received = received
     self.unreceived = unreceived
 
@@ -2008,6 +2014,11 @@ class transfer_data_args:
       if ftype == TType.STOP:
         break
       if fid == 1:
+        if ftype == TType.STRING:
+          self.transfer_to = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
         if ftype == TType.LIST:
           self.received = []
           (_etype126, _size123) = iprot.readListBegin()
@@ -2017,7 +2028,7 @@ class transfer_data_args:
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
-      elif fid == 2:
+      elif fid == 3:
         if ftype == TType.LIST:
           self.unreceived = []
           (_etype132, _size129) = iprot.readListBegin()
@@ -2037,15 +2048,19 @@ class transfer_data_args:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('transfer_data_args')
+    if self.transfer_to is not None:
+      oprot.writeFieldBegin('transfer_to', TType.STRING, 1)
+      oprot.writeString(self.transfer_to)
+      oprot.writeFieldEnd()
     if self.received is not None:
-      oprot.writeFieldBegin('received', TType.LIST, 1)
+      oprot.writeFieldBegin('received', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.received))
       for iter135 in self.received:
         oprot.writeString(iter135)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unreceived is not None:
-      oprot.writeFieldBegin('unreceived', TType.LIST, 2)
+      oprot.writeFieldBegin('unreceived', TType.LIST, 3)
       oprot.writeListBegin(TType.STRING, len(self.unreceived))
       for iter136 in self.unreceived:
         oprot.writeString(iter136)
@@ -2060,6 +2075,7 @@ class transfer_data_args:
 
   def __hash__(self):
     value = 17
+    value = (value * 31) ^ hash(self.transfer_to)
     value = (value * 31) ^ hash(self.received)
     value = (value * 31) ^ hash(self.unreceived)
     return value

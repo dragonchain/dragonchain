@@ -463,7 +463,7 @@ class ConnectionManager(object):
         """ request unreceived verifications from node, notify node of already received verifications,
             store received verifications from node, find replications and store them in transfers table """
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
-        verifications = node.client.transfer_data(received, unreceived)
+        verifications = node.client.transfer_data(self.this_node.node_id, received, unreceived)
         node.last_transfer_time = int(time.time())
         for verification in verifications:
             try:
@@ -700,7 +700,7 @@ class BlockchainServiceHandler:
 
         return unsent_transfer_ids
 
-    def transfer_data(self, received, unreceived):
+    def transfer_data(self, transfer_to, received, unreceived):
         """ mark verifications as sent and return unsent verifications """
         verifications = []
         node_unreceived = []
@@ -708,14 +708,14 @@ class BlockchainServiceHandler:
 
         # retrieve ids that calling node is claiming as unreceived
         for guid in unreceived:
-            node_unreceived += self.get_unsent_transfer_ids(transfer_to=None, verification_id=guid)
+            node_unreceived += self.get_unsent_transfer_ids(transfer_to=transfer_to, verification_id=guid)
 
         # mark all verifications received as sent
         for guid in all_guids:
-            vr_transfers_db.set_verification_sent(guid)
+            vr_transfers_db.set_verification_sent(transfer_to, guid)
         # retrieve unreceived records
         for guid in node_unreceived:
-            verifications += verification_db.get_verifications(guid)
+            verifications.append(verification_db.get(guid))
 
         # format verifications to list of thrift structs for returning
         thrift_verifications = map(thrift_converter.get_verification_type, verifications)

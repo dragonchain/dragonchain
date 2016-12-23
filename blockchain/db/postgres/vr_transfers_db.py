@@ -40,7 +40,7 @@ from postgres import get_connection_pool
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
-SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE verification_id = %s"""
+SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE transfer_to = %s AND verification_id = %s"""
 SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
                                   origin_id,
                                   transfer_to,
@@ -97,9 +97,9 @@ def insert_transfer(origin_id, transfer_to, verification_id):
         get_connection_pool().putconn(conn)
 
 
-def set_verification_sent(ver_id):
-    """ set verifications sent field to true with ver_id and transfer_to """
-    sql_args = (ver_id,)
+def set_verification_sent(transfer_to, ver_id):
+    """ set verifications sent field to true with matching given 'transfer_to' and 'verification_id' """
+    sql_args = (transfer_to, ver_id)
     execute_db_args(sql_args, SQL_MARK_RECORD)
 
 

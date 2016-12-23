@@ -59,23 +59,6 @@ def get_cursor_name():
     return str(uuid.uuid4())
 
 
-def get_verifications(verification_id):
-    conn = get_connection_pool().getconn()
-    try:
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(SQL_GET_BY_ID, (verification_id,))
-        'An iterator that uses fetchmany to keep memory usage down'
-        while True:
-            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
-            if not results:
-                break
-            for result in results:
-                yield format_block_verification(result)
-        cur.close()
-    finally:
-        get_connection_pool().putconn(conn)
-
-
 def get(verification_id):
     conn = get_connection_pool().getconn()
     try:
