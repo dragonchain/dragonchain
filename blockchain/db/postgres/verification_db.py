@@ -120,25 +120,27 @@ def get_records(block_id, origin_id, phase):
         get_connection_pool().putconn(conn)
 
 
-def get_all(block_id, limit=None, offset=None, phase=None, origin_id=None):
-    # Build query
+def get_all(limit=None, offset=None, **params):
     query = SQL_GET_ALL
-    if block_id:
-        query += """ WHERE block_id = """ + str(block_id)
+    multi_param = False
+    if params:
+        query += """ WHERE """
 
-    if phase:
-        if not block_id:
-            query += """ WHERE """
-        else:
-            query += """ AND """
-        query += """ phase = """ + str(phase)
+    if "block_id" in params:
+        query += """ block_id = """ + str(params["block_id"])
+        multi_param = True
 
-    if origin_id:
-        if not block_id and not phase:
-            query += """ WHERE """
-        else:
+    if "phase" in params:
+        if multi_param:
             query += """ AND """
-        query += """ origin_id = """ + origin_id
+        query += """ phase = """ + str(params["phase"])
+        multi_param = True
+
+    if "origin_id" in params:
+        if multi_param:
+            query += """ AND """
+        query += """ origin_id = """ + str(params["origin_id"])
+        multi_param = True
 
     query += """ ORDER BY block_id DESC """
 
