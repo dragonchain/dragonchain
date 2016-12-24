@@ -121,6 +121,7 @@ def get_records(block_id, origin_id, phase):
 
 
 def get_all(limit=None, offset=None, **params):
+    """ return all verification records matching given parameters """
     query = SQL_GET_ALL
     multi_param = False
     if params:
@@ -170,6 +171,9 @@ def get_all(limit=None, offset=None, **params):
 
 
 def get_all_replication(block_id, phase, origin_id):
+    """ queries for records matching given block_id, having phase less than given phase,
+        and matching origin_id. This is used for retrieving verification records at lower
+        phases that match the higher phase record in question. """
     query = SQL_GET_ALL
     query += """ WHERE block_id = """ + str(block_id)
     query += """ AND phase < """ + str(phase)
