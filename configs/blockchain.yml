@@ -10,6 +10,9 @@ public_transmission: 
     p3_pub_trans: off
     p4_pub_trans: off
 
+# time limit (in seconds) before request is made for verification receipts from peers.
+receipt_request_time: 600
+
 # host:port:id:phases
 # phase 1 = 00001
 # phase 2 = 00011 ...

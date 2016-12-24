@@ -143,6 +143,8 @@ class ConnectionManager(object):
         self.connections = set()
         self.phases = int(phases)
         self.processing_node = processing_node
+        # defaults to 15 minutes (900 seconds)
+        self.receipt_request_time = 900
         """ Load configured nodelist """
         logger().info('loading network config...')
         self.load_config()
@@ -174,6 +176,8 @@ class ConnectionManager(object):
         self.this_node.port = int(self.port)
         self.this_node.owner = self.config[OWNER_PROPERTY_KEY]
         self.this_node.node_id = self.config[NODE_ID_PROPERTY_KEY]
+        if self.config["receipt_request_time"]:
+            self.receipt_request_time = self.config["receipt_request_time"]
         self.this_node.phases = int(self.phases)
 
     def start_service_handler(self):
@@ -455,7 +459,7 @@ class ConnectionManager(object):
     def timed_receipt_request(self):
         """ time based receipt request """
         for node in self.connections:
-            if int(time.time()) - node.last_transfer_time >= 900:
+            if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
                 ver_ids = node.client.receipt_request(self.this_node.node_id)
                 self.resolve_data(node, ver_ids)
 
