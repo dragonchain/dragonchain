@@ -134,6 +134,7 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
 - [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
 - [Dylan Yelton - Developer](https://www.linkedin.com/in/dylan-yelton-b11ba5aa)
+- [Alex Benedetto - Developer](https://www.linkedin.com/in/alex-benedetto-6175048b)
 - [Michael Bachtel - DevOps / Developer](https://www.linkedin.com/in/michael-bachtel-617b7b2)
 - [Lucas Ontivero - Developer](https://ar.linkedin.com/in/lucasontivero)
 - [Adam Bronfin - Developer / Reviewer](https://www.linkedin.com/in/adam-bronfin-694a7440)
@@ -148,7 +149,6 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - [Brian J Wilson - Architect](https://www.linkedin.com/in/brian-wilson-9325a776)
 - [Mike De'Shazer - Developer / Reviewer](https://kr.linkedin.com/in/mikedeshazer)
 - [Tai Kersten - Developer / Reviewer](https://kr.linkedin.com/in/tai-kersten-bb460412a/en)
-- [Alex Benedetto - Developer](https://www.linkedin.com/in/alex-benedetto-6175048b)
 - Steve Owens - Reviewer
 - Mark LaPerriere - Reviewer
 - Kevin Duane - Reviewer
