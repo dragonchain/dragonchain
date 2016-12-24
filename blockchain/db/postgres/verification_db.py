@@ -143,8 +143,6 @@ def get_all(limit=None, offset=None, **params):
         query += """ origin_id = """ + str(params["origin_id"])
         multi_param = True
 
-    query += """ ORDER BY block_id DESC """
-
     if not limit:
         limit = 10
 
