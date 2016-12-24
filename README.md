@@ -74,14 +74,8 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 # Execution
 
 ## Set the PYTHONPATH variable
-
-    Mac:
     
-        export PYTHONPATH=/path/to/dragonchain
-        
-    Linux:
-    
-        PYTHONPATH="/path/to/dragonchain"
+    export PYTHONPATH=/path/to/dragonchain
 
 ## Transaction Service
 
