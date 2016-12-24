@@ -48,37 +48,26 @@ SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
                                 ) VALUES (%s, %s, %s)"""
 
 
-def get_unsent_verification_records(node_transmit_id=None, verification_id=None):
+def get_unsent_verification_records(node_transmit_id):
     """ retrieve validated records that have not already been sent back to node with node_transmit_id or verification_id """
     query = GET_VERIFIED_RECORDS
-    query_ready = False
+    query += """ WHERE transfer_to = '""" + node_transmit_id
+    query += """' AND sent = b'0' """
 
-    if node_transmit_id and verification_id:
-        query += """ WHERE transfer_to = '""" + node_transmit_id + """' AND verification_id = '""" + verification_id
-        query_ready = True
-    elif node_transmit_id:
-        query += """ WHERE transfer_to = '""" + node_transmit_id
-        query_ready = True
-    elif verification_id:
-        query += """ WHERE verification_id = '""" + verification_id
-        query_ready = True
-
-    if query_ready:
-        query += """' AND sent = b'0' """
-        conn = get_connection_pool().getconn()
-        try:
-            cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-            cur.execute(query)
-            'An iterator that uses fetchmany to keep memory usage down'
-            while True:
-                results = cur.fetchmany(DEFAULT_PAGE_SIZE)
-                if not results:
-                    break
-                for result in results:
-                    yield format_verification_record(result)
-            cur.close()
-        finally:
-            get_connection_pool().putconn(conn)
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_verification_record(result)
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
 
 
 def insert_transfer(origin_id, transfer_to, verification_id):

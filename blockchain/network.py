@@ -692,12 +692,12 @@ class BlockchainServiceHandler:
 
         return map(create_node_from_peer, self.connection_manager.connections)
 
-    def get_unsent_transfer_ids(self, transfer_to=None, verification_id=None):
+    def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
         unsent_transfer_ids = []
         try:
             logger().info("Retrieving unsent transfer ids...")
-            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to, verification_id):
+            for transfer_record in vr_transfers_db.get_unsent_verification_records(transfer_to):
                 unsent_transfer_ids.append(transfer_record['verification_id'])
         except:
             logger().warning("An SQL error has occurred.")
