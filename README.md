@@ -83,7 +83,7 @@ If you have Apache Thrift installed you can regenerate these classes by using th
     
 ## Query Service
 
-    python <Dragonchain Home>/blockchain/query_svc.py -p port //defaults to 8080
+    python <Dragonchain Home>/blockchain/query_svc.py [-p port] //defaults to 8080
 
 ### Example Query
 
