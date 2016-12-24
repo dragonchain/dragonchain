@@ -176,7 +176,7 @@ class ConnectionManager(object):
         self.this_node.port = int(self.port)
         self.this_node.owner = self.config[OWNER_PROPERTY_KEY]
         self.this_node.node_id = self.config[NODE_ID_PROPERTY_KEY]
-        if self.config["receipt_request_time"]:
+        if "receipt_request_time" in self.config:
             self.receipt_request_time = self.config["receipt_request_time"]
         self.this_node.phases = int(self.phases)
 
@@ -707,18 +707,14 @@ class BlockchainServiceHandler:
     def transfer_data(self, transfer_to, received, unreceived):
         """ mark verifications as sent and return unsent verifications """
         verifications = []
-        node_unreceived = []
         all_guids = received + unreceived
-
-        # retrieve ids that calling node is claiming as unreceived
-        for guid in unreceived:
-            node_unreceived += self.get_unsent_transfer_ids(transfer_to=transfer_to, verification_id=guid)
 
         # mark all verifications received as sent
         for guid in all_guids:
             vr_transfers_db.set_verification_sent(transfer_to, guid)
+
         # retrieve unreceived records
-        for guid in node_unreceived:
+        for guid in unreceived:
             verifications.append(verification_db.get(guid))
 
         # format verifications to list of thrift structs for returning
