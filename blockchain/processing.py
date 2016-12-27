@@ -429,6 +429,7 @@ class ProcessingNode(object):
             # storing valid verification record
             verification_db.insert_verification(phase_2_record)
 
+            # retrieve all phase 2 records for current block
             phase_2_records = self.get_sig_records(phase_2_record)
 
             signatories, businesses, locations = self.get_verification_diversity(phase_2_records)
@@ -466,8 +467,9 @@ class ProcessingNode(object):
                 verification_id = str(uuid.uuid4())
                 verification_db.insert_verification(block_info['verification_record'], verification_id)
 
-                # inserting receipt of signed verification for data transfer
-                vr_transfers_db.insert_transfer(phase_2_record['origin_id'], phase_2_record['signature']['signatory'], verification_id)
+                # inserting receipt for each phase 2 record received
+                for record in phase_2_records:
+                    vr_transfers_db.insert_transfer(record['origin_id'], record['signature']['signatory'], verification_id)
 
                 # send block info off for public transmission if configured to do so
                 if phase_2_record['public_transmission']['p3_pub_trans']:
@@ -486,7 +488,7 @@ class ProcessingNode(object):
         origin_id = verification_record[ORIGIN_ID]
         phase = verification_record[PHASE]
 
-        # get_verifications number of phase validations received
+        # get_verifications -- number of phase validations received
         records = verification_db.get_records(block_id, origin_id, phase)
 
         return records
