@@ -587,8 +587,8 @@ class BlockchainServiceHandler:
 
         return connection_authorized
 
-    def unregister_node(self):
-        node = self.remove_inbound_connection()
+    def unregister_node(self, pass_phrase):
+        node = self.remove_inbound_connection(pass_phrase)
         logger().info('%s severed inbound connection', node.node_id)
 
     def get_node_info(self):
