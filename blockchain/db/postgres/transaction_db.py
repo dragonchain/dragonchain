@@ -263,7 +263,7 @@ def update_transaction(txn):
 
 
 def fixate_block(start_ts_range, end_ts_range, block_id):
-    # get_verifications all tx within the previous block
+    # get all tx within the previous block
     update_query = SQL_FIXATE_BLOCK % (block_id, start_ts_range, end_ts_range)
     conn = get_connection_pool().getconn()
     try:

@@ -71,7 +71,7 @@ def get_block_id(secs_since_epoch):
 
 
 def get_current_block_id():
-    # get_verifications the seconds in 5 sec intervals
+    # get the seconds in 5 sec intervals
     # interval = int(now.gmtime().tm_sec / BLOCK_INTERVAL) * BLOCK_INTERVAL
     return int((time.time()-EPOCH_OFFSET)/BLOCK_INTERVAL)
 
