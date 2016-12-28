@@ -1,0 +1,12 @@
+backports.ssl-match-hostname==3.4.0.2
+certifi==2015.4.28
+tornado==4.2.1
+wheel==0.24.0
+ecdsa==0.13
+psycopg2==2.6.1
+apscheduler==3.0.3
+thrift==0.9.3
+pytest==2.8.0
+rx==1.2.3
+pyyaml==3.11
+-e .

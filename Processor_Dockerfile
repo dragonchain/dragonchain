@@ -1,0 +1,75 @@
+FROM centos:7
+
+RUN yum install -y epel-release
+
+# General dependencies
+RUN yum install -y \
+      tar \
+      m4 \
+      perl \
+      clang \
+      gcc \
+      gcc-c++ \
+      git \
+      libtool \
+      autoconf \
+      make \
+      bison \
+      bison-devel \
+      flex
+
+# C++ dependencies
+RUN yum install -y \
+      boost-devel-static \
+      zlib-devel \
+      openssl-devel \
+      libevent-devel
+
+# Python Dependencies
+RUN yum install -y \
+      python-devel \
+      python-setuptools \
+      python-six
+
+# GLibC Dependencies
+RUN yum install -y glib2-devel
+
+# CMake
+RUN curl -sSL https://cmake.org/files/v3.4/cmake-3.4.0.tar.gz | tar -xz && \
+    cd cmake-3.4.0 && ./bootstrap && make -j4 && make install
+
+# Clean up
+RUN rm -rf /tmp/* && \
+    yum clean all
+
+ENV THRIFT_ROOT /var/thrift
+RUN mkdir -p $THRIFT_ROOT
+COPY ./thrift/ $THRIFT_ROOT
+
+# Install PIP
+RUN yum -y update
+RUN yum -y install python-pip
+RUN pip install --upgrade pip
+
+RUN yum install -y epel-release
+RUN yum -y install make automake gcc gcc-c++ kernel-devel
+RUN yum -y install postgresql-libs
+RUN yum -y install postgresql-devel
+RUN pip install psycopg2
+RUN echo $PATH
+
+COPY ./setup.py .
+COPY ./requirements.txt .
+COPY ./blockchain/ blockchain/
+RUN pip install -r requirements.txt
+
+#Start processing
+COPY ./configs/ configs/
+COPY ./configs/blockchain.yml .
+COPY ./pki/private-key.pem /blockchain/private-key.pem
+COPY ./pki/public-key.pem blockchain/public-key.pem
+
+RUN mkdir logs
+
+CMD ["python", "/blockchain/processing.py --private-key /blockchain/private-key.pem --public-key /blockchain/public-key.pem --port 80 --phase 1"]
+#ENTRYPOINT ["python", "/blockchain/processing.py --private-key /blockchain/private-key.pem --public-key /blockchain/public-key.pem --port 80 --phase 1"]

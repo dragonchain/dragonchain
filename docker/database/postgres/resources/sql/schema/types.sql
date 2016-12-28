@@ -29,9 +29,11 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-*/
+
 
 DROP TYPE transaction_status;
+*/
+
 CREATE TYPE transaction_status AS ENUM (
     'new',
     'pending',

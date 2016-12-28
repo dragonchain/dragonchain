@@ -1,0 +1,3 @@
+CREATE USER blocky;
+CREATE DATABASE blockchain;
+GRANT ALL PRIVILEGES ON DATABASE blockchain TO blocky;

@@ -1,0 +1,5 @@
+FROM postgres:9.6
+VOLUME ["/var/lib/pgsql"]
+
+ADD ./docker/database/postgres/resources/sql /docker-entrypoint-initdb.d/
+#RUN psql -U postgres -d blockchain -a -f /docker-entrypoint-initdb.d/init.sql

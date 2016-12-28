@@ -1,3 +1,5 @@
+-- noinspection SqlDialectInspectionForFile
+-- noinspection SqlNoDataSourceInspectionForFile
 /*
 
 Copyright 2016 Disney Connected and Advanced Technologies

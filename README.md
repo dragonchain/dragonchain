@@ -116,6 +116,24 @@ Configuration within yaml files within configs directory.
 
 `BLOCKCHAIN_DB_NAME` = Blockchain database (default blockchain, also selects `.yaml` config and log file with same name)
 
+## Docker
+
+Building and runnign the Prostgress_Dockerfile
+`docker build -t bc_database_image -f Postgres_Dockerfile .`
+`docker run --name blockchain_database -d bc_database_image`
+  
+Building and running the Processor_Dockerfile
+`docker build -t bc_processor_image -f Processor_Dockerfile .`
+`docker run -p 80:80 --name processor --env-file ./docker/env.list --link blockchain_database -d bc_processor_image`
+
+Building and running the Transaction_Dockerfile
+`docker build -t transaction_image -f Postgres_Dockerfile .`
+`docker run -p 80:80 --name transaction --link blockchain_database -d transaction_image`
+
+Building and running the Query_Dockerfile
+`docker build -t query_image -f Query_Dockerfile .`
+`docker run -p 80:80 --name query --link blockchain_database -d query_image`
+
 # Contribution
 
 Dragonchain uses a standard Feature Branch Workflow.

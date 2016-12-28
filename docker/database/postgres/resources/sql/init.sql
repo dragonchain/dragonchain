@@ -1,3 +1,4 @@
+-- noinspection SqlNoDataSourceInspectionForFile
 /*
 
 Copyright 2016 Disney Connected and Advanced Technologies
@@ -31,6 +32,7 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
+\i /docker-entrypoint-initdb.d/schema/database.sql
+\i /docker-entrypoint-initdb.d/schema/types.sql
+\i /docker-entrypoint-initdb.d/schema/blockchain.sql
+\i /docker-entrypoint-initdb.d/schema/net.sql
