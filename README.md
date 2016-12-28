@@ -73,14 +73,23 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 # Execution
 
+## Set the PYTHONPATH variable
+    
+    export PYTHONPATH=/path/to/dragonchain
+
 ## Transaction Service
 
     python <Dragonchain Home>/blockchain/transaction_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
     
 ## Query Service
 
-    python <Dragonchain Home>/blockchain/query_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
+    python <Dragonchain Home>/blockchain/query_svc.py [-p port] //defaults to 8080
 
+### Example Query
+
+    localhost:8080/transaction/?create_ts=1475155787 //timestamp in Unix Epoch timecode
+        - create_ts can be replaced with any of the header fields in a transaction
+    
 ## Blockchain Processor
 
     python <Dragonchain Home>/blockchain/processing.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
@@ -125,6 +134,7 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
 - [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
 - [Dylan Yelton - Developer](https://www.linkedin.com/in/dylan-yelton-b11ba5aa)
+- [Alex Benedetto - Developer](https://www.linkedin.com/in/alex-benedetto-6175048b)
 - [Michael Bachtel - DevOps / Developer](https://www.linkedin.com/in/michael-bachtel-617b7b2)
 - [Lucas Ontivero - Developer](https://ar.linkedin.com/in/lucasontivero)
 - [Adam Bronfin - Developer / Reviewer](https://www.linkedin.com/in/adam-bronfin-694a7440)
