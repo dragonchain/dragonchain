@@ -94,12 +94,10 @@ def get_cursor_name():
 
 def get_by_phase(phases, limit=None):
     query = SQL_GET_ALL
-    multi_param = False
     if phases:
         query += """ WHERE """
         query += """ phases & """ + str(phases) + "::bit(""" + str(BIT_LENGTH) + """) != 0::bit(""" + str(
             BIT_LENGTH) + """) AND connection_attempts IS NULL"""
-        multi_param = True
 
     query += """ ORDER BY priority_level ASC, latency DESC """
 

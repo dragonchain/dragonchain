@@ -123,25 +123,25 @@ def get_records(block_id, origin_id, phase):
 def get_all(limit=None, offset=None, **params):
     """ return all verification records matching given parameters """
     query = SQL_GET_ALL
-    multi_param = False
+    separator_needed = False
     if params:
         query += """ WHERE """
 
     if "block_id" in params:
         query += """ block_id = """ + str(params["block_id"])
-        multi_param = True
+        separator_needed = True
 
     if "phase" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ phase = """ + str(params["phase"])
-        multi_param = True
+        separator_needed = True
 
     if "origin_id" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ origin_id = """ + str(params["origin_id"])
-        multi_param = True
+        separator_needed = True
 
     if not limit:
         limit = 10
