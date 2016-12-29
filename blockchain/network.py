@@ -460,14 +460,14 @@ class ConnectionManager(object):
         """ time based receipt request """
         for node in self.connections:
             if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
-                ver_ids = node.client.receipt_request(self.this_node.node_id)
+                ver_ids = node.client.receipt_request(node.pass_phrase)
                 self.resolve_data(node, ver_ids)
 
     def resolve_data(self, node, guids):
         """ request unreceived verifications from node, notify node of already received verifications,
             store received verifications from node, find replications and store them in transfers table """
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
-        verifications = node.client.transfer_data(self.this_node.node_id, received, unreceived)
+        verifications = node.client.transfer_data(node.pass_phrase, received, unreceived)
         node.last_transfer_time = int(time.time())
         for verification in verifications:
             try:
@@ -580,7 +580,7 @@ class BlockchainServiceHandler:
         connection_authorized = False
         if self.incoming_connections < self.connection_manager.max_inbound_connections:
             # TODO: add more authorization logic here in the future
-            self.registered_nodes[pass_phrase] = [node_to_register]
+            self.registered_nodes[pass_phrase] = node_to_register
             connection_authorized = True
             self.incoming_connections += 1
             logger().info('accepted inbound connection from %s', node_to_register.node_id)
@@ -675,10 +675,6 @@ class BlockchainServiceHandler:
         self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
         return []
 
-    def receipt_request(self, signatory):
-        """ return unsent transfer ids to calling node """
-        return self.get_unsent_transfer_ids(transfer_to=signatory)
-
     def get_peers(self):
         """ return list of connections from this node """
         def create_node_from_peer(peer):
@@ -692,6 +688,32 @@ class BlockchainServiceHandler:
 
         return map(create_node_from_peer, self.connection_manager.connections)
 
+    def transfer_data(self, pass_phrase, received, unreceived):
+        """ mark verifications as sent and return unsent verifications """
+        self.authorize_pass_phrase(pass_phrase)
+        transfer_node = self.registered_nodes[pass_phrase]
+        verifications = []
+        guids = received + unreceived
+
+        # mark all verifications received as sent
+        for guid in guids:
+            vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
+
+        # retrieve unreceived records
+        for guid in unreceived:
+            verifications.append(verification_db.get(guid))
+
+        # format verifications to list of thrift structs for returning
+        thrift_verifications = map(thrift_converter.get_verification_type, verifications)
+
+        return thrift_verifications
+
+    def receipt_request(self, pass_phrase):
+        """ return unsent transfer ids to calling node """
+        self.authorize_pass_phrase(pass_phrase)
+        transfer_node = self.registered_nodes[pass_phrase]
+        return self.get_unsent_transfer_ids(transfer_node.node_id)
+
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
         unsent_transfer_ids = []
@@ -703,25 +725,6 @@ class BlockchainServiceHandler:
             logger().warning("An SQL error has occurred.")
 
         return unsent_transfer_ids
-
-    def transfer_data(self, transfer_to, received, unreceived):
-        """ mark verifications as sent and return unsent verifications """
-        verifications = []
-        all_guids = received + unreceived
-
-        # mark all verifications received as sent
-        for guid in all_guids:
-            vr_transfers_db.set_verification_sent(transfer_to, guid)
-
-        # retrieve unreceived records
-        for guid in unreceived:
-            verifications.append(verification_db.get(guid))
-
-        # format verifications to list of thrift structs for returning
-        thrift_verifications = map(thrift_converter.get_verification_type, verifications)
-
-        return thrift_verifications
-
 
 if __name__ == '__main__':
     net_dao.reset_data()

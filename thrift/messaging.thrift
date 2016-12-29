@@ -190,9 +190,9 @@ service BlockchainService {
    /* public, Bitcoin bridge phase */
    list<string> phase_5_message(1: Phase_5_msg p5),
 
-   list<string> receipt_request(1: string signatory),
+   list<string> receipt_request(1: string pass_phrase),
 
-   list<VerificationRecord> transfer_data(1: string transfer_to, 2: list<string> received, 3: list<string> unreceived),
+   list<VerificationRecord> transfer_data(1: string pass_phrase, 2: list<string> received, 3: list<string> unreceived),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

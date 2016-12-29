@@ -75,17 +75,17 @@ class Iface:
     """
     pass
 
-  def receipt_request(self, signatory):
+  def receipt_request(self, pass_phrase):
     """
     Parameters:
-     - signatory
+     - pass_phrase
     """
     pass
 
-  def transfer_data(self, transfer_to, received, unreceived):
+  def transfer_data(self, pass_phrase, received, unreceived):
     """
     Parameters:
-     - transfer_to
+     - pass_phrase
      - received
      - unreceived
     """
@@ -358,18 +358,18 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "phase_5_message failed: unknown result")
 
-  def receipt_request(self, signatory):
+  def receipt_request(self, pass_phrase):
     """
     Parameters:
-     - signatory
+     - pass_phrase
     """
-    self.send_receipt_request(signatory)
+    self.send_receipt_request(pass_phrase)
     return self.recv_receipt_request()
 
-  def send_receipt_request(self, signatory):
+  def send_receipt_request(self, pass_phrase):
     self._oprot.writeMessageBegin('receipt_request', TMessageType.CALL, self._seqid)
     args = receipt_request_args()
-    args.signatory = signatory
+    args.pass_phrase = pass_phrase
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -389,20 +389,20 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "receipt_request failed: unknown result")
 
-  def transfer_data(self, transfer_to, received, unreceived):
+  def transfer_data(self, pass_phrase, received, unreceived):
     """
     Parameters:
-     - transfer_to
+     - pass_phrase
      - received
      - unreceived
     """
-    self.send_transfer_data(transfer_to, received, unreceived)
+    self.send_transfer_data(pass_phrase, received, unreceived)
     return self.recv_transfer_data()
 
-  def send_transfer_data(self, transfer_to, received, unreceived):
+  def send_transfer_data(self, pass_phrase, received, unreceived):
     self._oprot.writeMessageBegin('transfer_data', TMessageType.CALL, self._seqid)
     args = transfer_data_args()
-    args.transfer_to = transfer_to
+    args.pass_phrase = pass_phrase
     args.received = received
     args.unreceived = unreceived
     args.write(self._oprot)
@@ -661,7 +661,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = receipt_request_result()
     try:
-      result.success = self._handler.receipt_request(args.signatory)
+      result.success = self._handler.receipt_request(args.pass_phrase)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -680,7 +680,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = transfer_data_result()
     try:
-      result.success = self._handler.transfer_data(args.transfer_to, args.received, args.unreceived)
+      result.success = self._handler.transfer_data(args.pass_phrase, args.received, args.unreceived)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -1850,16 +1850,16 @@ class phase_5_message_result:
 class receipt_request_args:
   """
   Attributes:
-   - signatory
+   - pass_phrase
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'signatory', None, None, ), # 1
+    (1, TType.STRING, 'pass_phrase', None, None, ), # 1
   )
 
-  def __init__(self, signatory=None,):
-    self.signatory = signatory
+  def __init__(self, pass_phrase=None,):
+    self.pass_phrase = pass_phrase
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1872,7 +1872,7 @@ class receipt_request_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.signatory = iprot.readString()
+          self.pass_phrase = iprot.readString()
         else:
           iprot.skip(ftype)
       else:
@@ -1885,9 +1885,9 @@ class receipt_request_args:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('receipt_request_args')
-    if self.signatory is not None:
-      oprot.writeFieldBegin('signatory', TType.STRING, 1)
-      oprot.writeString(self.signatory)
+    if self.pass_phrase is not None:
+      oprot.writeFieldBegin('pass_phrase', TType.STRING, 1)
+      oprot.writeString(self.pass_phrase)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1898,7 +1898,7 @@ class receipt_request_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.signatory)
+    value = (value * 31) ^ hash(self.pass_phrase)
     return value
 
   def __repr__(self):
@@ -1987,20 +1987,20 @@ class receipt_request_result:
 class transfer_data_args:
   """
   Attributes:
-   - transfer_to
+   - pass_phrase
    - received
    - unreceived
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'transfer_to', None, None, ), # 1
+    (1, TType.STRING, 'pass_phrase', None, None, ), # 1
     (2, TType.LIST, 'received', (TType.STRING,None), None, ), # 2
     (3, TType.LIST, 'unreceived', (TType.STRING,None), None, ), # 3
   )
 
-  def __init__(self, transfer_to=None, received=None, unreceived=None,):
-    self.transfer_to = transfer_to
+  def __init__(self, pass_phrase=None, received=None, unreceived=None,):
+    self.pass_phrase = pass_phrase
     self.received = received
     self.unreceived = unreceived
 
@@ -2015,7 +2015,7 @@ class transfer_data_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.transfer_to = iprot.readString()
+          self.pass_phrase = iprot.readString()
         else:
           iprot.skip(ftype)
       elif fid == 2:
@@ -2048,9 +2048,9 @@ class transfer_data_args:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('transfer_data_args')
-    if self.transfer_to is not None:
-      oprot.writeFieldBegin('transfer_to', TType.STRING, 1)
-      oprot.writeString(self.transfer_to)
+    if self.pass_phrase is not None:
+      oprot.writeFieldBegin('pass_phrase', TType.STRING, 1)
+      oprot.writeString(self.pass_phrase)
       oprot.writeFieldEnd()
     if self.received is not None:
       oprot.writeFieldBegin('received', TType.LIST, 2)
@@ -2075,7 +2075,7 @@ class transfer_data_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.transfer_to)
+    value = (value * 31) ^ hash(self.pass_phrase)
     value = (value * 31) ^ hash(self.received)
     value = (value * 31) ^ hash(self.unreceived)
     return value
