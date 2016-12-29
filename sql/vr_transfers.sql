@@ -59,9 +59,14 @@ CREATE TABLE IF NOT EXISTS vr_transfers (
     /* verification record id */
     verification_id UUID,
     /* Indicates whether a record has been transmitted or not */
-    sent BIT(1) DEFAULT b'0'
+    sent BOOLEAN DEFAULT FALSE
 );
 COMMIT;
+
+BEGIN;
+CREATE INDEX vr_transfer_tts_idx ON vr_transfers (transfer_to, sent);
+COMMIT;
+
 BEGIN;
 GRANT ALL ON vr_transfers to blocky;
 COMMIT;

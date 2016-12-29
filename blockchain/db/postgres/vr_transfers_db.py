@@ -40,7 +40,7 @@ from postgres import get_connection_pool
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
-SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = B'1' WHERE transfer_to = %s AND verification_id = %s"""
+SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = TRUE WHERE transfer_to = %s AND verification_id = %s"""
 SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
                                   origin_id,
                                   transfer_to,
@@ -52,7 +52,7 @@ def get_unsent_verification_records(node_transmit_id):
     """ retrieve validated records that have not already been sent back to node with node_transmit_id or verification_id """
     query = GET_VERIFIED_RECORDS
     query += """ WHERE transfer_to = '""" + node_transmit_id
-    query += """' AND sent = b'0' """
+    query += """' AND sent = FALSE """
 
     conn = get_connection_pool().getconn()
     try:

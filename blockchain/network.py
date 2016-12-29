@@ -390,7 +390,7 @@ class ConnectionManager(object):
                             template = "An exception of type {0} occured. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
                             logger().warning(message)
-                        transport.close
+                        transport.close()
                         print(node_to_connect.node_id + ' rejected outbound connection request.')
 
             except Exception as ex:
@@ -559,11 +559,12 @@ class BlockchainServiceHandler:
 
     def remove_inbound_connection(self, pass_phrase):
         node = None
-        if pass_phrase in self.registered_nodes:
-            node = self.registered_node_health.pop(pass_phrase)
-            del self.registered_nodes[pass_phrase]
-            self.incoming_connections -= 1
-        return node
+        if pass_phrase:
+            if pass_phrase in self.registered_nodes:
+                node = self.registered_node_health.pop(pass_phrase)
+                del self.registered_nodes[pass_phrase]
+                self.incoming_connections -= 1
+            return node
 
     def authorize_pass_phrase(self, pass_phrase):
         if pass_phrase not in self.registered_nodes:
@@ -578,7 +579,7 @@ class BlockchainServiceHandler:
         """ register(store) node connecting to this node """
         logger().info('a node is attempting to register')
         connection_authorized = False
-        if self.incoming_connections < self.connection_manager.max_inbound_connections:
+        if pass_phrase and self.incoming_connections < self.connection_manager.max_inbound_connections:
             # TODO: add more authorization logic here in the future
             self.registered_nodes[pass_phrase] = node_to_register
             connection_authorized = True
@@ -588,8 +589,9 @@ class BlockchainServiceHandler:
         return connection_authorized
 
     def unregister_node(self, pass_phrase):
-        node = self.remove_inbound_connection(pass_phrase)
-        logger().info('%s severed inbound connection', node.node_id)
+        if pass_phrase:
+            node = self.remove_inbound_connection(pass_phrase)
+            logger().info('%s severed inbound connection', node.node_id)
 
     def get_node_info(self):
         return self.connection_manager.this_node
@@ -690,29 +692,31 @@ class BlockchainServiceHandler:
 
     def transfer_data(self, pass_phrase, received, unreceived):
         """ mark verifications as sent and return unsent verifications """
-        self.authorize_pass_phrase(pass_phrase)
-        transfer_node = self.registered_nodes[pass_phrase]
-        verifications = []
-        guids = received + unreceived
+        if pass_phrase:
+            self.authorize_pass_phrase(pass_phrase)
+            transfer_node = self.registered_nodes[pass_phrase]
+            verifications = []
+            guids = received + unreceived
 
-        # mark all verifications received as sent
-        for guid in guids:
-            vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
+            # mark all verifications received as sent
+            for guid in guids:
+                vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
 
-        # retrieve unreceived records
-        for guid in unreceived:
-            verifications.append(verification_db.get(guid))
+                # retrieve unreceived records
+            for guid in unreceived:
+                verifications.append(verification_db.get(guid))
 
-        # format verifications to list of thrift structs for returning
-        thrift_verifications = map(thrift_converter.get_verification_type, verifications)
+                # format verifications to list of thrift structs for returning
+            thrift_verifications = map(thrift_converter.get_verification_type, verifications)
 
-        return thrift_verifications
+            return thrift_verifications
 
     def receipt_request(self, pass_phrase):
         """ return unsent transfer ids to calling node """
-        self.authorize_pass_phrase(pass_phrase)
-        transfer_node = self.registered_nodes[pass_phrase]
-        return self.get_unsent_transfer_ids(transfer_node.node_id)
+        if pass_phrase:
+            self.authorize_pass_phrase(pass_phrase)
+            transfer_node = self.registered_nodes[pass_phrase]
+            return self.get_unsent_transfer_ids(transfer_node.node_id)
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
