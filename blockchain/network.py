@@ -420,7 +420,7 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_1_message(phase_1_msg)
-                self.resolve_data(node, ver_ids)
+                self.resolve_data(node, ver_ids, 1)
             except Exception as ex:
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
@@ -434,7 +434,7 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_2_message(phase_2_msg)
-                self.resolve_data(node, ver_ids)
+                self.resolve_data(node, ver_ids, 2)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
@@ -447,7 +447,7 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_3_message(phase_3_msg)
-                self.resolve_data(node, ver_ids)
+                self.resolve_data(node, ver_ids, 3)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
@@ -461,9 +461,9 @@ class ConnectionManager(object):
         for node in self.connections:
             if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
                 ver_ids = node.client.receipt_request(node.pass_phrase)
-                self.resolve_data(node, ver_ids)
+                self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
 
-    def resolve_data(self, node, guids):
+    def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,
             store received verifications from node, find replications and store them in transfers table """
         received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
@@ -473,7 +473,7 @@ class ConnectionManager(object):
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 verification_db.insert_verification(verification, verification['verification_id'])
-                replicated_verifications = verification_db.get_all_replication(verification['block_id'], self.phases, verification['origin_id'])
+                replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
                 for replicated_ver in replicated_verifications:
                     vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
             except Exception as ex:

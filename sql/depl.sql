@@ -34,4 +34,4 @@ __email__ = "joe@dragonchain.org"
 \i types.sql
 \i txpool.sql
 \i net.sql
-\i b_trans.sql
+\i vr_transfers.sql
