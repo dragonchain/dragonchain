@@ -582,6 +582,7 @@ class ProcessingNode(object):
         timestamp_db.insert_verification(phase_4_record)
         print "phase 5 executed"
 
+    # ToDo: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
         pending_records = timestamp_db.get_pending_timestamp()
 

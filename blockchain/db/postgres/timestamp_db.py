@@ -94,3 +94,15 @@ def insert_verification(verification_record):
         cur.close()
     finally:
         get_connection_pool().putconn(conn)
+
+
+def get_pending_timestamp():
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(SQL_GET_PENDING_QUERY)
+        result = cur.fetchmany()
+        cur.close()
+        return result
+    finally:
+        get_connection_pool().putconn(conn)
