@@ -6,9 +6,12 @@ deploy_location: SEATTLE
 # dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
 public_transmission: 
     p1_pub_trans: off
-    p2_pub_trans: on
+    p2_pub_trans: off
     p3_pub_trans: off
     p4_pub_trans: off
+
+# time limit (in seconds) before request is made for verification receipts from peers.
+receipt_request_time: 600
 
 # host:port:id:phases
 # phase 1 = 00001

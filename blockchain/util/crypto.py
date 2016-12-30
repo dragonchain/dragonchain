@@ -35,7 +35,6 @@ Utility library for transaction operations
 
 import time
 import logging
-logging.basicConfig()
 import hashlib
 
 try:

@@ -115,10 +115,11 @@ struct VerificationRecordCommonInfo {
     2: string origin_id,
     3: i32 phase,
     4: i32 verification_ts,
-    5: Signature signature,
-    6: string prior_hash,
-    7: string lower_hash,
-    8: map<string, bool> public_transmission
+    5: string verification_id,
+    6: Signature signature,
+    7: string prior_hash,
+    8: string lower_hash,
+    9: map<string, bool> public_transmission
 }
 
 struct Phase_1_msg {
@@ -134,7 +135,6 @@ struct Phase_2_msg {
     5: string deploy_location
 }
 
-/* TODO: rename business_list and deploy_loc_list to businesses and deploy_locations respectively */
 struct Phase_3_msg {
     1: VerificationRecordCommonInfo record,
     2: list<string> lower_hashes,
@@ -178,17 +178,21 @@ service BlockchainService {
 
    oneway void unregister_node(1: string pass_phrase),
 
-   void phase_1_message(1: Phase_1_msg p1),
+   list<string> phase_1_message(1: Phase_1_msg p1),
 
-   void phase_2_message(1: Phase_2_msg p2),
+   list<string> phase_2_message(1: Phase_2_msg p2),
 
-   void phase_3_message(1: Phase_3_msg p3),
+   list<string> phase_3_message(1: Phase_3_msg p3),
 
    /* external partner notary phase */
-   void phase_4_message(1: Phase_4_msg p4),
+   list<string> phase_4_message(1: Phase_4_msg p4),
 
    /* public, Bitcoin bridge phase */
-   void phase_5_message(1: Phase_5_msg p5),
+   list<string> phase_5_message(1: Phase_5_msg p5),
+
+   list<string> receipt_request(1: string pass_phrase),
+
+   list<VerificationRecord> transfer_data(1: string pass_phrase, 2: list<string> received, 3: list<string> unreceived),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

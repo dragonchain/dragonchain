@@ -1044,6 +1044,7 @@ class VerificationRecordCommonInfo:
    - origin_id
    - phase
    - verification_ts
+   - verification_id
    - signature
    - prior_hash
    - lower_hash
@@ -1056,17 +1057,19 @@ class VerificationRecordCommonInfo:
     (2, TType.STRING, 'origin_id', None, None, ), # 2
     (3, TType.I32, 'phase', None, None, ), # 3
     (4, TType.I32, 'verification_ts', None, None, ), # 4
-    (5, TType.STRUCT, 'signature', (Signature, Signature.thrift_spec), None, ), # 5
-    (6, TType.STRING, 'prior_hash', None, None, ), # 6
-    (7, TType.STRING, 'lower_hash', None, None, ), # 7
-    (8, TType.MAP, 'public_transmission', (TType.STRING,None,TType.BOOL,None), None, ), # 8
+    (5, TType.STRING, 'verification_id', None, None, ), # 5
+    (6, TType.STRUCT, 'signature', (Signature, Signature.thrift_spec), None, ), # 6
+    (7, TType.STRING, 'prior_hash', None, None, ), # 7
+    (8, TType.STRING, 'lower_hash', None, None, ), # 8
+    (9, TType.MAP, 'public_transmission', (TType.STRING,None,TType.BOOL,None), None, ), # 9
   )
 
-  def __init__(self, block_id=None, origin_id=None, phase=None, verification_ts=None, signature=None, prior_hash=None, lower_hash=None, public_transmission=None,):
+  def __init__(self, block_id=None, origin_id=None, phase=None, verification_ts=None, verification_id=None, signature=None, prior_hash=None, lower_hash=None, public_transmission=None,):
     self.block_id = block_id
     self.origin_id = origin_id
     self.phase = phase
     self.verification_ts = verification_ts
+    self.verification_id = verification_id
     self.signature = signature
     self.prior_hash = prior_hash
     self.lower_hash = lower_hash
@@ -1102,22 +1105,27 @@ class VerificationRecordCommonInfo:
         else:
           iprot.skip(ftype)
       elif fid == 5:
+        if ftype == TType.STRING:
+          self.verification_id = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 6:
         if ftype == TType.STRUCT:
           self.signature = Signature()
           self.signature.read(iprot)
         else:
           iprot.skip(ftype)
-      elif fid == 6:
+      elif fid == 7:
         if ftype == TType.STRING:
           self.prior_hash = iprot.readString()
         else:
           iprot.skip(ftype)
-      elif fid == 7:
+      elif fid == 8:
         if ftype == TType.STRING:
           self.lower_hash = iprot.readString()
         else:
           iprot.skip(ftype)
-      elif fid == 8:
+      elif fid == 9:
         if ftype == TType.MAP:
           self.public_transmission = {}
           (_ktype31, _vtype32, _size30 ) = iprot.readMapBegin()
@@ -1154,20 +1162,24 @@ class VerificationRecordCommonInfo:
       oprot.writeFieldBegin('verification_ts', TType.I32, 4)
       oprot.writeI32(self.verification_ts)
       oprot.writeFieldEnd()
+    if self.verification_id is not None:
+      oprot.writeFieldBegin('verification_id', TType.STRING, 5)
+      oprot.writeString(self.verification_id)
+      oprot.writeFieldEnd()
     if self.signature is not None:
-      oprot.writeFieldBegin('signature', TType.STRUCT, 5)
+      oprot.writeFieldBegin('signature', TType.STRUCT, 6)
       self.signature.write(oprot)
       oprot.writeFieldEnd()
     if self.prior_hash is not None:
-      oprot.writeFieldBegin('prior_hash', TType.STRING, 6)
+      oprot.writeFieldBegin('prior_hash', TType.STRING, 7)
       oprot.writeString(self.prior_hash)
       oprot.writeFieldEnd()
     if self.lower_hash is not None:
-      oprot.writeFieldBegin('lower_hash', TType.STRING, 7)
+      oprot.writeFieldBegin('lower_hash', TType.STRING, 8)
       oprot.writeString(self.lower_hash)
       oprot.writeFieldEnd()
     if self.public_transmission is not None:
-      oprot.writeFieldBegin('public_transmission', TType.MAP, 8)
+      oprot.writeFieldBegin('public_transmission', TType.MAP, 9)
       oprot.writeMapBegin(TType.STRING, TType.BOOL, len(self.public_transmission))
       for kiter37,viter38 in self.public_transmission.items():
         oprot.writeString(kiter37)
@@ -1187,6 +1199,7 @@ class VerificationRecordCommonInfo:
     value = (value * 31) ^ hash(self.origin_id)
     value = (value * 31) ^ hash(self.phase)
     value = (value * 31) ^ hash(self.verification_ts)
+    value = (value * 31) ^ hash(self.verification_id)
     value = (value * 31) ^ hash(self.signature)
     value = (value * 31) ^ hash(self.prior_hash)
     value = (value * 31) ^ hash(self.lower_hash)
