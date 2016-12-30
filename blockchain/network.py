@@ -602,63 +602,23 @@ class BlockchainServiceHandler:
 
     def phase_1_message(self, phase_1):
         """ submit phase_1 block for phase_2 validation_phase """
-        phase_1_info = self.get_phase_1_info(phase_1)
+        phase_1_info = thrift_converter.get_phase_1_info(phase_1)
         self.connection_manager.processing_node.notify(2, phase_1_info=phase_1_info)
         return self.get_unsent_transfer_ids(transfer_to=phase_1_info[RECORD]['signature']['signatory'])
 
-    def get_phase_1_info(self, phase_1):
-        """ return dictionary representation of thrift phase 1 """
-        return {
-            RECORD: thrift_converter.thrift_record_to_dict(phase_1.record),
-            VERIFICATION_INFO: map(thrift_converter.thrift_transaction_to_dict, phase_1.transactions)
-        }
-
     def phase_2_message(self, phase_2):
-        phase_2_info = self.get_phase_2_info(phase_2)
+        phase_2_info = thrift_converter.get_phase_2_info(phase_2)
         self.connection_manager.processing_node.notify(3, phase_2_info=phase_2_info)
         return self.get_unsent_transfer_ids(transfer_to=phase_2_info[RECORD]['signature']['signatory'])
 
-    def get_phase_2_info(self, phase_2):
-        """ return dictionary representation of thrift phase 2 """
-        return {
-            RECORD: thrift_converter.thrift_record_to_dict(phase_2.record),
-            VERIFICATION_INFO: {
-                'valid_txs': map(thrift_converter.thrift_transaction_to_dict, phase_2.valid_txs),
-                'invalid_txs': map(thrift_converter.thrift_transaction_to_dict, phase_2.invalid_txs),
-                'business': phase_2.business,
-                'deploy_location': phase_2.deploy_location
-            }
-        }
-
     def phase_3_message(self, phase_3):
-        phase_3_info = self.get_phase_3_info(phase_3)
+        phase_3_info = thrift_converter.get_phase_3_info(phase_3)
         self.connection_manager.processing_node.notify(4, phase_3_info=phase_3_info)
         return self.get_unsent_transfer_ids(transfer_to=phase_3_info[RECORD]['signature']['signatory'])
 
-    def get_phase_3_info(self, phase_3):
-        """ return dictionary representation of thrift phase 3 """
-        return {
-            RECORD: thrift_converter.thrift_record_to_dict(phase_3.record),
-            VERIFICATION_INFO: {
-                'lower_hashes': phase_3.lower_hashes,
-                'p2_count': phase_3.p2_count,
-                'businesses': phase_3.businesses,
-                'deploy_locations': phase_3.deploy_locations
-            }
-        }
-
     def phase_4_message(self, phase_4):
-        # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
-        phase_4_info = self.get_phase_4_info(phase_4)
-        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
+        phase_4_info = thrift_converter.get_phase_4_info(phase_4)
         return self.get_unsent_transfer_ids(transfer_to=phase_4_info[RECORD]['signature']['signatory'])
-
-    def get_phase_4_info(self, phase_4):
-        """ return dictionary representation of thrift phase 4 """
-        return {
-            RECORD: thrift_converter.thrift_record_to_dict(phase_4.record),
-            VERIFICATION_INFO: None
-        }
 
     def phase_5_message(self, phase_5):
         """ determine which phase type being dealt with, convert thrift to dictionary
@@ -666,11 +626,11 @@ class BlockchainServiceHandler:
         """
         phase_info = None
         if phase_5.verification_record.p1:
-            phase_info = self.get_phase_1_info(phase_5.verification_record.p1)
+            phase_info = thrift_converter.get_phase_1_info(phase_5.verification_record.p1)
         elif phase_5.verification_record.p2:
-            phase_info = self.get_phase_2_info(phase_5.verification_record.p2)
+            phase_info = thrift_converter.get_phase_2_info(phase_5.verification_record.p2)
         elif phase_5.verification_record.p3:
-            phase_info = self.get_phase_3_info(phase_5.verification_record.p3)
+            phase_info = thrift_converter.get_phase_3_info(phase_5.verification_record.p3)
         elif phase_5.verification_record.p4:
             pass
 

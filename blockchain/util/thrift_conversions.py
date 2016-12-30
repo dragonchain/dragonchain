@@ -33,6 +33,10 @@ __email__ = "joe@dragonchain.org"
 
 import blockchain.gen.messaging.ttypes as message_types
 
+RECORD = 'record'
+VERIFICATION_RECORD = 'verification_record'
+VERIFICATION_INFO = 'verification_info'
+
 
 # **** functions below used for converting thrift types to some other structure **** #
 def thrift_record_to_dict(thrift_record):
@@ -162,6 +166,48 @@ def convert_to_thrift_record(record):
     return thrift_record
 
 
+def get_phase_1_info(phase_1):
+    """ return dictionary representation of thrift phase 1 """
+    return {
+        RECORD: thrift_record_to_dict(phase_1.record),
+        VERIFICATION_INFO: map(thrift_transaction_to_dict, phase_1.transactions)
+    }
+
+
+def get_phase_2_info(phase_2):
+    """ return dictionary representation of thrift phase 2 """
+    return {
+        RECORD: thrift_record_to_dict(phase_2.record),
+        VERIFICATION_INFO: {
+            'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
+            'invalid_txs': map(thrift_transaction_to_dict, phase_2.invalid_txs),
+            'business': phase_2.business,
+            'deploy_location': phase_2.deploy_location
+        }
+    }
+
+
+def get_phase_3_info(phase_3):
+    """ return dictionary representation of thrift phase 3 """
+    return {
+        RECORD: thrift_record_to_dict(phase_3.record),
+        VERIFICATION_INFO: {
+            'lower_hashes': phase_3.lower_hashes,
+            'p2_count': phase_3.p2_count,
+            'businesses': phase_3.businesses,
+            'deploy_locations': phase_3.deploy_locations
+        }
+    }
+
+
+def get_phase_4_info(phase_4):
+    """ return dictionary representation of thrift phase 4 """
+    return {
+        RECORD: thrift_record_to_dict(phase_4.record),
+        VERIFICATION_INFO: None
+    }
+
+
 def get_p1_message(block_info):
     """ returns thrift phase 1 message structure """
     verification_record = block_info['verification_record']
@@ -205,6 +251,16 @@ def get_p3_message(block_info):
     return phase_3_msg
 
 
+def get_p4_message(block_info):
+    """returns thrift phase 4 message structure """
+    verification_record = block_info['verification_record']
+
+    phase_4_msg = message_types.Phase_4_msg()
+    phase_4_msg.record = convert_to_thrift_record(verification_record)
+
+    return phase_4_msg
+
+
 def get_verification_type(verification):
     """ construct a thrift friendly verification record for broadcast receipt """
     record = {'block_id': verification['block_id'],
@@ -229,7 +285,8 @@ def get_verification_type(verification):
     elif phase == 3:
         verification_record.p3 = get_p3_message(info)
     elif phase == 4:
-        pass
+        verification_record.p4 = get_p4_message(info)
+
     return verification_record
 
 
@@ -268,4 +325,5 @@ def convert_thrift_verification(verification):
                            'signature': convert_thrift_signature(record.signature),
                            'verification_info': verification_info
                            }
+
     return verification_record

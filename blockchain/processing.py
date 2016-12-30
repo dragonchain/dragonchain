@@ -35,7 +35,7 @@ from blockchain.block import Block, \
     get_block_time, \
     get_current_block_id
 
-from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
+from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, final_hash
 
 from db.postgres import transaction_db
 from db.postgres import verification_db
@@ -264,7 +264,7 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
-            lower_hash = str(deep_hash(0))
+            lower_hash = str(final_hash([0]))
 
             # sign approved transactions
             block_info = sign_verification_record(signatory,
@@ -447,7 +447,7 @@ class ProcessingNode(object):
                     'deploy_locations': list(locations)
                 }
 
-                lower_hash = str(deep_hash(lower_hashes))
+                lower_hash = str(final_hash(lower_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
@@ -560,7 +560,7 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
+            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, phase_5_info):
