@@ -565,6 +565,7 @@ class ProcessingNode(object):
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, phase_4_info):
+        print "Phase 5 called"
         """ public, Bitcoin bridge phase """
         phase = 5
         phase_4_record = thrift_record_to_dict(phase_4_info.record)
@@ -587,18 +588,18 @@ class ProcessingNode(object):
         pending_records = timestamp_db.get_pending_timestamp()
 
         pending_records_hash = [hashlib.sha256(r).hexdigest() for r in pending_records]
-        merkle_tree = MerkleTree()
-        merkle_tree.add_leaves(pending_records_hash)
-        merkle_tree.make_tree()
-
-        merkle_root = merkle_tree.get_merkle_root()
-        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        bitcoin_tx_id = stamper.persist(merkle_root)
-
-        for index, pr in pending_records:
-            receipt = merkle_tree.make_receipt(index, bitcoin_tx_id)
-            pr["timestamp_receipt"] = receipt
-            timestamp_db.set_transaction_timestamp_proof(pr)
+        # merkle_tree = MerkleTree()
+        # merkle_tree.add_leaves(pending_records_hash)
+        # merkle_tree.make_tree()
+        #
+        # merkle_root = merkle_tree.get_merkle_root()
+        # stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
+        # bitcoin_tx_id = stamper.persist(merkle_root)
+        #
+        # for index, pr in pending_records:
+        #     receipt = merkle_tree.make_receipt(index, bitcoin_tx_id)
+        #     pr["timestamp_receipt"] = receipt
+        #     timestamp_db.set_transaction_timestamp_proof(pr)
 
 
     @staticmethod

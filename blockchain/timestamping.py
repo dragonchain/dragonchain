@@ -75,7 +75,8 @@ class IPoEStore(object):
         pass
 
 
-class BitcoinTimestamper(IPoEStore):
+# ToDo: fix and verify this portion works
+class BitcoinTimestamper(): # IPoEStore
     """
     Stamps a data item in the bitcoin blockchain and also allows us to verifies the
     existence of a data item in a given bitcoin transaction output. For doing this
