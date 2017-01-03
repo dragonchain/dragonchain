@@ -154,6 +154,11 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - Kevin Duane - Reviewer
 - Chris Moore - Reviewer
 
+# Disclaimer
+
+The comments, views, and opinions expressed in this forum are those of the authors and do not necessarily reflect the official policy or position of the Walt Disney Company, Disney Connected and Advanced Technologies, or any affiliated companies.
+
+All code contained herein is provided “AS IS” without warranties of any kind. Any implied warranties of non-infringement, merchantability, and fitness for a particular purpose are expressly disclaimed by the author(s).
 
 # License
 
