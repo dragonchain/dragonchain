@@ -176,7 +176,6 @@ class ProcessingNode(object):
             # schedule task using cron trigger
             self._scheduler.add_job(trigger_handler, trigger)
 
-
     def _cron_type_config_handler(self, config):
         """
         Cron callbacks are called with the processing node instance and config dict as params
@@ -540,6 +539,8 @@ class ProcessingNode(object):
 
             lower_hash = phase_3_record[SIGNATURE][HASH]
 
+            verification_info = lower_hash
+
             # sign verification and rewrite record
             block_info = sign_verification_record(self.network.this_node.node_id,
                                                   prior_block_hash,
@@ -551,7 +552,7 @@ class ProcessingNode(object):
                                                   phase_3_record[ORIGIN_ID],
                                                   int(time.time()),
                                                   phase_3_record['public_transmission'],
-                                                  None
+                                                  verification_info
                                                   )
 
             # inserting verification info after signing
@@ -561,26 +562,20 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
+            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, phase_4_info):
         """ public, Bitcoin bridge phase """
         phase = 5
-        phase_4_record = thrift_record_to_dict(phase_4_info.record)
+        phase_4_record = phase_4_info['record']
 
-        p4_verification_info = {
-            'lower_hashes': phase_4_info.lower_hashes,
-        }
-
+        p4_verification_info = phase_4_info['verification_info']
         phase_4_record['verification_info'] = p4_verification_info
 
-        valid_record = validate_verification_record(phase_4_info, p4_verification_info)
-        if not valid_record:
-            return
-
-        timestamp_db.insert_verification(phase_4_record)
-        print "phase 5 executed"
+        if validate_verification_record(phase_4_record, p4_verification_info):
+            timestamp_db.insert_verification(phase_4_record)
+            print "phase 5 executed"
 
     # ToDo: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):

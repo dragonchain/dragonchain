@@ -1574,15 +1574,18 @@ class Phase_4_msg:
   """
   Attributes:
    - record
+   - lower_hash
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
+    (2, TType.STRING, 'lower_hash', None, None, ), # 2
   )
 
-  def __init__(self, record=None,):
+  def __init__(self, record=None, lower_hash=None,):
     self.record = record
+    self.lower_hash = lower_hash
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1599,6 +1602,11 @@ class Phase_4_msg:
           self.record.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.lower_hash = iprot.readString()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1613,6 +1621,10 @@ class Phase_4_msg:
       oprot.writeFieldBegin('record', TType.STRUCT, 1)
       self.record.write(oprot)
       oprot.writeFieldEnd()
+    if self.lower_hash is not None:
+      oprot.writeFieldBegin('lower_hash', TType.STRING, 2)
+      oprot.writeString(self.lower_hash)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1623,6 +1635,7 @@ class Phase_4_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.record)
+    value = (value * 31) ^ hash(self.lower_hash)
     return value
 
   def __repr__(self):
