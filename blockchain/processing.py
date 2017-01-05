@@ -582,7 +582,8 @@ class ProcessingNode(object):
     def _execute_timestamping(self, config):
         pending_records = timestamp_db.get_pending_timestamp()
 
-        pending_records_hash = [hashlib.sha256(r).hexdigest() for r in pending_records]
+        pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
+        print pending_records_hash
         # merkle_tree = MerkleTree()
         # merkle_tree.add_leaves(pending_records_hash)
         # merkle_tree.make_tree()
