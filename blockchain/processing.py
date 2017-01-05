@@ -561,11 +561,11 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
+            # ToDo: Find out why this is failing
+            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, phase_4_info):
-        print "Phase 5 called"
         """ public, Bitcoin bridge phase """
         phase = 5
         phase_4_record = thrift_record_to_dict(phase_4_info.record)

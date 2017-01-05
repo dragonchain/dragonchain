@@ -145,6 +145,7 @@ struct Phase_3_msg {
 
 struct Phase_4_msg {
     1: VerificationRecordCommonInfo record
+    2: list<string> lower_hashes
 }
 
 union VerificationRecord {

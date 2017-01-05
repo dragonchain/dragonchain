@@ -1,4 +1,4 @@
-node_id: 31ce807a-868c-11e6-99f6-3c970e3bee11
+node_id: 0318edaf-4a08-49c9-ba03-c4d732fd8d9c
 owner: OWNER
 business: BUSINESS
 deploy_location: SEATTLE
@@ -15,6 +15,6 @@ public_transmission: 
 # phase 2 = 00011 ...
 peers:
     - localhost:8081:8f0aabca-aa2e-4aab-a1d2-8420ffba0cce:00010
-    - localhost:8082:0318edaf-4a08-49c9-ba03-c4d732fd8d9c:00011
-    - localhost:8083:f9aba210-1d66-4d06-80d6-e87895c8da00:00010
-    - localhost:8084:4cc5d599-df17-4c4a-8f3c-2ce70f874c54:00010
+    - localhost:8082:64110e10-cdf9-41e5-a13a-f95ba1f5acdb:00011
+    - localhost:8083:7475ab41-58d9-49f6-b3be-f207fc96bb51:00010
+    - localhost:8084:4cc5d599-df17-4c4a-8f3c-2ce70f874c54:00010 #change when node 5 imported
