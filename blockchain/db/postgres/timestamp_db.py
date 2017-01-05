@@ -76,6 +76,7 @@ def set_transaction_timestamp_proof(verification_record):
         get_connection_pool().putconn(conn)
 
 
+# TODO: restructure insertion to match table values
 def insert_verification(verification_record):
     values = (
         str(uuid.uuid4()),

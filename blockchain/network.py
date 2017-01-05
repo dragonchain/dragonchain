@@ -91,7 +91,6 @@ CONFIG_FILE = '../configs/' + DATABASE_NAME + '.yml'
 LOG_FILE = '../logs/' + DATABASE_NAME + '.log'
 
 
-
 def logger(name="network-manager"):
     logging.basicConfig(filename=LOG_FILE, level=logging.INFO)
     logging.getLogger("apscheduler.scheduler").setLevel('WARNING')
@@ -488,7 +487,7 @@ class ConnectionManager(object):
 
         phase_4_msg = message_types.Phase_4_msg()
         phase_4_msg.record = convert_to_thrift_record(verification_record)
-        phase_4_msg.lower_hashes = verification_info['lower_hashes']
+        phase_4_msg.lower_hash = verification_info
 
         for node in self.peer_dict[phase_type]:
             try:
@@ -649,11 +648,15 @@ class BlockchainServiceHandler:
 
     def phase_4_message(self, phase_4):
         # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
-        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4)
+        phase_4_info = self.get_phase_4_info(phase_4)
+        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
 
     def get_phase_4_info(self, phase_4):
         """ return dictionary representation of thrift phase 4 """
-        pass
+        return {
+            RECORD: thrift_record_to_dict(phase_4.record),
+            VERIFICATION_INFO: phase_4.lower_hash
+        }
 
     def phase_5_message(self, phase_5):
         """ determine which phase type being dealt with, convert thrift to dictionary

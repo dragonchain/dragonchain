@@ -1574,18 +1574,18 @@ class Phase_4_msg:
   """
   Attributes:
    - record
-   - lower_hashes
+   - lower_hash
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'record', (VerificationRecordCommonInfo, VerificationRecordCommonInfo.thrift_spec), None, ), # 1
-    (2, TType.LIST, 'lower_hashes', (TType.STRING,None), None, ), # 2
+    (2, TType.STRING, 'lower_hash', None, None, ), # 2
   )
 
-  def __init__(self, record=None, lower_hashes=None,):
+  def __init__(self, record=None, lower_hash=None,):
     self.record = record
-    self.lower_hashes = lower_hashes
+    self.lower_hash = lower_hash
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1603,13 +1603,8 @@ class Phase_4_msg:
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.LIST:
-          self.lower_hashes = []
-          (_etype84, _size81) = iprot.readListBegin()
-          for _i85 in xrange(_size81):
-            _elem86 = iprot.readString()
-            self.lower_hashes.append(_elem86)
-          iprot.readListEnd()
+        if ftype == TType.STRING:
+          self.lower_hash = iprot.readString()
         else:
           iprot.skip(ftype)
       else:
@@ -1626,12 +1621,9 @@ class Phase_4_msg:
       oprot.writeFieldBegin('record', TType.STRUCT, 1)
       self.record.write(oprot)
       oprot.writeFieldEnd()
-    if self.lower_hashes is not None:
-      oprot.writeFieldBegin('lower_hashes', TType.LIST, 2)
-      oprot.writeListBegin(TType.STRING, len(self.lower_hashes))
-      for iter87 in self.lower_hashes:
-        oprot.writeString(iter87)
-      oprot.writeListEnd()
+    if self.lower_hash is not None:
+      oprot.writeFieldBegin('lower_hash', TType.STRING, 2)
+      oprot.writeString(self.lower_hash)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1643,7 +1635,7 @@ class Phase_4_msg:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.record)
-    value = (value * 31) ^ hash(self.lower_hashes)
+    value = (value * 31) ^ hash(self.lower_hash)
     return value
 
   def __repr__(self):
