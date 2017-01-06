@@ -35,7 +35,7 @@ from psycopg2.extras import Json
 import uuid
 import time
 
-from blockchain.qry import format_block_verification
+from blockchain.qry import format_block_verification, format_pending_transaction
 from postgres import get_connection_pool
 
 """ CONSTANTS """
@@ -93,12 +93,18 @@ def insert_verification(verification_record):
 
 
 def get_pending_timestamp():
+    timestamps = []
     conn = get_connection_pool().getconn()
     try:
-        cur = conn.cursor(cursor_factory=None)
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(SQL_GET_PENDING_QUERY)
-        result = cur.fetchmany()
+        while True:
+            results = cur.fetchmany()
+            if not results:
+                break
+            for result in results:
+                timestamps.append(format_pending_transaction(result))
         cur.close()
-        return result
+        return timestamps
     finally:
         get_connection_pool().putconn(conn)

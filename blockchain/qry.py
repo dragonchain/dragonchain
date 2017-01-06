@@ -64,7 +64,7 @@ def format_block_verification(block_verification):
         "verification_id":      block_verification["verification_id"],
         "verified_ts":          format_time(block_verification["verified_ts"]),
         "block_id":             block_verification["block_id"],
-        "signature":      block_verification["signature"],
+        "signature":            block_verification["signature"],
         "origin_id":            block_verification["origin_id"],
         "phase":                block_verification["phase"],
         "verification_info":    block_verification["verification_info"],
@@ -83,4 +83,14 @@ def format_node(node):
         "latency":              node["latency"],
         "connection_attempts":  node["connection_attempts"],
         "pass_phrase":          node["pass_phrase"]
+    }
+
+
+def format_pending_transaction(pending_timestamp_record):
+    return {
+        "timestamp_id":         pending_timestamp_record["timestamp_id"],
+        "block_id":             pending_timestamp_record["block_id"],
+        "create_ts":            pending_timestamp_record["create_ts"],
+        "signature":            pending_timestamp_record["signature"],
+        "verification_info":    pending_timestamp_record["verification_info"]
     }
