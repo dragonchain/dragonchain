@@ -35,7 +35,7 @@ from psycopg2.extras import Json
 import uuid
 import time
 
-from blockchain.qry import format_block_verification
+from blockchain.qry import format_block_verification, format_pending_transaction
 from postgres import get_connection_pool
 
 """ CONSTANTS """
@@ -47,14 +47,12 @@ SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = %s WHERE ti
 
 SQL_INSERT_QUERY = """
     INSERT INTO timestamps (
-        verification_id,
-        verified_ts,
+        timestamp_id,
         block_id,
+        create_ts,
         signature,
-        origin_id,
-        phase,
         verification_info
-    ) VALUES (%s, to_timestamp(%s), %s, %s, %s, %s, %s)"""
+    ) VALUES (%s, %s, to_timestamp(%s), %s, %s)"""
 
 
 def get_cursor_name():
@@ -76,15 +74,12 @@ def set_transaction_timestamp_proof(verification_record):
         get_connection_pool().putconn(conn)
 
 
-# TODO: restructure insertion to match table values
 def insert_verification(verification_record):
     values = (
         str(uuid.uuid4()),
-        verification_record['verification_ts'],
         verification_record["block_id"],
+        verification_record['verification_ts'],
         psycopg2.extras.Json(verification_record["signature"]),
-        verification_record["origin_id"],
-        verification_record["phase"],
         psycopg2.extras.Json(verification_record["verification_info"])
     )
     conn = get_connection_pool().getconn()
@@ -98,12 +93,18 @@ def insert_verification(verification_record):
 
 
 def get_pending_timestamp():
+    timestamps = []
     conn = get_connection_pool().getconn()
     try:
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(SQL_GET_PENDING_QUERY)
-        result = cur.fetchmany()
+        while True:
+            results = cur.fetchmany()
+            if not results:
+                break
+            for result in results:
+                timestamps.append(format_pending_transaction(result))
         cur.close()
-        return result
+        return timestamps
     finally:
         get_connection_pool().putconn(conn)

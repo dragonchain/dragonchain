@@ -49,6 +49,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from merkleproof import MerkleTree
 from blockchain.timestamping import BitcoinTimestamper, BitcoinFeeProvider
+from blockchain.util.crypto import deterministic_hash
 
 import logging
 import argparse
@@ -561,6 +562,7 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
+            # ToDo: Find out why this is failing
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
@@ -578,21 +580,31 @@ class ProcessingNode(object):
 
     # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
+        final_hash = ""
         pending_records = timestamp_db.get_pending_timestamp()
+        # Prints hashes for testing purposes
+        for r in pending_records:
+            final_hash = deterministic_hash(r['signature']['hash'])
 
-        pending_records_hash = [hashlib.sha256(r).hexdigest() for r in pending_records]
-        merkle_tree = MerkleTree()
-        merkle_tree.add_leaves(pending_records_hash)
-        merkle_tree.make_tree()
+        # Do deterministic hash on pending_records hash
 
-        merkle_root = merkle_tree.get_merkle_root()
+
+        # pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
+
+        # merkle_tree = MerkleTree()
+        # merkle_tree.add_leaves(pending_records_hash)
+        # merkle_tree.make_tree()
+        #
+        # merkle_root = merkle_tree.get_merkle_root()
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        bitcoin_tx_id = stamper.persist(merkle_root)
-
-        for index, pr in pending_records:
-            receipt = merkle_tree.make_receipt(index, bitcoin_tx_id)
-            pr["timestamp_receipt"] = receipt
-            timestamp_db.set_transaction_timestamp_proof(pr)
+        bitcoin_tx_id = stamper.persist(final_hash) # was pending_records[0]
+        print "Transaction ID: "+bitcoin_tx_id
+        # bitcoin_tx_id = stamper.persist(merkle_root)
+        #
+        # for index, pr in pending_records:
+        #     receipt = merkle_tree.make_receipt(index, bitcoin_tx_id) # change to create verification record
+        #     pr["timestamp_receipt"] = receipt
+        #     timestamp_db.set_transaction_timestamp_proof(pr)
 
     @staticmethod
     def split_items(filter_func, items):

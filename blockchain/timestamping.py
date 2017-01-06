@@ -75,7 +75,8 @@ class IPoEStore(object):
         pass
 
 
-class BitcoinTimestamper(IPoEStore):
+# ToDo: fix and verify this portion works
+class BitcoinTimestamper(): # IPoEStore
     """
     Stamps a data item in the bitcoin blockchain and also allows us to verifies the
     existence of a data item in a given bitcoin transaction output. For doing this
@@ -89,6 +90,7 @@ class BitcoinTimestamper(IPoEStore):
         assert stamper.ispersisted(txid, "hello world!"), "data item not present in the given txid"
     """
     MIN_FEE_BYTE = 60
+    MAX_FEE_BYTE = 120
 
     def __init__(self, network, fee_provider):
         """
@@ -148,7 +150,7 @@ class BitcoinTimestamper(IPoEStore):
         assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
 
         while True:
-            suggested_fee = len(tx.serialize()) * fee_byte
+            suggested_fee = len(tx.serialize(COutPoint)) * fee_byte
             tx.vout[0].nValue = int(value_in - suggested_fee)
             r = proxy.signrawtransaction(tx)
             assert r['complete']
@@ -157,6 +159,7 @@ class BitcoinTimestamper(IPoEStore):
             suggested_fee = len(tx.serialize()) * fee_byte
             if effective_fee >= suggested_fee:
                 tx = proxy.sendrawtransaction(tx)
+                print "Transaction sent to bitcoin-testnet"
                 break
         return tx
 
