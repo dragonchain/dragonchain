@@ -36,7 +36,6 @@ from blockchain.block import Block, \
     get_current_block_id
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
-from blockchain.util.thrift_conversions import thrift_record_to_dict
 
 from db.postgres import transaction_db
 from db.postgres import verfication_db
@@ -577,7 +576,7 @@ class ProcessingNode(object):
             timestamp_db.insert_verification(phase_4_record)
             print "phase 5 executed"
 
-    # ToDo: create Verification Record outline instead of merkle tree implementation
+    # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
         pending_records = timestamp_db.get_pending_timestamp()
 
@@ -594,7 +593,6 @@ class ProcessingNode(object):
             receipt = merkle_tree.make_receipt(index, bitcoin_tx_id)
             pr["timestamp_receipt"] = receipt
             timestamp_db.set_transaction_timestamp_proof(pr)
-
 
     @staticmethod
     def split_items(filter_func, items):
