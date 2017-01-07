@@ -70,6 +70,13 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 * Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
 * Verifying Key Generation `openssl ec -in pki/sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
+* **The signing key must be kept private.**  The pki directory is listed in .gitignore to prevent accidentally pushing keys to a public repository.
+
+### Logs
+
+Pre-create a directory for log files before execution.
+
+    mkdir logs
 
 # Execution
 

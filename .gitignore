@@ -105,3 +105,6 @@ configs/
 
 #docker
 docker/custom*compose.yml
+
+# Emacs
+*~
