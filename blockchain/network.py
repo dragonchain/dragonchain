@@ -662,11 +662,11 @@ class BlockchainServiceHandler:
             for guid in guids:
                 vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
 
-                # retrieve unreceived records
+            # retrieve unreceived records
             for guid in unreceived:
                 verifications.append(verification_db.get(guid))
 
-                # format verifications to list of thrift structs for returning
+            # format verifications to list of thrift structs for returning
             thrift_verifications = map(thrift_converter.get_verification_type, verifications)
 
             return thrift_verifications

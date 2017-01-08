@@ -46,6 +46,7 @@ from db.postgres import postgres
 from blockchain.util.crypto import sign_transaction, valid_transaction_sig
 
 from blockchain.db.postgres import transaction_db as tx_dao
+from blockchain.db.postgres import subscriptions_db as sub_db
 
 import uuid
 
@@ -89,6 +90,7 @@ class TransactionHandler(tornado.web.RequestHandler):
                                        self.application.public_key, txn)
 
                 tx_dao.insert_transaction(txn)
+                self.check_subscriptions(txn)
                 self.set_header("Content-Type", "application/json")
                 self.set_txn_status(log, 201)
                 self.write(json.dumps({
@@ -113,13 +115,29 @@ class TransactionHandler(tornado.web.RequestHandler):
             log.error("500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
         self.set_status(status_code)
 
+    def check_subscriptions(self, txn):
+        """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database """
+        if "subscriptions" in txn:
+            subscriptions = txn['subscriptions']
+            for subscription in subscriptions:
+                try:
+                    sub_db.insert_subscription(subscriptions[subscription])
+                except Exception as ex:
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    # logger().warning(message)
+                    continue
+
 
 def valid_vestal_transaction(transaction):
     """ check if raw client transaction contains required fields """
-    tx_header = transaction["header"]
     valid = True
+    if "header" not in transaction:
+        return False
 
-    if not tx_header["transaction_type"]:
+    tx_header = transaction["header"]
+
+    if "transaction_type" not in tx_header and not tx_header["transaction_type"]:
         valid = False
     if not tx_header["owner"]:
         valid = False

@@ -1,5 +1,4 @@
-/*
-
+"""
 Copyright 2016 Disney Connected and Advanced Technologies
 
 Licensed under the Apache License, Version 2.0 (the "Apache License")
@@ -21,6 +20,7 @@ distributed under the Apache License with the above modification is
 distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
+"""
 
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
@@ -29,10 +29,42 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-*/
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i vr_transfers.sql
-\i subscriptions.sql
+import psycopg2
+import psycopg2.extras
+
+from blockchain.qry import format_node
+
+from postgres import get_connection_pool
+import uuid
+
+""" CONSTANTS """
+# TODO: CONST for interval time, limit - import from file
+DEFAULT_PAGE_SIZE = 1000
+""" SQL Queries """
+SQL_INSERT = """INSERT into subscriptions (
+                    sub_id,
+                    subscribe_to,
+                    host,
+                    port,
+                    criteria
+                ) VALUES (%s, %s, %s, %s, %s) """
+
+
+def insert_subscription(subscription):
+    """ insert given subscription into database """
+    values = (
+        str(uuid.uuid4()),
+        subscription['sub_to'],
+        subscription['host'],
+        subscription['port'],
+        psycopg2.extras.Json(subscription['criteria'])
+    )
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute(SQL_INSERT, values)
+        conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)

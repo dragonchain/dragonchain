@@ -31,8 +31,50 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i vr_transfers.sql
-\i subscriptions.sql
+
+/* Create a blocky user if it doesn't exist */
+do
+$body$
+declare
+  num_users integer;
+begin
+   SELECT count(*)
+     into num_users
+   FROM pg_user
+   WHERE usename = 'blocky';
+
+   IF num_users = 0 THEN
+      CREATE ROLE blocky WITH LOGIN;
+   END IF;
+end
+$body$
+;
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+CREATE TABLE IF NOT EXISTS subscriptions (
+
+  sub_id UUID PRIMARY KEY,
+
+  /* subscribee id */
+  subscribe_to VARCHAR(256) UNIQUE,
+
+  /* subscribee host */
+  host VARCHAR(256),
+
+  /* subscribee port */
+  port VARCHAR(256),
+
+  /* criteria to be met by subscribee */
+  criteria JSON,
+
+  /* minimum block id a transaction may be in */
+  minimum_block_id INTEGER,
+
+  /* time in seconds between requesting transactions from subscribee */
+  synchronization_time INTEGER DEFAULT 5
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON subscriptions to blocky;
+COMMIT;

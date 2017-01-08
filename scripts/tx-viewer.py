@@ -50,7 +50,7 @@ def run():
     log.info("Setting up argparse")
 
     parser = argparse.ArgumentParser(description='Watch live blockchain transactions.', prog='')
-    parser.add_argument('-s', '--server', required=False    , default="blockchain.cloud.corp.dig.com", help="Query Service server.")
+    parser.add_argument('-s', '--server', required=False, default="blockchain.cloud.corp.dig.com", help="Query Service server.")
     parser.add_argument('-p', '--port', default=8080)
     parser.add_argument('--debug', default=True, action = "store_true")
     parser.add_argument('-c', '--criteria', dest="criteria", required=False, help="Query criteria as URL query string.")
