@@ -149,8 +149,9 @@ class BitcoinTimestamper(): # IPoEStore
         fee_byte = max(fee_byte, self.MIN_FEE_BYTE)
         assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
 
+
         while True:
-            suggested_fee = len(tx.serialize(COutPoint)) * fee_byte
+            suggested_fee = len(tx.serialize()) * fee_byte
             tx.vout[0].nValue = int(value_in - suggested_fee)
             r = proxy.signrawtransaction(tx)
             assert r['complete']
@@ -182,12 +183,13 @@ class BitcoinTimestamper(): # IPoEStore
             change_pubkey: change address' pubkey
             data: data item (a hash) to persist after the OP_RETURN opcode
         Returns:
-            a bitcoin transaction that is candidate for being broadcasted to the network
+            a bitcoin transaction that is candidate for being broadcast to the network
         """
         txins = [CTxIn(output)]
         change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
-        digest_out = CMutableTxOut(0, CScript([OP_RETURN, data]))
-        tx = CMutableTransaction(txins, [change_out, digest_out])
+        digest_out = [CMutableTxOut(0, CScript([OP_RETURN, data]))]
+        txouts = [change_out] + digest_out
+        tx = CMutableTransaction(txins, txouts)
         return tx
 
 
