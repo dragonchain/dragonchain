@@ -112,7 +112,6 @@ class ProcessingNode(object):
             observer["callback"](config=observer["config"], **kwargs)
 
     """ INTERNAL METHODS """
-
     def _init_networking(self):
         """ currently only starts up network, may add more features """
         print 'initializing network'

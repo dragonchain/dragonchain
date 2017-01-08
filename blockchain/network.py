@@ -199,6 +199,7 @@ class ConnectionManager(object):
         scheduler.add_job(self.refresh_unregistered, CronTrigger(second='*/60'))
         scheduler.add_job(self.connect, CronTrigger(second='*/5'))
         scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
+        scheduler.add_job(self.subscription_feed, CronTrigger(second='*/5'))
         scheduler.start()
 
     def refresh_registered(self):
@@ -462,6 +463,10 @@ class ConnectionManager(object):
             if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
                 ver_ids = node.client.receipt_request(node.pass_phrase)
                 self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
+
+    def subscription_feed(self):
+        """ request transactions from subscribees """
+        pass
 
     def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,

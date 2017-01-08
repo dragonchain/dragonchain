@@ -39,9 +39,9 @@ from postgres import get_connection_pool
 import uuid
 
 """ CONSTANTS """
-# TODO: CONST for interval time, limit - import from file
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
+SQL_GET_ALL = """SELECT * FROM subscriptions"""
 SQL_INSERT = """INSERT into subscriptions (
                     sub_id,
                     subscribe_to,

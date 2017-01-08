@@ -23,7 +23,8 @@
       "host": "localhost",
       "port": "8081",
       "criteria": {
-        "transaction_type": "TT_REQ"
+        "transaction_type": "TT_REQ",
+        "owner": "Test Node"
       }
     }
   }
