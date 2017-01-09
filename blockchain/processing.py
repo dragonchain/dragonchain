@@ -586,8 +586,6 @@ class ProcessingNode(object):
         for r in pending_records:
             final_hash = deterministic_hash(r['signature']['hash'])
 
-        # Do deterministic hash on pending_records hash
-
 
         # pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
 
@@ -598,7 +596,6 @@ class ProcessingNode(object):
         # merkle_root = merkle_tree.get_merkle_root()
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
         bitcoin_tx_id = stamper.persist(final_hash) # was pending_records[0]
-        print "Transaction ID: "+bitcoin_tx_id
         # bitcoin_tx_id = stamper.persist(merkle_root)
         #
         # for index, pr in pending_records:
