@@ -185,7 +185,7 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             a bitcoin transaction that is candidate for being broadcast to the network
         """
-        txins = [CTxIn(output)]
+        txins = [CTxIn(output['outpoint'])]
         change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
         digest_out = [CMutableTxOut(0, CScript([OP_RETURN, data]))]
         txouts = [change_out] + digest_out
