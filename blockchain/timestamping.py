@@ -89,6 +89,8 @@ class BitcoinTimestamper(IPoEStore):
         assert stamper.ispersisted(txid, "hello world!"), "data item not present in the given txid"
     """
     MIN_FEE_BYTE = 60
+    MAX_FEE_BYTE = 200
+    P2PKH_SIGSCRIPT_SIZE = 105
 
     def __init__(self, network, fee_provider):
         """
@@ -147,17 +149,11 @@ class BitcoinTimestamper(IPoEStore):
         fee_byte = max(fee_byte, self.MIN_FEE_BYTE)
         assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
 
-        while True:
-            suggested_fee = len(tx.serialize()) * fee_byte
-            tx.vout[0].nValue = int(value_in - suggested_fee)
-            r = proxy.signrawtransaction(tx)
-            assert r['complete']
-            tx = r['tx']
-            effective_fee = value_in - tx.vout[0].nValue
-            suggested_fee = len(tx.serialize()) * fee_byte
-            if effective_fee >= suggested_fee:
-                tx = proxy.sendrawtransaction(tx)
-                break
+        suggested_fee = (len(tx.serialize()) + self.P2PKH_SIGSCRIPT_SIZE) * fee_byte
+        tx.vout[0].nValue = int(value_in - suggested_fee)
+        r = proxy.signrawtransaction(tx)
+        assert r['complete']
+        tx = proxy.sendrawtransaction(r['tx'])
         return tx
 
     def get_new_pubkey(self):
@@ -181,7 +177,7 @@ class BitcoinTimestamper(IPoEStore):
         Returns:
             a bitcoin transaction that is candidate for being broadcasted to the network
         """
-        txins = [CTxIn(output)]
+        txins = [CTxIn(output['outpoint'])]
         change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
         digest_out = CMutableTxOut(0, CScript([OP_RETURN, data]))
         tx = CMutableTransaction(txins, [change_out, digest_out])
@@ -203,3 +199,9 @@ class BitcoinFeeProvider(object):
         fees = response.json()
         calculated_fee = 0.5 * (int(fees["fastestFee"]) + int(fees["halfHourFee"]))
         return int(calculated_fee)
+
+
+fee_provider = BitcoinFeeProvider()
+stamper = BitcoinTimestamper("regtest", fee_provider)
+txid = stamper.persist("hello world!")
+assert stamper.ispersisted(txid, "hello world!"), "data item not present in the given txid"
