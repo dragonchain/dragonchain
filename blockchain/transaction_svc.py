@@ -46,7 +46,7 @@ from db.postgres import postgres
 from blockchain.util.crypto import sign_transaction, valid_transaction_sig
 
 from blockchain.db.postgres import transaction_db as tx_dao
-from blockchain.db.postgres import subscriptions_db as sub_db
+from blockchain.db.postgres import subscribe_to_db as sub_db
 
 import uuid
 

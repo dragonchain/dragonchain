@@ -1,5 +1,4 @@
-/*
-
+"""
 Copyright 2016 Disney Connected and Advanced Technologies
 
 Licensed under the Apache License, Version 2.0 (the "Apache License")
@@ -21,6 +20,7 @@ distributed under the Apache License with the above modification is
 distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
+"""
 
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
@@ -29,69 +29,42 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-*/
+
+import psycopg2
+import psycopg2.extras
+
+from blockchain.qry import format_node
+
+from postgres import get_connection_pool
+import uuid
+
+""" CONSTANTS """
+DEFAULT_PAGE_SIZE = 1000
+""" SQL Queries """
+SQL_GET_ALL = """SELECT * FROM subscribe_to"""
+SQL_INSERT = """INSERT into subscribe_to (
+                    subscription_id,
+                    subscribed_node_id,
+                    host,
+                    port,
+                    criteria
+                ) VALUES (%s, %s, %s, %s, %s) """
 
 
-/* Create a blocky user if it doesn't exist */
-do
-$body$
-declare
-  num_users integer;
-begin
-   SELECT count(*)
-     into num_users
-   FROM pg_user
-   WHERE usename = 'blocky';
-
-   IF num_users = 0 THEN
-      CREATE ROLE blocky WITH LOGIN;
-   END IF;
-end
-$body$
-;
-
-BEGIN;
-/* Don't drop tables unless you really want to */
-CREATE TABLE IF NOT EXISTS subscribe_to (
-
-  subscription_id UUID PRIMARY KEY,
-
-  /* subscribee id */
-  subscribed_node_id UUID UNIQUE,
-
-  /* subscribee host */
-  host VARCHAR(256),
-
-  /* subscribee port */
-  port INTEGER,
-
-  /* criteria to be met by subscribee */
-  criteria JSON,
-
-  /* minimum block id a transaction may be in */
-  minimum_block_id INTEGER,
-
-  /* time in seconds between requesting transactions from subscribee */
-  synchonization_period INTEGER DEFAULT 5,
-
-  /* last time a request was made to subscribee for data */
-  last_time_called timestamptz
-);
-COMMIT;
-BEGIN;
-GRANT ALL ON subscribe_to to blocky;
-COMMIT;
-
-BEGIN;
-CREATE TABLE IF NOT EXISTS subscribe_from (
-  subscriber_id UUID PRIMARY KEY,
-
-  /* transaction criteria to be met for subscriber */
-  criteria JSON,
-
-  subscriber_public_key VARCHAR(256)
-);
-COMMIT;
-BEGIN;
-GRANT ALL ON subscribe_from to blocky;
-COMMIT;
+def insert_subscription(subscription):
+    """ insert given subscription into database """
+    values = (
+        str(uuid.uuid4()),
+        subscription['sub_to'],
+        subscription['host'],
+        subscription['port'],
+        psycopg2.extras.Json(subscription['criteria'])
+    )
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute(SQL_INSERT, values)
+        conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
