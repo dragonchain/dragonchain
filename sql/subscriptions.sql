@@ -72,10 +72,10 @@ CREATE TABLE IF NOT EXISTS subscribe_to (
   minimum_block_id INTEGER,
 
   /* time in seconds between requesting transactions from subscribee */
-  synchonization_period INTEGER DEFAULT 5,
+  synchronization_period INTEGER DEFAULT 5,
 
   /* last time a request was made to subscribee for data */
-  last_time_called timestamptz
+  last_time_called timestamptz DEFAULT CURRENT_TIMESTAMP
 );
 COMMIT;
 BEGIN;

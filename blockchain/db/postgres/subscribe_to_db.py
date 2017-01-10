@@ -33,7 +33,7 @@ __email__ = "joe@dragonchain.org"
 import psycopg2
 import psycopg2.extras
 
-from blockchain.qry import format_node
+from blockchain.qry import format_subscription
 
 from postgres import get_connection_pool
 import uuid
@@ -68,3 +68,29 @@ def insert_subscription(subscription):
         cur.close()
     finally:
         get_connection_pool().putconn(conn)
+
+
+def get_all(limit=None):
+    query = SQL_GET_ALL
+    query += """ WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) """
+    if limit:
+        query += """ LIMIT """ + str(limit)
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_subscription(result)
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def get_cursor_name():
+    return str(uuid.uuid4())

@@ -115,6 +115,7 @@ class TransactionHandler(tornado.web.RequestHandler):
             log.error("500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
         self.set_status(status_code)
 
+    # TODO: make initial call to subscribee and retrieve subscription ID
     def check_subscriptions(self, txn):
         """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database """
         if "subscriptions" in txn:

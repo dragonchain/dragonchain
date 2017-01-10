@@ -93,3 +93,16 @@ def format_verification_record(verification_record):
         "verification_id":      verification_record["verification_id"],
         "sent":                 verification_record["sent"]
     }
+
+
+def format_subscription(subscription):
+    return {
+        "subscription_id":          subscription["subscription_id"],
+        "subscribed_node_id":       subscription["subscribed_node_id"],
+        "host":                     subscription["host"],
+        "port":                     subscription["port"],
+        "criteria":                 subscription["criteria"],
+        "minimum_block_id":         subscription["minimum_block_id"],
+        "synchronization_period":   subscription["synchronization_period"],
+        "last_time_called":         subscription["last_time_called"]
+    }

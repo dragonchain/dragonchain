@@ -44,6 +44,7 @@ from apscheduler.triggers.cron import CronTrigger
 from blockchain.db.postgres import network_db as net_dao
 from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
+from blockchain.db.postgres import subscribe_to_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
@@ -464,8 +465,12 @@ class ConnectionManager(object):
                 ver_ids = node.client.receipt_request(node.pass_phrase)
                 self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
 
+    # TODO: connect (if not already) and request transactions from each subscription. Passing the sub_id and the min_block
     def subscription_feed(self):
         """ request transactions from subscribees """
+        subscriptions = subscribe_to_db.get_all()
+        for subscription in subscriptions:
+            pass
         pass
 
     def resolve_data(self, node, guids, phase):
