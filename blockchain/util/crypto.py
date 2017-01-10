@@ -382,9 +382,13 @@ def deep_hash(thing):
     return deterministic_hash(list_to_hash)
 
 
-def final_hash(items):
-    """ returns final sha512 hash """
-    hash_object = hashlib.sha512(str(deterministic_hash(items)))
+def final_hash(items, type=512):
+    if type == 512:
+        """ returns final sha512 hash """
+        hash_object = hashlib.sha512(str(deterministic_hash(items)))
+    else:
+        """ returns final sha256 hash """
+        hash_object = hashlib.sha256(str(deterministic_hash(items)))
     hex_dig = hash_object.hexdigest()
 
     return hex_dig

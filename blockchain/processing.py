@@ -49,7 +49,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from merkleproof import MerkleTree
 from blockchain.timestamping import BitcoinTimestamper, BitcoinFeeProvider
-from blockchain.util.crypto import deterministic_hash
+from blockchain.util.crypto import deterministic_hash, final_hash
 
 import logging
 import argparse
@@ -580,13 +580,14 @@ class ProcessingNode(object):
 
     # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
-        final_hash = ""
+        final_hashes = []
         pending_records = timestamp_db.get_pending_timestamp()
         # Prints hashes for testing purposes
         for r in pending_records:
-            final_hash = deterministic_hash(r['signature']['hash'])
-
-
+            pulled_hash = deterministic_hash(r['signature']['hash'])
+        final_hashes.append(pulled_hash)
+        end_hash = final_hash(final_hashes)
+        print end_hash
         # pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
 
         # merkle_tree = MerkleTree()
@@ -595,7 +596,7 @@ class ProcessingNode(object):
         #
         # merkle_root = merkle_tree.get_merkle_root()
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        bitcoin_tx_id = stamper.persist(final_hash) # was pending_records[0]
+        # bitcoin_tx_id = stamper.persist(end_hash) # was pending_records[0]
         # bitcoin_tx_id = stamper.persist(merkle_root)
         #
         # for index, pr in pending_records:
