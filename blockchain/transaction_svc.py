@@ -140,7 +140,7 @@ def valid_vestal_transaction(transaction):
 
     if "transaction_type" not in tx_header or not tx_header["transaction_type"]:
         valid = False
-    if "owner" not in tx_header or not tx_header["owner"]:
+    elif "owner" not in tx_header or not tx_header["owner"]:
         valid = False
 
     return valid

@@ -470,8 +470,15 @@ class ConnectionManager(object):
         """ request transactions from subscribees """
         subscriptions = subscribe_to_db.get_all()
         for subscription in subscriptions:
-            pass
+            subscription_node = self.get_subscription_node(subscription)
         pass
+
+    def get_subscription_node(self, subscription):
+        """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
+        for node in self.connections:
+            if subscription["subscribed_node_id"] == node.node_id:
+                return node
+            # TODO: connect subscription (not connected if reached this point)
 
     def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,

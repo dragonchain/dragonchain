@@ -55,7 +55,7 @@ def insert_subscription(subscription):
     """ insert given subscription into database """
     values = (
         str(uuid.uuid4()),
-        subscription['sub_to'],
+        subscription['subscribe_node_id'],
         subscription['host'],
         subscription['port'],
         psycopg2.extras.Json(subscription['criteria'])

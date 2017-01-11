@@ -19,7 +19,7 @@
   },
   "subscriptions": {
     "subscriber1": {
-      "sub_to": "0318edaf-4a08-49c9-ba03-c4d732fd8d9c",
+      "subscribe_node_id": "8f0aabca-aa2e-4aab-a1d2-8420ffba0cce",
       "host": "localhost",
       "port": "8081",
       "criteria": {
