@@ -67,6 +67,8 @@ PHASE = 'phase'
 SIGNATURE = 'signature'
 HASH = 'hash'
 
+RESERVED_TXN_TYPES = ["TT_SUB_REQ", "TT_PROVISION_SC"]
+
 
 def logger(name="verifier-service"):
     return logging.getLogger(name)
@@ -82,6 +84,8 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
+        self.smart_contracts = {"TT_SUB_REQ": self.subscription_request,
+                                "TT_PROVISION_SC": self.provision_sc}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
             PHASE: self._phase_type_config_handler,
@@ -215,6 +219,12 @@ class ProcessingNode(object):
 
         return prior_hash
 
+    def subscription_request(self):
+        pass
+
+    def provision_sc(self):
+        pass
+
     def _execute_phase_1(self, config, current_block_id):
         """
         TODO update all EXEC comments/docs
@@ -234,17 +244,21 @@ class ProcessingNode(object):
         print ("""Time bounds: %i - %i""" % (block_bound_lower_ts, block_bound_lower_ts + BLOCK_INTERVAL))
         transaction_db.fixate_block(block_bound_lower_ts, block_bound_lower_ts + BLOCK_INTERVAL, current_block_id)
 
-        if 'approve_block' in config:
-            return config['approve_block'](config, current_block_id)
-
         transactions = transaction_db.get_all(block_id=current_block_id)
 
         # Validate the schema and structure of the transactions
         valid_transactions, invalid_transactions = self.split_items(valid_transaction_sig, transactions)
 
+        # TODO: Take this condition out?
+        if 'approve_block' in config:
+            # TODO: strip reserved transaction types. pass stripped list instead of config
+            # TODO: call reserved transaction function
+            return config['approve_block'](config, current_block_id)
+
         # Use the custom approval code if configured, otherwise approve all valid transaction
         rejected_transactions = []
         if 'approve_transaction' in config:
+            # TODO: if transaction is reserved transaction, call reserved transaction functions
             approved_transactions, rejected_transactions = \
                 self.split_items(config['approve_transaction'], valid_transactions)
         else:
