@@ -65,6 +65,20 @@ SQL_RESET_ALL = """UPDATE nodes SET start_conn_ts = NULL, connection_attempts = 
 SQL_RESET_START = """UPDATE nodes SET start_conn_ts = NULL WHERE node_id = %s """
 
 
+def get(node_id):
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(SQL_GET_BY_ID, (node_id,))
+        result = cur.fetchone()
+        cur.close()
+        if result:
+            result = format_node(result)
+        return result
+    finally:
+        get_connection_pool().putconn(conn)
+
+
 def insert_node(node):
     node_id = node.node_id
     sql_args = (

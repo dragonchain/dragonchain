@@ -39,10 +39,11 @@ from blockchain.block import Block, \
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, final_hash
 
+from db.postgres import postgres
 from db.postgres import transaction_db
 from db.postgres import verification_db
 from db.postgres import vr_transfers_db
-from db.postgres import postgres
+from blockchain.db.postgres import subscribe_to_db as sub_db
 
 import network
 
@@ -219,8 +220,18 @@ class ProcessingNode(object):
 
         return prior_hash
 
-    def subscription_request(self):
-        pass
+    def subscription_request(self, transaction):
+        """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database """
+        if "subscriptions" in transaction["payload"]:
+            subscriptions = transaction["payload"]['subscriptions']
+            for subscription in subscriptions:
+                try:
+                    sub_db.insert_subscription(subscriptions[subscription])
+                except Exception as ex:  # likely already subscribed
+                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    # logger().warning(message)
+                    continue
 
     def provision_sc(self):
         pass
@@ -268,6 +279,8 @@ class ProcessingNode(object):
             # update status of approved transactions
             for tx in approved_transactions:
                 tx["header"]["status"] = "approved"
+                if tx["header"]["transaction_type"] == "TT_SUB_REQ":
+                    self.smart_contracts["TT_SUB_REQ"](tx)
                 transaction_db.update_transaction(tx)
 
             # stripping payload from all transactions before signing

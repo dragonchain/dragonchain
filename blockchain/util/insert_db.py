@@ -40,7 +40,7 @@ import uuid
 
 
 def load_required_nodes():
-    node = Node(str(uuid.uuid4()), 'TWDC', 'localhost', '8084', '10000')
+    node = Node(str(uuid.uuid4()), 'TWDC', 'localhost', '8090', '00001')
     net_dao.insert_node(node)
     print('inserted node into database ' + os.environ.get('BLOCKCHAIN_DB_NAME') + " " + node.node_id)
 

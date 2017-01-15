@@ -15,18 +15,17 @@
       "amount": "5.00",
       "artifact_id": "12345"
     },
-    "source": "f36c9086-8683-11e6-80dc-3c970e3bee11"
-  },
-  /* TODO: put subscriptions in payload structure */
-  "subscriptions": {
+    "subscriptions": {
     "subscriber1": {
-      "subscribe_node_id": "8f0aabca-aa2e-4aab-a1d2-8420ffba0cce",
+      "subscribe_node_id": "48a5224b-8645-423a-a9dd-97ccc292715e",
       "host": "localhost",
-      "port": "8081",
+      "port": "8090",
       "criteria": {
         "transaction_type": "TT_REQ",
         "owner": "Test Node"
       }
     }
+  },
+    "source": "f36c9086-8683-11e6-80dc-3c970e3bee11"
   }
 }

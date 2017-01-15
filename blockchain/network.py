@@ -475,10 +475,31 @@ class ConnectionManager(object):
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
+        if not self.subscription_connected(subscription):
+            self.connect_subscription_node(subscription)
         for node in self.connections:
             if subscription["subscribed_node_id"] == node.node_id:
                 return node
-            # TODO: connect subscription (not connected if reached this point)
+
+    def subscription_connected(self, subscription):
+        """ check if connected to subscription node """
+        for node in self.connections:
+            if subscription["subscribed_node_id"] == node.node_id:
+                return True
+        return False
+
+    def connect_subscription_node(self, subscription):
+        """ connect to subscription node """
+        # check if node is already in database, just not connected
+        node = net_dao.get(subscription["subscribed_node_id"])
+        if node:
+            subscription_node = Node(node["node_id"], node["node_owner"], node["host"], node["port"], node["phases"])
+            if node["phases"] not in self.peer_dict:
+                self.peer_dict.setdefault(node["phases"], [])
+            self.connect_node(subscription_node, node["phases"])
+        else:
+            # TODO: insert new node into node table and connect
+            pass
 
     def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,
