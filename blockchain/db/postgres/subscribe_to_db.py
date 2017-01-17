@@ -47,8 +47,9 @@ SQL_INSERT = """INSERT into subscribe_to (
                     subscribed_node_id,
                     host,
                     port,
-                    criteria
-                ) VALUES (%s, %s, %s, %s, %s) """
+                    criteria,
+                    status
+                ) VALUES (%s, %s, %s, %s, %s, %s) """
 
 
 def insert_subscription(subscription):
@@ -58,7 +59,8 @@ def insert_subscription(subscription):
         subscription['subscribe_node_id'],
         subscription['host'],
         subscription['port'],
-        psycopg2.extras.Json(subscription['criteria'])
+        psycopg2.extras.Json(subscription['criteria']),
+        "pending"
     )
     conn = get_connection_pool().getconn()
     try:
@@ -73,6 +75,7 @@ def insert_subscription(subscription):
 def get_all(limit=None):
     query = SQL_GET_ALL
     query += """ WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) """
+    query += """ ORDER BY status """
     if limit:
         query += """ LIMIT """ + str(limit)
 

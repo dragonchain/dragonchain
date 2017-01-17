@@ -471,6 +471,8 @@ class ConnectionManager(object):
         subscriptions = subscribe_to_db.get_all()
         for subscription in subscriptions:
             subscription_node = self.get_subscription_node(subscription)
+            if subscription_node:
+                subscription_node.client.subscription_request()
         pass
 
     def get_subscription_node(self, subscription):
@@ -480,6 +482,7 @@ class ConnectionManager(object):
         for node in self.connections:
             if subscription["subscribed_node_id"] == node.node_id:
                 return node
+        return None
 
     def subscription_connected(self, subscription):
         """ check if connected to subscription node """
@@ -715,6 +718,9 @@ class BlockchainServiceHandler:
             self.authorize_pass_phrase(pass_phrase)
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
+
+    def subscription_request(self):
+        pass
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

@@ -75,7 +75,10 @@ CREATE TABLE IF NOT EXISTS subscribe_to (
   synchronization_period INTEGER DEFAULT 5,
 
   /* last time a request was made to subscribee for data */
-  last_time_called timestamptz DEFAULT CURRENT_TIMESTAMP
+  last_time_called timestamptz DEFAULT CURRENT_TIMESTAMP,
+
+  /* subscription status */
+  status subscription_status
 );
 COMMIT;
 BEGIN;
