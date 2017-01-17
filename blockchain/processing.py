@@ -562,32 +562,47 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            # ToDo: Find out why this is failing
             self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
-    def _execute_phase_5(self, config, phase_4_info):
+    def _execute_phase_5(self, config, verification):
         """ public, Bitcoin bridge phase """
         phase = 5
-        phase_4_record = phase_4_info['record']
+        verification_record = verification['record']
 
-        p4_verification_info = phase_4_info['verification_info']
-        phase_4_record['verification_info'] = p4_verification_info
+        verification_info = verification['verification_info']
+        verification_record['verification_info'] = verification_info
 
-        if validate_verification_record(phase_4_record, p4_verification_info):
-            timestamp_db.insert_verification(phase_4_record)
+        if validate_verification_record(verification_record, verification_info):
+            timestamp_db.insert_verification(verification_record)
+            #TODO: insert into block_verifications table
+            verification_record['block_id'] = None
+            verification_record['origin_id'] = None
+            verfication_db.insert_verification(verification_record)
             print "phase 5 executed"
 
     # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
         final_hashes = []
+        verification_id_list = []
         pending_records = timestamp_db.get_pending_timestamp()
         # Prints hashes for testing purposes
         for r in pending_records:
             pulled_hash = deterministic_hash(r['signature']['hash'])
-        final_hashes.append(pulled_hash)
-        end_hash = final_hash(final_hashes)
-        print end_hash
+            if pulled_hash:
+                final_hashes.append(pulled_hash)
+                end_hash = final_hash(final_hashes,type=256)
+                print end_hash
+
+        verification_info = {
+            "verification_records": {
+                "verification_id": "123456789",
+                "verification_id": "something"
+            },
+            "transaction_id": "id",
+            "blockchain": "BTC"
+        }
+
         # pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
 
         # merkle_tree = MerkleTree()

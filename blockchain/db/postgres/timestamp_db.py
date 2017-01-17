@@ -42,7 +42,7 @@ from postgres import get_connection_pool
 DEFAULT_PAGE_SIZE = 256
 
 """ SQL QUERIES """
-SQL_GET_PENDING_QUERY = """SELECT * FROM timestamps WHERE timestamp_receipt IS NULL"""
+SQL_GET_PENDING_QUERY = """SELECT * FROM timestamps WHERE timestamp_receipt IS FALSE"""
 SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = %s WHERE timestamp_id = %s"""
 
 SQL_INSERT_QUERY = """
@@ -61,8 +61,8 @@ def get_cursor_name():
 
 def set_transaction_timestamp_proof(verification_record):
     values = (
+        True,
         verification_record['timestamp_id'],
-        verification_record['timestamp_receipt'],
     )
     conn = get_connection_pool().getconn()
     try:

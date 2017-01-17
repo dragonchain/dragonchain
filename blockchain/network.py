@@ -649,7 +649,7 @@ class BlockchainServiceHandler:
     def phase_4_message(self, phase_4):
         # FIXME: sending phase 4 to phase 5 by default, shouldn't be.
         phase_4_info = self.get_phase_4_info(phase_4)
-        self.connection_manager.processing_node.notify(5, phase_4_info=phase_4_info)
+        self.connection_manager.processing_node.notify(5, verification=phase_4_info)
 
     def get_phase_4_info(self, phase_4):
         """ return dictionary representation of thrift phase 4 """

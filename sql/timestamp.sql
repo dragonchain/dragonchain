@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS timestamps (
     create_ts timestamptz,
 
     /* chainpoint receipt containing the required data for verifying the timestamp */
-    timestamp_receipt JSON,
+    timestamp_receipt boolean not null DEFAULT FALSE,
 
     /* Signature block - includes public key */
     signature JSON,
