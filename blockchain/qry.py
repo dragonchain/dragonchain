@@ -104,5 +104,6 @@ def format_subscription(subscription):
         "criteria":                 subscription["criteria"],
         "minimum_block_id":         subscription["minimum_block_id"],
         "synchronization_period":   subscription["synchronization_period"],
-        "last_time_called":         subscription["last_time_called"]
+        "last_time_called":         subscription["last_time_called"],
+        "status":                   subscription["status"]
     }

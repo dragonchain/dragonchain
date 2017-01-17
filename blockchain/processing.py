@@ -37,7 +37,7 @@ from blockchain.block import Block, \
     get_block_time, \
     get_current_block_id
 
-from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, final_hash
+from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, sign_subscription, final_hash
 
 from db.postgres import postgres
 from db.postgres import transaction_db
@@ -232,6 +232,14 @@ class ProcessingNode(object):
                     message = template.format(type(ex).__name__, ex.args)
                     # logger().warning(message)
                     continue
+
+    def get_subscription_signature(self, subscription):
+        """ return signature for given subscription """
+        return sign_subscription(self.network.this_node.node_id,
+                                 subscription["criteria"],
+                                 subscription["minimum_block_id"],
+                                 self.service_config["private_key"],
+                                 self.service_config["public_key"])
 
     def provision_sc(self):
         pass

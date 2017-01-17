@@ -472,8 +472,8 @@ class ConnectionManager(object):
         for subscription in subscriptions:
             subscription_node = self.get_subscription_node(subscription)
             if subscription_node:
+                subscription_signature = self.processing_node.get_subscription_signature(subscription)
                 subscription_node.client.subscription_request()
-        pass
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
