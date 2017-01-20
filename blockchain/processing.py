@@ -38,7 +38,7 @@ from blockchain.block import Block, \
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
 from db.postgres import transaction_db
-from db.postgres import verfication_db
+from db.postgres import verification_db
 from db.postgres import timestamp_db
 from db.postgres import postgres
 
@@ -54,7 +54,6 @@ from blockchain.util.crypto import deterministic_hash, final_hash
 import logging
 import argparse
 import time
-import hashlib
 
 # TODO increase these for network sizing and later deliver via blockchain
 P2_COUNT_REQ = 1
@@ -221,7 +220,7 @@ class ProcessingNode(object):
         """
         prior_hash = None
         if phase:
-            prior_block = verfication_db.get_prior_block(origin_id, phase)
+            prior_block = verification_db.get_prior_block(origin_id, phase)
 
             if prior_block:
                 prior_hash = prior_block[SIGNATURE][HASH]
@@ -293,7 +292,7 @@ class ProcessingNode(object):
                                                   self.public_transmission,
                                                   verification_info)
             # store signed phase specific data
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_db.insert_verification(block_info['verification_record'])
 
             # send block info off for public transmission if configured to do so
             if block_info['verification_record']['public_transmission']['p1_pub_trans']:
@@ -335,7 +334,7 @@ class ProcessingNode(object):
         # validate phase_1's verification record
         if validate_verification_record(phase_1_record, p1_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_1_record)
+            verification_db.insert_verification(phase_1_record)
 
             # updating record phase
             phase_1_record[PHASE] = phase
@@ -366,7 +365,7 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_db.insert_verification(block_info['verification_record'])
 
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
@@ -436,7 +435,7 @@ class ProcessingNode(object):
         # validate phase_2's verification record
         if validate_verification_record(phase_2_record, p2_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_2_record)
+            verification_db.insert_verification(phase_2_record)
 
             phase_2_records = self.get_sig_records(phase_2_record)
 
@@ -473,7 +472,7 @@ class ProcessingNode(object):
                                                       )
 
                 # inserting verification info after signing
-                verfication_db.insert_verification(block_info['verification_record'])
+                verification_db.insert_verification(block_info['verification_record'])
 
                 # send block info off for public transmission if configured to do so
                 if phase_2_record['public_transmission']['p3_pub_trans']:
@@ -493,7 +492,7 @@ class ProcessingNode(object):
         phase = verification_record[PHASE]
 
         # get number of phase validations received
-        records = verfication_db.get_records(block_id, origin_id, phase)
+        records = verification_db.get_records(block_id, origin_id, phase)
 
         return records
 
@@ -532,7 +531,7 @@ class ProcessingNode(object):
         # validate phase_3's verification record
         if validate_verification_record(phase_3_record, p3_verification_info):
             # storing valid verification record
-            verfication_db.insert_verification(phase_3_record)
+            verification_db.insert_verification(phase_3_record)
 
             # updating record phase
             phase_3_record[PHASE] = phase
@@ -556,7 +555,7 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verfication_db.insert_verification(block_info['verification_record'])
+            verification_db.insert_verification(block_info['verification_record'])
 
             # send block info off for public transmission if configured to do so
             if phase_3_record['public_transmission']['p4_pub_trans']:
@@ -578,7 +577,7 @@ class ProcessingNode(object):
             #TODO: insert into block_verifications table
             verification_record['block_id'] = None
             verification_record['origin_id'] = None
-            verfication_db.insert_verification(verification_record)
+            verification_db.insert_verification(verification_record)
             print "phase 5 executed"
 
     # TODO: create Verification Record outline instead of merkle tree implementation
@@ -589,18 +588,22 @@ class ProcessingNode(object):
             'blockchain_type':"BTC"
         }
         pending_records = timestamp_db.get_pending_timestamp()
-        # Prints hashes for testing purposes
+
+        if pending_records is None:
+            pass
+
         for r in pending_records:
             hashes.append(r['signature']['hash'])
             verification_info['verification_records'][r['timestamp_id']] = r['signature']['hash']
+
         transaction_hash = final_hash(hashes,type=256)
         verification_info['hash'] = transaction_hash
 
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        # bitcoin_tx_id = stamper.persist(transaction_hash)
-        bitcoin_tx_id = "abcdef1"
+        # TODO: Fix bitcoin_tx_id so it will be utf-8 compatible
+        bitcoin_tx_id = stamper.persist(transaction_hash)
         verification_info['public_transaction_id'] = bitcoin_tx_id
-        #TODO: Create Verification Record
+
         prior_block_hash = None
         lower_hash = None
         block_id = None
@@ -619,7 +622,7 @@ class ProcessingNode(object):
                                               public_transmission,
                                               verification_info
                                               )
-        verfication_db.insert_verification(block_info['verification_record'])
+        verification_db.insert_verification(block_info['verification_record'])
         for verification_id in verification_info['verification_records'].keys():
             timestamp_db.set_transaction_timestamp_proof(verification_id)
         # print stamper.ispersisted(bitcoin_tx_id,definite_hash)

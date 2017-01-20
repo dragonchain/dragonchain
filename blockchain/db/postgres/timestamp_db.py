@@ -60,7 +60,8 @@ def get_cursor_name():
 
 
 def set_transaction_timestamp_proof(verification_id):
-    execute_db_args(verification_id, SQL_TIMESTAMP_QUERY)
+    sql_args = (verification_id,)
+    execute_db_args(sql_args, SQL_TIMESTAMP_QUERY)
 
 
 def insert_verification(verification_record):
