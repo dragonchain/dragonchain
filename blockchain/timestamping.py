@@ -150,22 +150,6 @@ class BitcoinTimestamper(): # IPoEStore
         fee_byte = max(fee_byte, self.MIN_FEE_BYTE)
         assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
 
-
-        # while True:
-        #     new_tx = tx
-        #     suggested_fee = len(new_tx.serialize()) * fee_byte
-        #     new_tx.vout[0].nValue = int(value_in - suggested_fee)
-        #     r = proxy.signrawtransaction(new_tx)
-        #     assert r['complete']
-        #     new_tx = r['tx']
-        #     effective_fee = value_in - new_tx.vout[0].nValue
-        #     suggested_fee = len(new_tx.serialize()) * fee_byte
-        #     if effective_fee >= suggested_fee:
-        #         new_tx = proxy.sendrawtransaction(new_tx)
-        #         print "Transaction sent to bitcoin-testnet"
-        #         break
-
-
         new_tx = tx
         suggested_fee = (len(new_tx.serialize()) + self.P2PKH_SIGSCRIPT_SIZE) * fee_byte
         new_tx.vout[0].nValue = int(value_in - suggested_fee)

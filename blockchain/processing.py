@@ -583,40 +583,46 @@ class ProcessingNode(object):
 
     # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
-        final_hashes = []
-        verification_id_list = []
+        hashes = []
+        verification_info = {
+            'verification_records': {},
+            'blockchain_type':"BTC"
+        }
         pending_records = timestamp_db.get_pending_timestamp()
         # Prints hashes for testing purposes
         for r in pending_records:
-            pulled_hash = deterministic_hash(r['signature']['hash'])
-            if pulled_hash:
-                final_hashes.append(pulled_hash)
-                end_hash = final_hash(final_hashes,type=256)
-                print end_hash
+            hashes.append(r['signature']['hash'])
+            verification_info['verification_records'][r['timestamp_id']] = r['signature']['hash']
+        transaction_hash = final_hash(hashes,type=256)
+        verification_info['hash'] = transaction_hash
 
-        verification_info = {
-            "verification_records": {
-                "verification_id": "123456789",
-                "verification_id": "something"
-            },
-            "transaction_id": "id",
-            "blockchain": "BTC"
-        }
-
-        # pending_records_hash = [hashlib.sha256(str(r)).hexdigest() for r in pending_records]
-
-        # merkle_tree = MerkleTree()
-        # merkle_tree.add_leaves(pending_records_hash)
-        # merkle_tree.make_tree()
-        #
-        # merkle_root = merkle_tree.get_merkle_root()
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        # bitcoin_tx_id = stamper.persist(end_hash) # was pending_records[0]
-        # bitcoin_tx_id = stamper.persist(merkle_root)
-        #
-        # for index, pr in pending_records:
-        #     receipt = merkle_tree.make_receipt(index, bitcoin_tx_id) # change to create verification record
-        #     pr["timestamp_receipt"] = receipt
+        # bitcoin_tx_id = stamper.persist(transaction_hash)
+        bitcoin_tx_id = "abcdef1"
+        verification_info['public_transaction_id'] = bitcoin_tx_id
+        #TODO: Create Verification Record
+        prior_block_hash = None
+        lower_hash = None
+        block_id = None
+        phase = 5
+        origin_id = None
+        public_transmission = False
+        block_info = sign_verification_record(self.network.this_node.node_id,
+                                              prior_block_hash,
+                                              lower_hash,
+                                              self.service_config['public_key'],
+                                              self.service_config['private_key'],
+                                              block_id,
+                                              phase,
+                                              origin_id,
+                                              int(time.time()),
+                                              public_transmission,
+                                              verification_info
+                                              )
+        verfication_db.insert_verification(block_info['verification_record'])
+        for verification_id in verification_info['verification_records'].keys():
+            timestamp_db.set_transaction_timestamp_proof(verification_id)
+        # print stamper.ispersisted(bitcoin_tx_id,definite_hash)
         #     timestamp_db.set_transaction_timestamp_proof(pr)
 
     @staticmethod

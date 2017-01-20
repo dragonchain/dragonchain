@@ -43,7 +43,7 @@ DEFAULT_PAGE_SIZE = 256
 
 """ SQL QUERIES """
 SQL_GET_PENDING_QUERY = """SELECT * FROM timestamps WHERE timestamp_receipt IS FALSE"""
-SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = %s WHERE timestamp_id = %s"""
+SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = TRUE WHERE timestamp_id = %s"""
 
 SQL_INSERT_QUERY = """
     INSERT INTO timestamps (
@@ -59,10 +59,9 @@ def get_cursor_name():
     return str(uuid.uuid4())
 
 
-def set_transaction_timestamp_proof(verification_record):
+def set_transaction_timestamp_proof(verification_id):
     values = (
-        True,
-        verification_record['timestamp_id'],
+        verification_id
     )
     conn = get_connection_pool().getconn()
     try:
