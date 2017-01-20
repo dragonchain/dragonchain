@@ -120,20 +120,28 @@ def get_records(block_id, origin_id, phase):
         get_connection_pool().putconn(conn)
 
 
-def get_all(block_id, limit=None, offset=None, phase=None):
-    # Build query
+def get_all(limit=None, offset=None, **params):
+    """ return all verification records matching given parameters """
     query = SQL_GET_ALL
-    if block_id:
-        query += """ WHERE block_id = """ + str(block_id)
+    separator_needed = False
+    if params:
+        query += """ WHERE """
 
-    if phase:
-        if not block_id:
-            query += """ WHERE """
-        else:
+    if "block_id" in params:
+        query += """ block_id = """ + str(params["block_id"])
+        separator_needed = True
+
+    if "phase" in params:
+        if separator_needed:
             query += """ AND """
-        query += """ phase = """ + str(phase)
+        query += """ phase = """ + str(params["phase"])
+        separator_needed = True
 
-    query += """ ORDER BY block_id DESC """
+    if "origin_id" in params:
+        if separator_needed:
+            query += """ AND """
+        query += """ origin_id = """ + str(params["origin_id"])
+        separator_needed = True
 
     if not limit:
         limit = 10
@@ -160,9 +168,41 @@ def get_all(block_id, limit=None, offset=None, phase=None):
         get_connection_pool().putconn(conn)
 
 
-def insert_verification(verification_record):
+def get_all_replication(block_id, phase, origin_id):
+    """ queries for records matching given block_id, having phase less than given phase,
+        and matching origin_id. This is used for retrieving verification records at lower
+        phases that match the higher phase record in question. """
+    query = SQL_GET_ALL
+    query += """ WHERE block_id = """ + str(block_id)
+    query += """ AND phase < """ + str(phase)
+    query += """ AND origin_id = '""" + str(origin_id)
+    query += """' ORDER BY block_id DESC """
+
+    records = []
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                records.append(format_block_verification(result))
+
+        cur.close()
+        return records
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def insert_verification(verification_record, verification_id=None):
+    if not verification_id:
+        verification_id = str(uuid.uuid4())
     values = (
-        str(uuid.uuid4()),
+        verification_id,
         verification_record['verification_ts'],
         verification_record["block_id"],
         psycopg2.extras.Json(verification_record["signature"]),

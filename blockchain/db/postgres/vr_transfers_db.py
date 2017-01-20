@@ -22,7 +22,7 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
-__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
+__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel, Alex Benedetto"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
 __version__ = "2.0"
@@ -31,45 +31,50 @@ __email__ = "joe@dragonchain.org"
 
 import psycopg2
 import psycopg2.extras
-from psycopg2.extras import Json
 import uuid
-import time
 
-from blockchain.qry import format_block_verification, format_pending_transaction
+from blockchain.qry import format_verification_record
+
 from postgres import get_connection_pool
 
 """ CONSTANTS """
-DEFAULT_PAGE_SIZE = 256
-
-""" SQL QUERIES """
-SQL_GET_PENDING_QUERY = """SELECT * FROM timestamps WHERE timestamp_receipt IS FALSE"""
-SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = TRUE WHERE timestamp_id = %s"""
-
-SQL_INSERT_QUERY = """
-    INSERT INTO timestamps (
-        timestamp_id,
-        block_id,
-        create_ts,
-        signature,
-        verification_info
-    ) VALUES (%s, %s, to_timestamp(%s), %s, %s)"""
+DEFAULT_PAGE_SIZE = 1000
+GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
+SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = TRUE WHERE transfer_to = %s AND verification_id = %s"""
+SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
+                                  origin_id,
+                                  transfer_to,
+                                  verification_id
+                                ) VALUES (%s, %s, %s)"""
 
 
-def get_cursor_name():
-    return str(uuid.uuid4())
+def get_unsent_verification_records(node_transmit_id):
+    """ retrieve validated records that have not already been sent back to node with node_transmit_id or verification_id """
+    query = GET_VERIFIED_RECORDS
+    query += """ WHERE transfer_to = '""" + node_transmit_id
+    query += """' AND sent = FALSE """
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_verification_record(result)
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
 
 
-def set_transaction_timestamp_proof(verification_id):
-    execute_db_args(verification_id, SQL_TIMESTAMP_QUERY)
-
-
-def insert_verification(verification_record):
+def insert_transfer(origin_id, transfer_to, verification_id):
     values = (
-        str(uuid.uuid4()),
-        verification_record["block_id"],
-        verification_record['verification_ts'],
-        psycopg2.extras.Json(verification_record["signature"]),
-        psycopg2.extras.Json(verification_record["verification_info"])
+        origin_id,
+        transfer_to,
+        verification_id
     )
     conn = get_connection_pool().getconn()
     try:
@@ -81,22 +86,14 @@ def insert_verification(verification_record):
         get_connection_pool().putconn(conn)
 
 
-def get_pending_timestamp():
-    timestamps = []
-    conn = get_connection_pool().getconn()
-    try:
-        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(SQL_GET_PENDING_QUERY)
-        while True:
-            results = cur.fetchmany()
-            if not results:
-                break
-            for result in results:
-                timestamps.append(format_pending_transaction(result))
-        cur.close()
-        return timestamps
-    finally:
-        get_connection_pool().putconn(conn)
+def set_verification_sent(transfer_to, ver_id):
+    """ set verifications sent field to true with matching given 'transfer_to' and 'verification_id' """
+    sql_args = (transfer_to, ver_id)
+    execute_db_args(sql_args, SQL_MARK_RECORD)
+
+
+def get_cursor_name():
+    return str(uuid.uuid4())
 
 
 def execute_db_args(sql_args, query_type):

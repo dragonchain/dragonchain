@@ -85,69 +85,69 @@ def get(txid):
 
 def get_all(limit=None, offset=None, **params):
     query = SQL_GET_ALL
-    multi_param = False
+    separator_needed = False
     if params:
         query += """ WHERE """
 
     if "block_id" in params:
         query += """ block_id = """ + str(params["block_id"])
-        multi_param = True
+        separator_needed = True
 
     if "transaction_type" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ transaction_type = '""" + str(params["transaction_type"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "business_unit" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ business_unit = '""" + str(params["business_unit"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "family_of_business" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query+= """ family_of_business = '""" + str(params["family_of_business"]) + """'"""
 
     if "line_of_business" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ line_of_business = '""" + str(params["line_of_business"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "signature" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ signature = '""" + str(params["signature"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "status" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ status = '""" + str(params["status"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "owner" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ owner = '""" + str(params["owner"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "actor" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ actor = '""" + str(params["actor"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "entity" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         query += """ entity = '""" + str(params["entity"]) + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "create_ts" in params:
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         if '-' in params["create_ts"]:
             # if it is timestamp >= UNIX-epoch timecode
@@ -164,11 +164,11 @@ def get_all(limit=None, offset=None, **params):
         else:
             cur_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"])))
             query += """ create_ts = '""" + cur_time + """'"""
-        multi_param = True
+        separator_needed = True
 
     if "transaction_ts" in params:
         print("transaction_ts")
-        if multi_param:
+        if separator_needed:
             query += """ AND """
         if '-' in params["transaction_ts"]:
              # if it is timestamp >= UNIX-epoch timecode
@@ -188,7 +188,7 @@ def get_all(limit=None, offset=None, **params):
         else:
              cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"])))
              query += """ transaction_ts = '""" + cur_time + """'"""
-             multi_param = True
+             separator_needed = True
              # not used but left in place to handle future params
 
     query += """ ORDER BY transaction_ts DESC """

@@ -29,43 +29,44 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
+from distutils.errors import DistutilsError
 from distutils.spawn import find_executable
-from setuptools import setup, find_packages, Command
+from setuptools import setup, Command
 from glob import glob
 import os.path
 
-cmdclass = {}
-
-ROOT = os.path.abspath(os.path.dirname(__file__))
-THRIFT = find_executable('thrift1')
-if THRIFT is None:
-    THRIFT = find_executable('thrift')
-
 # If we have a thrift compiler installed, let's use it to re-generate
 # the .py files.  If not, we'll use the pre-generated ones.
-if THRIFT is not None:
-    class gen_thrift(Command):
-        user_options=[]
+class gen_thrift(Command):
+    user_options=[]
 
-        def initialize_options(self):
-            pass
+    def initialize_options(self):
+        self.root = None
+        self.thrift = None
 
-        def finalize_options(self):
-            pass
+    def finalize_options(self):
+        self.root = os.path.abspath(os.path.dirname(__file__))
+        self.thrift = find_executable('thrift1')
+        if self.thrift is None:
+            self.thrift = find_executable('thrift')
 
-        def run(self):
-            self.mkpath(os.path.join(ROOT, 'blockchain', 'gen'))
-            for f in glob(os.path.join(ROOT, 'thrift', '*.thrift')):
-                self.spawn([THRIFT, '-out', os.path.join(ROOT, 'blockchain', 'gen'),
-                            '-r', '--gen', 'py',
-                            os.path.join(ROOT, 'thrift', f)])
+    def run(self):
+        if self.thrift is None:
+            raise DistutilsError(
+                'Apache Thrift binary not found.  Please install Apache Thrift or use pre-generated Thrift classes.')
 
-    cmdclass['gen_thrift'] = gen_thrift
+        self.mkpath(os.path.join(self.root, 'blockchain', 'gen'))
+        for f in glob(os.path.join(self.root, 'thrift', '*.thrift')):
+            self.spawn([self.thrift, '-out', os.path.join(self.root, 'blockchain', 'gen'),
+                        '-r', '--gen', 'py',
+                        os.path.join(self.root, 'thrift', f)])
 
 setup(name         = 'Blockchain',
       version      = '0.0.1',
       description  = 'blockchain stuff',
       author       = 'Folks',
       packages     = ['blockchain'],
-      cmdclass     = cmdclass
+      cmdclass     = {
+          'gen_thrift': gen_thrift
+      }
 )

@@ -70,8 +70,19 @@ If you have Apache Thrift installed you can regenerate these classes by using th
 
 * Signing Key Generation `openssl ecparam -name secp224r1 -genkey -out <Dragonchain Home>/pki/sk.pem`
 * Verifying Key Generation `openssl ec -in pki/sk.pem -pubout -out <Dragonchain Home>/pki/pk.pem`
+* **The signing key must be kept private.**  The pki directory is listed in .gitignore to prevent accidentally pushing keys to a public repository.
+
+### Logs
+
+Pre-create a directory for log files before execution.
+
+    mkdir logs
 
 # Execution
+
+## Set the PYTHONPATH variable
+    
+    export PYTHONPATH=/path/to/dragonchain
 
 ## Transaction Service
 
@@ -79,8 +90,13 @@ If you have Apache Thrift installed you can regenerate these classes by using th
     
 ## Query Service
 
-    python <Dragonchain Home>/blockchain/query_svc.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
+    python <Dragonchain Home>/blockchain/query_svc.py [-p port] //defaults to 8080
 
+### Example Query
+
+    localhost:8080/transaction/?create_ts=1475155787 //timestamp in Unix Epoch timecode
+        - create_ts can be replaced with any of the header fields in a transaction
+    
 ## Blockchain Processor
 
     python <Dragonchain Home>/blockchain/processing.py --private-key <Dragonchain Home>/pki/sk.pem --public-key <Dragonchain Home>/pki/pk.pem
@@ -125,6 +141,7 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
 - [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
 - [Dylan Yelton - Developer](https://www.linkedin.com/in/dylan-yelton-b11ba5aa)
+- [Alex Benedetto - Developer](https://www.linkedin.com/in/alex-benedetto-6175048b)
 - [Michael Bachtel - DevOps / Developer](https://www.linkedin.com/in/michael-bachtel-617b7b2)
 - [Lucas Ontivero - Developer](https://ar.linkedin.com/in/lucasontivero)
 - [Adam Bronfin - Developer / Reviewer](https://www.linkedin.com/in/adam-bronfin-694a7440)
@@ -144,6 +161,11 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - Kevin Duane - Reviewer
 - Chris Moore - Reviewer
 
+# Disclaimer
+
+The comments, views, and opinions expressed in this forum are those of the authors and do not necessarily reflect the official policy or position of the Walt Disney Company, Disney Connected and Advanced Technologies, or any affiliated companies.
+
+All code contained herein is provided “AS IS” without warranties of any kind. Any implied warranties of non-infringement, merchantability, and fitness for a particular purpose are expressly disclaimed by the author(s).
 
 # License
 
