@@ -602,7 +602,7 @@ class ProcessingNode(object):
 
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
         # TODO: Fix bitcoin_tx_id so it will be utf-8 compatible
-        bitcoin_tx_id = stamper.persist(transaction_hash)
+        bitcoin_tx_id = stamper.persist(transaction_hash).decode('ISO-8859-1')
         verification_info['public_transaction_id'] = bitcoin_tx_id
 
         prior_block_hash = None
