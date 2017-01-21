@@ -496,7 +496,6 @@ class ConnectionManager(object):
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
-
     def public_broadcast(self, block_info, phase):
         """ broadcast to phase 5 nodes for public transmission """
         if block_info and phase <= PHASE_5_NODE:
