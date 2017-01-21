@@ -39,6 +39,7 @@ from blockchain.util.crypto import valid_transaction_sig, sign_verification_reco
 
 from db.postgres import transaction_db
 from db.postgres import verification_db
+from db.postgres import vr_transfers_db
 from db.postgres import timestamp_db
 from db.postgres import postgres
 
@@ -625,8 +626,7 @@ class ProcessingNode(object):
         verification_db.insert_verification(block_info['verification_record'])
         for verification_id in verification_info['verification_records'].keys():
             timestamp_db.set_transaction_timestamp_proof(verification_id)
-        # print stamper.ispersisted(bitcoin_tx_id,definite_hash)
-        #     timestamp_db.set_transaction_timestamp_proof(pr)
+
 
     @staticmethod
     def split_items(filter_func, items):
