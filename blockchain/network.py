@@ -476,7 +476,9 @@ class ConnectionManager(object):
             if subscription_node:
                 self.processing_node.get_subscription_signature(subscription)
                 subscription_id = subscription['subscription_id']
+                # minimum block client is concerned about
                 minimum_block_id = subscription['minimum_block_id']
+                # convert to thrift signature for sending to server
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, server already knows criteria
                 if subscription['status'] == "approved":
@@ -740,7 +742,9 @@ class BlockchainServiceHandler:
         #     subscribe_from_db.insert_subscription(subscription_id, criteria, subscription_signature.public_key)
 
         subscriber_info = subscribe_from_db.get(subscription_id)
+        # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
+        # check if subscription signature being sent by client is valid
         if validate_subscription(subscriber_signature, subscriber_info['criteria'], minimum_block_id, subscriber_signature["public_key"]):
             return True
         else:
