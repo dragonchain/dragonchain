@@ -37,6 +37,8 @@ from blockchain.block import Block, \
 
 from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
 
+from bitcoin.core import *
+
 from db.postgres import transaction_db
 from db.postgres import verification_db
 from db.postgres import vr_transfers_db
@@ -48,9 +50,8 @@ import network
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from merkleproof import MerkleTree
 from blockchain.timestamping import BitcoinTimestamper, BitcoinFeeProvider
-from blockchain.util.crypto import deterministic_hash, final_hash
+from blockchain.util.crypto import final_hash
 
 import logging
 import argparse
@@ -590,8 +591,8 @@ class ProcessingNode(object):
         }
         pending_records = timestamp_db.get_pending_timestamp()
 
-        if pending_records is None:
-            pass
+        if not pending_records:
+            return
 
         for r in pending_records:
             hashes.append(r['signature']['hash'])
@@ -601,8 +602,9 @@ class ProcessingNode(object):
         verification_info['hash'] = transaction_hash
 
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
-        # TODO: Fix bitcoin_tx_id so it will be utf-8 compatible
-        bitcoin_tx_id = stamper.persist(transaction_hash).decode('ISO-8859-1')
+        # TODO: Fix bitcoin_tx_id so it will be utf-8
+        bitcoin_tx_id = stamper.persist(transaction_hash)
+        bitcoin_tx_id = b2lx(bitcoin_tx_id).encode('utf-8')
         verification_info['public_transaction_id'] = bitcoin_tx_id
 
         prior_block_hash = None
@@ -626,6 +628,9 @@ class ProcessingNode(object):
         verification_db.insert_verification(block_info['verification_record'])
         for verification_id in verification_info['verification_records'].keys():
             timestamp_db.set_transaction_timestamp_proof(verification_id)
+
+        for verification_record in pending_records:
+            vr_transfers_db.insert_transfer(None, verification_record['signature']['signatory'], verification_record['timestamp_id'])
 
 
     @staticmethod

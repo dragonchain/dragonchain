@@ -157,9 +157,9 @@ class BitcoinTimestamper(): # IPoEStore
         assert r['complete']
         new_tx = r['tx']
         suggested_fee = len(new_tx.serialize()) * fee_byte
-        new_tx = proxy.sendrawtransaction(new_tx)
-        print "Transaction sent to bitcoin-testnet"
-        return new_tx
+        tx_id = proxy.sendrawtransaction(new_tx)
+        log.info('Transaction sent')
+        return tx_id
 
     def get_new_pubkey(self):
         """
