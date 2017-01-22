@@ -28,3 +28,36 @@ __license__ = "Apache"
 __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
+
+
+import psycopg2
+import psycopg2.extras
+
+from postgres import get_connection_pool
+
+""" CONSTANTS """
+DEFAULT_PAGE_SIZE = 1000
+""" SQL Queries """
+SQL_GET_ALL = """SELECT * FROM subscribe_from"""
+SQL_INSERT = """INSERT into subscribe_from (
+                    subscriber_id,
+                    criteria,
+                    subscriber_public_key
+                ) VALUES (%s, %s, %s) """
+
+
+def insert_subscription(subscriber_id, criteria, subscriber_public_key):
+    """ insert given subscription into database """
+    values = (
+        subscriber_id,
+        psycopg2.extras.Json(criteria),
+        subscriber_public_key
+    )
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor()
+        cur.execute(SQL_INSERT, values)
+        conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)

@@ -91,6 +91,16 @@ class Iface:
     """
     pass
 
+  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+    """
+    Parameters:
+     - subscription_id
+     - minimum_block_id
+     - subscription_signature
+     - criteria
+    """
+    pass
+
   def get_peers(self):
     pass
 
@@ -424,6 +434,41 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "transfer_data failed: unknown result")
 
+  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+    """
+    Parameters:
+     - subscription_id
+     - minimum_block_id
+     - subscription_signature
+     - criteria
+    """
+    self.send_subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria)
+    self.recv_subscription_request()
+
+  def send_subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+    self._oprot.writeMessageBegin('subscription_request', TMessageType.CALL, self._seqid)
+    args = subscription_request_args()
+    args.subscription_id = subscription_id
+    args.minimum_block_id = minimum_block_id
+    args.subscription_signature = subscription_signature
+    args.criteria = criteria
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_subscription_request(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = subscription_request_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    return
+
   def get_peers(self):
     self.send_get_peers()
     return self.recv_get_peers()
@@ -468,6 +513,7 @@ class Processor(Iface, TProcessor):
     self._processMap["phase_5_message"] = Processor.process_phase_5_message
     self._processMap["receipt_request"] = Processor.process_receipt_request
     self._processMap["transfer_data"] = Processor.process_transfer_data
+    self._processMap["subscription_request"] = Processor.process_subscription_request
     self._processMap["get_peers"] = Processor.process_get_peers
 
   def process(self, iprot, oprot):
@@ -689,6 +735,25 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("transfer_data", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_subscription_request(self, seqid, iprot, oprot):
+    args = subscription_request_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = subscription_request_result()
+    try:
+      self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature, args.criteria)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("subscription_request", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -2164,6 +2229,167 @@ class transfer_data_result:
   def __ne__(self, other):
     return not (self == other)
 
+class subscription_request_args:
+  """
+  Attributes:
+   - subscription_id
+   - minimum_block_id
+   - subscription_signature
+   - criteria
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'subscription_id', None, None, ), # 1
+    (2, TType.I32, 'minimum_block_id', None, None, ), # 2
+    (3, TType.STRUCT, 'subscription_signature', (Signature, Signature.thrift_spec), None, ), # 3
+    (4, TType.MAP, 'criteria', (TType.STRING,None,TType.STRING,None), None, ), # 4
+  )
+
+  def __init__(self, subscription_id=None, minimum_block_id=None, subscription_signature=None, criteria=None,):
+    self.subscription_id = subscription_id
+    self.minimum_block_id = minimum_block_id
+    self.subscription_signature = subscription_signature
+    self.criteria = criteria
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.subscription_id = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.I32:
+          self.minimum_block_id = iprot.readI32()
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.subscription_signature = Signature()
+          self.subscription_signature.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.MAP:
+          self.criteria = {}
+          (_ktype145, _vtype146, _size144 ) = iprot.readMapBegin()
+          for _i148 in xrange(_size144):
+            _key149 = iprot.readString()
+            _val150 = iprot.readString()
+            self.criteria[_key149] = _val150
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('subscription_request_args')
+    if self.subscription_id is not None:
+      oprot.writeFieldBegin('subscription_id', TType.STRING, 1)
+      oprot.writeString(self.subscription_id)
+      oprot.writeFieldEnd()
+    if self.minimum_block_id is not None:
+      oprot.writeFieldBegin('minimum_block_id', TType.I32, 2)
+      oprot.writeI32(self.minimum_block_id)
+      oprot.writeFieldEnd()
+    if self.subscription_signature is not None:
+      oprot.writeFieldBegin('subscription_signature', TType.STRUCT, 3)
+      self.subscription_signature.write(oprot)
+      oprot.writeFieldEnd()
+    if self.criteria is not None:
+      oprot.writeFieldBegin('criteria', TType.MAP, 4)
+      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.criteria))
+      for kiter151,viter152 in self.criteria.items():
+        oprot.writeString(kiter151)
+        oprot.writeString(viter152)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.subscription_id)
+    value = (value * 31) ^ hash(self.minimum_block_id)
+    value = (value * 31) ^ hash(self.subscription_signature)
+    value = (value * 31) ^ hash(self.criteria)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class subscription_request_result:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('subscription_request_result')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class get_peers_args:
 
   thrift_spec = (
@@ -2238,11 +2464,11 @@ class get_peers_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype147, _size144) = iprot.readListBegin()
-          for _i148 in xrange(_size144):
-            _elem149 = Node()
-            _elem149.read(iprot)
-            self.success.append(_elem149)
+          (_etype156, _size153) = iprot.readListBegin()
+          for _i157 in xrange(_size153):
+            _elem158 = Node()
+            _elem158.read(iprot)
+            self.success.append(_elem158)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2265,8 +2491,8 @@ class get_peers_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter150 in self.success:
-        iter150.write(oprot)
+      for iter159 in self.success:
+        iter159.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unauthorized is not None:

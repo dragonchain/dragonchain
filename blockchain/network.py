@@ -45,6 +45,7 @@ from blockchain.db.postgres import network_db as net_dao
 from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
 from blockchain.db.postgres import subscribe_to_db
+from blockchain.db.postgres import subscribe_from_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
@@ -475,7 +476,7 @@ class ConnectionManager(object):
                 self.processing_node.get_subscription_signature(subscription)
                 subscription_id = subscription['subscription_id']
                 minimum_block_id = subscription['minimum_block_id']
-                subscription_signature = subscription['signature']
+                subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, server already knows criteria
                 if subscription['status'] == "approved":
                     subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature)
@@ -728,7 +729,10 @@ class BlockchainServiceHandler:
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
-    def subscription_request(self):
+    def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria=None):
+        # initial subscription request from client
+        if criteria:
+            subscribe_from_db.insert_subscription(subscription_id, criteria, subscription_signature.public_key)
         pass
 
     def get_unsent_transfer_ids(self, transfer_to):

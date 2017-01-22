@@ -125,21 +125,21 @@ def convert_to_thrift_header(tx_header):
     return thrift_header
 
 
-def convert_to_thrift_signature(tx_signature):
+def convert_to_thrift_signature(signature):
     """ returns a thrift representation of a dictionary transaction signature """
     thrift_signature = message_types.Signature()
-    if "signatory" in tx_signature:
-        thrift_signature.signatory = str(tx_signature['signatory'])
+    if "signatory" in signature:
+        thrift_signature.signatory = str(signature['signatory'])
 
-    if "signature_ts" in tx_signature:
-        thrift_signature.signature_ts = tx_signature['signature_ts']
+    if "signature_ts" in signature:
+        thrift_signature.signature_ts = signature['signature_ts']
 
-    if "stripped_hash" in tx_signature:
-        thrift_signature.strip_hash = tx_signature['stripped_hash']
+    if "stripped_hash" in signature:
+        thrift_signature.strip_hash = signature['stripped_hash']
 
-    thrift_signature.hash = tx_signature['hash']
-    thrift_signature.signature = tx_signature['signature']
-    thrift_signature.public_key = tx_signature['public_key']
+    thrift_signature.hash = signature['hash']
+    thrift_signature.signature = signature['signature']
+    thrift_signature.public_key = signature['public_key']
 
     return thrift_signature
 
