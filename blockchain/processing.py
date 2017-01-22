@@ -235,11 +235,10 @@ class ProcessingNode(object):
 
     def get_subscription_signature(self, subscription):
         """ return signature for given subscription """
-        return sign_subscription(self.network.this_node.node_id,
-                                 subscription["criteria"],
-                                 subscription["minimum_block_id"],
-                                 self.service_config["private_key"],
-                                 self.service_config["public_key"])
+        sign_subscription(self.network.this_node.node_id,
+                          subscription,
+                          self.service_config["private_key"],
+                          self.service_config["public_key"])
 
     def provision_sc(self):
         pass

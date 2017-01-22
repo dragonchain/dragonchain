@@ -204,14 +204,14 @@ def sign_verification_record(signatory,
     return block_info
 
 
-def sign_subscription(signatory, criteria, min_block_id, private_key_string, public_key_string):
+def sign_subscription(signatory, subscription, private_key_string, public_key_string):
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
     signature_ts = int(time.time())
     hashed_items = []
 
     # append criteria for hashing
-    hashed_items.append(deep_hash(criteria))
-    hashed_items.append(min_block_id)
+    hashed_items.append(deep_hash(subscription['criteria']))
+    hashed_items.append(subscription['minimum_block_id'])
     hashed_items.append(public_key_string)
 
     verification_hash = final_hash(hashed_items)
@@ -219,7 +219,7 @@ def sign_subscription(signatory, criteria, min_block_id, private_key_string, pub
     signature = ecdsa_signing_key.sign(verification_hash)
     digest = signature.encode('base64')
 
-    signature_block = assemble_sig_block(None, signatory, public_key_string, digest, verification_hash, signature_ts)
+    signature_block = assemble_sig_block(subscription, signatory, public_key_string, digest, verification_hash, signature_ts)
 
     return signature_block
 
