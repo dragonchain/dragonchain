@@ -443,7 +443,7 @@ class Client(Iface):
      - criteria
     """
     self.send_subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria)
-    self.recv_subscription_request()
+    return self.recv_subscription_request()
 
   def send_subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
     self._oprot.writeMessageBegin('subscription_request', TMessageType.CALL, self._seqid)
@@ -467,7 +467,9 @@ class Client(Iface):
     result = subscription_request_result()
     result.read(iprot)
     iprot.readMessageEnd()
-    return
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "subscription_request failed: unknown result")
 
   def get_peers(self):
     self.send_get_peers()
@@ -745,7 +747,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = subscription_request_result()
     try:
-      self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature, args.criteria)
+      result.success = self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature, args.criteria)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -2345,9 +2347,17 @@ class subscription_request_args:
     return not (self == other)
 
 class subscription_request_result:
+  """
+  Attributes:
+   - success
+  """
 
   thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
   )
+
+  def __init__(self, success=None,):
+    self.success = success
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2358,6 +2368,11 @@ class subscription_request_result:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2368,6 +2383,10 @@ class subscription_request_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('subscription_request_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2377,6 +2396,7 @@ class subscription_request_result:
 
   def __hash__(self):
     value = 17
+    value = (value * 31) ^ hash(self.success)
     return value
 
   def __repr__(self):

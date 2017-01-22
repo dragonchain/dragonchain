@@ -194,7 +194,7 @@ service BlockchainService {
 
    list<VerificationRecord> transfer_data(1: string pass_phrase, 2: list<string> received, 3: list<string> unreceived),
 
-   void subscription_request(1: string subscription_id, 2: i32 minimum_block_id, 3: Signature subscription_signature, 4: map<string, string> criteria),
+   bool subscription_request(1: string subscription_id, 2: i32 minimum_block_id, 3: Signature subscription_signature, 4: map<string, string> criteria),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

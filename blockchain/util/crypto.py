@@ -212,6 +212,9 @@ def sign_subscription(signatory, subscription, private_key_string, public_key_st
     # append criteria for hashing
     hashed_items.append(deep_hash(subscription['criteria']))
     hashed_items.append(subscription['minimum_block_id'])
+
+    hashed_items.append(signatory)
+    hashed_items.append(signature_ts)
     hashed_items.append(public_key_string)
 
     verification_hash = final_hash(hashed_items)
@@ -370,9 +373,35 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     return True
 
 
-def validate_subscription():
+def validate_subscription(signature_block,
+                          criteria,
+                          minimum_block_id,
+                          subscriber_public_key,
+                          log=logging.getLogger(__name__)):
     """ validate subscription signature """
-    pass
+    hashed_items = []
+    try:
+        validate_signature(signature_block)
+
+        hashed_items.append(deep_hash(criteria))
+        hashed_items.append(minimum_block_id)
+
+        hashed_items.append(signature_block['signatory'])
+        hashed_items.append(signature_block['signature_ts'])
+        hashed_items.append(subscriber_public_key)
+
+        verification_hash = final_hash(hashed_items)
+        if not verification_hash == signature_block['hash']:
+            return False
+
+    except BadSignatureError:
+        log.error("BadSignatureError detected.")
+        return False
+    except:
+        log.warning("An unexpected error has occurred. Possible causes: KeyError")
+        raise  # re-raise the exception
+
+    return True
 
 
 def assemble_sig_block(record, signatory, public_key_string, signature, hash, signature_ts, stripped_hash=None,

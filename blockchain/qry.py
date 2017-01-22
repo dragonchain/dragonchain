@@ -107,3 +107,11 @@ def format_subscription(subscription):
         "last_time_called":         subscription["last_time_called"],
         "status":                   subscription["status"]
     }
+
+
+def format_subscriber(subscription):
+    return {
+        "subscriber_id":            subscription["subscriber_id"],
+        "criteria":                 subscription["criteria"],
+        "subscriber_public_key":    subscription["subscriber_public_key"]
+    }

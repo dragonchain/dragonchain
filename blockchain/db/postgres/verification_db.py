@@ -33,7 +33,6 @@ import psycopg2
 import psycopg2.extras
 from psycopg2.extras import Json
 import uuid
-import time
 
 from blockchain.qry import format_block_verification
 from postgres import get_connection_pool

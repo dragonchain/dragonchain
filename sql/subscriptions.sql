@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS subscribe_to (
   criteria JSON,
 
   /* minimum block id a transaction may be in */
-  minimum_block_id INTEGER,
+  minimum_block_id INTEGER DEFAULT 0,
 
   /* time in seconds between requesting transactions from subscribee */
   synchronization_period INTEGER DEFAULT 5,

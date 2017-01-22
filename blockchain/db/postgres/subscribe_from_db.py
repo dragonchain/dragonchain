@@ -33,11 +33,13 @@ __email__ = "joe@dragonchain.org"
 import psycopg2
 import psycopg2.extras
 
+from blockchain.qry import format_subscriber
 from postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
+SQL_GET_BY_ID = """SELECT * FROM subscribe_from WHERE subscriber_id = %s"""
 SQL_GET_ALL = """SELECT * FROM subscribe_from"""
 SQL_INSERT = """INSERT into subscribe_from (
                     subscriber_id,
@@ -59,5 +61,19 @@ def insert_subscription(subscriber_id, criteria, subscriber_public_key):
         cur.execute(SQL_INSERT, values)
         conn.commit()
         cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def get(subscriber_id):
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(SQL_GET_BY_ID, (subscriber_id,))
+        result = cur.fetchone()
+        cur.close()
+        if result:
+            result = format_subscriber(result)
+        return result
     finally:
         get_connection_pool().putconn(conn)

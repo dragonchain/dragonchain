@@ -52,6 +52,7 @@ import gen.messaging.ttypes as message_types
 import db.postgres.postgres as pg
 
 from blockchain.util import thrift_conversions as thrift_converter
+from blockchain.util.crypto import validate_subscription
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -483,7 +484,10 @@ class ConnectionManager(object):
                 # initial communication with subscription node, send criteria
                 elif subscription['status'] == "pending":
                     criteria = subscription['criteria']
-                    subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria)
+                    if subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria):
+                        print "valid subscription request"
+                    else:
+                        print "bad subscription request"
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
@@ -730,10 +734,17 @@ class BlockchainServiceHandler:
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
     def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria=None):
-        # initial subscription request from client
-        if criteria:
-            subscribe_from_db.insert_subscription(subscription_id, criteria, subscription_signature.public_key)
-        pass
+        # initial subscription request from client, insert new subscription info
+        # FIXME: commented out for testing purposes
+        # if criteria:
+        #     subscribe_from_db.insert_subscription(subscription_id, criteria, subscription_signature.public_key)
+
+        subscriber_info = subscribe_from_db.get(subscription_id)
+        subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
+        if validate_subscription(subscriber_signature, subscriber_info['criteria'], minimum_block_id, subscriber_signature["public_key"]):
+            return True
+        else:
+            return False
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

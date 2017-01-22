@@ -35,7 +35,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('   phase_5_message(Phase_5_msg p5)')
   print('   receipt_request(string pass_phrase)')
   print('   transfer_data(string pass_phrase,  received,  unreceived)')
-  print('  void subscription_request(string subscription_id, i32 minimum_block_id, Signature subscription_signature,  criteria)')
+  print('  bool subscription_request(string subscription_id, i32 minimum_block_id, Signature subscription_signature,  criteria)')
   print('   get_peers()')
   print('')
   sys.exit(0)
