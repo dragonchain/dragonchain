@@ -75,7 +75,6 @@ class IPoEStore(object):
         pass
 
 
-# ToDo: fix and verify this portion works
 class BitcoinTimestamper(): # IPoEStore
     """
     Stamps a data item in the bitcoin blockchain and also allows us to verifies the
@@ -103,6 +102,7 @@ class BitcoinTimestamper(): # IPoEStore
         bitcoin.SelectParams(network)
         self.fee_provider = fee_provider
 
+
     def ispersisted(self, tx_id, data):
         """
         Verifies ``data`` item is on the bitcoin transaction identified by the ``tx_id``
@@ -125,6 +125,7 @@ class BitcoinTimestamper(): # IPoEStore
                 if step == 'waiting_data' and op == data:
                     return True
         return False
+
 
     def persist(self, data):
         """
@@ -161,6 +162,7 @@ class BitcoinTimestamper(): # IPoEStore
         log.info('Transaction sent')
         return tx_id
 
+
     def get_new_pubkey(self):
         """
         Requests a new bitcoin address and returns its public key
@@ -169,6 +171,7 @@ class BitcoinTimestamper(): # IPoEStore
         address = proxy.getnewaddress()
         pubkey = proxy.validateaddress(address)['pubkey']
         return pubkey
+
 
     def _build_transaction(self, output, change_pubkey, data):
         """
