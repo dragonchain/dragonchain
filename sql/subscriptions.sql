@@ -98,3 +98,33 @@ COMMIT;
 BEGIN;
 GRANT ALL ON subscribe_from to blocky;
 COMMIT;
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+CREATE TABLE IF NOT EXISTS subscription_vr_backlog (
+    transfer_id UUID PRIMARY KEY,
+    /* Original owner of the transaction data (Blockchain ID) */
+    subscription_id UUID,
+    /* The node to transmit this block to */
+    client_id VARCHAR(256),
+    /* block id */
+    block_id INT,
+    /* Indicates whether the subscription criteria for this block is satisfied */
+    completion_criteria JSON,
+    /* Indicates whether a block has been transmitted or not */
+    sent BOOLEAN DEFAULT FALSE
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON subscription_vr_backlog to blocky;
+COMMIT;
+
+/* used to accelerate queries from subscription clients for blocks that are ready to transfer */
+BEGIN;
+CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id, completion_criteria, sent);
+COMMIT;
+
+/* used to accelerate queries when verification records are received to see if criteria has been satisfied */
+BEGIN;
+CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id, completion_criteria);
+COMMIT;

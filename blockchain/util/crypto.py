@@ -370,6 +370,11 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     return True
 
 
+def validate_subscription():
+    """ validate subscription signature """
+    pass
+
+
 def assemble_sig_block(record, signatory, public_key_string, signature, hash, signature_ts, stripped_hash=None,
                        child_signature=None, log=logging.getLogger(__name__)):
     """
