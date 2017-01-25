@@ -156,12 +156,11 @@ union VerificationRecord {
 }
 
 union Phase_5_msg {
-    1: Transaction transaction,
-    2: VerificationRecord verification_record,
-    /* Level 5 node will NOT hash this field */
-    3: string hash,
-    /* Level 5 node WILL hash this field */
-    4: string misc
+    1: VerificationRecord verification_record
+}
+
+struct public_proof {
+
 }
 
 exception UnauthorizedException {
