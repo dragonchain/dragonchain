@@ -479,6 +479,7 @@ class ConnectionManager(object):
 
         return phase_3_msg
 
+
     # TODO: review this broadcast implementation
     def phase_4_broadcast(self, block_info, phase_type):
         """ send phase_4 information for phase_5 execution """
@@ -510,7 +511,7 @@ class ConnectionManager(object):
 
             phase_msg = None
             verification_record = message_types.VerificationRecord()
-            phase_5_msg = message_types.Phase_5_msg()
+            phase_5_request = message_types.Phase_5_request()
 
             if phase == 1:
                 phase_msg = self.get_p1_message(block_info)
@@ -524,13 +525,13 @@ class ConnectionManager(object):
             elif phase == 4:
                 pass
 
-            phase_5_msg.verification_record = verification_record
+            phase_5_request.verification_record = verification_record
 
             # send block to all known phase 5 nodes
             if phase_msg:
                 for node in self.peer_dict[PHASE_5_NODE]:
                     try:
-                        node.client.phase_5_message(phase_5_msg)
+                        node.client.phase_5_message(phase_5_request)
                         logger().info('block sent for public transmission...')
                     except:
                         logger().warning('failed to submit to node %s', node.node_id)

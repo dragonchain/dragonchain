@@ -8,7 +8,7 @@ public_transmission: 
     p1_pub_trans: off
     p2_pub_trans: off
     p3_pub_trans: off
-    p4_pub_trans: off
+    p4_pub_trans: on
 
 # time limit (in seconds) before request is made for verification receipts from peers.
 receipt_request_time: 600

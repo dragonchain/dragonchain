@@ -563,7 +563,7 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
+            # self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, verification):
@@ -582,7 +582,7 @@ class ProcessingNode(object):
             verification_db.insert_verification(verification_record)
             print "phase 5 executed"
 
-    # TODO: create Verification Record outline instead of merkle tree implementation
+
     def _execute_timestamping(self, config):
         hashes = []
         verification_info = {
