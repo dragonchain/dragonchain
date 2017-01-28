@@ -221,12 +221,23 @@ class ProcessingNode(object):
         return prior_hash
 
     def subscription_request(self, transaction):
-        """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database """
+        """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
+            initial communication with subscription node
+        """
         if "subscriptions" in transaction["payload"]:
             subscriptions = transaction["payload"]['subscriptions']
-            for subscription in subscriptions:
+            for sub in subscriptions:
                 try:
-                    sub_db.insert_subscription(subscriptions[subscription])
+                    subscription = subscriptions[sub]
+                    subscription_id = str(uuid.uuid4())
+                    criteria = subscription['criteria']
+                    public_key = self.service_config['public_key']
+                    # store new subscription info
+                    sub_db.insert_subscription(subscription, subscription_id)
+                    # get subscription node
+                    subscription_node = self.network.get_subscription_node(subscription)
+                    # initial communication with subscription node
+                    subscription_node.client.subscription_provisioning(subscription_id, criteria, public_key)
                 except Exception as ex:  # likely already subscribed
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)

@@ -474,22 +474,18 @@ class ConnectionManager(object):
         for subscription in subscriptions:
             subscription_node = self.get_subscription_node(subscription)
             if subscription_node:
+                # sign subscription
                 self.processing_node.get_subscription_signature(subscription)
                 subscription_id = subscription['subscription_id']
                 # minimum block client is concerned about
                 minimum_block_id = subscription['minimum_block_id']
                 # convert to thrift signature for sending to server
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
-                # subscription already approved, server already knows criteria
+                # subscription already approved, request data from server
                 if subscription['status'] == "approved":
                     subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature)
-                # initial communication with subscription node, send criteria
                 elif subscription['status'] == "pending":
-                    criteria = subscription['criteria']
-                    if subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria):
-                        print "valid subscription request"
-                    else:
-                        print "bad subscription request"
+                    logger().warning("Subscription still in pending status... Waiting for admin(s) approval.")
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
@@ -735,20 +731,23 @@ class BlockchainServiceHandler:
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
-    def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria=None):
-        # initial subscription request from client, insert new subscription info
+    def subscription_provisioning(self, subscription_id, criteria, public_key):
+        """ initial communication between subscription """
         # FIXME: commented out for testing purposes
-        # if criteria:
-        #     subscribe_from_db.insert_subscription(subscription_id, criteria, subscription_signature.public_key)
+        try:
+            subscribe_from_db.insert_subscription(subscription_id, criteria, public_key)
+        except:
+            logger().warning("An SQL error has occurred.")
+        pass
 
+    def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
         subscriber_info = subscribe_from_db.get(subscription_id)
         # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
         # check if subscription signature being sent by client is valid
         if validate_subscription(subscriber_signature, subscriber_info['criteria'], minimum_block_id, subscriber_signature["public_key"]):
-            return True
-        else:
-            return False
+            # TODO: do subscription stuff
+            pass
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

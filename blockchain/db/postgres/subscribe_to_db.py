@@ -52,11 +52,13 @@ SQL_INSERT = """INSERT into subscribe_to (
                 ) VALUES (%s, %s, %s, %s, %s, %s) """
 
 
-def insert_subscription(subscription):
+def insert_subscription(subscription, subscription_id=None):
     """ insert given subscription into database """
+    if not subscription_id:
+        subscription_id = str(uuid.uuid4())
     values = (
-        str(uuid.uuid4()),
-        subscription['subscribe_node_id'],
+        subscription_id,
+        subscription['subscribed_node_id'],
         subscription['host'],
         subscription['port'],
         psycopg2.extras.Json(subscription['criteria']),

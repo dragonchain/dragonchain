@@ -91,13 +91,21 @@ class Iface:
     """
     pass
 
-  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+  def subscription_provisioning(self, subscription_id, criteria, public_key):
+    """
+    Parameters:
+     - subscription_id
+     - criteria
+     - public_key
+    """
+    pass
+
+  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
     """
     Parameters:
      - subscription_id
      - minimum_block_id
      - subscription_signature
-     - criteria
     """
     pass
 
@@ -434,24 +442,55 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "transfer_data failed: unknown result")
 
-  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+  def subscription_provisioning(self, subscription_id, criteria, public_key):
+    """
+    Parameters:
+     - subscription_id
+     - criteria
+     - public_key
+    """
+    self.send_subscription_provisioning(subscription_id, criteria, public_key)
+    self.recv_subscription_provisioning()
+
+  def send_subscription_provisioning(self, subscription_id, criteria, public_key):
+    self._oprot.writeMessageBegin('subscription_provisioning', TMessageType.CALL, self._seqid)
+    args = subscription_provisioning_args()
+    args.subscription_id = subscription_id
+    args.criteria = criteria
+    args.public_key = public_key
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_subscription_provisioning(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = subscription_provisioning_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    return
+
+  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
     """
     Parameters:
      - subscription_id
      - minimum_block_id
      - subscription_signature
-     - criteria
     """
-    self.send_subscription_request(subscription_id, minimum_block_id, subscription_signature, criteria)
-    return self.recv_subscription_request()
+    self.send_subscription_request(subscription_id, minimum_block_id, subscription_signature)
+    self.recv_subscription_request()
 
-  def send_subscription_request(self, subscription_id, minimum_block_id, subscription_signature, criteria):
+  def send_subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
     self._oprot.writeMessageBegin('subscription_request', TMessageType.CALL, self._seqid)
     args = subscription_request_args()
     args.subscription_id = subscription_id
     args.minimum_block_id = minimum_block_id
     args.subscription_signature = subscription_signature
-    args.criteria = criteria
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -467,9 +506,7 @@ class Client(Iface):
     result = subscription_request_result()
     result.read(iprot)
     iprot.readMessageEnd()
-    if result.success is not None:
-      return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "subscription_request failed: unknown result")
+    return
 
   def get_peers(self):
     self.send_get_peers()
@@ -515,6 +552,7 @@ class Processor(Iface, TProcessor):
     self._processMap["phase_5_message"] = Processor.process_phase_5_message
     self._processMap["receipt_request"] = Processor.process_receipt_request
     self._processMap["transfer_data"] = Processor.process_transfer_data
+    self._processMap["subscription_provisioning"] = Processor.process_subscription_provisioning
     self._processMap["subscription_request"] = Processor.process_subscription_request
     self._processMap["get_peers"] = Processor.process_get_peers
 
@@ -741,13 +779,32 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_subscription_provisioning(self, seqid, iprot, oprot):
+    args = subscription_provisioning_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = subscription_provisioning_result()
+    try:
+      self._handler.subscription_provisioning(args.subscription_id, args.criteria, args.public_key)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("subscription_provisioning", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_subscription_request(self, seqid, iprot, oprot):
     args = subscription_request_args()
     args.read(iprot)
     iprot.readMessageEnd()
     result = subscription_request_result()
     try:
-      result.success = self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature, args.criteria)
+      self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -2231,13 +2288,159 @@ class transfer_data_result:
   def __ne__(self, other):
     return not (self == other)
 
+class subscription_provisioning_args:
+  """
+  Attributes:
+   - subscription_id
+   - criteria
+   - public_key
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'subscription_id', None, None, ), # 1
+    (2, TType.MAP, 'criteria', (TType.STRING,None,TType.STRING,None), None, ), # 2
+    (3, TType.STRING, 'public_key', None, None, ), # 3
+  )
+
+  def __init__(self, subscription_id=None, criteria=None, public_key=None,):
+    self.subscription_id = subscription_id
+    self.criteria = criteria
+    self.public_key = public_key
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.subscription_id = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.MAP:
+          self.criteria = {}
+          (_ktype145, _vtype146, _size144 ) = iprot.readMapBegin()
+          for _i148 in xrange(_size144):
+            _key149 = iprot.readString()
+            _val150 = iprot.readString()
+            self.criteria[_key149] = _val150
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.public_key = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('subscription_provisioning_args')
+    if self.subscription_id is not None:
+      oprot.writeFieldBegin('subscription_id', TType.STRING, 1)
+      oprot.writeString(self.subscription_id)
+      oprot.writeFieldEnd()
+    if self.criteria is not None:
+      oprot.writeFieldBegin('criteria', TType.MAP, 2)
+      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.criteria))
+      for kiter151,viter152 in self.criteria.items():
+        oprot.writeString(kiter151)
+        oprot.writeString(viter152)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    if self.public_key is not None:
+      oprot.writeFieldBegin('public_key', TType.STRING, 3)
+      oprot.writeString(self.public_key)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.subscription_id)
+    value = (value * 31) ^ hash(self.criteria)
+    value = (value * 31) ^ hash(self.public_key)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class subscription_provisioning_result:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('subscription_provisioning_result')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class subscription_request_args:
   """
   Attributes:
    - subscription_id
    - minimum_block_id
    - subscription_signature
-   - criteria
   """
 
   thrift_spec = (
@@ -2245,14 +2448,12 @@ class subscription_request_args:
     (1, TType.STRING, 'subscription_id', None, None, ), # 1
     (2, TType.I32, 'minimum_block_id', None, None, ), # 2
     (3, TType.STRUCT, 'subscription_signature', (Signature, Signature.thrift_spec), None, ), # 3
-    (4, TType.MAP, 'criteria', (TType.STRING,None,TType.STRING,None), None, ), # 4
   )
 
-  def __init__(self, subscription_id=None, minimum_block_id=None, subscription_signature=None, criteria=None,):
+  def __init__(self, subscription_id=None, minimum_block_id=None, subscription_signature=None,):
     self.subscription_id = subscription_id
     self.minimum_block_id = minimum_block_id
     self.subscription_signature = subscription_signature
-    self.criteria = criteria
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2279,17 +2480,6 @@ class subscription_request_args:
           self.subscription_signature.read(iprot)
         else:
           iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.MAP:
-          self.criteria = {}
-          (_ktype145, _vtype146, _size144 ) = iprot.readMapBegin()
-          for _i148 in xrange(_size144):
-            _key149 = iprot.readString()
-            _val150 = iprot.readString()
-            self.criteria[_key149] = _val150
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2312,14 +2502,6 @@ class subscription_request_args:
       oprot.writeFieldBegin('subscription_signature', TType.STRUCT, 3)
       self.subscription_signature.write(oprot)
       oprot.writeFieldEnd()
-    if self.criteria is not None:
-      oprot.writeFieldBegin('criteria', TType.MAP, 4)
-      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.criteria))
-      for kiter151,viter152 in self.criteria.items():
-        oprot.writeString(kiter151)
-        oprot.writeString(viter152)
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2332,7 +2514,6 @@ class subscription_request_args:
     value = (value * 31) ^ hash(self.subscription_id)
     value = (value * 31) ^ hash(self.minimum_block_id)
     value = (value * 31) ^ hash(self.subscription_signature)
-    value = (value * 31) ^ hash(self.criteria)
     return value
 
   def __repr__(self):
@@ -2347,17 +2528,9 @@ class subscription_request_args:
     return not (self == other)
 
 class subscription_request_result:
-  """
-  Attributes:
-   - success
-  """
 
   thrift_spec = (
-    (0, TType.BOOL, 'success', None, None, ), # 0
   )
-
-  def __init__(self, success=None,):
-    self.success = success
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2368,11 +2541,6 @@ class subscription_request_result:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
-      if fid == 0:
-        if ftype == TType.BOOL:
-          self.success = iprot.readBool()
-        else:
-          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2383,10 +2551,6 @@ class subscription_request_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('subscription_request_result')
-    if self.success is not None:
-      oprot.writeFieldBegin('success', TType.BOOL, 0)
-      oprot.writeBool(self.success)
-      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2396,7 +2560,6 @@ class subscription_request_result:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.success)
     return value
 
   def __repr__(self):

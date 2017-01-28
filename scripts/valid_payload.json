@@ -17,7 +17,7 @@
     },
     "subscriptions": {
     "subscriber1": {
-      "subscribe_node_id": "48a5224b-8645-423a-a9dd-97ccc292715e",
+      "subscribed_node_id": "48a5224b-8645-423a-a9dd-97ccc292715e",
       "host": "localhost",
       "port": "8090",
       "criteria": {
