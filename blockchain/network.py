@@ -759,6 +759,7 @@ class BlockchainServiceHandler:
             # store data into response
             subscription_response['transactions'] += transactions
             subscription_response['verification_records'] += verification_records
+            # TODO: implement backlog functionality and return response to client
             pass
 
     def get_subscription_txns(self, criteria, minimum_block_id):

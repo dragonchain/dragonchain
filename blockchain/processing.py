@@ -606,7 +606,6 @@ class ProcessingNode(object):
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, phase_5_info):
