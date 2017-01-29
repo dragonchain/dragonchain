@@ -91,13 +91,27 @@ def get_prior_block(origin_id, phase):
         get_connection_pool().putconn(conn)
 
 
-def get_records(block_id, origin_id, phase):
+def get_records(**params):
     """ return verification records with given criteria """
     # TODO: getting strange results from query string "||" around origin_id. Not currently breaking anything
     query = SQL_GET_ALL
-    query += """ WHERE block_id = """ + str(block_id)
-    query += """ AND origin_id = '""" + str(origin_id)
-    query += """' AND phase = """ + str(phase)
+    query += """ WHERE """
+    separator_needed = False
+
+    if "block_id" in params:
+        query += """ block_id = """ + str(params['block_id'])
+        separator_needed = True
+
+    if "origin_id" in params:
+        if separator_needed:
+            query += """ AND """
+        query += """ origin_id = '""" + str(params['origin_id']) + """'"""
+        separator_needed = True
+
+    if "phase" in params:
+        if separator_needed:
+            query += """ AND """
+        query += """ phase = """ + str(params['phase'])
 
     records = []
 

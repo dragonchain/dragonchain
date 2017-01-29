@@ -742,21 +742,33 @@ class BlockchainServiceHandler:
         pass
 
     def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
+        """ request for transactions and associated verification records that meet criteria made by client """
         subscriber_info = subscribe_from_db.get(subscription_id)
         # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
         criteria = subscriber_info['criteria']
         public_key = subscriber_signature["public_key"]
-        # check if subscription signature being sent by client is valid
+        # validate subscription signature
         if validate_subscription(subscriber_signature, criteria, minimum_block_id, public_key):
+            subscription_response = {"transactions": [],
+                                     "verification_records": []}
             # transactions that meet subscription criteria
             transactions = self.get_subscription_txns(criteria, minimum_block_id)
+            # verification records associated with transactions
+            verification_records = map(self.get_subscription_vrs, transactions)
+            # store data into response
+            subscription_response['transactions'] += transactions
+            subscription_response['verification_records'] += verification_records
             pass
 
     def get_subscription_txns(self, criteria, minimum_block_id):
         """ retrieve transactions that meet subscription criteria """
         transactions = transaction_db.get_subscription_txns(criteria, minimum_block_id)
         return list(transactions)
+
+    def get_subscription_vrs(self, transaction):
+        """ retrieve verification records that match given transaction """
+        return verification_db.get_records(block_id=transaction['header']['block_id'])
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

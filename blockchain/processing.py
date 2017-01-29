@@ -535,7 +535,7 @@ class ProcessingNode(object):
         phase = verification_record[PHASE]
 
         # get_verifications -- number of phase validations received
-        records = verification_db.get_records(block_id, origin_id, phase)
+        records = verification_db.get_records(block_id=block_id, origin_id=origin_id, phase=phase)
 
         return records
 
