@@ -50,7 +50,8 @@ import db.postgres.postgres as pg
 from blockchain.util.thrift_conversions import convert_to_thrift_transaction, \
                                                convert_to_thrift_record, \
                                                thrift_record_to_dict, \
-                                               thrift_transaction_to_dict
+                                               thrift_transaction_to_dict, \
+                                               get_p4_message
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -523,7 +524,10 @@ class ConnectionManager(object):
                 phase_msg = self.get_p3_message(block_info)
                 verification_record.p3 = phase_msg
             elif phase == 4:
-                pass
+                # TODO: possibly remove this and change back to pass, see if it works
+                phase_msg = get_p4_message(block_info)
+                verification_record.p4 = phase_msg
+                # pass
 
             phase_5_request.verification_record = verification_record
 
@@ -670,9 +674,11 @@ class BlockchainServiceHandler:
         elif phase_5.verification_record.p3:
             phase_info = self.get_phase_3_info(phase_5.verification_record.p3)
         elif phase_5.verification_record.p4:
-            pass
+            # TODO: possibly change this back to pass
+            phase_info = self.get_phase_4_info(phase_5.verification_record.p4)
+            # pass
 
-        self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
+        self.connection_manager.processing_node.notify(5, verification=phase_info)
 
     def get_peers(self):
         """ return list of connections from this node """

@@ -575,8 +575,8 @@ class ProcessingNode(object):
         verification_record['verification_info'] = verification_info
 
         if validate_verification_record(verification_record, verification_info):
+
             timestamp_db.insert_verification(verification_record)
-            #TODO: insert into block_verifications table
             verification_record['block_id'] = None
             verification_record['origin_id'] = None
             verification_db.insert_verification(verification_record)
