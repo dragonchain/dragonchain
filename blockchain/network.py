@@ -46,6 +46,7 @@ from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
 from blockchain.db.postgres import subscribe_to_db
 from blockchain.db.postgres import subscribe_from_db
+from db.postgres import transaction_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
@@ -733,21 +734,29 @@ class BlockchainServiceHandler:
 
     def subscription_provisioning(self, subscription_id, criteria, public_key):
         """ initial communication between subscription """
-        # FIXME: commented out for testing purposes
-        try:
-            subscribe_from_db.insert_subscription(subscription_id, criteria, public_key)
-        except:
-            logger().warning("An SQL error has occurred.")
+        # FIXME: commented out for testing purposes (using dupe subscription), uncomment before PR
+        # try:
+        #     subscribe_from_db.insert_subscription(subscription_id, criteria, public_key)
+        # except:
+        #     logger().warning("An SQL error has occurred.")
         pass
 
     def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
         subscriber_info = subscribe_from_db.get(subscription_id)
         # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
+        criteria = subscriber_info['criteria']
+        public_key = subscriber_signature["public_key"]
         # check if subscription signature being sent by client is valid
-        if validate_subscription(subscriber_signature, subscriber_info['criteria'], minimum_block_id, subscriber_signature["public_key"]):
-            # TODO: do subscription stuff
+        if validate_subscription(subscriber_signature, criteria, minimum_block_id, public_key):
+            # transactions that meet subscription criteria
+            transactions = self.get_subscription_txns(criteria, minimum_block_id)
             pass
+
+    def get_subscription_txns(self, criteria, minimum_block_id):
+        """ retrieve transactions that meet subscription criteria """
+        transactions = transaction_db.get_subscription_txns(criteria, minimum_block_id)
+        return list(transactions)
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

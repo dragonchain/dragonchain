@@ -218,6 +218,55 @@ def get_all(limit=None, offset=None, **params):
         get_connection_pool().putconn(conn)
 
 
+def get_subscription_txns(criteria, minimum_block_id):
+    """ retrieve transactions that meet given criteria and have a block_id >= minimum_block_id """
+    query = SQL_GET_ALL
+    query += """ WHERE """
+    separator_needed = False
+
+    if "transaction_type" in criteria:
+        query += """ transaction_type = '""" + str(criteria["transaction_type"]) + """'"""
+        separator_needed = True
+
+    if "actor" in criteria:
+        if separator_needed:
+            query += """ AND """
+        query += """ actor = '""" + str(criteria["actor"]) + """'"""
+        separator_needed = True
+
+    if "entity" in criteria:
+        if separator_needed:
+            query += """ AND """
+        query += """ entity = '""" + str(criteria["entity"]) + """'"""
+        separator_needed = True
+
+    if "owner" in criteria:
+        if separator_needed:
+            query += """ AND """
+        query += """ owner = '""" + str(criteria["owner"]) + """'"""
+        separator_needed = True
+
+    if minimum_block_id:
+        if separator_needed:
+            query += """ AND """
+        query += """ block_id >= """ + str(minimum_block_id)
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_transaction(result)
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
+
+
 def insert_transaction(txn):
     header = txn["header"]
     sql_args = (

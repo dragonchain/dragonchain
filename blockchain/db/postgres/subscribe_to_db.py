@@ -62,7 +62,7 @@ def insert_subscription(subscription, subscription_id=None):
         subscription['host'],
         subscription['port'],
         psycopg2.extras.Json(subscription['criteria']),
-        "pending"
+        "approved"  # FIXME: change back to "pending" before making PR
     )
     conn = get_connection_pool().getconn()
     try:
