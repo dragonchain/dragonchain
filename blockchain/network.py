@@ -46,7 +46,8 @@ from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
 from blockchain.db.postgres import subscribe_to_db
 from blockchain.db.postgres import subscribe_from_db
-from db.postgres import transaction_db
+from blockchain.db.postgres import transaction_db
+from blockchain.db.postgres import subscription_vr_backlog_db as backlog_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
@@ -753,14 +754,19 @@ class BlockchainServiceHandler:
             subscription_response = {"transactions": [],
                                      "verification_records": []}
             # transactions that meet subscription criteria
+            # TODO: will probably have to convert to thrift transactions for return map(convert, ...)
             transactions = self.get_subscription_txns(criteria, minimum_block_id)
+            # insert backlog(s)
+            # FIXME: uncomment before making PR
+            # self.sub_vr_backlog_insert(subscription_id, subscriber_signature['signatory'], transactions)
             # verification records associated with transactions
+            # TODO: will probably have to convert to thrift verifications for return map(convert, ...)
+            # TODO: use backlog table to check if there's any new vrs for old sub blocks
             verification_records = map(self.get_subscription_vrs, transactions)
             # store data into response
             subscription_response['transactions'] += transactions
             subscription_response['verification_records'] += verification_records
-            # TODO: implement backlog functionality and return response to client
-            pass
+            # TODO: return response to client
 
     def get_subscription_txns(self, criteria, minimum_block_id):
         """ retrieve transactions that meet subscription criteria """
@@ -770,6 +776,13 @@ class BlockchainServiceHandler:
     def get_subscription_vrs(self, transaction):
         """ retrieve verification records that match given transaction """
         return verification_db.get_records(block_id=transaction['header']['block_id'])
+
+    def sub_vr_backlog_insert(self, subscription_id, client_id, transactions):
+        """ insert transaction info for each given transaction to handle future vrs received """
+        # FIXME: completion_criteria being hard coded here. should be in valid_payload json
+        completion_criteria = {"phase": 5}
+        for transaction in transactions:
+            backlog_db.insert_backlog(subscription_id, client_id, transaction['header']['block_id'], completion_criteria)
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
