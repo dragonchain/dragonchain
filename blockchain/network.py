@@ -484,6 +484,8 @@ class ConnectionManager(object):
     # TODO: review this broadcast implementation
     def phase_4_broadcast(self, block_info, phase_type):
         """ send phase_4 information for phase_5 execution """
+        ver_ids = []
+
         verification_record = block_info['verification_record']
         verification_info = verification_record['verification_info']
 
@@ -493,7 +495,8 @@ class ConnectionManager(object):
 
         for node in self.peer_dict[phase_type]:
             try:
-                node.client.phase_4_message(phase_4_msg)
+                ver_ids += node.client.phase_4_message(phase_4_msg)
+                # TODO: implement transfers action here
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
