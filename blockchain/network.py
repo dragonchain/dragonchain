@@ -48,6 +48,7 @@ from blockchain.db.postgres import subscribe_to_db
 from blockchain.db.postgres import subscribe_from_db
 from blockchain.db.postgres import transaction_db
 from blockchain.db.postgres import subscription_vr_backlog_db as backlog_db
+from blockchain.db.postgres import sub_vr_transfers_db
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
@@ -469,7 +470,6 @@ class ConnectionManager(object):
                 ver_ids = node.client.receipt_request(node.pass_phrase)
                 self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
 
-    # TODO: connect (if not already) and request transactions from each subscription. Passing the sub_id and the min_block
     def subscription_feed(self):
         """ request transactions from subscribees """
         subscriptions = subscribe_to_db.get_all()
@@ -479,15 +479,31 @@ class ConnectionManager(object):
                 # sign subscription
                 self.processing_node.get_subscription_signature(subscription)
                 subscription_id = subscription['subscription_id']
-                # minimum block client is concerned about
-                minimum_block_id = subscription['minimum_block_id']
                 # convert to thrift signature for sending to server
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, request data from server
                 if subscription['status'] == "approved":
-                    subscription_node.client.subscription_request(subscription_id, minimum_block_id, subscription_signature)
+                    subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
+                    self.insert_transactions(map(thrift_converter.convert_thrift_transaction, subscription_response.transactions))
+                    self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription still in pending status... Waiting for admin(s) approval.")
+
+    def insert_transactions(self, transactions):
+        """ insert given transactions into database """
+        for txn in transactions:
+            try:
+                transaction_db.insert_transaction(txn)
+            except:
+                logger().warning("An unexpected SQL error has occurred during subscription transaction insertion...")
+
+    def insert_verifications(self, verification_records):
+        """ insert given verification records in database """
+        for verification in verification_records:
+            try:
+                verification_db.insert_verification(verification)
+            except:
+                logger().warning("An unexpected SQL error has occurred during subscription verification insertion...")
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
@@ -531,10 +547,48 @@ class ConnectionManager(object):
                 replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
                 for replicated_ver in replicated_verifications:
                     vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
+                self.update_subscription_response(verification)
             except Exception as ex:
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
+
+    def update_subscription_response(self, verification_record):
+        """ check sub_vr_backlog, check if there are any active subscriptions that have phase criteria
+            that match given vr phase. if so, build a response of transactions and matching vrs for this block. """
+        block_id = verification_record['block_id']
+        backlogs = backlog_db.get_backlogs(block_id)
+        if backlogs:
+            for bl in backlogs:
+                sub_vr_transfers_db.insert_transfer(bl['client_id'], [], [verification_record])
+        else:
+            # subscriptions with phase criteria that meet given record's phase
+            subscriptions = subscribe_from_db.get_by_phase_criteria(verification_record['phase'])
+            for sub in subscriptions:
+                criteria = sub['criteria']
+                # transactions that meet subscription criteria
+                transactions = self.get_subscription_txns(criteria, block_id)
+                # verification records associated with transactions
+                verification_records = []
+                for txn in transactions:
+                    verification_records += self.get_subscription_vrs(txn)
+                # insert new response for subscriber with transactions and vrs
+                sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
+                # create backlog for potential delayed verifications
+                backlog_db.insert_backlog(sub['subscriber_id'], block_id)
+
+    def get_subscription_txns(self, criteria, block_id):
+        """ retrieve transactions that meet subscription criteria """
+        transactions = transaction_db.get_subscription_txns(criteria, block_id)
+        return list(transactions)
+
+    def get_subscription_vrs(self, transaction):
+        """ retrieve verification records that match given transaction """
+        txn_header = transaction["header"]
+        verifications_records = []
+        if "block_id" in txn_header and txn_header['block_id']:
+            verifications_records = verification_db.get_records(block_id=txn_header['block_id'])
+        return verifications_records
 
     @staticmethod
     def split_items(filter_func, items):
@@ -733,56 +787,39 @@ class BlockchainServiceHandler:
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
-    def subscription_provisioning(self, subscription_id, criteria, public_key):
+    def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
         """ initial communication between subscription """
-        # FIXME: commented out for testing purposes (using dupe subscription), uncomment before PR
-        # try:
-        #     subscribe_from_db.insert_subscription(subscription_id, criteria, public_key)
-        # except:
-        #     logger().warning("An SQL error has occurred.")
+        try:
+            subscribe_from_db.insert_subscription(subscription_id, criteria, phase_criteria, public_key)
+        except:
+            logger().warning("A subscription SQL error has occurred.")
         pass
 
-    def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
+    def subscription_request(self, subscription_id, subscription_signature):
         """ request for transactions and associated verification records that meet criteria made by client """
+        transactions = []
+        verification_records = []
         subscriber_info = subscribe_from_db.get(subscription_id)
         # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
         criteria = subscriber_info['criteria']
         public_key = subscriber_signature["public_key"]
         # validate subscription signature
-        if validate_subscription(subscriber_signature, criteria, minimum_block_id, public_key):
-            subscription_response = {"transactions": [],
-                                     "verification_records": []}
-            # transactions that meet subscription criteria
-            # TODO: will probably have to convert to thrift transactions for return map(convert, ...)
-            transactions = self.get_subscription_txns(criteria, minimum_block_id)
-            # insert backlog(s)
-            # FIXME: uncomment before making PR
-            # self.sub_vr_backlog_insert(subscription_id, subscriber_signature['signatory'], transactions)
-            # verification records associated with transactions
-            # TODO: will probably have to convert to thrift verifications for return map(convert, ...)
-            # TODO: use backlog table to check if there's any new vrs for old sub blocks
-            verification_records = map(self.get_subscription_vrs, transactions)
-            # store data into response
-            subscription_response['transactions'] += transactions
-            subscription_response['verification_records'] += verification_records
-            # TODO: return response to client
+        if validate_subscription(subscriber_signature, criteria, public_key):
+            # query transactions/vrs ready to send to calling subscription node
+            try:
+                subscription_messages = list(sub_vr_transfers_db.get_all(subscriber_info['subscriber_id']))
+                for message in subscription_messages:
+                    transactions += map(thrift_converter.convert_to_thrift_transaction, message['transactions'])
+                    verification_records += map(thrift_converter.get_verification_type, message['verifications'])
 
-    def get_subscription_txns(self, criteria, minimum_block_id):
-        """ retrieve transactions that meet subscription criteria """
-        transactions = transaction_db.get_subscription_txns(criteria, minimum_block_id)
-        return list(transactions)
-
-    def get_subscription_vrs(self, transaction):
-        """ retrieve verification records that match given transaction """
-        return verification_db.get_records(block_id=transaction['header']['block_id'])
-
-    def sub_vr_backlog_insert(self, subscription_id, client_id, transactions):
-        """ insert transaction info for each given transaction to handle future vrs received """
-        # FIXME: completion_criteria being hard coded here. should be in valid_payload json
-        completion_criteria = {"phase": 5}
-        for transaction in transactions:
-            backlog_db.insert_backlog(subscription_id, client_id, transaction['header']['block_id'], completion_criteria)
+                # convert to thrift friendly response
+                subscription_response = message_types.subscriptionResponse()
+                subscription_response.transactions = transactions
+                subscription_response.verification_records = verification_records
+                return subscription_response
+            except:
+                logger().error("An unexpected error has occurred during subscription response...")
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

@@ -218,7 +218,7 @@ def get_all(limit=None, offset=None, **params):
         get_connection_pool().putconn(conn)
 
 
-def get_subscription_txns(criteria, minimum_block_id):
+def get_subscription_txns(criteria, block_id=None):
     """ retrieve transactions that meet given criteria and have a block_id >= minimum_block_id """
     query = SQL_GET_ALL
     query += """ WHERE """
@@ -246,10 +246,10 @@ def get_subscription_txns(criteria, minimum_block_id):
         query += """ owner = '""" + str(criteria["owner"]) + """'"""
         separator_needed = True
 
-    if minimum_block_id:
+    if block_id:
         if separator_needed:
             query += """ AND """
-        query += """ block_id >= """ + str(minimum_block_id)
+        query += """ block_id = """ + str(block_id)
 
     conn = get_connection_pool().getconn()
     try:

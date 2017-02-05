@@ -16,16 +16,17 @@
       "artifact_id": "12345"
     },
     "subscriptions": {
-    "subscriber1": {
-      "subscribed_node_id": "48a5224b-8645-423a-a9dd-97ccc292715e",
-      "host": "localhost",
-      "port": "8090",
-      "criteria": {
-        "transaction_type": "TT_REQ",
-        "owner": "Test Node"
+      "subscriber1": {
+        "subscribed_node_id": "31ce807a-868c-11e6-99f6-3c970e3bee11",
+        "host": "localhost",
+        "port": "8090",
+        "criteria": {
+          "transaction_type": "TT_SUB_REQ",
+          "owner": "Test Node"
+        },
+        "phase_criteria": "5"
       }
     }
   },
     "source": "f36c9086-8683-11e6-80dc-3c970e3bee11"
   }
-}

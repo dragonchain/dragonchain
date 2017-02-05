@@ -163,6 +163,11 @@ union Phase_5_msg {
     4: string misc
 }
 
+struct subscriptionResponse {
+    1: list<Transaction> transactions,
+    2: list<VerificationRecord> verification_records
+}
+
 exception UnauthorizedException {
 }
 
@@ -194,9 +199,9 @@ service BlockchainService {
 
    list<VerificationRecord> transfer_data(1: string pass_phrase, 2: list<string> received, 3: list<string> unreceived),
 
-   void subscription_provisioning(1: string subscription_id, 2: map<string, string> criteria, 3: string public_key),
+   void subscription_provisioning(1: string subscription_id, 2: map<string, string> criteria, 3:string phase_criteria, 4: string public_key),
 
-   void subscription_request(1: string subscription_id, 2: i32 minimum_block_id, 3: Signature subscription_signature),
+   subscriptionResponse subscription_request(1: string subscription_id, 2: Signature subscription_signature),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

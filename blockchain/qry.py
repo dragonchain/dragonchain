@@ -102,7 +102,6 @@ def format_subscription(subscription):
         "host":                     subscription["host"],
         "port":                     subscription["port"],
         "criteria":                 subscription["criteria"],
-        "minimum_block_id":         subscription["minimum_block_id"],
         "synchronization_period":   subscription["synchronization_period"],
         "last_time_called":         subscription["last_time_called"],
         "status":                   subscription["status"]
@@ -113,5 +112,22 @@ def format_subscriber(subscription):
     return {
         "subscriber_id":            subscription["subscriber_id"],
         "criteria":                 subscription["criteria"],
+        "phase_criteria":           subscription["phase_criteria"],
         "subscriber_public_key":    subscription["subscriber_public_key"]
+    }
+
+
+def format_sub_response(sub_response):
+    return {
+        "transfer_to":      sub_response["transfer_to"],
+        "transactions":     sub_response["transactions"],
+        "verifications":    sub_response["verifications"]
+    }
+
+
+def format_backlog(backlog):
+    return {
+        "transfer_id":  backlog["transfer_id"],
+        "client_id":    backlog["client_id"],
+        "block_id":     backlog["block_id"]
     }

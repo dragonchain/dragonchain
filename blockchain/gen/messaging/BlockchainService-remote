@@ -35,8 +35,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('   phase_5_message(Phase_5_msg p5)')
   print('   receipt_request(string pass_phrase)')
   print('   transfer_data(string pass_phrase,  received,  unreceived)')
-  print('  void subscription_provisioning(string subscription_id,  criteria, string public_key)')
-  print('  void subscription_request(string subscription_id, i32 minimum_block_id, Signature subscription_signature)')
+  print('  void subscription_provisioning(string subscription_id,  criteria, string phase_criteria, string public_key)')
+  print('  subscriptionResponse subscription_request(string subscription_id, Signature subscription_signature)')
   print('   get_peers()')
   print('')
   sys.exit(0)
@@ -161,16 +161,16 @@ elif cmd == 'transfer_data':
   pp.pprint(client.transfer_data(args[0],eval(args[1]),eval(args[2]),))
 
 elif cmd == 'subscription_provisioning':
-  if len(args) != 3:
-    print('subscription_provisioning requires 3 args')
+  if len(args) != 4:
+    print('subscription_provisioning requires 4 args')
     sys.exit(1)
-  pp.pprint(client.subscription_provisioning(args[0],eval(args[1]),args[2],))
+  pp.pprint(client.subscription_provisioning(args[0],eval(args[1]),args[2],args[3],))
 
 elif cmd == 'subscription_request':
-  if len(args) != 3:
-    print('subscription_request requires 3 args')
+  if len(args) != 2:
+    print('subscription_request requires 2 args')
     sys.exit(1)
-  pp.pprint(client.subscription_request(args[0],eval(args[1]),eval(args[2]),))
+  pp.pprint(client.subscription_request(args[0],eval(args[1]),))
 
 elif cmd == 'get_peers':
   if len(args) != 0:

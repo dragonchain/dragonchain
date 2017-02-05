@@ -68,9 +68,6 @@ CREATE TABLE IF NOT EXISTS subscribe_to (
   /* criteria to be met by subscribee */
   criteria JSON,
 
-  /* minimum block id a transaction may be in */
-  minimum_block_id INTEGER DEFAULT 0,
-
   /* time in seconds between requesting transactions from subscribee */
   synchronization_period INTEGER DEFAULT 5,
 
@@ -92,6 +89,9 @@ CREATE TABLE IF NOT EXISTS subscribe_from (
   /* transaction criteria to be met for subscriber */
   criteria JSON,
 
+  /* Indicates whether the subscription criteria for this block is satisfied */
+  phase_criteria INT,
+
   subscriber_public_key VARCHAR(256)
 );
 COMMIT;
@@ -103,28 +103,36 @@ BEGIN;
 /* Don't drop tables unless you really want to */
 CREATE TABLE IF NOT EXISTS subscription_vr_backlog (
     transfer_id UUID PRIMARY KEY,
-    /* Original owner of the transaction data (Blockchain ID) */
-    subscription_id UUID,
     /* The node to transmit this block to */
     client_id VARCHAR(256),
     /* block id */
-    block_id INT,
-    /* Indicates whether the subscription criteria for this block is satisfied */
-    completion_criteria JSON,
-    /* Indicates whether a block has been transmitted or not */
-    sent BOOLEAN DEFAULT FALSE
+    block_id INT
 );
 COMMIT;
 BEGIN;
 GRANT ALL ON subscription_vr_backlog to blocky;
 COMMIT;
 
-/* used to accelerate queries from subscription clients for blocks that are ready to transfer */
 BEGIN;
-CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id, completion_criteria, sent);
+CREATE TABLE IF NOT EXISTS sub_vr_transfers (
+  /* The node to transmit this record to */
+  transfer_to VARCHAR(256),
+
+  transactions JSON[],
+
+  verifications JSON[]
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON sub_vr_transfers to blocky;
 COMMIT;
 
-/* used to accelerate queries when verification records are received to see if criteria has been satisfied */
-BEGIN;
-CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id, completion_criteria);
-COMMIT;
+-- /* used to accelerate queries from subscription clients for blocks that are ready to transfer */
+-- BEGIN;
+-- CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id, completion_criteria, sent);
+-- COMMIT;
+--
+-- /* used to accelerate queries when verification records are received to see if criteria has been satisfied */
+-- BEGIN;
+-- CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id, completion_criteria);
+-- COMMIT;

@@ -91,20 +91,20 @@ class Iface:
     """
     pass
 
-  def subscription_provisioning(self, subscription_id, criteria, public_key):
+  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
     """
     Parameters:
      - subscription_id
      - criteria
+     - phase_criteria
      - public_key
     """
     pass
 
-  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
+  def subscription_request(self, subscription_id, subscription_signature):
     """
     Parameters:
      - subscription_id
-     - minimum_block_id
      - subscription_signature
     """
     pass
@@ -442,21 +442,23 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "transfer_data failed: unknown result")
 
-  def subscription_provisioning(self, subscription_id, criteria, public_key):
+  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
     """
     Parameters:
      - subscription_id
      - criteria
+     - phase_criteria
      - public_key
     """
-    self.send_subscription_provisioning(subscription_id, criteria, public_key)
+    self.send_subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
     self.recv_subscription_provisioning()
 
-  def send_subscription_provisioning(self, subscription_id, criteria, public_key):
+  def send_subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
     self._oprot.writeMessageBegin('subscription_provisioning', TMessageType.CALL, self._seqid)
     args = subscription_provisioning_args()
     args.subscription_id = subscription_id
     args.criteria = criteria
+    args.phase_criteria = phase_criteria
     args.public_key = public_key
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
@@ -475,21 +477,19 @@ class Client(Iface):
     iprot.readMessageEnd()
     return
 
-  def subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
+  def subscription_request(self, subscription_id, subscription_signature):
     """
     Parameters:
      - subscription_id
-     - minimum_block_id
      - subscription_signature
     """
-    self.send_subscription_request(subscription_id, minimum_block_id, subscription_signature)
-    self.recv_subscription_request()
+    self.send_subscription_request(subscription_id, subscription_signature)
+    return self.recv_subscription_request()
 
-  def send_subscription_request(self, subscription_id, minimum_block_id, subscription_signature):
+  def send_subscription_request(self, subscription_id, subscription_signature):
     self._oprot.writeMessageBegin('subscription_request', TMessageType.CALL, self._seqid)
     args = subscription_request_args()
     args.subscription_id = subscription_id
-    args.minimum_block_id = minimum_block_id
     args.subscription_signature = subscription_signature
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
@@ -506,7 +506,9 @@ class Client(Iface):
     result = subscription_request_result()
     result.read(iprot)
     iprot.readMessageEnd()
-    return
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "subscription_request failed: unknown result")
 
   def get_peers(self):
     self.send_get_peers()
@@ -785,7 +787,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = subscription_provisioning_result()
     try:
-      self._handler.subscription_provisioning(args.subscription_id, args.criteria, args.public_key)
+      self._handler.subscription_provisioning(args.subscription_id, args.criteria, args.phase_criteria, args.public_key)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -804,7 +806,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = subscription_request_result()
     try:
-      self._handler.subscription_request(args.subscription_id, args.minimum_block_id, args.subscription_signature)
+      result.success = self._handler.subscription_request(args.subscription_id, args.subscription_signature)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -1372,10 +1374,10 @@ class phase_1_message_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype84, _size81) = iprot.readListBegin()
-          for _i85 in xrange(_size81):
-            _elem86 = iprot.readString()
-            self.success.append(_elem86)
+          (_etype98, _size95) = iprot.readListBegin()
+          for _i99 in xrange(_size95):
+            _elem100 = iprot.readString()
+            self.success.append(_elem100)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1392,8 +1394,8 @@ class phase_1_message_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter87 in self.success:
-        oprot.writeString(iter87)
+      for iter101 in self.success:
+        oprot.writeString(iter101)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1510,10 +1512,10 @@ class phase_2_message_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype91, _size88) = iprot.readListBegin()
-          for _i92 in xrange(_size88):
-            _elem93 = iprot.readString()
-            self.success.append(_elem93)
+          (_etype105, _size102) = iprot.readListBegin()
+          for _i106 in xrange(_size102):
+            _elem107 = iprot.readString()
+            self.success.append(_elem107)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1530,8 +1532,8 @@ class phase_2_message_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter94 in self.success:
-        oprot.writeString(iter94)
+      for iter108 in self.success:
+        oprot.writeString(iter108)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1648,10 +1650,10 @@ class phase_3_message_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype98, _size95) = iprot.readListBegin()
-          for _i99 in xrange(_size95):
-            _elem100 = iprot.readString()
-            self.success.append(_elem100)
+          (_etype112, _size109) = iprot.readListBegin()
+          for _i113 in xrange(_size109):
+            _elem114 = iprot.readString()
+            self.success.append(_elem114)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1668,8 +1670,8 @@ class phase_3_message_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter101 in self.success:
-        oprot.writeString(iter101)
+      for iter115 in self.success:
+        oprot.writeString(iter115)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1786,10 +1788,10 @@ class phase_4_message_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype105, _size102) = iprot.readListBegin()
-          for _i106 in xrange(_size102):
-            _elem107 = iprot.readString()
-            self.success.append(_elem107)
+          (_etype119, _size116) = iprot.readListBegin()
+          for _i120 in xrange(_size116):
+            _elem121 = iprot.readString()
+            self.success.append(_elem121)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1806,8 +1808,8 @@ class phase_4_message_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter108 in self.success:
-        oprot.writeString(iter108)
+      for iter122 in self.success:
+        oprot.writeString(iter122)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -1924,10 +1926,10 @@ class phase_5_message_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype112, _size109) = iprot.readListBegin()
-          for _i113 in xrange(_size109):
-            _elem114 = iprot.readString()
-            self.success.append(_elem114)
+          (_etype126, _size123) = iprot.readListBegin()
+          for _i127 in xrange(_size123):
+            _elem128 = iprot.readString()
+            self.success.append(_elem128)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -1944,8 +1946,8 @@ class phase_5_message_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter115 in self.success:
-        oprot.writeString(iter115)
+      for iter129 in self.success:
+        oprot.writeString(iter129)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2061,10 +2063,10 @@ class receipt_request_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype119, _size116) = iprot.readListBegin()
-          for _i120 in xrange(_size116):
-            _elem121 = iprot.readString()
-            self.success.append(_elem121)
+          (_etype133, _size130) = iprot.readListBegin()
+          for _i134 in xrange(_size130):
+            _elem135 = iprot.readString()
+            self.success.append(_elem135)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2081,8 +2083,8 @@ class receipt_request_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRING, len(self.success))
-      for iter122 in self.success:
-        oprot.writeString(iter122)
+      for iter136 in self.success:
+        oprot.writeString(iter136)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2145,20 +2147,20 @@ class transfer_data_args:
       elif fid == 2:
         if ftype == TType.LIST:
           self.received = []
-          (_etype126, _size123) = iprot.readListBegin()
-          for _i127 in xrange(_size123):
-            _elem128 = iprot.readString()
-            self.received.append(_elem128)
+          (_etype140, _size137) = iprot.readListBegin()
+          for _i141 in xrange(_size137):
+            _elem142 = iprot.readString()
+            self.received.append(_elem142)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.LIST:
           self.unreceived = []
-          (_etype132, _size129) = iprot.readListBegin()
-          for _i133 in xrange(_size129):
-            _elem134 = iprot.readString()
-            self.unreceived.append(_elem134)
+          (_etype146, _size143) = iprot.readListBegin()
+          for _i147 in xrange(_size143):
+            _elem148 = iprot.readString()
+            self.unreceived.append(_elem148)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2179,15 +2181,15 @@ class transfer_data_args:
     if self.received is not None:
       oprot.writeFieldBegin('received', TType.LIST, 2)
       oprot.writeListBegin(TType.STRING, len(self.received))
-      for iter135 in self.received:
-        oprot.writeString(iter135)
+      for iter149 in self.received:
+        oprot.writeString(iter149)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unreceived is not None:
       oprot.writeFieldBegin('unreceived', TType.LIST, 3)
       oprot.writeListBegin(TType.STRING, len(self.unreceived))
-      for iter136 in self.unreceived:
-        oprot.writeString(iter136)
+      for iter150 in self.unreceived:
+        oprot.writeString(iter150)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2240,11 +2242,11 @@ class transfer_data_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype140, _size137) = iprot.readListBegin()
-          for _i141 in xrange(_size137):
-            _elem142 = VerificationRecord()
-            _elem142.read(iprot)
-            self.success.append(_elem142)
+          (_etype154, _size151) = iprot.readListBegin()
+          for _i155 in xrange(_size151):
+            _elem156 = VerificationRecord()
+            _elem156.read(iprot)
+            self.success.append(_elem156)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2261,8 +2263,8 @@ class transfer_data_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter143 in self.success:
-        iter143.write(oprot)
+      for iter157 in self.success:
+        iter157.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2293,6 +2295,7 @@ class subscription_provisioning_args:
   Attributes:
    - subscription_id
    - criteria
+   - phase_criteria
    - public_key
   """
 
@@ -2300,12 +2303,14 @@ class subscription_provisioning_args:
     None, # 0
     (1, TType.STRING, 'subscription_id', None, None, ), # 1
     (2, TType.MAP, 'criteria', (TType.STRING,None,TType.STRING,None), None, ), # 2
-    (3, TType.STRING, 'public_key', None, None, ), # 3
+    (3, TType.STRING, 'phase_criteria', None, None, ), # 3
+    (4, TType.STRING, 'public_key', None, None, ), # 4
   )
 
-  def __init__(self, subscription_id=None, criteria=None, public_key=None,):
+  def __init__(self, subscription_id=None, criteria=None, phase_criteria=None, public_key=None,):
     self.subscription_id = subscription_id
     self.criteria = criteria
+    self.phase_criteria = phase_criteria
     self.public_key = public_key
 
   def read(self, iprot):
@@ -2325,15 +2330,20 @@ class subscription_provisioning_args:
       elif fid == 2:
         if ftype == TType.MAP:
           self.criteria = {}
-          (_ktype145, _vtype146, _size144 ) = iprot.readMapBegin()
-          for _i148 in xrange(_size144):
-            _key149 = iprot.readString()
-            _val150 = iprot.readString()
-            self.criteria[_key149] = _val150
+          (_ktype159, _vtype160, _size158 ) = iprot.readMapBegin()
+          for _i162 in xrange(_size158):
+            _key163 = iprot.readString()
+            _val164 = iprot.readString()
+            self.criteria[_key163] = _val164
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
       elif fid == 3:
+        if ftype == TType.STRING:
+          self.phase_criteria = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
         if ftype == TType.STRING:
           self.public_key = iprot.readString()
         else:
@@ -2355,13 +2365,17 @@ class subscription_provisioning_args:
     if self.criteria is not None:
       oprot.writeFieldBegin('criteria', TType.MAP, 2)
       oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.criteria))
-      for kiter151,viter152 in self.criteria.items():
-        oprot.writeString(kiter151)
-        oprot.writeString(viter152)
+      for kiter165,viter166 in self.criteria.items():
+        oprot.writeString(kiter165)
+        oprot.writeString(viter166)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
+    if self.phase_criteria is not None:
+      oprot.writeFieldBegin('phase_criteria', TType.STRING, 3)
+      oprot.writeString(self.phase_criteria)
+      oprot.writeFieldEnd()
     if self.public_key is not None:
-      oprot.writeFieldBegin('public_key', TType.STRING, 3)
+      oprot.writeFieldBegin('public_key', TType.STRING, 4)
       oprot.writeString(self.public_key)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2375,6 +2389,7 @@ class subscription_provisioning_args:
     value = 17
     value = (value * 31) ^ hash(self.subscription_id)
     value = (value * 31) ^ hash(self.criteria)
+    value = (value * 31) ^ hash(self.phase_criteria)
     value = (value * 31) ^ hash(self.public_key)
     return value
 
@@ -2439,20 +2454,17 @@ class subscription_request_args:
   """
   Attributes:
    - subscription_id
-   - minimum_block_id
    - subscription_signature
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'subscription_id', None, None, ), # 1
-    (2, TType.I32, 'minimum_block_id', None, None, ), # 2
-    (3, TType.STRUCT, 'subscription_signature', (Signature, Signature.thrift_spec), None, ), # 3
+    (2, TType.STRUCT, 'subscription_signature', (Signature, Signature.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, subscription_id=None, minimum_block_id=None, subscription_signature=None,):
+  def __init__(self, subscription_id=None, subscription_signature=None,):
     self.subscription_id = subscription_id
-    self.minimum_block_id = minimum_block_id
     self.subscription_signature = subscription_signature
 
   def read(self, iprot):
@@ -2470,11 +2482,6 @@ class subscription_request_args:
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.I32:
-          self.minimum_block_id = iprot.readI32()
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
         if ftype == TType.STRUCT:
           self.subscription_signature = Signature()
           self.subscription_signature.read(iprot)
@@ -2494,12 +2501,8 @@ class subscription_request_args:
       oprot.writeFieldBegin('subscription_id', TType.STRING, 1)
       oprot.writeString(self.subscription_id)
       oprot.writeFieldEnd()
-    if self.minimum_block_id is not None:
-      oprot.writeFieldBegin('minimum_block_id', TType.I32, 2)
-      oprot.writeI32(self.minimum_block_id)
-      oprot.writeFieldEnd()
     if self.subscription_signature is not None:
-      oprot.writeFieldBegin('subscription_signature', TType.STRUCT, 3)
+      oprot.writeFieldBegin('subscription_signature', TType.STRUCT, 2)
       self.subscription_signature.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2512,7 +2515,6 @@ class subscription_request_args:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.subscription_id)
-    value = (value * 31) ^ hash(self.minimum_block_id)
     value = (value * 31) ^ hash(self.subscription_signature)
     return value
 
@@ -2528,9 +2530,17 @@ class subscription_request_args:
     return not (self == other)
 
 class subscription_request_result:
+  """
+  Attributes:
+   - success
+  """
 
   thrift_spec = (
+    (0, TType.STRUCT, 'success', (subscriptionResponse, subscriptionResponse.thrift_spec), None, ), # 0
   )
+
+  def __init__(self, success=None,):
+    self.success = success
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2541,6 +2551,12 @@ class subscription_request_result:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = subscriptionResponse()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2551,6 +2567,10 @@ class subscription_request_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('subscription_request_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2560,6 +2580,7 @@ class subscription_request_result:
 
   def __hash__(self):
     value = 17
+    value = (value * 31) ^ hash(self.success)
     return value
 
   def __repr__(self):
@@ -2647,11 +2668,11 @@ class get_peers_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype156, _size153) = iprot.readListBegin()
-          for _i157 in xrange(_size153):
-            _elem158 = Node()
-            _elem158.read(iprot)
-            self.success.append(_elem158)
+          (_etype170, _size167) = iprot.readListBegin()
+          for _i171 in xrange(_size167):
+            _elem172 = Node()
+            _elem172.read(iprot)
+            self.success.append(_elem172)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2674,8 +2695,8 @@ class get_peers_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter159 in self.success:
-        iter159.write(oprot)
+      for iter173 in self.success:
+        iter173.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.unauthorized is not None:

@@ -54,7 +54,7 @@ def thrift_record_to_dict(thrift_record):
     }
 
 
-def thrift_transaction_to_dict(thrift_transaction):
+def convert_thrift_transaction(thrift_transaction):
     """ returns a dictionary representation of a thrift transaction """
     payload = thrift_transaction.tx_payload
     return {
@@ -170,7 +170,7 @@ def get_phase_1_info(phase_1):
     """ return dictionary representation of thrift phase 1 """
     return {
         RECORD: thrift_record_to_dict(phase_1.record),
-        VERIFICATION_INFO: map(thrift_transaction_to_dict, phase_1.transactions)
+        VERIFICATION_INFO: map(convert_thrift_transaction, phase_1.transactions)
     }
 
 
@@ -179,8 +179,8 @@ def get_phase_2_info(phase_2):
     return {
         RECORD: thrift_record_to_dict(phase_2.record),
         VERIFICATION_INFO: {
-            'valid_txs': map(thrift_transaction_to_dict, phase_2.valid_txs),
-            'invalid_txs': map(thrift_transaction_to_dict, phase_2.invalid_txs),
+            'valid_txs': map(convert_thrift_transaction, phase_2.valid_txs),
+            'invalid_txs': map(convert_thrift_transaction, phase_2.invalid_txs),
             'business': phase_2.business,
             'deploy_location': phase_2.deploy_location
         }
@@ -296,11 +296,11 @@ def convert_thrift_verification(verification):
     verification_info = None
     if verification.p1:
         record = verification.p1.record
-        verification_info = map(thrift_transaction_to_dict, verification.p1.transactions)
+        verification_info = map(convert_thrift_transaction, verification.p1.transactions)
     elif verification.p2:
         record = verification.p2.record
-        verification_info = {'valid_txs': map(thrift_transaction_to_dict, verification.p2.valid_txs),
-                             'invalid_txs': map(thrift_transaction_to_dict, verification.p2.invalid_txs),
+        verification_info = {'valid_txs': map(convert_thrift_transaction, verification.p2.valid_txs),
+                             'invalid_txs': map(convert_thrift_transaction, verification.p2.invalid_txs),
                              'business': verification.p2.business,
                              'deploy_location': verification.p2.deploy_location
                              }

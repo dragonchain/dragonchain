@@ -36,6 +36,9 @@ import psycopg2.extras
 from blockchain.qry import format_subscriber
 from postgres import get_connection_pool
 
+import uuid
+
+
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
@@ -44,15 +47,17 @@ SQL_GET_ALL = """SELECT * FROM subscribe_from"""
 SQL_INSERT = """INSERT into subscribe_from (
                     subscriber_id,
                     criteria,
+                    phase_criteria,
                     subscriber_public_key
-                ) VALUES (%s, %s, %s) """
+                ) VALUES (%s, %s, %s, %s) """
 
 
-def insert_subscription(subscriber_id, criteria, subscriber_public_key):
+def insert_subscription(subscriber_id, criteria, phase_criteria, subscriber_public_key):
     """ insert given subscription into database """
     values = (
         subscriber_id,
         psycopg2.extras.Json(criteria),
+        phase_criteria,
         subscriber_public_key
     )
     conn = get_connection_pool().getconn()
@@ -77,3 +82,31 @@ def get(subscriber_id):
         return result
     finally:
         get_connection_pool().putconn(conn)
+
+
+def get_by_phase_criteria(phase):
+    """ retrieve subscriptions with phase criteria that match given phase """
+    query = SQL_GET_ALL
+    query += """ WHERE phase_criteria = """ + str(phase)
+
+    subscriptions = []
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                subscriptions.append(format_subscriber(result))
+        cur.close()
+        return subscriptions
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def get_cursor_name():
+    return str(uuid.uuid4())

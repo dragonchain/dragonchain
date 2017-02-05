@@ -32,26 +32,25 @@ __email__ = "joe@dragonchain.org"
 import psycopg2
 import psycopg2.extras
 import uuid
+
+from blockchain.qry import format_sub_response
+
 from postgres import get_connection_pool
-
-from blockchain.qry import format_backlog
-
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-SQL_GET_BY_ID = """SELECT * FROM subscription_vr_backlog WHERE block_id = %s"""
-GET_BACKLOGS = """SELECT * FROM subscription_vr_backlog"""
-SQL_INSERT_QUERY = """INSERT INTO subscription_vr_backlog (
-                                  transfer_id,
-                                  client_id,
-                                  block_id
-                                  ) VALUES (%s, %s, %s)"""
+SQL_GET_ALL = """SELECT * FROM sub_vr_transfers"""
+SQL_INSERT_QUERY = """INSERT INTO sub_vr_transfers (
+                                  transfer_to,
+                                  transactions,
+                                  verifications
+                                ) VALUES (%s, %s::json[], %s::json[])"""
 
 
-def insert_backlog(client_id, block_id):
+def insert_transfer(transfer_to, transactions, verifications):
     values = (
-        str(uuid.uuid4()),  # transfer_id PK
-        client_id,
-        block_id
+        transfer_to,
+        map(psycopg2.extras.Json, transactions),
+        map(psycopg2.extras.Json, verifications)
     )
     conn = get_connection_pool().getconn()
     try:
@@ -63,22 +62,22 @@ def insert_backlog(client_id, block_id):
         get_connection_pool().putconn(conn)
 
 
-def get_backlogs(block_id):
-    """ check if backlog exists for given block id """
-    back_logs = []
+def get_all(transfer_to):
+    query = SQL_GET_ALL
+    query += """ WHERE transfer_to = '""" + transfer_to + """'"""
+
     conn = get_connection_pool().getconn()
     try:
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(SQL_GET_BY_ID, (block_id,))
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
             if not results:
                 break
             for result in results:
-                back_logs.append(format_backlog(result))
+                yield format_sub_response(result)
         cur.close()
-        return back_logs
     finally:
         get_connection_pool().putconn(conn)
 

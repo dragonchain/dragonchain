@@ -211,7 +211,6 @@ def sign_subscription(signatory, subscription, private_key_string, public_key_st
 
     # append criteria for hashing
     hashed_items.append(deep_hash(subscription['criteria']))
-    hashed_items.append(subscription['minimum_block_id'])
 
     hashed_items.append(signatory)
     hashed_items.append(signature_ts)
@@ -375,7 +374,6 @@ def validate_verification_record(record, verification_info, test_mode=False, log
 
 def validate_subscription(signature_block,
                           criteria,
-                          minimum_block_id,
                           subscriber_public_key,
                           log=logging.getLogger(__name__)):
     """ validate subscription signature """
@@ -384,7 +382,6 @@ def validate_subscription(signature_block,
         validate_signature(signature_block)
 
         hashed_items.append(deep_hash(criteria))
-        hashed_items.append(minimum_block_id)
 
         hashed_items.append(signature_block['signatory'])
         hashed_items.append(signature_block['signature_ts'])
