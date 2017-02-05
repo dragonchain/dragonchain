@@ -526,16 +526,16 @@ class ConnectionManager(object):
             phase_5_request = message_types.Phase_5_request()
 
             if phase == 1:
-                phase_msg = self.get_p1_message(block_info)
+                phase_msg = thrift_converter.get_p1_message(block_info)
                 verification_record.p1 = phase_msg
             elif phase == 2:
-                phase_msg = self.get_p2_message(block_info)
+                phase_msg = thrift_converter.get_p2_message(block_info)
                 verification_record.p2 = phase_msg
             elif phase == 3:
-                phase_msg = self.get_p3_message(block_info)
+                phase_msg = thrift_converter.get_p3_message(block_info)
                 verification_record.p3 = phase_msg
             elif phase == 4:
-                phase_msg = get_p4_message(block_info)
+                phase_msg = thrift_converter.get_p4_message(block_info)
                 verification_record.p4 = phase_msg
 
             phase_5_request.verification_record = verification_record
@@ -650,9 +650,9 @@ class BlockchainServiceHandler:
         elif phase_5.verification_record.p3:
             phase_info = thrift_converter.get_phase_3_info(phase_5.verification_record.p3)
         elif phase_5.verification_record.p4:
-            pass
+            phase_info = thrift_converter.get_phase_4_info(phase_5.verification_record.p4)
 
-        self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
+        self.connection_manager.processing_node.notify(5, verification=phase_info)
         return []
 
     def get_peers(self):

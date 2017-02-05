@@ -49,10 +49,11 @@ SQL_INSERT_QUERY = """
     INSERT INTO timestamps (
         timestamp_id,
         block_id,
+        origin_id,
         create_ts,
         signature,
         verification_info
-    ) VALUES (%s, %s, to_timestamp(%s), %s, %s)"""
+    ) VALUES (%s, %s, %s, to_timestamp(%s), %s, %s)"""
 
 
 def get_cursor_name():
@@ -68,6 +69,7 @@ def insert_verification(verification_record):
     values = (
         str(uuid.uuid4()),
         verification_record["block_id"],
+        verification_record["origin_id"],
         verification_record['verification_ts'],
         psycopg2.extras.Json(verification_record["signature"]),
         psycopg2.extras.Json(verification_record["verification_info"])
