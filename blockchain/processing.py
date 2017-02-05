@@ -629,24 +629,18 @@ class ProcessingNode(object):
         for verification_id in verification_info['verification_records'].keys():
             timestamp_db.set_transaction_timestamp_proof(verification_id)
 
-        unique_origin_ids = []
-        unique_signatories = []
+        unique_vr_transfers = {}
 
         for verification_record in pending_records:
+            if not verification_record['origin_id'] in unique_vr_transfers:
+                unique_vr_transfers[verification_record['origin_id']] = []
             # inserts a single record per origin_id
-            if verification_record['origin_id'] not in unique_origin_ids:
+            if verification_record['signature']['signatory'] not in unique_vr_transfers[verification_record['origin_id']]:
                 vr_transfers_db.insert_transfer(verification_record['origin_id'],
                                                 verification_record['signature']['signatory'],
                                                 verification_record['timestamp_id'])
 
-                unique_origin_ids.append(verification_record['origin_id'])
-
-            # inserts a single record per unique signatory
-            if verification_record['signature']['signatory'] not in unique_signatories:
-                vr_transfers_db.insert_transfer(verification_record['origin_id'],
-                                                verification_record['signature']['signatory'],
-                                                verification_record['timestamp_id'])
-                unique_signatories.append(verification_record['signature']['signatory'])
+                unique_vr_transfers[verification_record['origin_id']].append(verification_record['signature']['signatory'])
 
                 # create vr_transfer record for both unique origin_id and for unique signatories. 1 record per signatories
 
