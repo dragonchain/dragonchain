@@ -234,11 +234,12 @@ class ProcessingNode(object):
                     phase_criteria = subscription['phase_criteria']
                     public_key = self.service_config['public_key']
                     # store new subscription info
-                    # sub_db.insert_subscription(subscription, subscription_id) # FIXME: uncomment before making PR
+                    sub_db.insert_subscription(subscription, subscription_id)
                     # get subscription node
                     subscription_node = self.network.get_subscription_node(subscription)
                     # initial communication with subscription node
-                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
+                    if subscription_node:
+                        subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
                 except Exception as ex:  # likely already subscribed
                     template = "An exception of type {0} occured. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)

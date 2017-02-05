@@ -59,6 +59,9 @@ CREATE TABLE IF NOT EXISTS subscribe_to (
   /* subscribee id */
   subscribed_node_id UUID UNIQUE,
 
+  /* confirm who created the node */
+    node_owner VARCHAR(256),
+
   /* subscribee host */
   host VARCHAR(256),
 

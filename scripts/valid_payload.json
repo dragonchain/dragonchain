@@ -18,10 +18,11 @@
     "subscriptions": {
       "subscriber1": {
         "subscribed_node_id": "31ce807a-868c-11e6-99f6-3c970e3bee11",
+        "node_owner": "TEST_NODE",
         "host": "localhost",
-        "port": "8090",
+        "port": "8080",
         "criteria": {
-          "transaction_type": "TT_SUB_REQ",
+          "transaction_type": "TT_REQ",
           "owner": "Test Node"
         },
         "phase_criteria": "5"

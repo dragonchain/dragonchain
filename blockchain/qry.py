@@ -99,6 +99,7 @@ def format_subscription(subscription):
     return {
         "subscription_id":          subscription["subscription_id"],
         "subscribed_node_id":       subscription["subscribed_node_id"],
+        "node_owner":               subscription["node_owner"],
         "host":                     subscription["host"],
         "port":                     subscription["port"],
         "criteria":                 subscription["criteria"],

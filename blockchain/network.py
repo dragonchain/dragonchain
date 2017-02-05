@@ -471,7 +471,7 @@ class ConnectionManager(object):
                 self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
 
     def subscription_feed(self):
-        """ request transactions from subscribees """
+        """ request transactions with associated verification records from subscription """
         subscriptions = subscribe_to_db.get_all()
         for subscription in subscriptions:
             subscription_node = self.get_subscription_node(subscription)
@@ -488,22 +488,6 @@ class ConnectionManager(object):
                     self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription still in pending status... Waiting for admin(s) approval.")
-
-    def insert_transactions(self, transactions):
-        """ insert given transactions into database """
-        for txn in transactions:
-            try:
-                transaction_db.insert_transaction(txn)
-            except:
-                logger().warning("An unexpected SQL error has occurred during subscription transaction insertion...")
-
-    def insert_verifications(self, verification_records):
-        """ insert given verification records in database """
-        for verification in verification_records:
-            try:
-                verification_db.insert_verification(verification)
-            except:
-                logger().warning("An unexpected SQL error has occurred during subscription verification insertion...")
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
@@ -523,16 +507,37 @@ class ConnectionManager(object):
 
     def connect_subscription_node(self, subscription):
         """ connect to subscription node """
-        # check if node is already in database, just not connected
+        # check if node is already in database and just not connected
         node = net_dao.get(subscription["subscribed_node_id"])
         if node:
             subscription_node = Node(node["node_id"], node["node_owner"], node["host"], node["port"], node["phases"])
             if node["phases"] not in self.peer_dict:
                 self.peer_dict.setdefault(node["phases"], [])
-            self.connect_node(subscription_node, node["phases"])
+            try:
+                self.connect_node(subscription_node, node["phases"])
+            except:
+                logger().warning("Failed to connect to subscription node %s", node['node_id'])
         else:
-            # TODO: insert new node into node table and connect
-            pass
+            # insert new node into table and recursively call connect_subscription_node
+            node = Node(subscription['subscribed_node_id'], subscription['node_owner'], subscription['host'], subscription['port'], "00001")
+            net_dao.insert_node(node)
+            self.connect_subscription_node(subscription)
+
+    def insert_transactions(self, transactions):
+        """ insert given transactions into database """
+        for txn in transactions:
+            try:
+                transaction_db.insert_transaction(txn)
+            except:
+                logger().warning("An unexpected SQL error has occurred during subscription transaction insertion...")
+
+    def insert_verifications(self, verification_records):
+        """ insert given verification records in database """
+        for verification in verification_records:
+            try:
+                verification_db.insert_verification(verification)
+            except:
+                logger().warning("An unexpected SQL error has occurred during subscription verification insertion...")
 
     def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,
@@ -544,9 +549,11 @@ class ConnectionManager(object):
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 verification_db.insert_verification(verification, verification['verification_id'])
+                # check if there are nodes further down the chain interested in this record
                 replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
                 for replicated_ver in replicated_verifications:
                     vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
+                # check if there are active subscriptions interested in this record
                 self.update_subscription_response(verification)
             except Exception as ex:
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
@@ -796,7 +803,7 @@ class BlockchainServiceHandler:
         pass
 
     def subscription_request(self, subscription_id, subscription_signature):
-        """ request for transactions and associated verification records that meet criteria made by client """
+        """ return transactions and associated verification records that meet criteria made by client """
         transactions = []
         verification_records = []
         subscriber_info = subscribe_from_db.get(subscription_id)

@@ -45,11 +45,12 @@ SQL_GET_ALL = """SELECT * FROM subscribe_to"""
 SQL_INSERT = """INSERT into subscribe_to (
                     subscription_id,
                     subscribed_node_id,
+                    node_owner,
                     host,
                     port,
                     criteria,
                     status
-                ) VALUES (%s, %s, %s, %s, %s, %s) """
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s) """
 
 
 def insert_subscription(subscription, subscription_id=None):
@@ -59,10 +60,11 @@ def insert_subscription(subscription, subscription_id=None):
     values = (
         subscription_id,
         subscription['subscribed_node_id'],
+        subscription['node_owner'],
         subscription['host'],
         subscription['port'],
         psycopg2.extras.Json(subscription['criteria']),
-        "approved"  # FIXME: change back to "pending" before making PR
+        "pending"
     )
     conn = get_connection_pool().getconn()
     try:

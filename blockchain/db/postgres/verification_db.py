@@ -93,7 +93,7 @@ def get_prior_block(origin_id, phase):
 
 def get_records(**params):
     """ return verification records with given criteria """
-    # TODO: getting strange results from query string "||" around origin_id. Not currently breaking anything
+    # TODO: getting unusual results from query string "||" around origin_id. Not currently breaking anything
     query = SQL_GET_ALL
     query += """ WHERE """
     separator_needed = False
