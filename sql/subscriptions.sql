@@ -130,12 +130,12 @@ BEGIN;
 GRANT ALL ON sub_vr_transfers to blocky;
 COMMIT;
 
--- /* used to accelerate queries from subscription clients for blocks that are ready to transfer */
--- BEGIN;
--- CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id, completion_criteria, sent);
--- COMMIT;
---
--- /* used to accelerate queries when verification records are received to see if criteria has been satisfied */
--- BEGIN;
--- CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id, completion_criteria);
--- COMMIT;
+/* used to accelerate queries from subscription clients for blocks that are ready to transfer */
+BEGIN;
+CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id);
+COMMIT;
+
+/* used to accelerate queries when verification records are received to see if criteria has been satisfied */
+BEGIN;
+CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id);
+COMMIT;
