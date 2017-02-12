@@ -2536,7 +2536,7 @@ class subscription_request_result:
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (subscriptionResponse, subscriptionResponse.thrift_spec), None, ), # 0
+    (0, TType.STRUCT, 'success', (SubscriptionResponse, SubscriptionResponse.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -2553,7 +2553,7 @@ class subscription_request_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = subscriptionResponse()
+          self.success = SubscriptionResponse()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)

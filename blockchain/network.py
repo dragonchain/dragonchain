@@ -483,7 +483,7 @@ class ConnectionManager(object):
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, request data from server
                 if subscription['status'] == "approved":
-                    subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
+                    subscription_response = subscription_node.client._subscription_request(subscription_id, subscription_signature)
                     self.insert_transactions(map(thrift_converter.convert_thrift_transaction, subscription_response.transactions))
                     self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
                 elif subscription['status'] == "pending":
@@ -821,7 +821,7 @@ class BlockchainServiceHandler:
                     verification_records += map(thrift_converter.get_verification_type, message['verifications'])
 
                 # convert to thrift friendly response
-                subscription_response = message_types.subscriptionResponse()
+                subscription_response = message_types.SubscriptionResponse()
                 subscription_response.transactions = transactions
                 subscription_response.verification_records = verification_records
                 return subscription_response

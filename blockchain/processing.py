@@ -85,7 +85,7 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
-        self.smart_contracts = {"TT_SUB_REQ": self.subscription_request,
+        self.smart_contracts = {"TT_SUB_REQ": self._subscription_request,
                                 "TT_PROVISION_SC": self.provision_sc}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
@@ -220,7 +220,7 @@ class ProcessingNode(object):
 
         return prior_hash
 
-    def subscription_request(self, transaction):
+    def _subscription_request(self, transaction):
         """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
             initial communication with subscription node
         """

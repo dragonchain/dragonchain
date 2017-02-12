@@ -36,7 +36,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('   receipt_request(string pass_phrase)')
   print('   transfer_data(string pass_phrase,  received,  unreceived)')
   print('  void subscription_provisioning(string subscription_id,  criteria, string phase_criteria, string public_key)')
-  print('  subscriptionResponse subscription_request(string subscription_id, Signature subscription_signature)')
+  print('  SubscriptionResponse subscription_request(string subscription_id, Signature subscription_signature)')
   print('   get_peers()')
   print('')
   sys.exit(0)

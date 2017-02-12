@@ -1863,7 +1863,7 @@ class Phase_5_msg:
   def __ne__(self, other):
     return not (self == other)
 
-class subscriptionResponse:
+class SubscriptionResponse:
   """
   Attributes:
    - transactions
@@ -1920,7 +1920,7 @@ class subscriptionResponse:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('subscriptionResponse')
+    oprot.writeStructBegin('SubscriptionResponse')
     if self.transactions is not None:
       oprot.writeFieldBegin('transactions', TType.LIST, 1)
       oprot.writeListBegin(TType.STRUCT, len(self.transactions))
