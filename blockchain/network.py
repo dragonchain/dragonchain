@@ -529,16 +529,22 @@ class ConnectionManager(object):
         for txn in transactions:
             try:
                 transaction_db.insert_transaction(txn)
-            except:
-                logger().warning("An unexpected SQL error has occurred during subscription transaction insertion...")
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().error(message)
+                continue
 
     def insert_verifications(self, verification_records):
         """ insert given verification records in database """
         for verification in verification_records:
             try:
                 verification_db.insert_verification(verification)
-            except:
-                logger().warning("An unexpected SQL error has occurred during subscription verification insertion...")
+            except Exception as ex:
+                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().error(message)
+                continue
 
     def resolve_data(self, node, guids, phase):
         """ request unreceived verifications from node, notify node of already received verifications,
