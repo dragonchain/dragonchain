@@ -483,11 +483,12 @@ class ConnectionManager(object):
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, request data from server
                 if subscription['status'] == "approved":
-                    subscription_response = subscription_node.client._subscription_request(subscription_id, subscription_signature)
+                    subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
                     self.insert_transactions(map(thrift_converter.convert_thrift_transaction, subscription_response.transactions))
                     self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
                 elif subscription['status'] == "pending":
-                    logger().warning("Subscription still in pending status... Waiting for admin(s) approval.")
+                    logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
+                                     subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
