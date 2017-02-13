@@ -572,24 +572,23 @@ class ConnectionManager(object):
             that match given vr phase. if so, build a response of transactions and matching vrs for this block. """
         block_id = verification_record['block_id']
         backlogs = backlog_db.get_backlogs(block_id)
-        if backlogs:
-            for bl in backlogs:
-                sub_vr_transfers_db.insert_transfer(bl['client_id'], [], [verification_record])
-        else:
-            # subscriptions with phase criteria that meet given record's phase
-            subscriptions = subscribe_from_db.get_by_phase_criteria(verification_record['phase'])
-            for sub in subscriptions:
-                criteria = sub['criteria']
-                # transactions that meet subscription criteria
-                transactions = self.get_subscription_txns(criteria, block_id)
-                # verification records associated with transactions
-                verification_records = []
-                for txn in transactions:
-                    verification_records += self.get_subscription_vrs(txn)
-                # insert new response for subscriber with transactions and vrs
-                sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
-                # create backlog for potential delayed verifications
-                backlog_db.insert_backlog(sub['subscriber_id'], block_id)
+        # check for backlogged records and insert for transfer
+        for bl in backlogs:
+            sub_vr_transfers_db.insert_transfer(bl['client_id'], [], [verification_record])
+        # subscriptions with phase criteria that meet given record's phase
+        subscriptions = subscribe_from_db.get_by_phase_criteria(verification_record['phase'])
+        for sub in subscriptions:
+            criteria = sub['criteria']
+            # transactions that meet subscription criteria
+            transactions = self.get_subscription_txns(criteria, block_id)
+            # verification records associated with transactions
+            verification_records = []
+            for txn in transactions:
+                verification_records += self.get_subscription_vrs(txn)
+            # insert new response for subscriber with transactions and vrs
+            sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
+            # create backlog for potential delayed verifications
+            backlog_db.insert_backlog(sub['subscriber_id'], block_id)
 
     def get_subscription_txns(self, criteria, block_id):
         """ retrieve transactions that meet subscription criteria """
