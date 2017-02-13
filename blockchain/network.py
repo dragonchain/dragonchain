@@ -570,6 +570,7 @@ class ConnectionManager(object):
     def update_subscription_response(self, verification_record):
         """ check sub_vr_backlog, check if there are any active subscriptions that have phase criteria
             that match given vr phase. if so, build a response of transactions and matching vrs for this block. """
+        server_id = self.this_node.node_id
         block_id = verification_record['block_id']
         backlogs = backlog_db.get_backlogs(block_id)
         # check for backlogged records and insert for transfer
@@ -584,7 +585,7 @@ class ConnectionManager(object):
             # verification records associated with transactions
             verification_records = []
             for txn in transactions:
-                verification_records += self.get_subscription_vrs(txn)
+                verification_records += self.get_subscription_vrs(txn, server_id)
             # insert new response for subscriber with transactions and vrs
             sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
             # create backlog for potential delayed verifications
@@ -595,12 +596,12 @@ class ConnectionManager(object):
         transactions = transaction_db.get_subscription_txns(criteria, block_id)
         return list(transactions)
 
-    def get_subscription_vrs(self, transaction):
-        """ retrieve verification records that match given transaction """
+    def get_subscription_vrs(self, transaction, server_id):
+        """ retrieve records for the block matching the given transaction with origin ids matching the server's id. """
         txn_header = transaction["header"]
         verifications_records = []
         if "block_id" in txn_header and txn_header['block_id']:
-            verifications_records = verification_db.get_records(block_id=txn_header['block_id'])
+            verifications_records = verification_db.get_records(block_id=txn_header['block_id'], origin_id=server_id)
         return verifications_records
 
     @staticmethod
@@ -830,7 +831,10 @@ class BlockchainServiceHandler:
                 subscription_response = message_types.SubscriptionResponse()
                 subscription_response.transactions = transactions
                 subscription_response.verification_records = verification_records
-                return subscription_response
+                try:
+                    return subscription_response
+                except TTransport.TTransportException as tx:
+                    pass
             except:
                 logger().error("An unexpected error has occurred during subscription response...")
 
