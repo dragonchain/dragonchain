@@ -224,5 +224,22 @@ class TestSignSubscription(TestCase):
         subscription['signature']['hash'] = 'invalid_hash'
         self.assertRaises(BadSignatureError, crypto.validate_signature, subscription['signature'])
 
+
+class TestValidateSubscription(TestCase):
+    def test_validate_subscription(self):
+        """ testing crypto validate_subscription """
+        subscription = SUBSCRIPTION.copy()
+        crypto.sign_subscription(SIGNATORY, subscription, PRIVATE_KEY, PUBLIC_KEY)
+
+        signature_block = subscription['signature']
+        criteria = subscription['criteria']
+
+        # testing if validate_subscription passes
+        self.assertEqual(crypto.validate_subscription(signature_block, criteria, PUBLIC_KEY), True)
+
+        # testing that an exception is thrown on invalid hashes
+        signature_block['hash'] = 'invalid_hash'
+        self.assertRaises(BadSignatureError, crypto.validate_signature, signature_block)
+
 if __name__ == '__main__':
     unittest.main()
