@@ -427,7 +427,11 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_1_message(phase_1_msg)
-                self.resolve_data(node, ver_ids, 1)
+                vrs = self.get_vrs(node, ver_ids)
+                record = message_types.VerificationRecord()
+                record.p1 = phase_1_msg
+                vrs.append(record)
+                self.resolve_data(vrs, 1)
             except Exception as ex:
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
@@ -441,7 +445,8 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_2_message(phase_2_msg)
-                self.resolve_data(node, ver_ids, 2)
+                vrs = self.get_vrs(node, ver_ids)
+                self.resolve_data(vrs, 2)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
@@ -454,12 +459,14 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_3_message(phase_3_msg)
-                self.resolve_data(node, ver_ids, 3)
+                vrs = self.get_vrs(node, ver_ids)
+                self.resolve_data(vrs, 3)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
     # TODO: implement this broadcast
+    # TODO: make sure to add in vrs = self.get_vrs(node, ver_ids) self.resolve_data(vrs, 4)
     def phase_4_broadcast(self, block_info, phase_type):
         pass
 
@@ -546,12 +553,8 @@ class ConnectionManager(object):
                 logger().error(message)
                 continue
 
-    def resolve_data(self, node, guids, phase):
-        """ request unreceived verifications from node, notify node of already received verifications,
-            store received verifications from node, find replications and store them in transfers table """
-        received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
-        verifications = node.client.transfer_data(node.pass_phrase, received, unreceived)
-        node.last_transfer_time = int(time.time())
+    def resolve_data(self, verifications, phase):
+        """ store received verifications from node, find replications and store them in transfers table """
         for verification in verifications:
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
@@ -566,6 +569,14 @@ class ConnectionManager(object):
                 template = "An exception of type {0} occured. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
+
+    def get_vrs(self, node, guids):
+        """ request unreceived verifications from node, notify node of already received verifications """
+        received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
+        verifications = node.client.transfer_data(node.pass_phrase, received, unreceived)
+        node.last_transfer_time = int(time.time())
+
+        return verifications
 
     def update_subscription_response(self, verification_record):
         """ check sub_vr_backlog, check if there are any active subscriptions that have phase criteria
