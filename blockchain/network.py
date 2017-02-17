@@ -47,7 +47,7 @@ from blockchain.db.postgres import verification_db
 from blockchain.db.postgres import subscribe_to_db
 from blockchain.db.postgres import subscribe_from_db
 from blockchain.db.postgres import transaction_db
-from blockchain.db.postgres import subscription_vr_backlog_db as backlog_db
+from blockchain.db.postgres import subscription_vr_backlog_db as sub_vr_backlog_db
 from blockchain.db.postgres import sub_vr_transfers_db
 
 import gen.messaging.BlockchainService as BlockchainService
@@ -224,7 +224,7 @@ class ConnectionManager(object):
                         try:
                             net_dao.insert_node(converted_node)
                         except Exception as ex:  # likely trying to add a dupe node
-                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
                             # logger().warning(message)
                             continue
@@ -255,7 +255,7 @@ class ConnectionManager(object):
                 if self.phases & PHASE_4_NODE:
                     self.connect_nodes(PHASE_5_NODE)
         except Exception as ex:
-            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             logger().warning(message)
 
@@ -348,7 +348,7 @@ class ConnectionManager(object):
             try:
                 net_dao.update_failed_ping(node_to_calc)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
@@ -394,7 +394,7 @@ class ConnectionManager(object):
                         try:
                             net_dao.update_con_attempts(node_to_connect)  # incrementing connection attempts on fail
                         except Exception as ex:
-                            template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                             message = template.format(type(ex).__name__, ex.args)
                             logger().warning(message)
                         transport.close()
@@ -403,7 +403,7 @@ class ConnectionManager(object):
             except Exception as ex:
                 if not connection_successful:
                     net_dao.update_con_attempts(node_to_connect)
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
             finally:
@@ -433,7 +433,7 @@ class ConnectionManager(object):
                 vrs.append(record)
                 self.resolve_data(vrs, 1)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
@@ -537,7 +537,7 @@ class ConnectionManager(object):
             try:
                 transaction_db.insert_transaction(txn)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().error(message)
                 continue
@@ -548,7 +548,7 @@ class ConnectionManager(object):
             try:
                 verification_db.insert_verification(verification)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().error(message)
                 continue
@@ -566,7 +566,7 @@ class ConnectionManager(object):
                 # check if there are active subscriptions interested in this record
                 self.update_subscription_response(verification)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
@@ -583,7 +583,7 @@ class ConnectionManager(object):
             that match given vr phase. if so, build a response of transactions and matching vrs for this block. """
         server_id = self.this_node.node_id
         block_id = verification_record['block_id']
-        backlogs = backlog_db.get_backlogs(block_id)
+        backlogs = sub_vr_backlog_db.get_backlogs(block_id)
         # check for backlogged records and insert for transfer
         for bl in backlogs:
             sub_vr_transfers_db.insert_transfer(bl['client_id'], [], [verification_record])
@@ -600,7 +600,7 @@ class ConnectionManager(object):
             # insert new response for subscriber with transactions and vrs
             sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
             # create backlog for potential delayed verifications
-            backlog_db.insert_backlog(sub['subscriber_id'], block_id)
+            sub_vr_backlog_db.insert_backlog(sub['subscriber_id'], block_id)
 
     def get_subscription_txns(self, criteria, block_id):
         """ retrieve transactions that meet subscription criteria """
@@ -634,7 +634,7 @@ class ConnectionManager(object):
                 if self.phases:
                     self.connect_nodes(PHASE_5_NODE)
             except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 

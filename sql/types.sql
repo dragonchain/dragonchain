@@ -39,6 +39,7 @@ CREATE TYPE transaction_status AS ENUM (
     'rejected',
     'complete'
 );
+
 DROP TYPE subscription_status;
 CREATE TYPE subscription_status AS ENUM (
   'approved',

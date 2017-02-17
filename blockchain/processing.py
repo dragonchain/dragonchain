@@ -224,27 +224,26 @@ class ProcessingNode(object):
         """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
             initial communication with subscription node
         """
-        if "subscriptions" in transaction["payload"]:
-            subscriptions = transaction["payload"]['subscriptions']
-            for sub in subscriptions:
-                try:
-                    subscription = subscriptions[sub]
-                    subscription_id = str(uuid.uuid4())
-                    criteria = subscription['criteria']
-                    phase_criteria = subscription['phase_criteria']
-                    public_key = self.service_config['public_key']
-                    # store new subscription info
-                    sub_db.insert_subscription(subscription, subscription_id)
-                    # get subscription node
-                    subscription_node = self.network.get_subscription_node(subscription)
-                    # initial communication with subscription node
-                    if subscription_node:
-                        subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
-                except Exception as ex:  # likely already subscribed
-                    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    logger().warning(message)
-                    continue
+        if "subscription" in transaction["payload"]:
+            subscription = transaction["payload"]['subscription']
+            try:
+                subscription_id = str(uuid.uuid4())
+                criteria = subscription['criteria']
+                phase_criteria = subscription['phase_criteria']
+                public_key = self.service_config['public_key']
+                # store new subscription info
+                sub_db.insert_subscription(subscription, subscription_id)
+                # get subscription node
+                subscription_node = self.network.get_subscription_node(subscription)
+                # initial communication with subscription node
+                if subscription_node:
+                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
+                return True
+            except Exception as ex:  # likely already subscribed
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
+                return False
 
     def get_subscription_signature(self, subscription):
         """ return signature for given subscription """
@@ -280,27 +279,23 @@ class ProcessingNode(object):
         # Validate the schema and structure of the transactions
         valid_transactions, invalid_transactions = self.split_items(valid_transaction_sig, transactions)
 
-        # TODO: Take this condition out?
-        if 'approve_block' in config:
-            # TODO: strip reserved transaction types. pass stripped list instead of config
-            # TODO: call reserved transaction function
-            return config['approve_block'](config, current_block_id)
-
-        # Use the custom approval code if configured, otherwise approve all valid transaction
         rejected_transactions = []
-        if 'approve_transaction' in config:
-            # TODO: if transaction is reserved transaction, call reserved transaction functions
-            approved_transactions, rejected_transactions = \
-                self.split_items(config['approve_transaction'], valid_transactions)
-        else:
-            approved_transactions = valid_transactions
+        approved_transactions = []
+
+        for txn in valid_transactions:
+            txn_type = txn["header"]["transaction_type"]
+            if txn_type in self.smart_contracts:
+                if self.smart_contracts[txn["header"]["transaction_type"]](txn):
+                    approved_transactions.append(txn)
+                else:
+                    rejected_transactions.append(txn)
+            else:
+                rejected_transactions.append(txn)
 
         if len(approved_transactions) > 0:
             # update status of approved transactions
             for tx in approved_transactions:
                 tx["header"]["status"] = "approved"
-                if tx["header"]["transaction_type"] == "TT_SUB_REQ":
-                    self.smart_contracts["TT_SUB_REQ"](tx)
                 transaction_db.update_transaction(tx)
 
             # stripping payload from all transactions before signing
