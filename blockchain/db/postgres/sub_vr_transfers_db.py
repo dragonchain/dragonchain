@@ -36,6 +36,7 @@ import uuid
 from blockchain.qry import format_sub_response
 
 from postgres import get_connection_pool
+
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 SQL_GET_ALL = """SELECT * FROM sub_vr_transfers"""
@@ -47,6 +48,12 @@ SQL_INSERT_QUERY = """INSERT INTO sub_vr_transfers (
 
 
 def insert_transfer(transfer_to, transactions, verifications):
+    """
+    inserts new transfer record containing list of transactions and verifications
+    param transfer_to: node_id to send transfer records to
+    param transactions: list of json formatted transactions
+    param verifications: list of json formatted verification records
+    """
     values = (
         transfer_to,
         map(psycopg2.extras.Json, transactions),
@@ -63,6 +70,7 @@ def insert_transfer(transfer_to, transactions, verifications):
 
 
 def get_all(transfer_to):
+    """ query for all transfer records with transfer_to matching given transfer_to id """
     query = SQL_GET_ALL
     query += """ WHERE transfer_to = '""" + transfer_to + """'"""
 
