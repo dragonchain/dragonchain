@@ -53,7 +53,12 @@ SQL_INSERT = """INSERT into subscribe_from (
 
 
 def insert_subscription(subscriber_id, criteria, phase_criteria, subscriber_public_key):
-    """ insert given subscription into database """
+    """
+    insert given subscription into database
+    param subscriber_id: id of subscribing node
+    param criteria: json structured data of criteria to be met by the subscription node
+    param phase_criteria: subscriber requests data up to this phase
+    """
     values = (
         subscriber_id,
         psycopg2.extras.Json(criteria),
@@ -71,6 +76,7 @@ def insert_subscription(subscriber_id, criteria, phase_criteria, subscriber_publ
 
 
 def get(subscriber_id):
+    """ query for subscription matching given subscriber_id """
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

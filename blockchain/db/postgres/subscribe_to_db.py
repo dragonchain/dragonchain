@@ -58,13 +58,13 @@ def insert_subscription(subscription, subscription_id=None):
     if not subscription_id:
         subscription_id = str(uuid.uuid4())
     values = (
-        subscription_id,
-        subscription['subscribed_node_id'],
-        subscription['node_owner'],
-        subscription['host'],
-        subscription['port'],
-        psycopg2.extras.Json(subscription['criteria']),
-        "pending"
+        subscription_id,  # subscription uuid pk
+        subscription['subscribed_node_id'],  # id of subscription node
+        subscription['node_owner'],  # owner of subscription node
+        subscription['host'],  # subscription node's host
+        subscription['port'],  # subscription node's port
+        psycopg2.extras.Json(subscription['criteria']),  # criteria to be met by subscription
+        "pending"  # subscription status
     )
     conn = get_connection_pool().getconn()
     try:
@@ -77,6 +77,7 @@ def insert_subscription(subscription, subscription_id=None):
 
 
 def get_all(limit=None):
+    """ query for all subscriptions that have passed due synchronization periods """
     query = SQL_GET_ALL
     query += """ WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) """
     query += """ ORDER BY status """
