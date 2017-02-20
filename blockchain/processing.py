@@ -43,7 +43,7 @@ from db.postgres import postgres
 from db.postgres import transaction_db
 from db.postgres import verification_db
 from db.postgres import vr_transfers_db
-from blockchain.db.postgres import subscribe_to_db as sub_db
+from blockchain.db.postgres import sub_to_db as sub_db
 
 import network
 
@@ -221,9 +221,11 @@ class ProcessingNode(object):
         return prior_hash
 
     def _subscription_request(self, transaction):
-        """ check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
-            initial communication with subscription node
         """
+            attempts to make initial communication with subscription node
+            param transaction: transaction to retrieve subscription info from
+        """
+        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
         if "subscription" in transaction["payload"]:
             subscription = transaction["payload"]['subscription']
             try:
@@ -235,7 +237,7 @@ class ProcessingNode(object):
                 sub_db.insert_subscription(subscription, subscription_id)
                 # get subscription node
                 subscription_node = self.network.get_subscription_node(subscription)
-                # initial communication with subscription node
+                # initiate communication with subscription node
                 if subscription_node:
                     subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
                 return True

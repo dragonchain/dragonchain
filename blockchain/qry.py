@@ -20,6 +20,9 @@ distributed under the Apache License with the above modification is
 distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
+
+
+This module is used for converting query results from database into dictionaries
 """
 
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
@@ -38,6 +41,7 @@ def format_time(dt):
 
 
 def format_transaction(txn):
+    """ format and return dictionary representation of given transaction """
     return {
         "header": {
             "transaction_id":       txn["transaction_id"],
@@ -60,6 +64,7 @@ def format_transaction(txn):
 
 
 def format_block_verification(block_verification):
+    """ format and return dictionary representation of given block verification """
     return {
         "verification_id":      block_verification["verification_id"],
         "verified_ts":          format_time(block_verification["verified_ts"]),
@@ -73,6 +78,7 @@ def format_block_verification(block_verification):
 
 
 def format_node(node):
+    """ format and return given node into dictionary """
     return {
         "node_id":              node["node_id"],
         "create_ts":            node["create_ts"],
@@ -87,6 +93,7 @@ def format_node(node):
 
 
 def format_verification_record(verification_record):
+    """ format and return given verification record into dictionary """
     return {
         "origin_id":            verification_record["origin_id"],
         "transfer_to":          verification_record["transfer_to"],
@@ -96,6 +103,7 @@ def format_verification_record(verification_record):
 
 
 def format_subscription(subscription):
+    """ format and return given subscription into dictionary """
     return {
         "subscription_id":          subscription["subscription_id"],
         "subscribed_node_id":       subscription["subscribed_node_id"],
@@ -110,6 +118,7 @@ def format_subscription(subscription):
 
 
 def format_subscriber(subscription):
+    """ format and return given subscriber into dictionary """
     return {
         "subscriber_id":            subscription["subscriber_id"],
         "criteria":                 subscription["criteria"],
@@ -119,6 +128,7 @@ def format_subscriber(subscription):
 
 
 def format_sub_response(sub_response):
+    """ format and return given subscription response into dictionary """
     return {
         "transfer_to":      sub_response["transfer_to"],
         "transactions":     sub_response["transactions"],
@@ -127,6 +137,7 @@ def format_sub_response(sub_response):
 
 
 def format_backlog(backlog):
+    """ format and return given subscription backlog into dictionary """
     return {
         "transfer_id":  backlog["transfer_id"],
         "client_id":    backlog["client_id"],

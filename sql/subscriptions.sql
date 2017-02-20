@@ -52,7 +52,7 @@ $body$
 
 BEGIN;
 /* Don't drop tables unless you really want to */
-CREATE TABLE IF NOT EXISTS subscribe_to (
+CREATE TABLE IF NOT EXISTS sub_to (
 
   subscription_id UUID PRIMARY KEY,
 
@@ -86,7 +86,7 @@ GRANT ALL ON subscribe_to to blocky;
 COMMIT;
 
 BEGIN;
-CREATE TABLE IF NOT EXISTS subscribe_from (
+CREATE TABLE IF NOT EXISTS sub_from (
   subscriber_id UUID PRIMARY KEY,
 
   /* transaction criteria to be met for subscriber */
@@ -104,7 +104,7 @@ COMMIT;
 
 BEGIN;
 /* Don't drop tables unless you really want to */
-CREATE TABLE IF NOT EXISTS subscription_vr_backlog (
+CREATE TABLE IF NOT EXISTS sub_vr_backlog (
     transfer_id UUID PRIMARY KEY,
     /* The node to transmit this block to */
     client_id VARCHAR(256),

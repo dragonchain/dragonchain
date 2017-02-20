@@ -136,8 +136,8 @@ def sign_verification_record(signatory,
     :param signatory: Name or identifier of the signing party (the caller)
     :param prior_block_hash: Hash of the prior block (verification record with the same origin_id, phase, and signatory)
     :param lower_hash: Hash of the lower phase verification record
-    :param public_key_string:
-    :param private_key_string:
+    :param public_key_string: hashed and inserted into signature block for later validation
+    :param private_key_string: private key used for generating signature
     :param block_id: Verification record block ID
     :param phase: Verification record phase
     :param origin_id: ID of the origin node (phase 1 node)
@@ -205,6 +205,13 @@ def sign_verification_record(signatory,
 
 
 def sign_subscription(signatory, subscription, private_key_string, public_key_string):
+    """
+    sign a subscription (deep hash of criteria, signatory, signature timestamp, public key)
+    param signatory: Name or identifier of the signing party (the caller)
+    param subscription: all fields of subscription signed
+    param private_key_string: private key used for generating signature
+    param public_key_string: hashed and inserted into signature block for later validation
+    """
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
     signature_ts = int(time.time())
     hashed_items = []
@@ -232,8 +239,8 @@ def valid_transaction_sig(transaction, test_mode=False, log=logging.getLogger(__
     Checks signature validity and that the signature's hash is equal to a newly calculated hash.
     If no signature is present, will return True (signature is _not_ required for a transaction).
     :param transaction: Transaction
-    :param test_mode:
-    :param log:
+    :param test_mode: errors not logged in test mode
+    :param log: message logger
     :return: True on valid or non-existent transaction signature, False otherwise.
     """
 
@@ -303,7 +310,7 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
     Validates signature of verification record or transaction accounting for presence of
         "stripped_hash" in transaction signatures
     :param signature_block: dict of signature
-    :param log:
+    :param log: message logger
     :return: True on valid signature, False otherwise.
     """
 
@@ -376,7 +383,13 @@ def validate_subscription(signature_block,
                           criteria,
                           subscriber_public_key,
                           log=logging.getLogger(__name__)):
-    """ validate subscription signature """
+    """
+    validate signature in a subscription.
+    checks signature validity and that the signature's hash is equal to a newly calculated hash.
+    param signature_block: dict of signature
+    param criteria: dict of criteria data hashed
+    param subscriber_public_key: public key hashed
+    """
     hashed_items = []
     try:
         validate_signature(signature_block)

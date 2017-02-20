@@ -126,7 +126,7 @@ def convert_to_thrift_header(tx_header):
 
 
 def convert_to_thrift_signature(signature):
-    """ returns a thrift representation of a dictionary transaction signature """
+    """ returns a thrift representation of a dictionary signature """
     thrift_signature = message_types.Signature()
     if "signatory" in signature:
         thrift_signature.signatory = str(signature['signatory'])

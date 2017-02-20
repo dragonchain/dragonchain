@@ -44,10 +44,10 @@ from apscheduler.triggers.cron import CronTrigger
 from blockchain.db.postgres import network_db as net_dao
 from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
-from blockchain.db.postgres import subscribe_to_db
-from blockchain.db.postgres import subscribe_from_db
+from blockchain.db.postgres import sub_to_db
+from blockchain.db.postgres import sub_from_db
 from blockchain.db.postgres import transaction_db
-from blockchain.db.postgres import subscription_vr_backlog_db as sub_vr_backlog_db
+from blockchain.db.postgres import sub_vr_backlog_db as sub_vr_backlog_db
 from blockchain.db.postgres import sub_vr_transfers_db
 
 import gen.messaging.BlockchainService as BlockchainService
@@ -479,7 +479,7 @@ class ConnectionManager(object):
 
     def subscription_feed(self):
         """ request transactions with associated verification records from subscription """
-        subscriptions = subscribe_to_db.get_all()
+        subscriptions = sub_to_db.get_all()
         for subscription in subscriptions:
             subscription_node = self.get_subscription_node(subscription)
             if subscription_node:
@@ -588,7 +588,7 @@ class ConnectionManager(object):
         for bl in backlogs:
             sub_vr_transfers_db.insert_transfer(bl['client_id'], [], [verification_record])
         # subscriptions with phase criteria that meet given record's phase
-        subscriptions = subscribe_from_db.get_by_phase_criteria(verification_record['phase'])
+        subscriptions = sub_from_db.get_by_phase_criteria(verification_record['phase'])
         for sub in subscriptions:
             criteria = sub['criteria']
             # transactions that meet subscription criteria
@@ -815,7 +815,7 @@ class BlockchainServiceHandler:
     def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
         """ initial communication between subscription """
         try:
-            subscribe_from_db.insert_subscription(subscription_id, criteria, phase_criteria, public_key)
+            sub_from_db.insert_subscription(subscription_id, criteria, phase_criteria, public_key)
         except:
             logger().warning("A subscription SQL error has occurred.")
         pass
@@ -824,7 +824,7 @@ class BlockchainServiceHandler:
         """ return transactions and associated verification records that meet criteria made by client """
         transactions = []
         verification_records = []
-        subscriber_info = subscribe_from_db.get(subscription_id)
+        subscriber_info = sub_from_db.get(subscription_id)
         # convert thrift signature to dictionary
         subscriber_signature = thrift_converter.convert_thrift_signature(subscription_signature)
         criteria = subscriber_info['criteria']

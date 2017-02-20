@@ -48,6 +48,11 @@ SQL_INSERT_QUERY = """INSERT INTO subscription_vr_backlog (
 
 
 def insert_backlog(client_id, block_id):
+    """
+    insert new backlog
+     param client_id: id of subscribing node
+     param block_id: block id of backlog
+    """
     values = (
         str(uuid.uuid4()),  # transfer_id PK
         client_id,
