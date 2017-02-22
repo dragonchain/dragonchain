@@ -198,7 +198,10 @@ class ConnectionManager(object):
         scheduler.add_job(self.refresh_registered, CronTrigger(second='*/5'))
         scheduler.add_job(self.refresh_unregistered, CronTrigger(second='*/60'))
         scheduler.add_job(self.connect, CronTrigger(second='*/5'))
-        scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
+        # the timed_receipt_request only is added to the chron for nodes that are transmitting up the chain.
+        if (self.this_node.phases & 0b00111 or
+           (self.this_node.phases & 0b01000 and self.config['public_transmission']['p4_pub_trans'])):
+            scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
         scheduler.start()
 
     def refresh_registered(self):

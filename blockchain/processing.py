@@ -601,7 +601,7 @@ class ProcessingNode(object):
         transaction_hash = final_hash(hashes,type=256)
         verification_info['hash'] = transaction_hash
 
-        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
+        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], self.service_config['bitcoin_ip'], self.service_config['bitcoin_port'], BitcoinFeeProvider())
         bitcoin_tx_id = stamper.persist(transaction_hash)
         bitcoin_tx_id = b2lx(bitcoin_tx_id).encode('utf-8')
         verification_info['public_transaction_id'] = bitcoin_tx_id
@@ -626,8 +626,10 @@ class ProcessingNode(object):
                                               )
 
         verification_db.insert_verification(block_info['verification_record'])
-        for verification_id in verification_info['verification_records'].keys():
-            timestamp_db.set_transaction_timestamp_proof(verification_id)
+
+        for origin_id in verification_info['verification_records'].keys():
+            for verification_id in verification_info['verification_records'][origin_id]:
+                timestamp_db.set_transaction_timestamp_proof(verification_id)
 
         unique_vr_transfers = {}
 
@@ -642,7 +644,6 @@ class ProcessingNode(object):
 
                 unique_vr_transfers[verification_record['origin_id']].append(verification_record['signature']['signatory'])
 
-                # create vr_transfer record for both unique origin_id and for unique signatories. 1 record per signatories
 
     @staticmethod
     def split_items(filter_func, items):
@@ -667,6 +668,8 @@ def main():
         parser.add_argument('--private-key', dest="private_key", required=True, help="ECDSA private key for signing")
         parser.add_argument('--public-key', dest="public_key", required=True, help="ECDSA public key for signing")
         parser.add_argument('--bitcoin-network', dest="bitcoin_network", required=False, help="Bitcoin network (mainnet, testnet, regtest)")
+        parser.add_argument('--bitcoin_ip', dest="bitcoin_ip", required=False, default="localhost", help="IP address of bitcoin node")
+        parser.add_argument('--bitcoin_port', dest="bitcoin_port", required=False, default=8332, help="Port of bitcoin node: defaults to 8332")
 
         logger().info("Parsing arguments")
         args = vars(parser.parse_args())
@@ -685,6 +688,8 @@ def main():
         port = args["port"]
         phase = args[PHASE]
         bitcoin_network = args["bitcoin_network"]
+        bitcoin_ip = args["bitcoin_ip"]
+        bitcoin_port = args["bitcoin_port"]
 
         ProcessingNode([{
             "type": PHASE,
@@ -695,7 +700,9 @@ def main():
             "owner": "DTSS",
             "host": host,
             "port": port,
-            "bitcoin_network": bitcoin_network
+            "bitcoin_network": bitcoin_network,
+            "bitcoin_ip": bitcoin_ip,
+            "bitcoin_port": bitcoin_port
         }).start()
 
     finally:

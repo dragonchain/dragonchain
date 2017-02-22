@@ -39,6 +39,9 @@ import bitcoin.rpc
 from bitcoin import params
 from bitcoin.core import *
 from bitcoin.core.script import *
+from bitcoinrpc.connection import BitcoinConnection
+from bitcoinrpc import *
+from decimal import Decimal
 
 import requests
 import logging
@@ -91,15 +94,18 @@ class BitcoinTimestamper(): # IPoEStore
     MIN_FEE_BYTE = 60
     MAX_FEE_BYTE = 200
     P2PKH_SIGSCRIPT_SIZE = 105
+    BITCOIN_CONNECTION = None
 
-    def __init__(self, network, fee_provider):
+    def __init__(self, network, bitcoin_ip, bitcoin_port, fee_provider):
         """
         Initializes a instance for working against a bitcoin network.
         Args:
             network: mainnet, regtest, testnet
             fee_provider: suggests fee per bytes to pay
         """
+
         bitcoin.SelectParams(network)
+        self.BITCOIN_CONNECTION = BitcoinConnection("benea021", "alex1658", host=bitcoin_ip, port=bitcoin_port)
         self.fee_provider = fee_provider
 
 
@@ -113,6 +119,7 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             True if the ``data`` item is in the bitcoin transaction identified by ``tx_id``; otherwise False
         """
+
         log.info('Connection to local bitcoin node')
         proxy = bitcoin.rpc.Proxy()
         tx = proxy.getrawtransaction(tx_id, True)['tx']
@@ -142,8 +149,11 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             A transaction id for referencing the saved data item in the transaction output
         """
-        proxy = bitcoin.rpc.Proxy()
-        utxo = sorted(proxy.listunspent(0), key=lambda x: hash(x['amount']))[-1]
+        proxy = self.BITCOIN_CONNECTION # BitcoinConnection("benea021", "alex1658", host="127.0.0.1", port=18332)
+        # wallet_unspent = proxy.listunspent()
+        # utxo = sorted(wallet_unspent, key=lambda x: hash(wallet_unspent[0]['amount']['_int']))[-1]
+        utxo = sorted(proxy.listunspent(), key=lambda x: hash(x.amount._int))[-1]
+        # random = proxy1.listunspent(0)
         tx = self._build_transaction(utxo, self.get_new_pubkey(), data)
         value_in = utxo['amount']
 
@@ -167,9 +177,10 @@ class BitcoinTimestamper(): # IPoEStore
         """
         Requests a new bitcoin address and returns its public key
         """
-        proxy = bitcoin.rpc.Proxy()
+        # proxy = bitcoin.rpc.Proxy()
+        proxy = self.BITCOIN_CONNECTION
         address = proxy.getnewaddress()
-        pubkey = proxy.validateaddress(address)['pubkey']
+        pubkey = proxy.validateaddress(address).pubkey
         return pubkey
 
 
@@ -185,7 +196,9 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             a bitcoin transaction that is candidate for being broadcast to the network
         """
-        txins = [CTxIn(output['outpoint'])]
+        # txins = [CTxIn(output['outpoint'])]
+        txins = [output.txid]
+        # TODO: fix this part to coincide with new RPC
         change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
         digest_out = [CMutableTxOut(0, CScript([OP_RETURN, data]))]
         txouts = [change_out] + digest_out
