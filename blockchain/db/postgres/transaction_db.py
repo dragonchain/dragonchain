@@ -35,8 +35,7 @@ from psycopg2.extras import Json
 import uuid
 import time
 
-from blockchain.qry import format_transaction, \
-                           format_block_verification
+from blockchain.qry import format_transaction
 
 from postgres import get_connection_pool
 
@@ -225,36 +224,37 @@ def get_subscription_txns(criteria, block_id=None):
     separator_needed = False
 
     if "transaction_type" in criteria:
-        query += """ transaction_type = '""" + str(criteria["transaction_type"]) + """'"""
+        query += """ transaction_type = %(transaction_type)s"""
         separator_needed = True
 
     if "actor" in criteria:
         if separator_needed:
             query += """ AND """
-        query += """ actor = '""" + str(criteria["actor"]) + """'"""
+        query += """ actor = %(actor)s"""
         separator_needed = True
 
     if "entity" in criteria:
         if separator_needed:
             query += """ AND """
-        query += """ entity = '""" + str(criteria["entity"]) + """'"""
+        query += """ entity = %(entity)s"""
         separator_needed = True
 
     if "owner" in criteria:
         if separator_needed:
             query += """ AND """
-        query += """ owner = '""" + str(criteria["owner"]) + """'"""
+        query += """ owner = %(owner)s"""
         separator_needed = True
 
     if block_id:
         if separator_needed:
             query += """ AND """
-        query += """ block_id = """ + str(block_id)
+        query += """ block_id = %(block_id)s"""
+        criteria['block_id'] = block_id  # adding for query execution vars
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(query, criteria)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)

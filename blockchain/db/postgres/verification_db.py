@@ -98,26 +98,26 @@ def get_records(**params):
     separator_needed = False
 
     if "block_id" in params:
-        query += """ block_id = """ + str(params['block_id'])
+        query += """ block_id = %(block_id)s"""
         separator_needed = True
 
     if "origin_id" in params:
         if separator_needed:
             query += """ AND """
-        query += """ origin_id = '""" + str(params['origin_id']) + """'"""
+        query += """ origin_id = %(origin_id)s"""
         separator_needed = True
 
     if "phase" in params:
         if separator_needed:
             query += """ AND """
-        query += """ phase = """ + str(params['phase'])
+        query += """ phase = %(phase)s"""
 
     records = []
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(query, params)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
