@@ -53,14 +53,13 @@ $body$
 BEGIN;
 /* Don't drop tables unless you really want to */
 CREATE TABLE IF NOT EXISTS sub_to (
-
   subscription_id UUID PRIMARY KEY,
 
   /* subscribee id */
   subscribed_node_id UUID,
 
   /* confirm who created the node */
-    node_owner VARCHAR(256),
+  node_owner VARCHAR(256),
 
   /* subscribee host */
   host VARCHAR(256),
@@ -77,12 +76,15 @@ CREATE TABLE IF NOT EXISTS sub_to (
   /* last time a request was made to subscribee for data */
   last_time_called timestamptz DEFAULT CURRENT_TIMESTAMP,
 
+  /* time subscription was created */
+  create_ts timestamptz,
+
   /* subscription status */
   status subscription_status
 );
 COMMIT;
 BEGIN;
-GRANT ALL ON subscribe_to to blocky;
+GRANT ALL ON sub_to to blocky;
 COMMIT;
 
 BEGIN;
@@ -95,11 +97,14 @@ CREATE TABLE IF NOT EXISTS sub_from (
   /* Indicates whether the subscription criteria for this block is satisfied */
   phase_criteria INT,
 
-  subscriber_public_key VARCHAR(256)
+  subscriber_public_key VARCHAR(256),
+
+  /* time subscription was created */
+  create_ts timestamptz
 );
 COMMIT;
 BEGIN;
-GRANT ALL ON subscribe_from to blocky;
+GRANT ALL ON sub_from to blocky;
 COMMIT;
 
 BEGIN;
@@ -113,7 +118,7 @@ CREATE TABLE IF NOT EXISTS sub_vr_backlog (
 );
 COMMIT;
 BEGIN;
-GRANT ALL ON subscription_vr_backlog to blocky;
+GRANT ALL ON sub_vr_backlog to blocky;
 COMMIT;
 
 BEGIN;
@@ -132,10 +137,10 @@ COMMIT;
 
 /* used to accelerate queries from subscription clients for blocks that are ready to transfer */
 BEGIN;
-CREATE INDEX subscription_vr_backlog_rdy_to_transfer_idx ON subscription_vr_backlog (client_id);
+CREATE INDEX sub_vr_backlog_rdy_to_transfer_idx ON sub_vr_backlog (client_id);
 COMMIT;
 
 /* used to accelerate queries when verification records are received to see if criteria has been satisfied */
 BEGIN;
-CREATE INDEX subscription_vr_backlog_criteria_check_idx ON subscription_vr_backlog (block_id);
+CREATE INDEX sub_vr_backlog_criteria_check_idx ON sub_vr_backlog (block_id);
 COMMIT;

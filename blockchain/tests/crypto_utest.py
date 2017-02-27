@@ -69,6 +69,7 @@ SUBSCRIPTION = {'criteria': {'owner': 'Test Node',
                 'status': 'approved',
                 'subscribed_node_id': 'dbbce2e5-600b-4e41-be5d-be4bacb1f952',
                 'subscription_id': '33a5f118-ddc8-4ca0-a037-c19ae8f1d39b',
+                'create_ts': 1488157671,
                 'synchronization_period': 5
                 }
 
@@ -235,7 +236,7 @@ class TestValidateSubscription(TestCase):
         criteria = subscription['criteria']
 
         # testing if validate_subscription passes
-        self.assertEqual(crypto.validate_subscription(signature_block, criteria, PUBLIC_KEY), True)
+        self.assertEqual(crypto.validate_subscription(signature_block, criteria, subscription['create_ts'], PUBLIC_KEY), True)
 
         # testing that an exception is thrown on invalid hashes
         signature_block['hash'] = 'invalid_hash'

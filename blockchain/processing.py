@@ -232,6 +232,7 @@ class ProcessingNode(object):
                 subscription_id = str(uuid.uuid4())
                 criteria = subscription['criteria']
                 phase_criteria = subscription['phase_criteria']
+                subscription['create_ts'] = int(time.time())
                 public_key = self.service_config['public_key']
                 # store new subscription info
                 sub_db.insert_subscription(subscription, subscription_id)
@@ -239,7 +240,7 @@ class ProcessingNode(object):
                 subscription_node = self.network.get_subscription_node(subscription)
                 # initiate communication with subscription node
                 if subscription_node:
-                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
+                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, subscription['create_ts'], public_key)
                 return True
             except Exception as ex:  # likely already subscribed
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"

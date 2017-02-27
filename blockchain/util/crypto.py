@@ -219,6 +219,9 @@ def sign_subscription(signatory, subscription, private_key_string, public_key_st
     # append criteria for hashing
     hashed_items.append(deep_hash(subscription['criteria']))
 
+    # append sub create timestamp for hashing
+    hashed_items.append(subscription['create_ts'])
+
     hashed_items.append(signatory)
     hashed_items.append(signature_ts)
     hashed_items.append(public_key_string)
@@ -338,6 +341,7 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     Checks signature validity and that the signature's hash is equal to a newly calculated hash.
     :param record: General/common verification record fields
     :param verification_info: Special, phase specific verification record fields/data
+    :param test_mode: flag set in testing to avoid unwanted error messages
     :param log:
     :return: True if signature is valid and hash is equal to a newly calculated hash, False otherwise.
     """
@@ -381,6 +385,7 @@ def validate_verification_record(record, verification_info, test_mode=False, log
 
 def validate_subscription(signature_block,
                           criteria,
+                          create_ts,
                           subscriber_public_key,
                           log=logging.getLogger(__name__)):
     """
@@ -388,6 +393,7 @@ def validate_subscription(signature_block,
     checks signature validity and that the signature's hash is equal to a newly calculated hash.
     param signature_block: dict of signature
     param criteria: dict of criteria data hashed
+    param create_ts: time subscription was created
     param subscriber_public_key: public key hashed
     """
     hashed_items = []
@@ -395,6 +401,8 @@ def validate_subscription(signature_block,
         validate_signature(signature_block)
 
         hashed_items.append(deep_hash(criteria))
+
+        hashed_items.append(create_ts)
 
         hashed_items.append(signature_block['signatory'])
         hashed_items.append(signature_block['signature_ts'])

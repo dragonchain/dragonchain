@@ -277,7 +277,8 @@ class ConnectionManager(object):
         """ remove given node in any places it shows up in peer_dict """
         for phase_type in self.peer_dict.keys():
             if node_to_remove.phases & phase_type:
-                self.peer_dict[phase_type].remove(node_to_remove)
+                if node_to_remove in self.peer_dict[phase_type]:
+                    self.peer_dict[phase_type].remove(node_to_remove)
 
     def disconnect_node(self, node_to_remove):
         """ disconnects given node and removes from connected structures """
@@ -475,7 +476,8 @@ class ConnectionManager(object):
         for node in self.connections:
             if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
                 ver_ids = node.client.receipt_request(node.pass_phrase)
-                self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
+                vrs = self.get_vrs(node, ver_ids)  # verifications matching given verification ids
+                self.resolve_data(vrs, node.phases)  # node.phases may present problems since it's in binary
 
     def subscription_feed(self):
         """ request transactions with associated verification records from subscription """
@@ -515,12 +517,13 @@ class ConnectionManager(object):
 
     def connect_subscription_node(self, subscription):
         """ connect to subscription node """
-        # check if node is already in database and just not connected
         node = net_dao.get(subscription["subscribed_node_id"])
+        # check if node is already in database and just not connected
         if node:
             subscription_node = Node(node["node_id"], node["node_owner"], node["host"], node["port"], node["phases"])
-            if node["phases"] not in self.peer_dict:
-                self.peer_dict.setdefault(node["phases"], [])
+            phase = int(node["phases"], 2)
+            if phase not in self.peer_dict:
+                self.peer_dict.setdefault(phase, [])
             try:
                 self.connect_node(subscription_node, node["phases"])
             except:
@@ -598,8 +601,9 @@ class ConnectionManager(object):
             for txn in transactions:
                 verification_records += self.get_subscription_vrs(txn, server_id)
             # insert new response for subscriber with transactions and vrs
-            sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
-            # create backlog for potential delayed verifications
+            if transactions or verification_records:
+                sub_vr_transfers_db.insert_transfer(sub['subscriber_id'], transactions, verification_records)
+            # create backlog for potentially delayed verifications
             sub_vr_backlog_db.insert_backlog(sub['subscriber_id'], block_id)
 
     def get_subscription_txns(self, criteria, block_id):
@@ -812,10 +816,10 @@ class BlockchainServiceHandler:
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
-    def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
+    def subscription_provisioning(self, subscription_id, criteria, phase_criteria, create_ts, public_key):
         """ initial communication between subscription """
         try:
-            sub_from_db.insert_subscription(subscription_id, criteria, phase_criteria, public_key)
+            sub_from_db.insert_subscription(subscription_id, criteria, phase_criteria, public_key, create_ts)
         except:
             logger().warning("A subscription SQL error has occurred.")
         pass
@@ -830,7 +834,7 @@ class BlockchainServiceHandler:
         criteria = subscriber_info['criteria']
         public_key = subscriber_signature["public_key"]
         # validate subscription signature
-        if validate_subscription(subscriber_signature, criteria, public_key):
+        if validate_subscription(subscriber_signature, criteria, subscriber_info['create_ts'], public_key):
             # query transactions/vrs ready to send to calling subscription node
             try:
                 subscription_messages = list(sub_vr_transfers_db.get_all(subscriber_info['subscriber_id']))
@@ -842,10 +846,7 @@ class BlockchainServiceHandler:
                 subscription_response = message_types.SubscriptionResponse()
                 subscription_response.transactions = transactions
                 subscription_response.verification_records = verification_records
-                try:
-                    return subscription_response
-                except TTransport.TTransportException as tx:
-                    pass
+                return subscription_response
             except:
                 logger().error("An unexpected error has occurred during subscription response...")
 

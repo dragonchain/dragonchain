@@ -85,13 +85,13 @@ def insert_node(node):
     node_id = node.node_id
     sql_args = (
         node_id,
-        int(time.time()),
+        int(time.time()),  # node creation time
         node.owner,
         node.host,
         node.port,
-        node.phases,
+        node.phases,  # phases provided in binary
         node.latency,
-        node.pass_phrase
+        node.pass_phrase  # used for Thrift network auth
     )
     conn = get_connection_pool().getconn()
     try:

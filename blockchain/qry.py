@@ -113,6 +113,7 @@ def format_subscription(subscription):
         "criteria":                 subscription["criteria"],
         "synchronization_period":   subscription["synchronization_period"],
         "last_time_called":         subscription["last_time_called"],
+        "create_ts":                format_time(subscription["create_ts"]),
         "status":                   subscription["status"]
     }
 
@@ -123,6 +124,7 @@ def format_subscriber(subscription):
         "subscriber_id":            subscription["subscriber_id"],
         "criteria":                 subscription["criteria"],
         "phase_criteria":           subscription["phase_criteria"],
+        "create_ts":                format_time(subscription["create_ts"]),
         "subscriber_public_key":    subscription["subscriber_public_key"]
     }
 

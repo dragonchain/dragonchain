@@ -38,9 +38,9 @@ from blockchain.qry import format_backlog
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-SQL_GET_BY_ID = """SELECT * FROM subscription_vr_backlog WHERE block_id = %s"""
-GET_BACKLOGS = """SELECT * FROM subscription_vr_backlog"""
-SQL_INSERT_QUERY = """INSERT INTO subscription_vr_backlog (
+SQL_GET_BY_ID = """SELECT * FROM sub_vr_backlog WHERE block_id = %s"""
+GET_BACKLOGS = """SELECT * FROM sub_vr_backlog"""
+SQL_INSERT_QUERY = """INSERT INTO sub_vr_backlog (
                                   transfer_id,
                                   client_id,
                                   block_id

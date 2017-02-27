@@ -36,21 +36,23 @@ import psycopg2.extras
 from blockchain.qry import format_subscription
 
 from postgres import get_connection_pool
+
 import uuid
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
-SQL_GET_ALL = """SELECT * FROM subscribe_to"""
-SQL_INSERT = """INSERT into subscribe_to (
+SQL_GET_ALL = """SELECT * FROM sub_to"""
+SQL_INSERT = """INSERT into sub_to (
                     subscription_id,
                     subscribed_node_id,
                     node_owner,
                     host,
                     port,
                     criteria,
+                    create_ts,
                     status
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s) """
+                ) VALUES (%s, %s, %s, %s, %s, %s, to_timestamp(%s), %s) """
 
 
 def insert_subscription(subscription, subscription_id=None):
@@ -64,6 +66,7 @@ def insert_subscription(subscription, subscription_id=None):
         subscription['host'],  # subscription node's host
         subscription['port'],  # subscription node's port
         psycopg2.extras.Json(subscription['criteria']),  # criteria to be met by subscription
+        subscription['create_ts'],  # subscription creation time
         "pending"  # subscription status
     )
     conn = get_connection_pool().getconn()

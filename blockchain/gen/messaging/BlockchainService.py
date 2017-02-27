@@ -91,12 +91,13 @@ class Iface:
     """
     pass
 
-  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
+  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, create_ts, public_key):
     """
     Parameters:
      - subscription_id
      - criteria
      - phase_criteria
+     - create_ts
      - public_key
     """
     pass
@@ -442,23 +443,25 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "transfer_data failed: unknown result")
 
-  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
+  def subscription_provisioning(self, subscription_id, criteria, phase_criteria, create_ts, public_key):
     """
     Parameters:
      - subscription_id
      - criteria
      - phase_criteria
+     - create_ts
      - public_key
     """
-    self.send_subscription_provisioning(subscription_id, criteria, phase_criteria, public_key)
+    self.send_subscription_provisioning(subscription_id, criteria, phase_criteria, create_ts, public_key)
     self.recv_subscription_provisioning()
 
-  def send_subscription_provisioning(self, subscription_id, criteria, phase_criteria, public_key):
+  def send_subscription_provisioning(self, subscription_id, criteria, phase_criteria, create_ts, public_key):
     self._oprot.writeMessageBegin('subscription_provisioning', TMessageType.CALL, self._seqid)
     args = subscription_provisioning_args()
     args.subscription_id = subscription_id
     args.criteria = criteria
     args.phase_criteria = phase_criteria
+    args.create_ts = create_ts
     args.public_key = public_key
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
@@ -787,7 +790,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = subscription_provisioning_result()
     try:
-      self._handler.subscription_provisioning(args.subscription_id, args.criteria, args.phase_criteria, args.public_key)
+      self._handler.subscription_provisioning(args.subscription_id, args.criteria, args.phase_criteria, args.create_ts, args.public_key)
       msg_type = TMessageType.REPLY
     except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
       raise
@@ -2296,6 +2299,7 @@ class subscription_provisioning_args:
    - subscription_id
    - criteria
    - phase_criteria
+   - create_ts
    - public_key
   """
 
@@ -2304,13 +2308,15 @@ class subscription_provisioning_args:
     (1, TType.STRING, 'subscription_id', None, None, ), # 1
     (2, TType.MAP, 'criteria', (TType.STRING,None,TType.STRING,None), None, ), # 2
     (3, TType.STRING, 'phase_criteria', None, None, ), # 3
-    (4, TType.STRING, 'public_key', None, None, ), # 4
+    (4, TType.I32, 'create_ts', None, None, ), # 4
+    (5, TType.STRING, 'public_key', None, None, ), # 5
   )
 
-  def __init__(self, subscription_id=None, criteria=None, phase_criteria=None, public_key=None,):
+  def __init__(self, subscription_id=None, criteria=None, phase_criteria=None, create_ts=None, public_key=None,):
     self.subscription_id = subscription_id
     self.criteria = criteria
     self.phase_criteria = phase_criteria
+    self.create_ts = create_ts
     self.public_key = public_key
 
   def read(self, iprot):
@@ -2344,6 +2350,11 @@ class subscription_provisioning_args:
         else:
           iprot.skip(ftype)
       elif fid == 4:
+        if ftype == TType.I32:
+          self.create_ts = iprot.readI32()
+        else:
+          iprot.skip(ftype)
+      elif fid == 5:
         if ftype == TType.STRING:
           self.public_key = iprot.readString()
         else:
@@ -2374,8 +2385,12 @@ class subscription_provisioning_args:
       oprot.writeFieldBegin('phase_criteria', TType.STRING, 3)
       oprot.writeString(self.phase_criteria)
       oprot.writeFieldEnd()
+    if self.create_ts is not None:
+      oprot.writeFieldBegin('create_ts', TType.I32, 4)
+      oprot.writeI32(self.create_ts)
+      oprot.writeFieldEnd()
     if self.public_key is not None:
-      oprot.writeFieldBegin('public_key', TType.STRING, 4)
+      oprot.writeFieldBegin('public_key', TType.STRING, 5)
       oprot.writeString(self.public_key)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2390,6 +2405,7 @@ class subscription_provisioning_args:
     value = (value * 31) ^ hash(self.subscription_id)
     value = (value * 31) ^ hash(self.criteria)
     value = (value * 31) ^ hash(self.phase_criteria)
+    value = (value * 31) ^ hash(self.create_ts)
     value = (value * 31) ^ hash(self.public_key)
     return value
 

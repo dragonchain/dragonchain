@@ -42,28 +42,31 @@ import uuid
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
-SQL_GET_BY_ID = """SELECT * FROM subscribe_from WHERE subscriber_id = %s"""
-SQL_GET_ALL = """SELECT * FROM subscribe_from"""
-SQL_INSERT = """INSERT into subscribe_from (
+SQL_GET_BY_ID = """SELECT * FROM sub_from WHERE subscriber_id = %s"""
+SQL_GET_ALL = """SELECT * FROM sub_from"""
+SQL_INSERT = """INSERT into sub_from (
                     subscriber_id,
                     criteria,
                     phase_criteria,
-                    subscriber_public_key
-                ) VALUES (%s, %s, %s, %s) """
+                    subscriber_public_key,
+                    create_ts
+                ) VALUES (%s, %s, %s, %s, to_timestamp(%s)) """
 
 
-def insert_subscription(subscriber_id, criteria, phase_criteria, subscriber_public_key):
+def insert_subscription(subscriber_id, criteria, phase_criteria, subscriber_public_key, create_ts):
     """
     insert given subscription into database
     param subscriber_id: id of subscribing node
     param criteria: json structured data of criteria to be met by the subscription node
     param phase_criteria: subscriber requests data up to this phase
+    param create_ts: time subscription was created
     """
     values = (
         subscriber_id,
         psycopg2.extras.Json(criteria),
         phase_criteria,
-        subscriber_public_key
+        subscriber_public_key,
+        create_ts
     )
     conn = get_connection_pool().getconn()
     try:
