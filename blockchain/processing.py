@@ -206,10 +206,8 @@ class ProcessingNode(object):
         """
         returns prior block hash of curr_block_id.
         returns None if no block_id was found -- meaning this is the first block.
-
-        Args:
-            origin_id:
-            phase
+        :param origin_id: search for hash matching this origin_id
+        :param phase: search for hash matching this phase
         """
         prior_hash = None
         if phase:
