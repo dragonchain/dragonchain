@@ -40,6 +40,25 @@ joe@dragonchain.org
 
 # Setup and Installation
 
+### Running Stack via Docker
+Requires Docker version 1.13.0 and docker-compose version 1.10.0 
+
+Stack declaration is made via the docker-compose.yaml in the docker 
+directory. Docker-compose.yml uses the dockerfile declarations that packages the project services into containers.
+
+To bring up the stack:
+
+
+    cd docker
+    docker-compose up -d
+Postgres is exposed at port 5432
+
+Query service is exposed at port 80
+
+Transaction service is exposed at port 81
+
+Processor service is exposed at port 8080
+
 ### Database Setup
 
 Requires Postgres 9.4+
