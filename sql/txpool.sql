@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS block_verifications (
 
     verification_id UUID PRIMARY KEY,
 
-    verified_ts timestamptz,
+    verification_ts timestamptz,
 
     block_id INT,
 

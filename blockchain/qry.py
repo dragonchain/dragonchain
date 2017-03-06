@@ -67,7 +67,7 @@ def format_block_verification(block_verification):
     """ format and return dictionary representation of given block verification """
     return {
         "verification_id":      block_verification["verification_id"],
-        "verified_ts":          format_time(block_verification["verified_ts"]),
+        "verification_ts":      format_time(block_verification["verification_ts"]),
         "block_id":             block_verification["block_id"],
         "signature":            block_verification["signature"],
         "origin_id":            block_verification["origin_id"],

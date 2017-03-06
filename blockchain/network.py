@@ -525,7 +525,7 @@ class ConnectionManager(object):
             if phase not in self.peer_dict:
                 self.peer_dict.setdefault(phase, [])
             try:
-                self.connect_node(subscription_node, node["phases"])
+                self.connect_node(subscription_node, phase)
             except:
                 logger().warning("Failed to connect to subscription node %s", node['node_id'])
         else:
@@ -547,9 +547,9 @@ class ConnectionManager(object):
 
     def insert_verifications(self, verification_records):
         """ insert given verification records in database """
-        for verification in verification_records:
+        for ver in verification_records:
             try:
-                verification_db.insert_verification(verification)
+                verification_db.insert_verification(ver, ver['verification_id'])
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
@@ -561,13 +561,14 @@ class ConnectionManager(object):
         for verification in verifications:
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
-                verification_db.insert_verification(verification, verification['verification_id'])
-                # check if there are nodes further down the chain interested in this record
-                replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
-                for replicated_ver in replicated_verifications:
-                    vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
-                # check if there are active subscriptions interested in this record
-                self.update_subscription_response(verification)
+                if verification['signature']['signatory'] is not self.this_node.node_id:
+                    verification_db.insert_verification(verification, verification['verification_id'])
+                    # check if there are nodes further down the chain interested in this record
+                    replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
+                    for replicated_ver in replicated_verifications:
+                        vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
+                    # check if there are active subscriptions interested in this record
+                    self.update_subscription_response(verification)
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
@@ -847,8 +848,10 @@ class BlockchainServiceHandler:
                 subscription_response.transactions = transactions
                 subscription_response.verification_records = verification_records
                 return subscription_response
-            except:
-                logger().error("An unexpected error has occurred during subscription response...")
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
 
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """

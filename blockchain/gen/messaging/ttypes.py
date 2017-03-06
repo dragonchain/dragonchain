@@ -205,7 +205,7 @@ class Verification:
   """
   Attributes:
    - verification_id
-   - verified_ts
+   - verification_ts
    - block_id
    - signature
    - owner
@@ -217,7 +217,7 @@ class Verification:
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'verification_id', None, None, ), # 1
-    (2, TType.STRING, 'verified_ts', None, None, ), # 2
+    (2, TType.STRING, 'verification_ts', None, None, ), # 2
     (3, TType.I32, 'block_id', None, None, ), # 3
     (4, TType.STRUCT, 'signature', (VerificationSignature, VerificationSignature.thrift_spec), None, ), # 4
     (5, TType.STRING, 'owner', None, None, ), # 5
@@ -226,9 +226,9 @@ class Verification:
     (8, TType.STRUCT, 'previous_block_hash', (PriorBlockHash, PriorBlockHash.thrift_spec), None, ), # 8
   )
 
-  def __init__(self, verification_id=None, verified_ts=None, block_id=None, signature=None, owner=None, transaction_ids=None, verification_ids=None, previous_block_hash=None,):
+  def __init__(self, verification_id=None, verification_ts=None, block_id=None, signature=None, owner=None, transaction_ids=None, verification_ids=None, previous_block_hash=None,):
     self.verification_id = verification_id
-    self.verified_ts = verified_ts
+    self.verification_ts = verification_ts
     self.block_id = block_id
     self.signature = signature
     self.owner = owner
@@ -252,7 +252,7 @@ class Verification:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.verified_ts = iprot.readString()
+          self.verification_ts = iprot.readString()
         else:
           iprot.skip(ftype)
       elif fid == 3:
@@ -311,9 +311,9 @@ class Verification:
       oprot.writeFieldBegin('verification_id', TType.STRING, 1)
       oprot.writeString(self.verification_id)
       oprot.writeFieldEnd()
-    if self.verified_ts is not None:
-      oprot.writeFieldBegin('verified_ts', TType.STRING, 2)
-      oprot.writeString(self.verified_ts)
+    if self.verification_ts is not None:
+      oprot.writeFieldBegin('verification_ts', TType.STRING, 2)
+      oprot.writeString(self.verification_ts)
       oprot.writeFieldEnd()
     if self.block_id is not None:
       oprot.writeFieldBegin('block_id', TType.I32, 3)
@@ -355,7 +355,7 @@ class Verification:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.verification_id)
-    value = (value * 31) ^ hash(self.verified_ts)
+    value = (value * 31) ^ hash(self.verification_ts)
     value = (value * 31) ^ hash(self.block_id)
     value = (value * 31) ^ hash(self.signature)
     value = (value * 31) ^ hash(self.owner)

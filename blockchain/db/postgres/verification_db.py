@@ -45,7 +45,7 @@ SQL_GET_ALL = """SELECT * FROM block_verifications"""
 SQL_INSERT_QUERY = """
     INSERT INTO block_verifications (
         verification_id,
-        verified_ts,
+        verification_ts,
         block_id,
         signature,
         origin_id,

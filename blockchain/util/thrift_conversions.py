@@ -266,7 +266,7 @@ def get_verification_type(verification):
     record = {'block_id': verification['block_id'],
               'origin_id': verification['origin_id'],
               'phase': verification['phase'],
-              'verification_ts': verification['verified_ts'],
+              'verification_ts': verification['verification_ts'],
               'verification_id': verification['verification_id'],
               'lower_hash': None,
               'prior_hash': None,

@@ -48,7 +48,7 @@ struct PriorBlockHash {
 
 struct Verification {
     1: string verification_id,
-    2: string verified_ts,
+    2: string verification_ts,
     3: i32 block_id,
     4: VerificationSignature signature,
     5: string owner,

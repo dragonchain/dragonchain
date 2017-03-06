@@ -253,8 +253,8 @@ class ProcessingNode(object):
                           self.service_config["private_key"],
                           self.service_config["public_key"])
 
-    def provision_sc(self):
-        pass
+    def provision_sc(self, transaction):
+        return True
 
     def _execute_phase_1(self, config, current_block_id):
         """
