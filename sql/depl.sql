@@ -35,3 +35,4 @@ __email__ = "joe@dragonchain.org"
 \i txpool.sql
 \i net.sql
 \i vr_transfers.sql
+\i subscriptions.sql

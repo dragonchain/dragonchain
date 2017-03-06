@@ -40,3 +40,8 @@ CREATE TYPE transaction_status AS ENUM (
     'complete'
 );
 
+DROP TYPE subscription_status;
+CREATE TYPE subscription_status AS ENUM (
+  'approved',
+  'pending'
+);

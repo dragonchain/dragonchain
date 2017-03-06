@@ -136,8 +136,8 @@ def sign_verification_record(signatory,
     :param signatory: Name or identifier of the signing party (the caller)
     :param prior_block_hash: Hash of the prior block (verification record with the same origin_id, phase, and signatory)
     :param lower_hash: Hash of the lower phase verification record
-    :param public_key_string:
-    :param private_key_string:
+    :param public_key_string: hashed and inserted into signature block for later validation
+    :param private_key_string: private key used for generating signature
     :param block_id: Verification record block ID
     :param phase: Verification record phase
     :param origin_id: ID of the origin node (phase 1 node)
@@ -204,14 +204,46 @@ def sign_verification_record(signatory,
     return block_info
 
 
+def sign_subscription(signatory, subscription, private_key_string, public_key_string):
+    """
+    sign a subscription (deep hash of criteria, signatory, signature timestamp, public key)
+    param signatory: Name or identifier of the signing party (the caller)
+    param subscription: all fields of subscription signed
+    param private_key_string: private key used for generating signature
+    param public_key_string: hashed and inserted into signature block for later validation
+    """
+    ecdsa_signing_key = SigningKey.from_pem(private_key_string)
+    signature_ts = int(time.time())
+    hashed_items = []
+
+    # append criteria for hashing
+    hashed_items.append(deep_hash(subscription['criteria']))
+
+    # append sub create timestamp for hashing
+    hashed_items.append(subscription['create_ts'])
+
+    hashed_items.append(signatory)
+    hashed_items.append(signature_ts)
+    hashed_items.append(public_key_string)
+
+    verification_hash = final_hash(hashed_items)
+
+    signature = ecdsa_signing_key.sign(verification_hash)
+    digest = signature.encode('base64')
+
+    signature_block = assemble_sig_block(subscription, signatory, public_key_string, digest, verification_hash, signature_ts)
+
+    return signature_block
+
+
 def valid_transaction_sig(transaction, test_mode=False, log=logging.getLogger(__name__)):
     """
     Validate the signature on a passed transaction.
     Checks signature validity and that the signature's hash is equal to a newly calculated hash.
     If no signature is present, will return True (signature is _not_ required for a transaction).
     :param transaction: Transaction
-    :param test_mode:
-    :param log:
+    :param test_mode: errors not logged in test mode
+    :param log: message logger
     :return: True on valid or non-existent transaction signature, False otherwise.
     """
 
@@ -281,7 +313,7 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
     Validates signature of verification record or transaction accounting for presence of
         "stripped_hash" in transaction signatures
     :param signature_block: dict of signature
-    :param log:
+    :param log: message logger
     :return: True on valid signature, False otherwise.
     """
 
@@ -309,6 +341,7 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     Checks signature validity and that the signature's hash is equal to a newly calculated hash.
     :param record: General/common verification record fields
     :param verification_info: Special, phase specific verification record fields/data
+    :param test_mode: flag set in testing to avoid unwanted error messages
     :param log:
     :return: True if signature is valid and hash is equal to a newly calculated hash, False otherwise.
     """
@@ -350,6 +383,45 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     return True
 
 
+def validate_subscription(signature_block,
+                          criteria,
+                          create_ts,
+                          subscriber_public_key,
+                          log=logging.getLogger(__name__)):
+    """
+    validate signature in a subscription.
+    checks signature validity and that the signature's hash is equal to a newly calculated hash.
+    param signature_block: dict of signature
+    param criteria: dict of criteria data hashed
+    param create_ts: time subscription was created
+    param subscriber_public_key: public key hashed
+    """
+    hashed_items = []
+    try:
+        validate_signature(signature_block)
+
+        hashed_items.append(deep_hash(criteria))
+
+        hashed_items.append(create_ts)
+
+        hashed_items.append(signature_block['signatory'])
+        hashed_items.append(signature_block['signature_ts'])
+        hashed_items.append(subscriber_public_key)
+
+        verification_hash = final_hash(hashed_items)
+        if not verification_hash == signature_block['hash']:
+            return False
+
+    except BadSignatureError:
+        log.error("BadSignatureError detected.")
+        return False
+    except:
+        log.warning("An unexpected error has occurred. Possible causes: KeyError")
+        raise  # re-raise the exception
+
+    return True
+
+
 def assemble_sig_block(record, signatory, public_key_string, signature, hash, signature_ts, stripped_hash=None,
                        child_signature=None, log=logging.getLogger(__name__)):
     """
@@ -364,14 +436,19 @@ def assemble_sig_block(record, signatory, public_key_string, signature, hash, si
     :param log:
     :return: The record with signature field added.
     """
-    # setting signature name
-    record["signature"] = {
+    signature_block = {
         "signatory": signatory,
         "signature": signature,
         "hash": hash,
         "public_key": public_key_string,
         "signature_ts": signature_ts
     }
+
+    if not record:
+        return signature_block
+
+    # setting signature name
+    record["signature"] = signature_block
 
     # setting stripped and full hashes
     if stripped_hash:

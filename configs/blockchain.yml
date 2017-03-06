@@ -3,6 +3,10 @@ owner: OWNER
 business: BUSINESS
 deploy_location: SEATTLE
 
+# smart contract data
+smart_contracts:
+    TT_EXAMPLE: valid_transaction_sig
+
 # dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
 public_transmission: 
     p1_pub_trans: off

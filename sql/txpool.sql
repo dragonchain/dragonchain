@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS block_verifications (
 
     verification_id UUID PRIMARY KEY,
 
-    verified_ts timestamptz,
+    verification_ts timestamptz,
 
     block_id INT,
 
@@ -116,7 +116,6 @@ CREATE TABLE IF NOT EXISTS block_verifications (
     signature JSON,
 
     /* Verifying node identifier */
-    /* TODO: should be origin_id */
     origin_id VARCHAR(256),
 
     phase INT,
