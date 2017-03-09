@@ -106,6 +106,10 @@ Pre-create a directory for log files before execution.
     --host        (defaults to localhost)
     --port, -p    (defaults to 8080)
     --phase       (required)
+    
+    For phase 5 node only:
+    --bitcoin_server  (required - ip address of bitcoin server to connect to)
+    --bitcoin_port    (defaults to 8332)
 
 ## Configuration
 

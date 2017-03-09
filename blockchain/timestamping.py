@@ -38,7 +38,7 @@ import bitcoin.rpc
 
 from bitcoin import params
 from bitcoin.core import *
-from bitcoin.core.script import *
+# from bitcoin.core.script import *
 from bitcoinrpc.connection import BitcoinConnection
 from bitcoinrpc import *
 from decimal import Decimal
@@ -92,7 +92,7 @@ class BitcoinTimestamper(): # IPoEStore
         assert stamper.ispersisted(txid, "hello world!"), "data item not present in the given txid"
     """
     MIN_FEE_BYTE = 60
-    MAX_FEE_BYTE = 200
+    MAX_FEE_BYTE = 220
     P2PKH_SIGSCRIPT_SIZE = 105
     BITCOIN_CONNECTION = None
 
@@ -149,26 +149,26 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             A transaction id for referencing the saved data item in the transaction output
         """
-        proxy = self.BITCOIN_CONNECTION # BitcoinConnection("benea021", "alex1658", host="127.0.0.1", port=18332)
-        # wallet_unspent = proxy.listunspent()
-        # utxo = sorted(wallet_unspent, key=lambda x: hash(wallet_unspent[0]['amount']['_int']))[-1]
+        proxy = self.BITCOIN_CONNECTION
+        # utxo = sorted(proxy.listunspent(0), key=lambda x: hash(x['amount']))[-1]
         utxo = sorted(proxy.listunspent(), key=lambda x: hash(x.amount._int))[-1]
         # random = proxy1.listunspent(0)
         tx = self._build_transaction(utxo, self.get_new_pubkey(), data)
-        value_in = utxo['amount']
+        value_in = utxo.amount._int
+        # value_in = utxo['amount']
 
         fee_byte = self.fee_provider.recommended()
         fee_byte = max(fee_byte, self.MIN_FEE_BYTE)
-        assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
+        assert fee_byte <= self.MAX_FEE_BYTE, "too high fee"
 
-        new_tx = tx
-        suggested_fee = (len(new_tx.serialize()) + self.P2PKH_SIGSCRIPT_SIZE) * fee_byte
-        new_tx.vout[0].nValue = int(value_in - suggested_fee)
-        r = proxy.signrawtransaction(new_tx)
+        suggested_fee = (len(tx) + self.P2PKH_SIGSCRIPT_SIZE) * fee_byte
+        # tx.vout[0].nValue = int(value_in - suggested_fee)
+
+        r = proxy.signrawtransaction(tx)
         assert r['complete']
-        new_tx = r['tx']
-        suggested_fee = len(new_tx.serialize()) * fee_byte
-        tx_id = proxy.sendrawtransaction(new_tx)
+        new_tx = r['hex']
+        suggested_fee = len(new_tx) * fee_byte
+        tx_id = proxy
         log.info('Transaction sent')
         return tx_id
 
@@ -181,6 +181,7 @@ class BitcoinTimestamper(): # IPoEStore
         proxy = self.BITCOIN_CONNECTION
         address = proxy.getnewaddress()
         pubkey = proxy.validateaddress(address).pubkey
+        # pubkey = proxy.validateaddress(address)['pubkey']
         return pubkey
 
 
@@ -196,14 +197,26 @@ class BitcoinTimestamper(): # IPoEStore
         Returns:
             a bitcoin transaction that is candidate for being broadcast to the network
         """
+        proxy = self.BITCOIN_CONNECTION
         # txins = [CTxIn(output['outpoint'])]
-        txins = [output.txid]
+        # txins = [output.txid]
+        txins = [self._build_transaction_input(output.txid, output.vout)]
+        txouts = {}
         # TODO: fix this part to coincide with new RPC
-        change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
-        digest_out = [CMutableTxOut(0, CScript([OP_RETURN, data]))]
-        txouts = [change_out] + digest_out
-        tx = CMutableTransaction(txins, txouts)
+        # change_out = CMutableTxOut(params.MAX_MONEY, CScript([change_pubkey, OP_CHECKSIG]))
+        # digest_out = [CMutableTxOut(0, CScript([OP_RETURN, data]))]
+        # returned = CScript([OP_RETURN, data])
+        # txouts = [change_out] + digest_out
+        # tx = CMutableTransaction(txins, [change_out, digest_out])
+        tx = proxy.createrawtransaction(txins, txouts)
         return tx
+
+
+    def _build_transaction_input(self, transaction_id, vout):
+        return {
+            "txid": transaction_id,
+            "vout": vout
+        }
 
 
 class BitcoinFeeProvider(object):
