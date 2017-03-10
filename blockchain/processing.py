@@ -601,7 +601,7 @@ class ProcessingNode(object):
         transaction_hash = final_hash(hashes,type=256)
         verification_info['hash'] = transaction_hash
 
-        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], self.service_config['bitcoin_ip'], self.service_config['bitcoin_port'], BitcoinFeeProvider())
+        stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
         bitcoin_tx_id = stamper.persist(transaction_hash)
         bitcoin_tx_id = b2lx(bitcoin_tx_id).encode('utf-8')
         verification_info['public_transaction_id'] = bitcoin_tx_id
@@ -668,8 +668,6 @@ def main():
         parser.add_argument('--private-key', dest="private_key", required=True, help="ECDSA private key for signing")
         parser.add_argument('--public-key', dest="public_key", required=True, help="ECDSA public key for signing")
         parser.add_argument('--bitcoin-network', dest="bitcoin_network", required=False, help="Bitcoin network (mainnet, testnet, regtest)")
-        parser.add_argument('--bitcoin_ip', dest="bitcoin_ip", required=False, default="localhost", help="IP address of bitcoin node")
-        parser.add_argument('--bitcoin_port', dest="bitcoin_port", required=False, default=8332, help="Port of bitcoin node: defaults to 8332")
 
         logger().info("Parsing arguments")
         args = vars(parser.parse_args())
@@ -688,8 +686,6 @@ def main():
         port = args["port"]
         phase = args[PHASE]
         bitcoin_network = args["bitcoin_network"]
-        bitcoin_ip = args["bitcoin_ip"]
-        bitcoin_port = args["bitcoin_port"]
 
         ProcessingNode([{
             "type": PHASE,
@@ -700,9 +696,7 @@ def main():
             "owner": "DTSS",
             "host": host,
             "port": port,
-            "bitcoin_network": bitcoin_network,
-            "bitcoin_ip": bitcoin_ip,
-            "bitcoin_port": bitcoin_port
+            "bitcoin_network": bitcoin_network
         }).start()
 
     finally:
