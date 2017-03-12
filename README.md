@@ -108,8 +108,7 @@ Pre-create a directory for log files before execution.
     --phase       (required)
     
     For phase 5 node only:
-    --bitcoin_server  (required - ip address of bitcoin server to connect to)
-    --bitcoin_port    (defaults to 8332)
+    --bitcoin-network (mainnet/testnet/regtest)
 
 ## Configuration
 
