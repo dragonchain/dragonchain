@@ -22,6 +22,19 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
+"""
+                ***** client-side subscription dao ******
+this dao is used for storing and retrieving client-side subscription data.
+when a client receives a new subscription transaction, the subscription data is stored.
+data stored:
+ - the subscription node's id, owner, host, and port.
+ - the subscription criteria to be met.
+ - the subscription create timestamp.
+ - the status of the subscription (i.e. approved, pending, etc.).
+subscription data is queried based on synchronization periods. if a sub has not been called
+since a time greater than its synchronization period, it will be queried.
+"""
+
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
