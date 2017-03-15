@@ -85,8 +85,17 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
-        self.smart_contracts = {"TT_SUB_REQ": self._subscription_request,
-                                "TT_PROVISION_SC": self.provision_sc}
+        # reserved transaction smart contracts
+        self.rtsc = {"TT_SUB_REQ": self._subscription_request,
+                     "TT_PROVISION_SC": self.provision_sc}
+        # user/business transaction smart contracts
+        self.tsc = {}
+        # subscription smart contracts
+        self.ssc = {}
+        # arbitrary/library smart contracts
+        self.lsc = {}
+        # broadcast receipt smart contracts
+        self.bsc = {}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
             PHASE: self._phase_type_config_handler,
@@ -285,8 +294,8 @@ class ProcessingNode(object):
 
         for txn in valid_transactions:
             txn_type = txn["header"]["transaction_type"]
-            if txn_type in self.smart_contracts:
-                if self.smart_contracts[txn["header"]["transaction_type"]](txn):
+            if txn_type in self.rtsc:
+                if self.rtsc[txn["header"]["transaction_type"]](txn):
                     approved_transactions.append(txn)
                 else:
                     rejected_transactions.append(txn)
