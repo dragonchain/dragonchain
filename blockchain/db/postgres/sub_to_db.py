@@ -24,8 +24,7 @@ language governing permissions and limitations under the Apache License.
 
 """
                 ***** client-side subscription dao ******
-this dao is used for storing and retrieving client-side subscription data.
-when a client receives a new subscription transaction, the subscription data is stored.
+Stores subscription info for the subscriber node when a subscription transaction is received.
 data stored:
  - the subscription node's id, owner, host, and port.
  - the subscription criteria to be met.
