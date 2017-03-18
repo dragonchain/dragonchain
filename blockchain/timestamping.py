@@ -160,7 +160,6 @@ class BitcoinTimestamper(): # IPoEStore
         suggested_fee = len(new_tx.serialize()) * fee_byte
         tx_id = proxy.sendrawtransaction(new_tx)
         log.info('Transaction sent')
-        print "Transaction Sent"
         return tx_id
 
 
