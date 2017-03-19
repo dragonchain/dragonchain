@@ -265,6 +265,42 @@ class ProcessingNode(object):
     def provision_sc(self, transaction):
         return True
 
+    def provision_tsc(self, transaction):
+        pl = transaction['payload']
+        try:
+            if 'smart_contract' in pl:
+                sc = pl['smart_contract']
+                if sc['tsc']:
+                    tsc = None
+                    # define tsc function
+                    exec(sc['tsc'])
+                    # store tsc function for this txn type
+                    self.tsc[pl['transaction_type']] = tsc
+        except:
+            return False
+        return True
+
+    def provision_ssc(self, transaction):
+        return True
+
+    def provision_lsc(self, transaction):
+        return True
+
+    def provision_bsc(self, transaction):
+        pl = transaction['payload']
+        try:
+            if 'smart_contract' in pl:
+                sc = pl['smart_contract']
+                if sc['bsc']:
+                    bsc = None
+                    # define bsc function
+                    exec (sc['bsc'])
+                    # store bsc function for this txn type
+                    self.tsc[pl['transaction_type']] = bsc
+        except:
+            return False
+        return True
+
     def _execute_phase_1(self, config, current_block_id):
         """
         TODO update all EXEC comments/docs
@@ -293,12 +329,8 @@ class ProcessingNode(object):
         approved_transactions = []
 
         for txn in valid_transactions:
-            txn_type = txn["header"]["transaction_type"]
-            if txn_type in self.rtsc:
-                if self.rtsc[txn["header"]["transaction_type"]](txn):
-                    approved_transactions.append(txn)
-                else:
-                    rejected_transactions.append(txn)
+            if self.handle_transaction(txn):
+                approved_transactions.append(txn)
             else:
                 rejected_transactions.append(txn)
 
@@ -348,6 +380,29 @@ class ProcessingNode(object):
             for tx in rejected_transactions:
                 tx["header"]["status"] = "rejected"
                 transaction_db.update_transaction(tx)
+
+    def handle_transaction(self, txn):
+        """
+            check if the given transaction falls under one of these smart contract types and execute
+            the appropriate smart contract provisioning function on it
+         """
+        txn_type = txn["header"]["transaction_type"]
+        if txn_type in self.rtsc:
+            if self.rtsc[txn["header"]["transaction_type"]](txn):
+                return True
+        elif txn_type == "TT_PROVISION_TSC":
+            if self.provision_tsc(txn):
+                return True
+        elif txn_type == "TT_PROVISION_SSC":
+            if self.provision_ssc(txn):
+                return True
+        elif txn_type == "TT_PROVISION_LSC":
+            if self.provision_lsc(txn):
+                return True
+        elif txn_type == "TT_PROVISION_BSC":
+            if self.provision_bsc(txn):
+                return True
+        return False
 
     def _execute_phase_2(self, config, phase_1_info):
         """
