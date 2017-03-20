@@ -14,8 +14,8 @@
     "smart_contract": {
       "tsc": "def func(self, transaction): print transaction['header']['transaction_type']"
     },
-    "criteria": {
-        "transaction_type": "TT_REQ"
+    "criteria": { // change to list
+        "transaction_type"
     },
     "test": "print 'TEST'",
     "requirements": ["uuid", "time"],

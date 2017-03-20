@@ -274,17 +274,17 @@ class ProcessingNode(object):
         pl = transaction['payload']
         txn_type = transaction['header']['transaction_type']
         # insert new sc into database
-        try:
-            sc_dao.insert_sc(pl, "tsc", txn_type)
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            logger().warning(message)
+        if not self.insert_sc(pl, "tsc", txn_type):
             return False
         return self.sc_provisioning_helper(pl, "tsc")
 
     def provision_ssc(self, transaction):
-        return True
+        pl = transaction['payload']
+        txn_type = transaction['header']['transaction_type']
+        # insert new sc into database
+        if not self.insert_sc(pl, "ssc", txn_type):
+            return False
+        return self.sc_provisioning_helper(pl, "ssc")
 
     def provision_lsc(self, transaction):
         return True
@@ -303,13 +303,24 @@ class ProcessingNode(object):
                 sc = pl['smart_contract']
                 if sc[sc_type]:
                     func = None
-                    # define bsc function
+                    # define sc function
                     exec(sc[sc_type])
-                    # store bsc function for this txn type
+                    # store sc function for this txn type
                     self.tsc[pl['transaction_type']] = func
                 else:
                     logger().warning("No smart contract code provided...")
                     return False
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            logger().warning(message)
+            return False
+        return True
+
+    def insert_sc(self, pl, sc_type, txn_type):
+        """ insert sc info into database """
+        try:
+            sc_dao.insert_sc(pl, sc_type, txn_type)
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
