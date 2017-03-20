@@ -113,6 +113,13 @@ class TransactionHandler(tornado.web.RequestHandler):
             log.error("500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
         self.set_status(status_code)
 
+# TODO: implement handler for posting transactions to bitcoin network
+class public_transmission_handler(tornado.web.RequestHandler):
+    def __init__(self, *args, **kwargs):
+        tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+
+
+
 
 def valid_vestal_transaction(transaction):
     """ check if raw client transaction contains required fields """
@@ -169,6 +176,8 @@ def run():
     hdlrs = [
         (r"^/transaction$", TransactionHandler),
         (r"^/transaction/(.*)", TransactionHandler),
+        (r"^/public_transmit$", public_transmission_handler),
+        (r"^/public_transmit/(.*)", public_transmission_handler),
     ]
 
     log.info("Creating new tornado.web.Application")

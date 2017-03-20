@@ -204,7 +204,7 @@ def get_phase_4_info(phase_4):
     """ return dictionary representation of thrift phase 4 """
     return {
         RECORD: thrift_record_to_dict(phase_4.record),
-        VERIFICATION_INFO: None
+        VERIFICATION_INFO: phase_4.lower_hash
     }
 
 
@@ -257,6 +257,7 @@ def get_p4_message(block_info):
 
     phase_4_msg = message_types.Phase_4_msg()
     phase_4_msg.record = convert_to_thrift_record(verification_record)
+    phase_4_msg.lower_hash = block_info['verification_record']['lower_hash']
 
     return phase_4_msg
 

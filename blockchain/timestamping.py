@@ -89,7 +89,7 @@ class BitcoinTimestamper(): # IPoEStore
         assert stamper.ispersisted(txid, "hello world!"), "data item not present in the given txid"
     """
     MIN_FEE_BYTE = 60
-    MAX_FEE_BYTE = 200
+    MAX_FEE_BYTE = 250
     P2PKH_SIGSCRIPT_SIZE = 105
 
     def __init__(self, network, fee_provider):

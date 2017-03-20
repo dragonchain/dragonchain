@@ -636,13 +636,11 @@ class ProcessingNode(object):
 
         if validate_verification_record(verification_record, verification_info):
             timestamp_db.insert_verification(verification_record)
-            #TODO: insert into block_verifications table
             verification_record['block_id'] = None
             verification_record['origin_id'] = None
             verification_db.insert_verification(verification_record)
             print "phase 5 executed"
 
-    # TODO: create Verification Record outline instead of merkle tree implementation
     def _execute_timestamping(self, config):
         hashes = []
         verification_info = {
@@ -656,7 +654,10 @@ class ProcessingNode(object):
 
         for r in pending_records:
             hashes.append(r['signature']['hash'])
-            verification_info['verification_records'][r['timestamp_id']] = r['signature']['hash']
+            if r['origin_id'] not in verification_info['verification_records']:
+                verification_info['verification_records'][r['origin_id']] = {}
+            verification_info['verification_records'][r['origin_id']][r['timestamp_id']] = r['signature']['hash']
+
 
         transaction_hash = final_hash(hashes,type=256)
         verification_info['hash'] = transaction_hash
@@ -684,12 +685,25 @@ class ProcessingNode(object):
                                               public_transmission,
                                               verification_info
                                               )
+
         verification_db.insert_verification(block_info['verification_record'])
-        for verification_id in verification_info['verification_records'].keys():
-            timestamp_db.set_transaction_timestamp_proof(verification_id)
+
+        for origin_id in verification_info['verification_records'].keys():
+            for verification_id in verification_info['verification_records'][origin_id]:
+                timestamp_db.set_transaction_timestamp_proof(verification_id)
+
+        unique_vr_transfers = {}
 
         for verification_record in pending_records:
-            vr_transfers_db.insert_transfer(None, verification_record['signature']['signatory'], verification_record['timestamp_id'])
+            if not verification_record['origin_id'] in unique_vr_transfers:
+                unique_vr_transfers[verification_record['origin_id']] = []
+            # inserts a single record per origin_id
+            if verification_record['signature']['signatory'] not in unique_vr_transfers[verification_record['origin_id']]:
+                vr_transfers_db.insert_transfer(verification_record['origin_id'],
+                                                verification_record['signature']['signatory'],
+                                                verification_record['timestamp_id'])
+
+                unique_vr_transfers[verification_record['origin_id']].append(verification_record['signature']['signatory'])
 
 
     @staticmethod

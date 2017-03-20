@@ -155,12 +155,12 @@ union VerificationRecord {
     4: Phase_4_msg p4
 }
 
-union Phase_5_msg {
+union Phase_5_request {
     1: VerificationRecord verification_record
 }
 
-struct public_proof {
-
+struct Phase_5_msg { /* change to Public_5_msg */
+    1: VerificationRecord verification_record
 }
 
 struct SubscriptionResponse {

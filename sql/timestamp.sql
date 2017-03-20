@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS timestamps (
 
     block_id INT,
 
+    origin_id VARCHAR(256),
+
     /* confirm: when the transaction record was created */
     create_ts timestamptz,
 

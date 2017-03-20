@@ -125,6 +125,33 @@ Pre-create a directory for log files before execution.
     --host        (defaults to localhost)
     --port, -p    (defaults to 8080)
     --phase       (required)
+    
+    For phase 5 node only:
+    --bitcoin-network (mainnet/testnet/regtest)
+    
+## Running a phase 5 node
+    The current implementation of the phase 5 node can connect to a local bitcoin node with wallet in order to run or
+    can remotely connect to another bitcoin wallet running Bitcoin-Qt. 
+    Make sure that your bitcoin.conf file is in the proper location:
+    
+    Mac OSX
+        - $HOME/Library/Application Support/Bitcoin/
+    Linux
+        - $HOME/.bitcoin/
+    Windows
+        - %APPDATA%\Bitcoin\
+    
+    Connecting to bitcoin node:
+    **bitcoin.conf**
+    
+    rpcuser="some username"
+    rpcpassword="password for the node"
+    
+    - optional for running on a remote node **
+    
+    rpcconnect="bitcoin_node_ip_address"
+    rpcport="bitcoin_node_port" (defaults to 8333)
+    
 
 ## Configuration
 

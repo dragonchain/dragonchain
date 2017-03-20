@@ -106,6 +106,7 @@ def format_pending_transaction(pending_timestamp_record):
     return {
         "timestamp_id":         pending_timestamp_record["timestamp_id"],
         "block_id":             pending_timestamp_record["block_id"],
+        "origin_id":            pending_timestamp_record["origin_id"],
         "create_ts":            pending_timestamp_record["create_ts"],
         "signature":            pending_timestamp_record["signature"],
         "verification_info":    pending_timestamp_record["verification_info"]
