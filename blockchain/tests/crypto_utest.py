@@ -29,8 +29,11 @@ __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
 import time
+import datetime
+
 import unittest
 from unittest import TestCase
+
 from ecdsa import BadSignatureError
 import blockchain.util.crypto as crypto
 
@@ -39,6 +42,7 @@ PRIVATE_KEY = "-----BEGIN EC PARAMETERS-----\nBgUrgQQAIQ==\n-----END EC PARAMETE
 
 PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nME4wEAYHKoZIzj0CAQYFK4EEACEDOgAE7pcbDVgIxjjvYS4Ce+cR54vH+mgb5OvK\nwNQfh4iH8GyLjM0LpbZuuKh090/D7jONd+xeKuS9t8A=\n-----END PUBLIC KEY-----"
 
+# mock transaction
 TRANSACTION = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b754',
                           'transaction_ts': 1479264525,
                           'actor': 'c26dd972-8683-11e6-977b-3c970e3bee11',
@@ -53,6 +57,21 @@ TRANSACTION = {'header': {'transaction_id': '8a864b59-46e3-4c9b-8dfd-9d9a2bd4b75
                'payload': {'action': {'amount': '5.0', 'artifact_id': '12345', 'name': 'Test Payload'},
                            'source': 'f36c9086-8683-11e6-80dc-3c970e3bee11'}
                }
+
+# mock subscription
+SUBSCRIPTION = {'criteria': {'owner': 'Test Node',
+                             'transaction_type': 'TT_REQ'
+                             },
+                'host': 'localhost',
+                'last_time_called': datetime.datetime.now(),
+                'node_owner': 'TEST_NODE',
+                'port': 8080,
+                'status': 'approved',
+                'subscribed_node_id': 'dbbce2e5-600b-4e41-be5d-be4bacb1f952',
+                'subscription_id': '33a5f118-ddc8-4ca0-a037-c19ae8f1d39b',
+                'create_ts': 1488157671,
+                'synchronization_period': 5
+                }
 
 SIGNATORY = "31ce807a-868c-11e6-99f6-3c970e3bee11"
 HASH = 'f3580fb50cbf07432aa2ed87c6737ab180c3d1d387e09b121aead1d98375402e9df52febe72c6fced1c59b59dcad41dde729e84962c2480ce4a4ecf9bd073f16'
@@ -112,7 +131,8 @@ class TestSignVerificationRecord(TestCase):
         # testing that the generated hash from crypto.sign_verification_record is valid
         test_signature = crypto.validate_signature(test_output['verification_record']['signature'])
         self.assertTrue(test_signature, True)
-        # testing that exception is thrown on invalid hashes
+
+        # testing that an exception is thrown on invalid hashes
         test_output['verification_record']['signature']['hash'] = 'invalid_hash'
         self.assertRaises(BadSignatureError, crypto.validate_signature, test_output['verification_record']['signature'])
 
@@ -140,8 +160,8 @@ class TestAssembleSigBlock(TestCase):
 
 
 class TestSignTransaction(TestCase):
-    """ testing crypto sign_transaction """
     def test_sign_transaction(self):
+        """ testing crypto sign_transaction """
         transaction = TRANSACTION.copy()
 
         test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
@@ -171,8 +191,8 @@ class TestValidTransactionSig(TestCase):
 
 class TestValidateVerificationRecord(TestCase):
     def test_validate_verification_record(self):
-        verification_ts = 1479435043
         """ testing crypto validate_verification_record """
+        verification_ts = 1479435043
         test_output = crypto.sign_verification_record(SIGNATORY, PRIOR_BLOCK_HASH, LOWER_HASH, PUBLIC_KEY, PRIVATE_KEY, BLOCK_ID, PHASE, ORIGIN_ID,
                                                       verification_ts, public_transmission=None, verification_info=None)
         record = test_output['verification_record']
@@ -186,6 +206,41 @@ class TestValidateVerificationRecord(TestCase):
             if key is not "verification_info":
                 record.pop(key)
                 self.assertRaises(KeyError, crypto.validate_verification_record, record, None, test_mode=True)
+
+
+class TestSignSubscription(TestCase):
+    def test_sign_subscription(self):
+        """ testing crypto sign_subscription """
+        subscription = SUBSCRIPTION.copy()
+        crypto.sign_subscription(SIGNATORY, subscription, PRIVATE_KEY, PUBLIC_KEY)
+
+        # checking if signature made it into subscription
+        self.assertEqual('signature' in subscription, True)
+
+        # testing that the generated hash from crypto.sign_subscription is valid
+        test_signature = crypto.validate_signature(subscription['signature'])
+        self.assertTrue(test_signature, True)
+
+        # testing that an exception is thrown on invalid hashes
+        subscription['signature']['hash'] = 'invalid_hash'
+        self.assertRaises(BadSignatureError, crypto.validate_signature, subscription['signature'])
+
+
+class TestValidateSubscription(TestCase):
+    def test_validate_subscription(self):
+        """ testing crypto validate_subscription """
+        subscription = SUBSCRIPTION.copy()
+        crypto.sign_subscription(SIGNATORY, subscription, PRIVATE_KEY, PUBLIC_KEY)
+
+        signature_block = subscription['signature']
+        criteria = subscription['criteria']
+
+        # testing if validate_subscription passes
+        self.assertEqual(crypto.validate_subscription(signature_block, criteria, subscription['create_ts'], PUBLIC_KEY), True)
+
+        # testing that an exception is thrown on invalid hashes
+        signature_block['hash'] = 'invalid_hash'
+        self.assertRaises(BadSignatureError, crypto.validate_signature, signature_block)
 
 if __name__ == '__main__':
     unittest.main()

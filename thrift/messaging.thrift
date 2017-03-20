@@ -48,7 +48,7 @@ struct PriorBlockHash {
 
 struct Verification {
     1: string verification_id,
-    2: string verified_ts,
+    2: string verification_ts,
     3: i32 block_id,
     4: VerificationSignature signature,
     5: string owner,
@@ -163,6 +163,11 @@ struct public_proof {
 
 }
 
+struct SubscriptionResponse {
+    1: list<Transaction> transactions,
+    2: list<VerificationRecord> verification_records
+}
+
 exception UnauthorizedException {
 }
 
@@ -193,6 +198,10 @@ service BlockchainService {
    list<string> receipt_request(1: string pass_phrase),
 
    list<VerificationRecord> transfer_data(1: string pass_phrase, 2: list<string> received, 3: list<string> unreceived),
+
+   void subscription_provisioning(1: string subscription_id, 2: map<string, string> criteria, 3:string phase_criteria, 4: i32 create_ts, 5: string public_key),
+
+   SubscriptionResponse subscription_request(1: string subscription_id, 2: Signature subscription_signature),
 
    list<Node> get_peers() throws (1:UnauthorizedException unauthorized)
 }

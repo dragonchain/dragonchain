@@ -38,11 +38,35 @@ import os
 
 import uuid
 
+import argparse
 
-def load_required_nodes():
-    node = Node("64110e10-cdf9-41e5-a13a-f95ba1f5acdb", 'TWDC', 'localhost', '8084', '10000')
+
+def load_required_nodes(owner, host, port, phases, node_id=str(uuid.uuid4())):
+    """
+    manually insert network node into database
+    Args:
+        owner: node owner
+        host: node host
+        port: node port
+        phases: node phases provided
+        node_id: node uuid pk
+    """
+    node = Node(node_id, owner, host, port, phases)
     net_dao.insert_node(node)
     print('inserted node into database ' + os.environ.get('BLOCKCHAIN_DB_NAME') + " " + node.node_id)
 
 if __name__ == '__main__':
-    load_required_nodes()
+    parser = argparse.ArgumentParser(description='Process node data.')
+    parser.add_argument('--owner', default="TEST_OWNER")
+    parser.add_argument('--host', default="localhost")
+    parser.add_argument('-p', '--port')
+    parser.add_argument('--phases', default="00001")
+
+    args = vars(parser.parse_args())
+
+    owner = args['owner']
+    host = args['host']
+    port = args['port']
+    phases = args['phases']
+
+    load_required_nodes(owner, host, port, phases)

@@ -55,6 +55,15 @@ def sign_transaction(signatory,
                      public_key_string,
                      transaction,
                      log=logging.getLogger(__name__)):
+    """
+    Sign a transaction
+    :param signatory: Name or identifier of the signing party (the caller)
+    :param private_key_string:
+    :param public_key_string:
+    :param transaction: Transaction to sign
+    :param log:
+    :return: Transaction with assembled signature field
+    """
     hashed_items = []
 
     child_signature = None
@@ -124,22 +133,28 @@ def sign_verification_record(signatory,
                              public_transmission,
                              verification_info):
     """
-    sign verification record (common and special info among each phase)
-    * signatory (current node's name/id)
-    * prior_block_hash
-    * lower_hash
-    * public_key
-    * private_key
-    * block_id
-    * phase
-    * origin_id (original phase_1 node_id)
-    * verification_ts
-    * verification_info (special info per phase)
-        - phase_1 (approved transactions)
-        - phase_2 (valid_txs, invalid_txs, business, deploy_location, verification_sig)
-        - phase_3 (phase_2 count, business_diversity list, deploy_loc_diversity list, verification_sig)
-        - phase_4
-        - phase_5
+    Sign a (block) verification record
+    :param signatory: Name or identifier of the signing party (the caller)
+    :param prior_block_hash: Hash of the prior block (verification record with the same origin_id, phase, and signatory)
+    :param lower_hash: Hash of the lower phase verification record
+    :param public_key_string: hashed and inserted into signature block for later validation
+    :param private_key_string: private key used for generating signature
+    :param block_id: Verification record block ID
+    :param phase: Verification record phase
+    :param origin_id: ID of the origin node (phase 1 node)
+    :param verification_ts:
+    :param public_transmission:
+    :param verification_info: Phase specific information to be included in the signature
+        - phase_1: list of approved transactions (dictionaries)
+        - phase_2: valid_tx ID list, invalid_tx ID list, business ID, deploy_location
+        - phase_3: phase_2 count, business_diversity list, deploy_loc_diversity list
+        - phase_4: Nothing (notary function only)
+        - phase_5: One of:
+            - transaction
+            - verification_record
+            - hash
+            - arbitrary string
+    :return: verification record with assembled signature field
     """
     # signature, transaction_hash = \
     #     sign_signatures(map(lambda tx: tx["signature"], approved_transactions), private_key_string)
@@ -192,7 +207,49 @@ def sign_verification_record(signatory,
     return block_info
 
 
+def sign_subscription(signatory, subscription, private_key_string, public_key_string):
+    """
+    sign a subscription (deep hash of criteria, signatory, signature timestamp, public key)
+    param signatory: Name or identifier of the signing party (the caller)
+    param subscription: all fields of subscription signed
+    param private_key_string: private key used for generating signature
+    param public_key_string: hashed and inserted into signature block for later validation
+    """
+    ecdsa_signing_key = SigningKey.from_pem(private_key_string)
+    signature_ts = int(time.time())
+    hashed_items = []
+
+    # append criteria for hashing
+    hashed_items.append(deep_hash(subscription['criteria']))
+
+    # append sub create timestamp for hashing
+    hashed_items.append(subscription['create_ts'])
+
+    hashed_items.append(signatory)
+    hashed_items.append(signature_ts)
+    hashed_items.append(public_key_string)
+
+    verification_hash = final_hash(hashed_items)
+
+    signature = ecdsa_signing_key.sign(verification_hash)
+    digest = signature.encode('base64')
+
+    signature_block = assemble_sig_block(subscription, signatory, public_key_string, digest, verification_hash, signature_ts)
+
+    return signature_block
+
+
 def valid_transaction_sig(transaction, test_mode=False, log=logging.getLogger(__name__)):
+    """
+    Validate the signature on a passed transaction.
+    Checks signature validity and that the signature's hash is equal to a newly calculated hash.
+    If no signature is present, will return True (signature is _not_ required for a transaction).
+    :param transaction: Transaction
+    :param test_mode: errors not logged in test mode
+    :param log: message logger
+    :return: True on valid or non-existent transaction signature, False otherwise.
+    """
+
     """ returns true on valid transaction signature, false otherwise """
     hashed_items = []
 
@@ -255,6 +312,14 @@ def valid_transaction_sig(transaction, test_mode=False, log=logging.getLogger(__
 
 
 def validate_signature(signature_block, log=logging.getLogger(__name__)):
+    """
+    Validates signature of verification record or transaction accounting for presence of
+        "stripped_hash" in transaction signatures
+    :param signature_block: dict of signature
+    :param log: message logger
+    :return: True on valid signature, False otherwise.
+    """
+
     """ validate signature using provided stripped and full hashes """
 
     verifying_key = VerifyingKey.from_pem(signature_block["public_key"])
@@ -275,9 +340,13 @@ def validate_signature(signature_block, log=logging.getLogger(__name__)):
 
 def validate_verification_record(record, verification_info, test_mode=False, log=logging.getLogger(__name__)):
     """
-    validate verification record signature
-    * verification_record - general info per phase - signing name, timestamp, pub_key, block_id, etc.
-    * verification_info - arbitrary data per phase such as approved transactions
+    Validate signature in a verification record.
+    Checks signature validity and that the signature's hash is equal to a newly calculated hash.
+    :param record: General/common verification record fields
+    :param verification_info: Special, phase specific verification record fields/data
+    :param test_mode: flag set in testing to avoid unwanted error messages
+    :param log:
+    :return: True if signature is valid and hash is equal to a newly calculated hash, False otherwise.
     """
     hashed_items = []
     try:
@@ -317,22 +386,72 @@ def validate_verification_record(record, verification_info, test_mode=False, log
     return True
 
 
+def validate_subscription(signature_block,
+                          criteria,
+                          create_ts,
+                          subscriber_public_key,
+                          log=logging.getLogger(__name__)):
+    """
+    validate signature in a subscription.
+    checks signature validity and that the signature's hash is equal to a newly calculated hash.
+    param signature_block: dict of signature
+    param criteria: dict of criteria data hashed
+    param create_ts: time subscription was created
+    param subscriber_public_key: public key hashed
+    """
+    hashed_items = []
+    try:
+        validate_signature(signature_block)
+
+        hashed_items.append(deep_hash(criteria))
+
+        hashed_items.append(create_ts)
+
+        hashed_items.append(signature_block['signatory'])
+        hashed_items.append(signature_block['signature_ts'])
+        hashed_items.append(subscriber_public_key)
+
+        verification_hash = final_hash(hashed_items)
+        if not verification_hash == signature_block['hash']:
+            return False
+
+    except BadSignatureError:
+        log.error("BadSignatureError detected.")
+        return False
+    except:
+        log.warning("An unexpected error has occurred. Possible causes: KeyError")
+        raise  # re-raise the exception
+
+    return True
+
+
 def assemble_sig_block(record, signatory, public_key_string, signature, hash, signature_ts, stripped_hash=None,
                        child_signature=None, log=logging.getLogger(__name__)):
     """
-    assemble new signature record
-    optional stripped_hash and child_sig
-    :param signature_ts:
+    :param record: Record to which a standard signature will be added (TODO consider to move this to calling functions)
+    :param signatory: Name or identifier of the signing party (the caller)
+    :param public_key_string: Encoded public key of the signing keypair
+    :param signature: The digital signature
+    :param hash: Hash of information which was signed
+    :param signature_ts: Timestamp of the signing action (included in the signature)
+    :param stripped_hash: Optional hash (used for transaction with payload "stripped").
+    :param child_signature: Optional nested signature
+    :param log:
+    :return: The record with signature field added.
     """
-    # setting signature name
-
-    record["signature"] = {
+    signature_block = {
         "signatory": signatory,
         "signature": signature,
         "hash": hash,
         "public_key": public_key_string,
         "signature_ts": signature_ts
     }
+
+    if not record:
+        return signature_block
+
+    # setting signature name
+    record["signature"] = signature_block
 
     # setting stripped and full hashes
     if stripped_hash:
@@ -344,12 +463,21 @@ def assemble_sig_block(record, signatory, public_key_string, signature, hash, si
 
 
 def bytes2long(str):
-    """ converts string bytes to long; only accepts string type """
+    """
+    Utility function to convert string to hexidecimal representation and cast to long for deterministic hashing.
+    TODO argument validation
+    :param str: String to convert
+    :return: integer representation of passed string
+    """
     return long(str.encode('hex'), 16)
 
 
 def deterministic_hash(items):
-    """ hash list of items; converts strings to longs when needed, returns 0 if item is none """
+    """
+    Intermediary hashing function that allows deterministic hashing of a list of items.
+    :param items: List of items to hash
+    :return: Numeric, deterministic hash, returns 0 if item is none
+    """
     h = 0
     for item in items:
         if not item:
@@ -363,9 +491,10 @@ def deterministic_hash(items):
 
 def deep_hash(thing):
     """
-    Makes a hash from a dictionary, list, tuple or set to any level, that contains
-    only other hashable types (including any lists, tuples, sets, and
-    dictionaries).
+    Intermediary hashing function that allows creation of a hash from a dictionary, list, tuple, or set to any level,
+        that contains only other hashable types (including any lists, tuples, sets, and dictionaries).
+    :param thing: Arbitrary dict, list, tuple, or set to hash
+    :return: Numeric, deterministic hash
     """
     if not thing:
         return 0
@@ -383,6 +512,11 @@ def deep_hash(thing):
 
 
 def final_hash(items, type=512):
+    """
+    Deterministic hashing function that should be used for any full hashing in the system.
+    :param items: A list of items to hash deterministically.
+    :return: finalized deterministic sha512 hash
+    """
     if type == 512:
         """ returns final sha512 hash """
         hash_object = hashlib.sha512(str(deterministic_hash(items)))
@@ -395,6 +529,11 @@ def final_hash(items, type=512):
 
 
 def merge_hashes(stripped_hash, hash):
-    """ merge stripped_hash (excluding payload) and hash (including payload) """
+    """
+    For transaction hashing, merge stripped_hash (excluding payload) and hash (including payload) for processing.
+    :param stripped_hash: Hash of the stripped transaction (no payload).
+    :param hash: Hash of the complete transaction.
+    :return: Deterministic unified hash
+    """
     hashed_items = [stripped_hash, hash]
     return deterministic_hash(hashed_items)

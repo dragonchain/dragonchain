@@ -5,7 +5,7 @@
     "family_of_business": "Test Business Family",
     "line_of_business": "My Business",
     "owner": "Test Node",
-    "transaction_type": "TT_REQ",
+    "transaction_type": "TT_PROVISION_SC",
     "actor": "c26dd972-8683-11e6-977b-3c970e3bee11",
     "entity": "c78f4526-8683-11e6-b1c6-3c970e3bee11"
   },
@@ -15,6 +15,17 @@
       "amount": "5.00",
       "artifact_id": "12345"
     },
+    "subscription": {
+      "subscribed_node_id": "31ce807a-868c-11e6-99f6-3c970e3bee11",
+      "node_owner": "TEST_NODE",
+      "host": "localhost",
+      "port": "8080",
+      "criteria": {
+        "transaction_type": "TT_REQ",
+        "owner": "Test Node"
+      },
+      "phase_criteria": "3"
+    }
+  },
     "source": "f36c9086-8683-11e6-80dc-3c970e3bee11"
   }
-}

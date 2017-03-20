@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Copyright 2016 Disney Connected and Advanced Technologies
 
@@ -35,15 +37,16 @@ from blockchain.block import Block, \
     get_block_time, \
     get_current_block_id
 
-from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, deep_hash
+from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, sign_subscription, final_hash
 
 from bitcoin.core import *
 
-from db.postgres import transaction_db
-from db.postgres import verification_db
-from db.postgres import vr_transfers_db
-from db.postgres import timestamp_db
-from db.postgres import postgres
+from blockchain.db.postgres import postgres
+from blockchain.db.postgres import transaction_db
+from blockchain.db.postgres import verification_db
+from blockchain.db.postgres import vr_transfers_db
+from blockchain.db.postgres import sub_to_db as sub_db
+from blockchain.db.postgres import timestamp_db
 
 import network
 
@@ -56,6 +59,7 @@ from blockchain.util.crypto import final_hash
 import logging
 import argparse
 import time
+import uuid
 
 # TODO increase these for network sizing and later deliver via blockchain
 P2_COUNT_REQ = 1
@@ -69,6 +73,8 @@ PHASE = 'phase'
 
 SIGNATURE = 'signature'
 HASH = 'hash'
+
+RESERVED_TXN_TYPES = ["TT_SUB_REQ", "TT_PROVISION_SC"]
 
 
 def logger(name="verifier-service"):
@@ -85,6 +91,8 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
+        self.smart_contracts = {"TT_SUB_REQ": self._subscription_request,
+                                "TT_PROVISION_SC": self.provision_sc}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
             PHASE: self._phase_type_config_handler,
@@ -216,9 +224,8 @@ class ProcessingNode(object):
         """
         returns prior block hash of curr_block_id.
         returns None if no block_id was found -- meaning this is the first block.
-
-        Args:
-            origin_id:
+        :param origin_id: search for hash matching this origin_id
+        :param phase: search for hash matching this phase
         """
         prior_hash = None
         if phase:
@@ -228,6 +235,44 @@ class ProcessingNode(object):
                 prior_hash = prior_block[SIGNATURE][HASH]
 
         return prior_hash
+
+    def _subscription_request(self, transaction):
+        """
+            attempts to make initial communication with subscription node
+            param transaction: transaction to retrieve subscription info from
+        """
+        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
+        if "subscription" in transaction["payload"]:
+            subscription = transaction["payload"]['subscription']
+            try:
+                subscription_id = str(uuid.uuid4())
+                criteria = subscription['criteria']
+                phase_criteria = subscription['phase_criteria']
+                subscription['create_ts'] = int(time.time())
+                public_key = self.service_config['public_key']
+                # store new subscription info
+                sub_db.insert_subscription(subscription, subscription_id)
+                # get subscription node
+                subscription_node = self.network.get_subscription_node(subscription)
+                # initiate communication with subscription node
+                if subscription_node:
+                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, subscription['create_ts'], public_key)
+                return True
+            except Exception as ex:  # likely already subscribed
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
+                return False
+
+    def get_subscription_signature(self, subscription):
+        """ return signature for given subscription """
+        sign_subscription(self.network.this_node.node_id,
+                          subscription,
+                          self.service_config["private_key"],
+                          self.service_config["public_key"])
+
+    def provision_sc(self, transaction):
+        return True
 
     def _execute_phase_1(self, config, current_block_id):
         """
@@ -248,21 +293,23 @@ class ProcessingNode(object):
         print ("""Time bounds: %i - %i""" % (block_bound_lower_ts, block_bound_lower_ts + BLOCK_INTERVAL))
         transaction_db.fixate_block(block_bound_lower_ts, block_bound_lower_ts + BLOCK_INTERVAL, current_block_id)
 
-        if 'approve_block' in config:
-            return config['approve_block'](config, current_block_id)
-
         transactions = transaction_db.get_all(block_id=current_block_id)
 
         # Validate the schema and structure of the transactions
         valid_transactions, invalid_transactions = self.split_items(valid_transaction_sig, transactions)
 
-        # Use the custom approval code if configured, otherwise approve all valid transaction
         rejected_transactions = []
-        if 'approve_transaction' in config:
-            approved_transactions, rejected_transactions = \
-                self.split_items(config['approve_transaction'], valid_transactions)
-        else:
-            approved_transactions = valid_transactions
+        approved_transactions = []
+
+        for txn in valid_transactions:
+            txn_type = txn["header"]["transaction_type"]
+            if txn_type in self.smart_contracts:
+                if self.smart_contracts[txn["header"]["transaction_type"]](txn):
+                    approved_transactions.append(txn)
+                else:
+                    rejected_transactions.append(txn)
+            else:
+                rejected_transactions.append(txn)
 
         if len(approved_transactions) > 0:
             # update status of approved transactions
@@ -279,7 +326,7 @@ class ProcessingNode(object):
             prior_block_hash = self.get_prior_hash(origin_id, phase)
             verification_info = approved_transactions
 
-            lower_hash = str(deep_hash(0))
+            lower_hash = str(final_hash([0]))
 
             # sign approved transactions
             block_info = sign_verification_record(signatory,
@@ -294,7 +341,8 @@ class ProcessingNode(object):
                                                   self.public_transmission,
                                                   verification_info)
             # store signed phase specific data
-            verification_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if block_info['verification_record']['public_transmission']['p1_pub_trans']:
@@ -367,14 +415,18 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verification_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
+
+            # inserting receipt of signed verification for data transfer
+            vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
             # send block info for phase 3 validation
-            self.network.send_block(self.network.phase_2_broadcast, block_info, phase_1_record[PHASE])
+            self.network.send_block(self.network.phase_2_broadcast, block_info, phase)
 
             print "phase_2 executed"
 
@@ -439,6 +491,7 @@ class ProcessingNode(object):
             # storing valid verification record
             verification_db.insert_verification(phase_2_record)
 
+            # retrieve all phase 2 records for current block
             phase_2_records = self.get_sig_records(phase_2_record)
 
             signatories, businesses, locations = self.get_verification_diversity(phase_2_records)
@@ -447,8 +500,7 @@ class ProcessingNode(object):
             if len(signatories) >= P2_COUNT_REQ and len(businesses) >= P2_BUS_COUNT_REQ and len(locations) >= P2_LOC_COUNT_REQ:
                 # updating record phase
                 phase_2_record[PHASE] = phase
-                lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH]
-                                      for record in phase_2_records]
+                lower_hashes = [record[SIGNATURE]['signatory'] + ":" + record[SIGNATURE][HASH] for record in phase_2_records]
 
                 verification_info = {
                     'lower_hashes': lower_hashes,
@@ -457,7 +509,7 @@ class ProcessingNode(object):
                     'deploy_locations': list(locations)
                 }
 
-                lower_hash = str(deep_hash(lower_hashes))
+                lower_hash = str(final_hash(lower_hashes))
 
                 # sign verification and rewrite record
                 block_info = sign_verification_record(self.network.this_node.node_id,
@@ -474,7 +526,12 @@ class ProcessingNode(object):
                                                       )
 
                 # inserting verification info after signing
-                verification_db.insert_verification(block_info['verification_record'])
+                verification_id = str(uuid.uuid4())
+                verification_db.insert_verification(block_info['verification_record'], verification_id)
+
+                # inserting receipt for each phase 2 record received
+                for record in phase_2_records:
+                    vr_transfers_db.insert_transfer(record['origin_id'], record['signature']['signatory'], verification_id)
 
                 # send block info off for public transmission if configured to do so
                 if phase_2_record['public_transmission']['p3_pub_trans']:
@@ -493,8 +550,8 @@ class ProcessingNode(object):
         origin_id = verification_record[ORIGIN_ID]
         phase = verification_record[PHASE]
 
-        # get number of phase validations received
-        records = verification_db.get_records(block_id, origin_id, phase)
+        # get_verifications -- number of phase validations received
+        records = verification_db.get_records(block_id=block_id, origin_id=origin_id, phase=phase)
 
         return records
 
@@ -557,13 +614,16 @@ class ProcessingNode(object):
                                                   )
 
             # inserting verification info after signing
-            verification_db.insert_verification(block_info['verification_record'])
+            verification_id = str(uuid.uuid4())
+            verification_db.insert_verification(block_info['verification_record'], verification_id)
+
+            # inserting receipt of signed verification for data transfer
+            vr_transfers_db.insert_transfer(phase_3_record['origin_id'], phase_3_record['signature']['signatory'], verification_id)
 
             # send block info off for public transmission if configured to do so
             if phase_3_record['public_transmission']['p4_pub_trans']:
                 self.network.public_broadcast(block_info, phase)
 
-            self.network.send_block(self.network.phase_4_broadcast, block_info, phase)
             print "phase 4 executed"
 
     def _execute_phase_5(self, config, verification):

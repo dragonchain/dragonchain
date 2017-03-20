@@ -33,7 +33,6 @@ import psycopg2
 import psycopg2.extras
 from psycopg2.extras import Json
 import uuid
-import time
 
 from blockchain.qry import format_block_verification
 from postgres import get_connection_pool
@@ -46,7 +45,7 @@ SQL_GET_ALL = """SELECT * FROM block_verifications"""
 SQL_INSERT_QUERY = """
     INSERT INTO block_verifications (
         verification_id,
-        verified_ts,
+        verification_ts,
         block_id,
         signature,
         origin_id,
@@ -92,20 +91,33 @@ def get_prior_block(origin_id, phase):
         get_connection_pool().putconn(conn)
 
 
-def get_records(block_id, origin_id, phase):
+def get_records(**params):
     """ return verification records with given criteria """
-    # TODO: getting strange results from query string "||" around origin_id. Not currently breaking anything
     query = SQL_GET_ALL
-    query += """ WHERE block_id = """ + str(block_id)
-    query += """ AND origin_id = '""" + str(origin_id)
-    query += """' AND phase = """ + str(phase)
+    query += """ WHERE """
+    separator_needed = False
+
+    if "block_id" in params:
+        query += """ block_id = %(block_id)s"""
+        separator_needed = True
+
+    if "origin_id" in params:
+        if separator_needed:
+            query += """ AND """
+        query += """ origin_id = %(origin_id)s"""
+        separator_needed = True
+
+    if "phase" in params:
+        if separator_needed:
+            query += """ AND """
+        query += """ phase = %(phase)s"""
 
     records = []
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(query, params)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)

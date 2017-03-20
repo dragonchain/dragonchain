@@ -65,17 +65,33 @@ SQL_RESET_ALL = """UPDATE nodes SET start_conn_ts = NULL, connection_attempts = 
 SQL_RESET_START = """UPDATE nodes SET start_conn_ts = NULL WHERE node_id = %s """
 
 
+def get(node_id):
+    """ query for network node that matches given node id """
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(SQL_GET_BY_ID, (node_id,))
+        result = cur.fetchone()
+        cur.close()
+        if result:
+            result = format_node(result)
+        return result
+    finally:
+        get_connection_pool().putconn(conn)
+
+
 def insert_node(node):
+    """ insert given network node into table."""
     node_id = node.node_id
     sql_args = (
         node_id,
-        int(time.time()),
+        int(time.time()),  # node creation time
         node.owner,
         node.host,
         node.port,
-        node.phases,
+        node.phases,  # phases provided in binary
         node.latency,
-        node.pass_phrase
+        node.pass_phrase  # used for Thrift network auth
     )
     conn = get_connection_pool().getconn()
     try:
@@ -93,6 +109,10 @@ def get_cursor_name():
 
 
 def get_by_phase(phases, limit=None):
+    """
+        query for all nodes that provide services for the given phases (bitwise and)
+        e.g. 01001 (phase 1 and 4) will return all nodes that provide either phase 1, 4 or both
+    """
     query = SQL_GET_ALL
     if phases:
         query += """ WHERE """
@@ -124,6 +144,7 @@ def get_by_phase(phases, limit=None):
 
 
 def get_unregistered_nodes(limit=None):
+    """ query for all nodes that are currently unconnected """
     query = SQL_GET_ALL
     #  should possibly be based upon total unregistered/non-connected nodes and how often this is executed
     # TODO: base time interval based on number of attempts (fibonacci series?)
@@ -164,7 +185,7 @@ def update_con_start(node):
 
 
 def update_con_attempts(node):
-    # increment connection attempts, update last connection attempt time. reset conn success
+    """ increment connection attempts, update last connection attempt time. reset conn success """
     sql_args = (
         int(time.time()),  # last attempt time
         node.node_id)
@@ -172,7 +193,7 @@ def update_con_attempts(node):
 
 
 def update_con_activity(node):
-    # update node latency and time of last activity
+    """ update node latency and time of last activity """
     sql_args = (
         int(time.time()),  # activity time
         node.latency,      # node latency
@@ -181,26 +202,26 @@ def update_con_activity(node):
 
 
 def update_failed_ping(node):
-    # reset connection start time and latency when registered node fails to ping
+    """ reset connection start time and latency when registered node fails to ping """
     sql_args = (node.node_id,)
     execute_db_args(sql_args, SQL_FAILED_PING)
 
 
 def reset_data():
-    # reset start_conn, latency, conn_attempts, last_attempt_ts on start up (for testing)
+    """ reset start_conn, latency, conn_attempts, last_attempt_ts on start up (used for testing) """
     sql_args = (None,)  # last attempt time
     # FIXME: No args needed
     execute_db_args(sql_args, SQL_RESET_ALL)
 
 
 def reset_start_time(node):
-    # reset start_conn_ts to null
+    """ reset start_conn_ts to null """
     sql_args = (node.node_id,)
     execute_db_args(sql_args, SQL_RESET_START)
 
 
 def execute_db_args(sql_args, query_type):
-    # establish database connection with given args
+    """ establish database connection with given args """
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
