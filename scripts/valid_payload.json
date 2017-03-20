@@ -12,7 +12,7 @@
   "payload": {
     "transaction_type": "TT_REQ",
     "smart_contract": {
-      "tsc": "def tsc(self, transaction): print transaction['header']['transaction_type']"
+      "tsc": "def func(self, transaction): print transaction['header']['transaction_type']"
     },
     "criteria": {
         "time": "0",
@@ -20,7 +20,7 @@
     },
     "test": 0,
     "requirements": 0,
-    "version": 1.0
+    "version": 1
   },
     "source": "f36c9086-8683-11e6-80dc-3c970e3bee11"
   }

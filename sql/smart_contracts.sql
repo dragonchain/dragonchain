@@ -31,9 +31,50 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i vr_transfers.sql
-\i subscriptions.sql
-\i smart_contracts.sql
+
+/* Create a blocky user if it doesn't exist */
+do
+$body$
+declare
+  num_users integer;
+begin
+   SELECT count(*)
+     into num_users
+   FROM pg_user
+   WHERE usename = 'blocky';
+
+   IF num_users = 0 THEN
+      CREATE ROLE blocky WITH LOGIN;
+   END IF;
+end
+$body$
+;
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+CREATE TABLE IF NOT EXISTS smart_contracts (
+    /* sc unique id */
+    sc_id UUID PRIMARY KEY,
+
+    /* smart contract code */
+    smart_contract TEXT,
+
+    /* transaction type of sc */
+    transaction_type VARCHAR(256),
+
+    /* criteria used for selection of appropriate sc */
+    criteria JSON,
+
+    /* unit test for sc */
+    test TEXT,
+
+    /* required libraries needed for the sc to run */
+    requirements TEXT[],
+
+    /* current sc version */
+    version INT
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON smart_contracts to blocky;
+COMMIT;

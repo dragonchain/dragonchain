@@ -266,19 +266,7 @@ class ProcessingNode(object):
         return True
 
     def provision_tsc(self, transaction):
-        pl = transaction['payload']
-        try:
-            if 'smart_contract' in pl:
-                sc = pl['smart_contract']
-                if sc['tsc']:
-                    tsc = None
-                    # define tsc function
-                    exec(sc['tsc'])
-                    # store tsc function for this txn type
-                    self.tsc[pl['transaction_type']] = tsc
-        except:
-            return False
-        return True
+        return self.sc_provisioning_helper(transaction['payload'], "tsc")
 
     def provision_ssc(self, transaction):
         return True
@@ -287,16 +275,18 @@ class ProcessingNode(object):
         return True
 
     def provision_bsc(self, transaction):
-        pl = transaction['payload']
+        return self.sc_provisioning_helper(transaction['payload'], "bsc")
+
+    def sc_provisioning_helper(self, pl, sc_type):
         try:
             if 'smart_contract' in pl:
                 sc = pl['smart_contract']
-                if sc['bsc']:
-                    bsc = None
+                if sc[sc_type]:
+                    func = None
                     # define bsc function
-                    exec (sc['bsc'])
+                    exec(sc[sc_type])
                     # store bsc function for this txn type
-                    self.tsc[pl['transaction_type']] = bsc
+                    self.tsc[pl['transaction_type']] = func
         except:
             return False
         return True
@@ -402,6 +392,9 @@ class ProcessingNode(object):
         elif txn_type == "TT_PROVISION_BSC":
             if self.provision_bsc(txn):
                 return True
+        elif txn_type in self.tsc:
+            self.tsc[txn_type](self, txn)
+            return True
         return False
 
     def _execute_phase_2(self, config, phase_1_info):
