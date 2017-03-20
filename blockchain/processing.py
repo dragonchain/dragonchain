@@ -43,6 +43,7 @@ from db.postgres import postgres
 from db.postgres import transaction_db
 from db.postgres import verification_db
 from db.postgres import vr_transfers_db
+from db.postgres import smart_contracts_db as sc_dao
 from blockchain.db.postgres import sub_to_db as sub_db
 
 import network
@@ -266,7 +267,21 @@ class ProcessingNode(object):
         return True
 
     def provision_tsc(self, transaction):
-        return self.sc_provisioning_helper(transaction['payload'], "tsc")
+        """
+        provision tsc type smart contract
+        :param transaction: transaction to extract sc data from
+        """
+        pl = transaction['payload']
+        txn_type = transaction['header']['transaction_type']
+        # insert new sc into database
+        try:
+            sc_dao.insert_sc(pl, "tsc", txn_type)
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            logger().warning(message)
+            return False
+        return self.sc_provisioning_helper(pl, "tsc")
 
     def provision_ssc(self, transaction):
         return True
@@ -278,6 +293,11 @@ class ProcessingNode(object):
         return self.sc_provisioning_helper(transaction['payload'], "bsc")
 
     def sc_provisioning_helper(self, pl, sc_type):
+        """
+        insert sc code into appropriate dictionary
+        :param pl: transaction payload to extract sc from
+        :param sc_type: type of sc being dealt with (e.g. tsc, ssc, etc.)
+        """
         try:
             if 'smart_contract' in pl:
                 sc = pl['smart_contract']
@@ -287,7 +307,13 @@ class ProcessingNode(object):
                     exec(sc[sc_type])
                     # store bsc function for this txn type
                     self.tsc[pl['transaction_type']] = func
-        except:
+                else:
+                    logger().warning("No smart contract code provided...")
+                    return False
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            logger().warning(message)
             return False
         return True
 

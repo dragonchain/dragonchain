@@ -52,7 +52,7 @@ SQL_INSERT = """INSERT into sub_to (
                     criteria,
                     create_ts,
                     status
-                ) VALUES (%s, %s, %s, %s, %s, %s, to_timestamp(%s), %s) """
+                ) VALUES (%s, %s, %s, %s, %s, %s, to_timestamp(%s), %s)"""
 
 
 def insert_subscription(subscription, subscription_id=None):
