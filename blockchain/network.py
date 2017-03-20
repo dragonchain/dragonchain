@@ -44,24 +44,20 @@ from apscheduler.triggers.cron import CronTrigger
 from blockchain.db.postgres import network_db as net_dao
 from blockchain.db.postgres import vr_transfers_db
 from blockchain.db.postgres import verification_db
-<<<<<<< HEAD
+
 from blockchain.db.postgres import sub_to_db
 from blockchain.db.postgres import sub_from_db
 from blockchain.db.postgres import transaction_db
 from blockchain.db.postgres import sub_vr_backlog_db as sub_vr_backlog_db
 from blockchain.db.postgres import sub_vr_transfers_db
-=======
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
 
 import gen.messaging.BlockchainService as BlockchainService
 import gen.messaging.ttypes as message_types
 import db.postgres.postgres as pg
 
 from blockchain.util import thrift_conversions as thrift_converter
-<<<<<<< HEAD
+
 from blockchain.util.crypto import validate_subscription
-=======
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
 
 from thrift import Thrift
 from thrift.transport import TSocket
@@ -210,15 +206,13 @@ class ConnectionManager(object):
         scheduler.add_job(self.refresh_registered, CronTrigger(second='*/5'))
         scheduler.add_job(self.refresh_unregistered, CronTrigger(second='*/60'))
         scheduler.add_job(self.connect, CronTrigger(second='*/5'))
-<<<<<<< HEAD
-        scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
         scheduler.add_job(self.subscription_feed, CronTrigger(second='*/5'))
-=======
+
         # the timed_receipt_request only is added to the chron for nodes that are transmitting up the chain.
         if (self.this_node.phases & 0b00111 or
            (self.this_node.phases & 0b01000 and self.config['public_transmission']['p4_pub_trans'])):
             scheduler.add_job(self.timed_receipt_request, CronTrigger(second='*/300'))
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
+
         scheduler.start()
 
     def refresh_registered(self):
@@ -441,7 +435,6 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_1_message(phase_1_msg)
-<<<<<<< HEAD
                 vrs = self.get_vrs(node, ver_ids)
                 record = message_types.VerificationRecord()
                 record.p1 = phase_1_msg
@@ -449,11 +442,9 @@ class ConnectionManager(object):
                 self.resolve_data(vrs, 1)
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-=======
-                self.resolve_data(node, ver_ids, 1)
-            except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
+
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
@@ -465,12 +456,8 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_2_message(phase_2_msg)
-<<<<<<< HEAD
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 2)
-=======
-                self.resolve_data(node, ver_ids, 2)
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
@@ -483,22 +470,12 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_3_message(phase_3_msg)
-<<<<<<< HEAD
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 3)
-=======
-                self.resolve_data(node, ver_ids, 3)
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
-<<<<<<< HEAD
-    # TODO: implement this broadcast
-    # TODO: make sure to add in vrs = self.get_vrs(node, ver_ids) self.resolve_data(vrs, 4)
-=======
-
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
     def phase_4_broadcast(self, block_info, phase_type):
         """ send phase_4 information for phase_5 execution """
         ver_ids = []
@@ -513,21 +490,17 @@ class ConnectionManager(object):
         for node in self.peer_dict[phase_type]:
             try:
                 ver_ids += node.client.phase_4_message(phase_4_msg)
-                self.resolve_data(node, ver_ids, 4)
+                vrs = self.get_vrs(node, ver_ids)
+                self.resolve_data(vrs, 4)
             except:
                 logger().warning('failed to submit to node %s', node.node_id)
                 continue
 
-<<<<<<< HEAD
-=======
-
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
     def timed_receipt_request(self):
         """ time based receipt request """
         for node in self.connections:
             if int(time.time()) - node.last_transfer_time >= self.receipt_request_time:
                 ver_ids = node.client.receipt_request(node.pass_phrase)
-<<<<<<< HEAD
                 vrs = self.get_vrs(node, ver_ids)  # verifications matching given verification ids
                 self.resolve_data(vrs, node.phases)  # node.phases may present problems since it's in binary
 
@@ -672,28 +645,6 @@ class ConnectionManager(object):
             verifications_records = verification_db.get_records(block_id=txn_header['block_id'], origin_id=server_id)
         return verifications_records
 
-=======
-                self.resolve_data(node, ver_ids, node.phases)  # node.phases may present problems since it's in binary
-
-    def resolve_data(self, node, guids, phase):
-        """ request unreceived verifications from node, notify node of already received verifications,
-            store received verifications from node, find replications and store them in transfers table """
-        received, unreceived = self.split_items(lambda guid: verification_db.get(guid) is not None, guids)
-        verifications = node.client.transfer_data(node.pass_phrase, received, unreceived)
-        node.last_transfer_time = int(time.time())
-        for verification in verifications:
-            try:
-                verification = thrift_converter.convert_thrift_verification(verification)
-                verification_db.insert_verification(verification, verification['verification_id'])
-                replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])
-                for replicated_ver in replicated_verifications:
-                    vr_transfers_db.insert_transfer(replicated_ver['origin_id'], replicated_ver['signature']['signatory'], verification['verification_id'])
-            except Exception as ex:
-                template = "An exception of type {0} occured. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                logger().warning(message)
-
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
     @staticmethod
     def split_items(filter_func, items):
         accepted = []
@@ -848,11 +799,8 @@ class BlockchainServiceHandler:
         elif phase_5.verification_record.p4:
             phase_info = thrift_converter.get_phase_4_info(phase_5.verification_record.p4)
 
-<<<<<<< HEAD
-        self.connection_manager.processing_node.notify(5, phase_5_info=phase_info)
-=======
         self.connection_manager.processing_node.notify(5, verification=phase_info)
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
+
         return []
 
     def get_peers(self):
@@ -880,19 +828,16 @@ class BlockchainServiceHandler:
             for guid in guids:
                 vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
 
-<<<<<<< HEAD
             # retrieve unreceived records
             for guid in unreceived:
                 verifications.append(verification_db.get(guid))
 
             # format verifications to list of thrift structs for returning
-=======
                 # retrieve unreceived records
             for guid in unreceived:
                 verifications.append(verification_db.get(guid))
 
-                # format verifications to list of thrift structs for returning
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
+            # format verifications to list of thrift structs for returning
             thrift_verifications = map(thrift_converter.get_verification_type, verifications)
 
             return thrift_verifications
@@ -904,7 +849,6 @@ class BlockchainServiceHandler:
             transfer_node = self.registered_nodes[pass_phrase]
             return self.get_unsent_transfer_ids(transfer_node.node_id)
 
-<<<<<<< HEAD
     def subscription_provisioning(self, subscription_id, criteria, phase_criteria, create_ts, public_key):
         """ initial communication between subscription """
         try:
@@ -941,8 +885,6 @@ class BlockchainServiceHandler:
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
-=======
->>>>>>> c6190b84837df4c6f0007b1c319294cd8739b2b8
     def get_unsent_transfer_ids(self, transfer_to):
         """ retrieve unsent transfer record info (data used for querying block_verification database) """
         unsent_transfer_ids = []
