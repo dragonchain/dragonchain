@@ -43,10 +43,10 @@ from db.postgres import postgres
 from db.postgres import transaction_db
 from db.postgres import verification_db
 from db.postgres import vr_transfers_db
-from db.postgres import smart_contracts_db as sc_dao
-from blockchain.db.postgres import sub_to_db as sub_db
 
 import network
+
+from blockchain.sc_provisioning_trusted import sc_provisioning
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -86,17 +86,6 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
-        # reserved transaction smart contracts
-        self.rtsc = {"TT_SUB_REQ": self._subscription_request,
-                     "TT_PROVISION_SC": self.provision_sc}
-        # user/business transaction smart contracts
-        self.tsc = {}
-        # subscription smart contracts
-        self.ssc = {}
-        # arbitrary/library smart contracts
-        self.lsc = {}
-        # broadcast receipt smart contracts
-        self.bsc = {}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
             PHASE: self._phase_type_config_handler,
@@ -106,12 +95,14 @@ class ProcessingNode(object):
         self._registrations = {}
         self._configured_phases = []
         self._register_configs()
-
-        # dictionary of public transmission flags. set by network, obtained through yml config file.
+        # public transmission flags
         self.public_transmission = None
-
+        # this nodes phases provided
         phase = self.phase_config[0][PHASE]
+        # this nodes network
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
+        # smart contract provisioning object used for running reserved and non-reserved smart contracts
+        self.scp = sc_provisioning.SmartContractProvisioning(self.network, self.service_config['public_key'])
 
     def start(self):
         """ Start the NON-blocking scheduler """
@@ -228,105 +219,12 @@ class ProcessingNode(object):
 
         return prior_hash
 
-    def _subscription_request(self, transaction):
-        """
-            attempts to make initial communication with subscription node
-            param transaction: transaction to retrieve subscription info from
-        """
-        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
-        if "subscription" in transaction["payload"]:
-            subscription = transaction["payload"]['subscription']
-            try:
-                subscription_id = str(uuid.uuid4())
-                criteria = subscription['criteria']
-                phase_criteria = subscription['phase_criteria']
-                subscription['create_ts'] = int(time.time())
-                public_key = self.service_config['public_key']
-                # store new subscription info
-                sub_db.insert_subscription(subscription, subscription_id)
-                # get subscription node
-                subscription_node = self.network.get_subscription_node(subscription)
-                # initiate communication with subscription node
-                if subscription_node:
-                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, subscription['create_ts'], public_key)
-                return True
-            except Exception as ex:  # likely already subscribed
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                logger().warning(message)
-                return False
-
     def get_subscription_signature(self, subscription):
         """ return signature for given subscription """
         sign_subscription(self.network.this_node.node_id,
                           subscription,
                           self.service_config["private_key"],
                           self.service_config["public_key"])
-
-    def provision_sc(self, transaction):
-        return True
-
-    def provision_tsc(self, transaction):
-        """
-        provision tsc type smart contract
-        :param transaction: transaction to extract sc data from
-        """
-        pl = transaction['payload']
-        txn_type = transaction['header']['transaction_type']
-        # insert new sc into database
-        if not self.insert_sc(pl, "tsc", txn_type):
-            return False
-        return self.sc_provisioning_helper(pl, "tsc")
-
-    def provision_ssc(self, transaction):
-        pl = transaction['payload']
-        txn_type = transaction['header']['transaction_type']
-        # insert new sc into database
-        if not self.insert_sc(pl, "ssc", txn_type):
-            return False
-        return self.sc_provisioning_helper(pl, "ssc")
-
-    def provision_lsc(self, transaction):
-        return True
-
-    def provision_bsc(self, transaction):
-        return self.sc_provisioning_helper(transaction['payload'], "bsc")
-
-    def sc_provisioning_helper(self, pl, sc_type):
-        """
-        insert sc code into appropriate dictionary
-        :param pl: transaction payload to extract sc from
-        :param sc_type: type of sc being dealt with (e.g. tsc, ssc, etc.)
-        """
-        try:
-            if 'smart_contract' in pl:
-                sc = pl['smart_contract']
-                if sc[sc_type]:
-                    func = None
-                    # define sc function
-                    exec(sc[sc_type])
-                    # store sc function for this txn type
-                    self.tsc[pl['transaction_type']] = func
-                else:
-                    logger().warning("No smart contract code provided...")
-                    return False
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            logger().warning(message)
-            return False
-        return True
-
-    def insert_sc(self, pl, sc_type, txn_type):
-        """ insert sc info into database """
-        try:
-            sc_dao.insert_sc(pl, sc_type, txn_type)
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            logger().warning(message)
-            return False
-        return True
 
     def _execute_phase_1(self, config, current_block_id):
         """
@@ -414,23 +312,25 @@ class ProcessingNode(object):
             the appropriate smart contract provisioning function on it
          """
         txn_type = txn["header"]["transaction_type"]
-        if txn_type in self.rtsc:
-            if self.rtsc[txn["header"]["transaction_type"]](txn):
+        # reserved transaction smart contracts
+        rtsc = self.scp.rtsc
+        if txn_type in rtsc:
+            if rtsc[txn["header"]["transaction_type"]](txn):
                 return True
         elif txn_type == "TT_PROVISION_TSC":
-            if self.provision_tsc(txn):
+            if self.scp.provision_tsc(txn):
                 return True
         elif txn_type == "TT_PROVISION_SSC":
-            if self.provision_ssc(txn):
+            if self.scp.provision_ssc(txn):
                 return True
         elif txn_type == "TT_PROVISION_LSC":
-            if self.provision_lsc(txn):
+            if self.scp.provision_lsc(txn):
                 return True
         elif txn_type == "TT_PROVISION_BSC":
-            if self.provision_bsc(txn):
+            if self.scp.provision_bsc(txn):
                 return True
-        elif txn_type in self.tsc:
-            self.tsc[txn_type](self, txn)
+        elif txn_type in self.scp.tsc:
+            self.scp.tsc[txn_type](self, txn)
             return True
         return False
 

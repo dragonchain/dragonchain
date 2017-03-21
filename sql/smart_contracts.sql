@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS smart_contracts (
     requirements TEXT[],
 
     /* current sc version */
-    version INT
+    version INT,
 
     /* sc status */
     status sc_status

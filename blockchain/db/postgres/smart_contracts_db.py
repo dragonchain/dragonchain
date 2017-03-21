@@ -45,14 +45,15 @@ DEFAULT_PAGE_SIZE = 1000
 SQL_GET_ALL = """SELECT * FROM smart_contracts"""
 SQL_INSERT = """INSERT into smart_contracts (
                    sc_id,
+                   sc_class,
                    smart_contract,
                    sc_key,
                    criteria,
                    test,
                    requirements,
-                   version
+                   version,
                    status
-               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
 
 def insert_sc(sc, sc_class, sc_key):
@@ -60,13 +61,13 @@ def insert_sc(sc, sc_class, sc_key):
     insert given smart contract into database
     :param sc: smart contract payload
     :param sc_class: type of smart contract being run
-    :param txn_type: transaction type
+    :param sc_key: dictionary key
     """
     values = (
         str(uuid.uuid4()),  # uuid pk
         sc_class,
         sc['smart_contract'][sc_class],  # code to be run
-        sc_key,  # transaction type
+        sc_key,  # dictionary key
         sc['criteria'],  # criteria (i.e. transaction type)
         sc['test'],  # unit test
         sc['requirements'],  # required libraries
@@ -90,7 +91,7 @@ def get_cursor_name():
 def get_all():
     """ query for all approved smart contracts """
     query = SQL_GET_ALL
-    query += """ WHERE status = approved """
+    query += """ WHERE status = 'approved' """
 
     conn = get_connection_pool().getconn()
     try:
