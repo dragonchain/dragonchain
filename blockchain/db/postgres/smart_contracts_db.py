@@ -30,9 +30,13 @@ __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
 
+import psycopg2
+import psycopg2.extras
+
 from postgres import get_connection_pool
-from psycopg2.extras import Json
 import uuid
+
+from blockchain.qry import format_sc
 
 
 """ CONSTANTS """
@@ -42,35 +46,63 @@ SQL_GET_ALL = """SELECT * FROM smart_contracts"""
 SQL_INSERT = """INSERT into smart_contracts (
                    sc_id,
                    smart_contract,
-                   transaction_type,
+                   sc_key,
                    criteria,
                    test,
                    requirements,
                    version
-               ) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                   status
+               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
 
 
-def insert_sc(sc, sc_type, txn_type):
+def insert_sc(sc, sc_class, sc_key):
     """
     insert given smart contract into database
     :param sc: smart contract payload
-    :param sc_type: type of smart contract being run
+    :param sc_class: type of smart contract being run
     :param txn_type: transaction type
     """
     values = (
         str(uuid.uuid4()),  # uuid pk
-        sc['smart_contract'][sc_type],  # code to be run
-        txn_type,  # transaction type
-        Json(sc['criteria']),  # criteria (i.e. transaction type)
+        sc_class,
+        sc['smart_contract'][sc_class],  # code to be run
+        sc_key,  # transaction type
+        sc['criteria'],  # criteria (i.e. transaction type)
         sc['test'],  # unit test
         sc['requirements'],  # required libraries
-        sc['version']  # current version
+        sc['version'],  # current version
+        "approved"  # sc status
     )
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor()
         cur.execute(SQL_INSERT, values)
         conn.commit()
+        cur.close()
+    finally:
+        get_connection_pool().putconn(conn)
+
+
+def get_cursor_name():
+    return str(uuid.uuid4())
+
+
+def get_all():
+    """ query for all approved smart contracts """
+    query = SQL_GET_ALL
+    query += """ WHERE status = approved """
+
+    conn = get_connection_pool().getconn()
+    try:
+        cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query)
+        'An iterator that uses fetchmany to keep memory usage down'
+        while True:
+            results = cur.fetchmany(DEFAULT_PAGE_SIZE)
+            if not results:
+                break
+            for result in results:
+                yield format_sc(result)
         cur.close()
     finally:
         get_connection_pool().putconn(conn)

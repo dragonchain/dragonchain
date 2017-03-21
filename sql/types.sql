@@ -45,3 +45,9 @@ CREATE TYPE subscription_status AS ENUM (
   'approved',
   'pending'
 );
+
+DROP TYPE sc_status;
+CREATE TYPE sc_status AS ENUM (
+  'approved',
+  'pending'
+);

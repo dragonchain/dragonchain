@@ -145,3 +145,18 @@ def format_backlog(backlog):
         "client_id":    backlog["client_id"],
         "block_id":     backlog["block_id"]
     }
+
+
+def format_sc(sc):
+    """ format and return given smart contract into dictionary """
+    return {
+        "sc_id":            sc["sc_id"],
+        "sc_class":         sc["sc_class"],
+        "smart_contract":   sc["smart_contract"],
+        "sc_key":           sc["sc_key"],
+        "criteria":         sc["criteria"],
+        "test":             sc["test"],
+        "requirements":     sc["requirements"],
+        "version":          sc["version"],
+        "status":           sc["status"]
+    }

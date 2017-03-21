@@ -56,14 +56,17 @@ CREATE TABLE IF NOT EXISTS smart_contracts (
     /* sc unique id */
     sc_id UUID PRIMARY KEY,
 
+    /* type of sc (i.e. tsc, ssc, lsc, bsc, etc.) */
+    sc_class VARCHAR(256),
+
     /* smart contract code */
     smart_contract TEXT,
 
-    /* transaction type of sc */
-    transaction_type VARCHAR(256),
+    /* sc dictionary key */
+    sc_key VARCHAR(256),
 
     /* criteria used for selection of appropriate sc */
-    criteria JSON,
+    criteria TEXT[],
 
     /* unit test for sc */
     test TEXT,
@@ -73,6 +76,9 @@ CREATE TABLE IF NOT EXISTS smart_contracts (
 
     /* current sc version */
     version INT
+
+    /* sc status */
+    status sc_status
 );
 COMMIT;
 BEGIN;
