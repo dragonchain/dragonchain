@@ -493,8 +493,14 @@ class ConnectionManager(object):
                 # subscription already approved, request data from server
                 if subscription['status'] == "approved":
                     subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
-                    self.insert_transactions(map(thrift_converter.convert_thrift_transaction, subscription_response.transactions))
-                    self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
+                    txns = map(thrift_converter.convert_thrift_transaction, subscription_response.transactions)
+                    vrs = map(thrift_converter.convert_thrift_verification, subscription_response.verification_records)
+                    if txns or vrs:
+                        self.insert_transactions(txns)
+                        self.insert_verifications(vrs)
+                        min_block_id = self.get_min_block_id(vrs)
+                        # execute any present subscription smart contracts
+                        self._execute_ssc(min_block_id)
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
                                      subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
@@ -556,9 +562,29 @@ class ConnectionManager(object):
                 logger().error(message)
                 continue
 
-    def _execute_ssc(self, transaction):
+    def get_min_block_id(self, vrs):
+        """ return minimum block id of given verification records """
+        min_id = 0
+        if vrs:
+            min_id = vrs[0]['block_id']
+            for i in range(1, len(vrs)):
+                id = vrs[i]['block_id']
+                if id < min_id:
+                    min_id = id
+        return min_id
+
+    def _execute_ssc(self, min_block_id):
         """ execute subscription smart contract """
-        pass
+        for sc_key in self.processing_node.scp.ssc.keys():
+            # [origin_id:txn_type:phase]
+            criteria = sc_key.split(":")
+            origin_id = criteria[0]
+            txn_type = criteria[1]
+            phase = criteria[2]
+            vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
+            for v in vrs:
+                txns = transaction_db.get_all(txn_type, v['block_id'])
+                self.processing_node.scp.ssc[sc_key](txns, v)
 
     def resolve_data(self, verifications, phase):
         """ store received verifications from node, find replications and store them in transfers table """

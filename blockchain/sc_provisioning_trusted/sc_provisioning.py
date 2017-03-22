@@ -102,7 +102,7 @@ class SmartContractProvisioning(object):
 
     def provision_tsc(self, transaction):
         """
-        provision tsc type smart contract
+        provision tsc class smart contract
         :param transaction: transaction to extract sc data from
         """
         pl = transaction['payload']
@@ -113,12 +113,16 @@ class SmartContractProvisioning(object):
         return self._sc_provisioning_helper(pl, "tsc", sc_key)
 
     def provision_ssc(self, transaction):
+        """
+        provision ssc class smart contract
+        :param transaction: transaction to extract sc data from
+        """
         pl = transaction['payload']
         criteria = pl['criteria']
         sc_key = ""
         if "origin_id" in criteria:
             if "origin_id" in pl and pl['origin_id']:
-                sc_key = pl['origin_id']
+                sc_key += pl['origin_id']
             else:
                 return False
         sc_key += ":"
@@ -130,7 +134,7 @@ class SmartContractProvisioning(object):
         sc_key += ":"
         if "phase" in criteria:
             if "phase" in pl and pl['phase']:
-                sc_key += pl['phase']
+                sc_key += str(pl['phase'])
             else:
                 return False
         # insert new sc into database
