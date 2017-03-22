@@ -59,7 +59,7 @@ class SmartContractProvisioning(object):
         # broadcast receipt smart contracts
         self.bsc = {}
 
-        # dictionary to hold smart contract structures sc_type => sc dict
+        # dictionary to hold smart contract structures sc_class => sc dict
         self.sc_container = {"tsc": self.tsc, "ssc": self.ssc, "lsc": self.lsc, "bsc": self.bsc}
 
         # load existing smart contracts from database
@@ -106,44 +106,65 @@ class SmartContractProvisioning(object):
         :param transaction: transaction to extract sc data from
         """
         pl = transaction['payload']
-        txn_type = transaction['payload']['transaction_type']
+        sc_key = transaction['payload']['transaction_type']
         # insert new sc into database
-        if not self._insert_sc(pl, "tsc", txn_type):
+        if not self._insert_sc(pl, "tsc", sc_key):
             return False
-        return self._sc_provisioning_helper(pl, "tsc")
+        return self._sc_provisioning_helper(pl, "tsc", sc_key)
 
     def provision_ssc(self, transaction):
         pl = transaction['payload']
-        txn_type = transaction['payload']['transaction_type']
+        criteria = pl['criteria']
+        sc_key = ""
+        if "origin_id" in criteria:
+            if "origin_id" in pl and pl['origin_id']:
+                sc_key = pl['origin_id']
+            else:
+                return False
+        sc_key += ":"
+        if "transaction_type" in criteria:
+            if "transaction_type" in pl and pl['transaction_type']:
+                sc_key += pl['transaction_type']
+            else:
+                return False
+        sc_key += ":"
+        if "phase" in criteria:
+            if "phase" in pl and pl['phase']:
+                sc_key += pl['phase']
+            else:
+                return False
         # insert new sc into database
-        if not self._insert_sc(pl, "ssc", txn_type):
+        if not self._insert_sc(pl, "ssc", sc_key):
             return False
-        return self._sc_provisioning_helper(pl, "ssc")
+        return self._sc_provisioning_helper(pl, "ssc", sc_key)
 
     def provision_lsc(self, transaction):
         return True
 
     def provision_bsc(self, transaction):
-        return self._sc_provisioning_helper(transaction['payload'], "bsc")
+        sc_key = ""
+        return self._sc_provisioning_helper(transaction['payload'], "bsc", sc_key)
 
-    def _sc_provisioning_helper(self, pl, sc_type):
+    def _sc_provisioning_helper(self, pl, sc_class, sc_key):
         """
         insert sc code into appropriate dictionary
         :param pl: transaction payload to extract sc from
-        :param sc_type: type of sc being dealt with (e.g. tsc, ssc, etc.)
+        :param sc_class: type of sc being dealt with (e.g. tsc, ssc, etc.)
         """
         try:
             if 'smart_contract' in pl:
                 sc = pl['smart_contract']
-                if sc[sc_type]:
+                if sc[sc_class]:
                     func = None
                     # define sc function
-                    exec (sc[sc_type])
+                    exec(sc[sc_class])
                     # store sc function for this txn type
-                    self.tsc[pl['transaction_type']] = func
+                    self.sc_container[sc_class][sc_key] = func
                 else:
                     logger().warning("No smart contract code provided...")
                     return False
+            else:
+                return False
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
@@ -151,10 +172,10 @@ class SmartContractProvisioning(object):
             return False
         return True
 
-    def _insert_sc(self, pl, sc_type, txn_type):
+    def _insert_sc(self, pl, sc_class, sc_key):
         """ insert sc info into database """
         try:
-            sc_dao.insert_sc(pl, sc_type, txn_type)
+            sc_dao.insert_sc(pl, sc_class, sc_key)
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)

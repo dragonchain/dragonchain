@@ -556,6 +556,10 @@ class ConnectionManager(object):
                 logger().error(message)
                 continue
 
+    def _execute_ssc(self, transaction):
+        """ execute subscription smart contract """
+        pass
+
     def resolve_data(self, verifications, phase):
         """ store received verifications from node, find replications and store them in transfers table """
         for verification in verifications:
