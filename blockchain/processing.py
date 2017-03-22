@@ -46,7 +46,7 @@ from db.postgres import vr_transfers_db
 
 import network
 
-from blockchain.sc_provisioning_trusted import sc_provisioning
+from blockchain.smart_contracts import sc_trusted
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -102,7 +102,7 @@ class ProcessingNode(object):
         # this nodes network
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
         # smart contract provisioning object used for running reserved and non-reserved smart contracts
-        self.scp = sc_provisioning.SmartContractProvisioning(self.network, self.service_config['public_key'])
+        self.scp = sc_trusted.SmartContractProvisioning(self.network, self.service_config['public_key'])
 
     def start(self):
         """ Start the NON-blocking scheduler """

@@ -495,9 +495,9 @@ class ConnectionManager(object):
                     subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
                     txns = map(thrift_converter.convert_thrift_transaction, subscription_response.transactions)
                     vrs = map(thrift_converter.convert_thrift_verification, subscription_response.verification_records)
+                    self.insert_transactions(txns)
+                    self.insert_verifications(vrs)
                     if txns or vrs:
-                        self.insert_transactions(txns)
-                        self.insert_verifications(vrs)
                         min_block_id = self.get_min_block_id(vrs)
                         # execute any present subscription smart contracts
                         self._execute_ssc(min_block_id)
