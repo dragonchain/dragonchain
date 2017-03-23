@@ -106,5 +106,12 @@ configs/
 #docker
 docker/custom*compose.yml
 
+#eclipse,pydev
+.metadata/
+.project
+.pydevproject
+
 # Emacs
-*~
+*
+
+~
