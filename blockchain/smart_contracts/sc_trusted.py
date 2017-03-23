@@ -105,12 +105,14 @@ class SmartContractProvisioning(object):
         provision tsc class smart contract
         :param transaction: transaction to extract sc data from
         """
+        status = False
         pl = transaction['payload']
-        sc_key = transaction['payload']['transaction_type']
-        # insert new sc into database
-        if not self._insert_sc(pl, "tsc", sc_key):
-            return False
-        return self._sc_provisioning_helper(pl, "tsc", sc_key)
+        if "transaction_type" in pl and pl['transaction_type']:
+            sc_key = pl['transaction_type']
+            # insert new sc into database
+            if self._insert_sc(pl, "tsc", sc_key):
+                status = self._sc_provisioning_helper(pl, "tsc", sc_key)
+        return status
 
     def provision_ssc(self, transaction):
         """
@@ -143,11 +145,21 @@ class SmartContractProvisioning(object):
         return self._sc_provisioning_helper(pl, "ssc", sc_key)
 
     def provision_lsc(self, transaction):
+        """ provide name and python module to run sc """
         return True
 
     def provision_bsc(self, transaction):
-        sc_key = ""
-        return self._sc_provisioning_helper(transaction['payload'], "bsc", sc_key)
+        """
+        provision bsc class smart contract
+        :param transaction: transaction to extract sc data from
+        """
+        status = False
+        pl = transaction['payload']
+        if "phase" in pl and pl['phase']:
+            sc_key = pl['phase']
+            if self._insert_sc(pl, "bsc", sc_key):
+                status = self._sc_provisioning_helper(pl, "bsc", sc_key)
+        return status
 
     def _sc_provisioning_helper(self, pl, sc_class, sc_key):
         """
