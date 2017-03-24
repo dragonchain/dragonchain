@@ -42,7 +42,7 @@ class TestAllStringValues(unittest.TestCase):
         self.assertEqual(test_val, expected_val)
 
     def test_time_ranges(self):
-        """ testing all string values """
+        """ testing all time_range values """
         builder = SQLClauseBuilder("AND")
         valid_params =  ["epoch_dash", "dash_epoch", 
                          "epoch_dash_epoch", "epoch"]
