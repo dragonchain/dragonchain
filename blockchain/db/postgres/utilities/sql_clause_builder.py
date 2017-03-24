@@ -130,13 +130,10 @@ class SQLClauseBuilder(object):
                 segments.append(segment)
         return conjunctive_operator.join(segments)
     
-    def build_parameter_list(self, conjunctive_operator, allowed_params, **params):
+    def build_parameter_list(self, conjunctive_operator, valid_params):
         segments = []
-        for allowed_param in allowed_params:
-            if allowed_param in params:
-                segments.append('"' + allowed_param + 
-                          '" = %(' + allowed_param + ")s")
+        for param in valid_params:
+            segments.append('"' + param + '" = %(' + param + ")s")
         if not segments:
-            raise ValueError("None of [" ", ".join(allowed_params) 
-                         + " in params.")
+            return ""
         return conjunctive_operator.join(segments)

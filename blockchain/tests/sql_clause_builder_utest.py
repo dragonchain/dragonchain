@@ -31,26 +31,27 @@ __email__ = "steveo98501@gmail.com"
 from blockchain.db.postgres.utilities.sql_clause_builder import SQLClauseBuilder
 import unittest
 
-class TestAllStringValues(unittest.TestCase):
+builder = SQLClauseBuilder()
+
+class TestBuild(unittest.TestCase):
     def test_all_string_values(self):
         """ testing all string values """
-        builder = SQLClauseBuilder("AND")
+        
         valid_params =  ["foo", "bar", "baz"]
         field_values = {"foo":"gimble", "bar":"bimble", "baz":"grump"}
-        test_val = builder.build("string", valid_params, field_values)
+        test_val = builder.build(" AND ", "string", valid_params, field_values)
         expected_val = '"bar" = \'bimble\' AND "baz" = \'grump\' AND "foo" = \'gimble\''
         self.assertEqual(test_val, expected_val)
 
     def test_time_ranges(self):
         """ testing all time_range values """
-        builder = SQLClauseBuilder("AND")
         valid_params =  ["epoch_dash", "dash_epoch", 
                          "epoch_dash_epoch", "epoch"]
         field_values = {"epoch_dash": "1490312638-", 
                         "dash_epoch":"-1490312638", 
                         "epoch_dash_epoch":"1490312638-1490112638",
                         "epoch":"1490312638"}
-        test_val = builder.build("time_range", valid_params, field_values)
+        test_val = builder.build(" AND ", "time_range", valid_params, field_values)
         expected_val = ("\"dash_epoch\" >= '2017-03-23 23:43:58' " + 
             "AND \"epoch\" = '2017-03-23 23:43:58' " +
             "AND \"epoch_dash\" <= '2017-03-23 23:43:58' " + 
@@ -58,3 +59,13 @@ class TestAllStringValues(unittest.TestCase):
             "\"epoch_dash_epoch\" <= '2017-03-21 16:10:38'")
         self.assertEqual(test_val, expected_val)
         
+        
+class TestBuildParameterList(unittest.TestCase):
+    def test(self):
+        conjunctive_operator = " OR "
+        valid_params = [ "peter", "paul" ]
+        params = { "peter":"MALE", "paul":"MALE", "mary":"FEMALE"}
+        test_val = builder.build_parameter_list(conjunctive_operator,
+                                                 valid_params)
+        expected_val = '"peter" = %(peter)s OR "paul" = %(paul)s'
+        self.assertEqual(test_val, expected_val)
