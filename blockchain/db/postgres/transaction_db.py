@@ -29,15 +29,11 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-import psycopg2
 import psycopg2.extras
-from psycopg2.extras import Json
 import uuid
-import time
+from psycopg2.extras import Json
 from blockchain.db.postgres.utilities.sql_clause_builder import SQLClauseBuilder
-
 from blockchain.qry import format_transaction
-
 from postgres import get_connection_pool
 
 """ CONSTANTS """
