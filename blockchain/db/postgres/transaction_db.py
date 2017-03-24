@@ -22,7 +22,7 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
-__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
+__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel, Steve Owens"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
 __version__ = "2.0"
