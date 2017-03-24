@@ -30,7 +30,6 @@ __maintainer__ = "Steve Owens"
 __email__ = "steve098501@gmail.com"
 
 import time
-import collections
 
 class SQLClauseBuilder(object):
     """
@@ -52,21 +51,14 @@ class SQLClauseBuilder(object):
         
     With a more concise expression
     """
-    __conjunctive_operator = ' AND '
     __valid_types = ["string", "time_range"]
     
-    def __init__(self, operator):
+    def __init__(self):
         '''
         Constructor takes a joining operator which is an element of
         the set { 'AND', 'OR', ','} and joins the elements of 
         field_values into equality / assignment statements.
         '''
-        if operator not in ["AND", "OR", ","]:
-            raise ValueError(
-                "The conjunctive_operator argument must be one of" +
-                + "[ 'AND', 'OR', ',']")
-        else:
-            self.__conjunctive_operator = ' ' + operator + ' '
     
     def __assert_valid_param_type(self, param_type):
         if param_type not in self.__valid_types:
@@ -122,7 +114,7 @@ class SQLClauseBuilder(object):
         if param_type == "time_range":
             return self.__build_time_range_segment(field_name, field_value)
         
-    def build(self, param_type, valid_params = [], field_values = {}):
+    def build(self, conjunctive_operator, param_type, valid_params = [], field_values = {}):
         """ 
         Loop through valid_params, and build a where clause using the 
         conjunctive_operator to join segments built from values in field_values 
@@ -136,5 +128,15 @@ class SQLClauseBuilder(object):
                 segment = self.__build_segment(
                     param_type, field_name, field_values[field_name])
                 segments.append(segment)
-        return self.__conjunctive_operator.join(segments)
-        
+        return conjunctive_operator.join(segments)
+    
+    def build_parameter_list(self, conjunctive_operator, allowed_params, **params):
+        segments = []
+        for allowed_param in allowed_params:
+            if allowed_param in params:
+                segments.append('"' + allowed_param + 
+                          '" = %(' + allowed_param + ")s")
+        if not segments:
+            raise ValueError("None of [" ", ".join(allowed_params) 
+                         + " in params.")
+        return conjunctive_operator.join(segments)
