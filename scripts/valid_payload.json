@@ -12,7 +12,7 @@
   "payload": {
     "phase": 2,
     "smart_contract": {
-      "ssc": "def func(self, transaction): print transaction['header']['transaction_type']"
+      "bsc": "def func(self, transaction): print transaction['header']['transaction_type']"
     },
     "criteria": ["phase"],
     "test": "print 'TEST'",
