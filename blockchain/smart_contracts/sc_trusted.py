@@ -22,6 +22,12 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
+"""
+                **trusted smart contract module**
+smart contract code is run through this module under the assumption that the user is not delivering
+invalid or malicious code.
+"""
+
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
@@ -50,7 +56,7 @@ class SmartContractProvisioning(object):
         self.public_key = public_key
         self.rtsc = {"TT_SUB_REQ": self.subscription_request,
                      "TT_PROVISION_SC": self.provision_sc}
-        # user/business transaction smart contracts
+        # user/business transaction smart contracts (txn_type => function)
         self.tsc = {}
         # subscription smart contracts
         self.ssc = {}
