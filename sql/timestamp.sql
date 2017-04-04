@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS timestamps (
     /* confirm: when the transaction record was created */
     create_ts timestamptz,
 
-    /* chainpoint receipt containing the required data for verifying the timestamp */
+    /* boolean field to indicate whether a transaction was successfully sent */
     timestamp_receipt boolean not null DEFAULT FALSE,
 
     /* Signature block - includes public key */

@@ -634,6 +634,8 @@ class ProcessingNode(object):
         verification_info = verification['verification_info']
         verification_record['verification_info'] = verification_info
 
+
+        # set block_id and origin_id to None for the reason that the records can come from any phase
         if validate_verification_record(verification_record, verification_info):
             timestamp_db.insert_verification(verification_record)
             verification_record['block_id'] = None
@@ -649,17 +651,21 @@ class ProcessingNode(object):
         }
         pending_records = timestamp_db.get_pending_timestamp()
 
+        # returns out of the function if there are no records waiting to be broadcast
         if not pending_records:
             return
 
+        # creates a list of hashes as well as builds the verification_info structure
         for r in pending_records:
             hashes.append(r['signature']['hash'])
+            # organizes the verification records by origin_id with a dictionary of timestamp_ids and hashes
             if r['origin_id'] not in verification_info['verification_records']:
                 verification_info['verification_records'][r['origin_id']] = {}
             verification_info['verification_records'][r['origin_id']][r['timestamp_id']] = r['signature']['hash']
 
-
+        # takes the list of hashes to be transmitted and hashes with 256 bit to get in form to send
         transaction_hash = final_hash(hashes,type=256)
+        # sets the hash in the verification_info structure to the hash we just generated
         verification_info['hash'] = transaction_hash
 
         stamper = BitcoinTimestamper(self.service_config['bitcoin_network'], BitcoinFeeProvider())
@@ -686,14 +692,18 @@ class ProcessingNode(object):
                                               verification_info
                                               )
 
+        # inserts a new verification record for the new record created to be sent
         verification_db.insert_verification(block_info['verification_record'])
 
+        # sets the timestamp_receipt to true to indicate the records have been sent
         for origin_id in verification_info['verification_records'].keys():
             for verification_id in verification_info['verification_records'][origin_id]:
                 timestamp_db.set_transaction_timestamp_proof(verification_id)
 
+        # dictionary where the key is origin_id and the value is list of signatories sent from that origin_id
         unique_vr_transfers = {}
 
+        # creates a verification_record for each unique origin_id-signatory pair
         for verification_record in pending_records:
             if not verification_record['origin_id'] in unique_vr_transfers:
                 unique_vr_transfers[verification_record['origin_id']] = []

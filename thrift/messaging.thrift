@@ -159,10 +159,6 @@ union Phase_5_request {
     1: VerificationRecord verification_record
 }
 
-struct Phase_5_msg { /* change to Public_5_msg */
-    1: VerificationRecord verification_record
-}
-
 struct SubscriptionResponse {
     1: list<Transaction> transactions,
     2: list<VerificationRecord> verification_records

@@ -445,8 +445,6 @@ class ConnectionManager(object):
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
 
-                message = template.format(type(ex).__name__, ex.args)
-                logger().warning(message)
 
     def phase_2_broadcast(self, block_info, phase_type):
         """ sends phase_2 information for phase_3 execution """
@@ -829,11 +827,6 @@ class BlockchainServiceHandler:
                 vr_transfers_db.set_verification_sent(transfer_node.node_id, guid)
 
             # retrieve unreceived records
-            for guid in unreceived:
-                verifications.append(verification_db.get(guid))
-
-            # format verifications to list of thrift structs for returning
-                # retrieve unreceived records
             for guid in unreceived:
                 verifications.append(verification_db.get(guid))
 

@@ -156,8 +156,6 @@ def sign_verification_record(signatory,
             - arbitrary string
     :return: verification record with assembled signature field
     """
-    # signature, transaction_hash = \
-    #     sign_signatures(map(lambda tx: tx["signature"], approved_transactions), private_key_string)
 
     ecdsa_signing_key = SigningKey.from_pem(private_key_string)
     block_info = {}
@@ -517,12 +515,12 @@ def final_hash(items, type=512):
     :param items: A list of items to hash deterministically.
     :return: finalized deterministic sha512 hash
     """
-    if type == 512:
-        """ returns final sha512 hash """
-        hash_object = hashlib.sha512(str(deterministic_hash(items)))
-    else:
+    if type == 256:
         """ returns final sha256 hash """
         hash_object = hashlib.sha256(str(deterministic_hash(items)))
+    else:
+        """ returns final sha512 hash """
+        hash_object = hashlib.sha512(str(deterministic_hash(items)))
     hex_dig = hash_object.hexdigest()
 
     return hex_dig

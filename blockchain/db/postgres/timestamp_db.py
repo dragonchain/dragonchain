@@ -60,8 +60,8 @@ def get_cursor_name():
     return str(uuid.uuid4())
 
 
-def set_transaction_timestamp_proof(verification_id):
-    sql_args = (verification_id,)
+def set_transaction_timestamp_proof(timestamp_id):
+    sql_args = (timestamp_id,)
     execute_db_args(sql_args, SQL_TIMESTAMP_QUERY)
 
 
@@ -84,6 +84,7 @@ def insert_verification(verification_record):
         get_connection_pool().putconn(conn)
 
 
+# Gets timestamp_db entries with timestamp_receipt set to false
 def get_pending_timestamp():
     timestamps = []
     conn = get_connection_pool().getconn()

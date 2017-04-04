@@ -22,7 +22,7 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
-__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
+__author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel, Alex Benedetto, Lucas Ontivero"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
 __version__ = "2.0"
@@ -44,35 +44,6 @@ import requests
 import logging
 
 log = logging.getLogger(__name__)
-
-
-class IPoEStore(object):
-    """
-    Abstracts a proof-of-existence store.
-    """
-
-    def ispersisted(self, id, data):
-        """
-        Verifies ``data`` item is persisted on the datastore with identifier ``id``
-        Args:
-            id: the data item identifier within the datastore
-            data: the item data we want to verify
-
-        Returns:
-            True if the ``data`` item is in the datastore with identifier ``id``; otherwise False
-        """
-        pass
-
-    def persist(self, data):
-        """
-        Persists data in a datastore and returns and identifier for future reference
-        Args:
-            data:   the item data to be persisted
-
-        Returns:
-            An identifier for referencing the saved data item:
-        """
-        pass
 
 
 class BitcoinTimestamper(): # IPoEStore
@@ -144,7 +115,7 @@ class BitcoinTimestamper(): # IPoEStore
         """
         proxy = bitcoin.rpc.Proxy()
         utxo = sorted(proxy.listunspent(0), key=lambda x: hash(x['amount']))[-1]
-        tx = self._build_transaction(utxo, self.get_new_pubkey(), data)
+        tx = self._build_timestamp_transaction(utxo, self.get_new_pubkey(), data)
         value_in = utxo['amount']
 
         fee_byte = self.fee_provider.recommended()
@@ -173,9 +144,9 @@ class BitcoinTimestamper(): # IPoEStore
         return pubkey
 
 
-    def _build_transaction(self, output, change_pubkey, data):
+    def _build_timestamp_transaction(self, output, change_pubkey, data):
         """
-        Builds a bitcoin transaction with 1 input an 2 outputs:
+        Builds a bitcoin transaction with 1 input and 2 outputs:
             output 1 - the change output
             output 2 - the OP_RETURN + data output
         Args:
