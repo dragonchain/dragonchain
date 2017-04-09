@@ -63,10 +63,10 @@ SQL_INSERT = """INSERT into transactions (
 SQL_UPDATE = """UPDATE transactions SET status = %s, block_id = %s WHERE transaction_id = %s"""
 SQL_FIXATE_BLOCK = """UPDATE transactions 
                             SET status='pending', 
-                            block_id=%i 
+                            block_id=%s
                             WHERE status = 'new' AND 
-                            transaction_ts >= to_timestamp(%i) AND 
-                            transaction_ts <= to_timestamp(%i)"""
+                            transaction_ts >= to_timestamp(%s) AND
+                            transaction_ts <= to_timestamp(%s)"""
 
 
 def get_cursor_name():
