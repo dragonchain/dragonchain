@@ -39,7 +39,7 @@ from postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-SQL_GET_ALL = """SELECT * FROM sub_vr_transfers"""
+SQL_GET_ALL = """SELECT * FROM sub_vr_transfers WHERE transfer_to = %s"""
 SQL_INSERT_QUERY = """INSERT INTO sub_vr_transfers (
                                   transfer_to,
                                   transactions,
@@ -71,13 +71,10 @@ def insert_transfer(transfer_to, transactions, verifications):
 
 def get_all(transfer_to):
     """ query for all transfer records with transfer_to matching given transfer_to id """
-    query = SQL_GET_ALL
-    query += """ WHERE transfer_to = '""" + transfer_to + """'"""
-
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_ALL, (transfer_to, ))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
