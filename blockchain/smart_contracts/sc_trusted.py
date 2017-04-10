@@ -222,8 +222,3 @@ class SmartContractProvisioning(object):
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             logger().warning(message)
-
-
-if __name__ == '__main__':
-    scp = SmartContractProvisioning()
-    scp.load_scs()

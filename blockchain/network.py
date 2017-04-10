@@ -564,23 +564,12 @@ class ConnectionManager(object):
 
     def get_min_block_id(self, vrs):
         """ return minimum block id of given verification records """
-        min_id = 0
-        if vrs:
-            min_id = vrs[0]['block_id']
-            for i in range(1, len(vrs)):
-                id = vrs[i]['block_id']
-                if id < min_id:
-                    min_id = id
-        return min_id
+        return min(v['block_id'] for v in vrs)
 
     def _execute_ssc(self, min_block_id):
         """ execute subscription smart contract """
         for sc_key in self.processing_node.scp.ssc.keys():
-            # [origin_id:txn_type:phase]
-            criteria = sc_key.split(":")
-            origin_id = criteria[0]
-            txn_type = criteria[1]
-            phase = criteria[2]
+            (origin_id, txn_type, phase) = sc_key.split(":")
             vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
             for v in vrs:
                 txns = transaction_db.get_all(txn_type, v['block_id'])
@@ -592,7 +581,7 @@ class ConnectionManager(object):
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 if verification['signature']['signatory'] is not self.this_node.node_id:
-                    # run smart contract code if phase matches
+                    # run broadcast smart contract (BSC) code here if phase matches
                     if phase in self.processing_node.scp.bsc:
                         self.processing_node.scp.bsc[phase](verification)
                     verification_db.insert_verification(verification, verification['verification_id'])

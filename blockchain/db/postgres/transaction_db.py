@@ -88,71 +88,62 @@ def get_all(limit=None, offset=None, **params):
     if params:
         query += """ WHERE """
 
-    if "block_id" in params:
-        if params["block_id"]:
-            query += """ block_id = """ + str(params["block_id"])
-            separator_needed = True
+    if "block_id" in params and params["block_id"]:
+        query += """ block_id = """ + str(params["block_id"])
+        separator_needed = True
 
-    if "transaction_type" in params:
-        if params["transaction_type"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ transaction_type = '""" + str(params["transaction_type"]) + """'"""
-            separator_needed = True
-
-    if "business_unit" in params:
-        if params["business_unit"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ business_unit = '""" + str(params["business_unit"]) + """'"""
-            separator_needed = True
-
-    if "family_of_business" in params:
+    if "transaction_type" in params and params["transaction_type"]:
         if separator_needed:
             query += """ AND """
-        query+= """ family_of_business = '""" + str(params["family_of_business"]) + """'"""
+        query += """ transaction_type = '""" + str(params["transaction_type"]) + """'"""
+        separator_needed = True
 
-    if "line_of_business" in params:
-        if params["line_of_business"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ line_of_business = '""" + str(params["line_of_business"]) + """'"""
-            separator_needed = True
+    if "business_unit" in params and params["business_unit"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ business_unit = '""" + str(params["business_unit"]) + """'"""
+        separator_needed = True
 
-    if "signature" in params:
-        if params["signature"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ signature = '""" + str(params["signature"]) + """'"""
-            separator_needed = True
+    if "family_of_business" in params and params["family_of_business"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ family_of_business = '""" + str(params["family_of_business"]) + """'"""
 
-    if "status" in params:
-        if params["status"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ status = '""" + str(params["status"]) + """'"""
-            separator_needed = True
+    if "line_of_business" in params and params["line_of_business"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ line_of_business = '""" + str(params["line_of_business"]) + """'"""
+        separator_needed = True
 
-    if "owner" in params:
-        if params["owner"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ owner = '""" + str(params["owner"]) + """'"""
-            separator_needed = True
+    if "signature" in params and params["signature"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ signature = '""" + str(params["signature"]) + """'"""
+        separator_needed = True
 
-    if "actor" in params:
-        if params["actor"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ actor = '""" + str(params["actor"]) + """'"""
-            separator_needed = True
+    if "status" in params and params["status"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ status = '""" + str(params["status"]) + """'"""
+        separator_needed = True
 
-    if "entity" in params:
-        if params["entity"]:
-            if separator_needed:
-                query += """ AND """
-            query += """ entity = '""" + str(params["entity"]) + """'"""
-            separator_needed = True
+    if "owner" in params and params["owner"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ owner = '""" + str(params["owner"]) + """'"""
+        separator_needed = True
+
+    if "actor" in params and params["actor"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ actor = '""" + str(params["actor"]) + """'"""
+        separator_needed = True
+
+    if "entity" in params and params["entity"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ entity = '""" + str(params["entity"]) + """'"""
+        separator_needed = True
 
     if "create_ts" in params:
         if separator_needed:
