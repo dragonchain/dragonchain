@@ -42,6 +42,8 @@ DEFAULT_PAGE_SIZE = 1000
 """ SQL QUERIES """
 SQL_GET_BY_ID = """SELECT * FROM block_verifications WHERE verification_id = %s"""
 SQL_GET_ALL = """SELECT * FROM block_verifications"""
+SQL_GET_PRIOR_BLOCK = """SELECT * FROM block_verifications WHERE origin_id = %s AND phase = %s ORDER BY block_id DESC LIMIT 1"""
+SQL_GET_ALL_REPLICATION = """SELECT * FROM block_verifications WHERE block_id = %s AND phase < %s AND origin_id = %s ORDER BY block_id DESC"""
 SQL_INSERT_QUERY = """
     INSERT INTO block_verifications (
         verification_id,
@@ -73,15 +75,10 @@ def get(verification_id):
 
 
 def get_prior_block(origin_id, phase):
-    query = SQL_GET_ALL
-    query += """ WHERE origin_id = '""" + str(origin_id)
-    query += """' AND phase = """ + str(phase)
-    query += """ ORDER BY block_id DESC LIMIT 1 """
-
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_PRIOR_BLOCK, (origin_id, phase))
         result = cur.fetchone()
         cur.close()
         if result:
@@ -94,7 +91,7 @@ def get_prior_block(origin_id, phase):
 def get_records(**params):
     """ return verification records with given criteria """
     query = SQL_GET_ALL
-    query += """ WHERE """
+    query += """ WHERE"""
     separator_needed = False
 
     if "block_id" in params:
@@ -137,37 +134,38 @@ def get_all(limit=None, offset=None, **params):
     query = SQL_GET_ALL
     separator_needed = False
     if params:
-        query += """ WHERE """
+        query += """ WHERE"""
 
     if "block_id" in params:
-        query += """ block_id = """ + str(params["block_id"])
+        query += """ block_id = %(block_id)s"""
         separator_needed = True
 
     if "phase" in params:
         if separator_needed:
             query += """ AND """
-        query += """ phase = """ + str(params["phase"])
+        query += """ phase = %(phase)s"""
         separator_needed = True
 
     if "origin_id" in params:
         if separator_needed:
             query += """ AND """
-        query += """ origin_id = """ + str(params["origin_id"])
-        separator_needed = True
+        query += """ origin_id = %(origin_id)s"""
 
     if not limit:
         limit = 10
 
     if limit:
-        query += """ LIMIT """ + str(limit)
+        params["limit"] = limit
+        query += """ LIMIT %(limit)s"""
 
     if offset:
-        query += """ OFFSET """ + str(offset)
+        params["offset"] = offset
+        query += """ OFFSET $(offset)s"""
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(query, params)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
@@ -184,18 +182,12 @@ def get_all_replication(block_id, phase, origin_id):
     """ queries for records matching given block_id, having phase less than given phase,
         and matching origin_id. This is used for retrieving verification records at lower
         phases that match the higher phase record in question. """
-    query = SQL_GET_ALL
-    query += """ WHERE block_id = """ + str(block_id)
-    query += """ AND phase < """ + str(phase)
-    query += """ AND origin_id = '""" + str(origin_id)
-    query += """' ORDER BY block_id DESC """
 
     records = []
-
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_ALL_REPLICATION, (block_id, phase, origin_id))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)

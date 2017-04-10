@@ -39,7 +39,7 @@ from postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
-GET_VERIFIED_RECORDS = """SELECT * FROM vr_transfers"""
+GET_UNSENT_VERIFIED_RECORDS = """SELECT * FROM vr_transfers WHERE transfer_to = %s AND sent = FALSE"""
 SQL_MARK_RECORD = """UPDATE vr_transfers SET sent = TRUE WHERE transfer_to = %s AND verification_id = %s"""
 SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
                                   origin_id,
@@ -50,14 +50,11 @@ SQL_INSERT_QUERY = """INSERT INTO vr_transfers (
 
 def get_unsent_verification_records(node_transmit_id):
     """ retrieve validated records that have not already been sent back to node with node_transmit_id or verification_id """
-    query = GET_VERIFIED_RECORDS
-    query += """ WHERE transfer_to = '""" + node_transmit_id
-    query += """' AND sent = FALSE """
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(GET_UNSENT_VERIFIED_RECORDS, (node_transmit_id, ))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
@@ -88,21 +85,16 @@ def insert_transfer(origin_id, transfer_to, verification_id):
 
 def set_verification_sent(transfer_to, ver_id):
     """ set verifications sent field to true with matching given 'transfer_to' and 'verification_id' """
-    sql_args = (transfer_to, ver_id)
-    execute_db_args(sql_args, SQL_MARK_RECORD)
 
-
-def get_cursor_name():
-    return str(uuid.uuid4())
-
-
-def execute_db_args(sql_args, query_type):
-    # establish database connection with given args
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query_type, sql_args)
+        cur.execute(SQL_MARK_RECORD, (transfer_to, ver_id))
         conn.commit()
         cur.close()
     finally:
         get_connection_pool().putconn(conn)
+
+
+def get_cursor_name():
+    return str(uuid.uuid4())

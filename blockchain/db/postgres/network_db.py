@@ -47,6 +47,19 @@ MAX_CONN_LIMIT = 5
 """ SQL Queries """
 SQL_GET_BY_ID = """SELECT * FROM nodes WHERE node_id = %s"""
 SQL_GET_ALL = """SELECT * FROM nodes"""
+SQL_GET_BY_PHASE = """SELECT * FROM nodes 
+                            WHERE 
+                            phases & %s::bit(%s) != 0::bit(%s) AND 
+                            connection_attempts IS NULL 
+                            ORDER BY priority_level ASC, latency DESC 
+                            LIMIT %s"""
+SQL_GET_UNREGISTERED_NODES = """SELECT * FROM nodes 
+                            WHERE last_conn_attempt_ts IS NULL OR 
+                            last_conn_attempt_ts < NOW() - INTERVAL '7 days' AND 
+                            start_conn_ts IS NULL AND 
+                            last_activity_ts < NOW() - INTERVAL '7 days' 
+                            ORDER BY priority_level ASC, last_conn_attempt_ts ASC, connection_attempts ASC 
+                            LIMIT %s"""
 SQL_INSERT = """INSERT into nodes (
                             node_id,
                             create_ts,
@@ -113,24 +126,13 @@ def get_by_phase(phases, limit=None):
         query for all nodes that provide services for the given phases (bitwise and)
         e.g. 01001 (phase 1 and 4) will return all nodes that provide either phase 1, 4 or both
     """
-    query = SQL_GET_ALL
-    if phases:
-        query += """ WHERE """
-        query += """ phases & """ + str(phases) + "::bit(""" + str(BIT_LENGTH) + """) != 0::bit(""" + str(
-            BIT_LENGTH) + """) AND connection_attempts IS NULL"""
-
-    query += """ ORDER BY priority_level ASC, latency DESC """
-
     if not limit or limit > MAX_CONN_LIMIT:
         limit = MAX_CONN_LIMIT
-
-    if limit:
-        query += """ LIMIT """ + str(limit)
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_BY_PHASE, (phases, BIT_LENGTH, BIT_LENGTH, limit))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
@@ -145,23 +147,17 @@ def get_by_phase(phases, limit=None):
 
 def get_unregistered_nodes(limit=None):
     """ query for all nodes that are currently unconnected """
-    query = SQL_GET_ALL
+
     #  should possibly be based upon total unregistered/non-connected nodes and how often this is executed
     # TODO: base time interval based on number of attempts (fibonacci series?)
-    query += """ WHERE last_conn_attempt_ts IS NULL OR last_conn_attempt_ts < NOW() - INTERVAL '7 days' """
-    query += """ AND start_conn_ts IS NULL AND last_activity_ts < NOW() - INTERVAL '7 days' """
-    query += """ ORDER BY priority_level ASC, last_conn_attempt_ts ASC, connection_attempts ASC """
 
     if not limit or limit > MAX_CONN_LIMIT:
         limit = MAX_CONN_LIMIT
 
-    if limit:
-        query += """ LIMIT """ + str(limit)
-
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_UNREGISTERED_NODES, limit)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
