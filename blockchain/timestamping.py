@@ -120,7 +120,13 @@ class BitcoinTimestamper(): # IPoEStore
 
         fee_byte = self.fee_provider.recommended()
         fee_byte = max(fee_byte, self.MIN_FEE_BYTE)
-        assert fee_byte < self.MAX_FEE_BYTE, "too high fee"
+
+        try:
+            if fee_byte < self.MAX_FEE_BYTE:
+                pass
+        except:
+            print "Fee too high"
+            return
 
         new_tx = tx
         suggested_fee = (len(new_tx.serialize()) + self.P2PKH_SIGSCRIPT_SIZE) * fee_byte

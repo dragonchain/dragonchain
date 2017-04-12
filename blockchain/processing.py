@@ -172,7 +172,9 @@ class ProcessingNode(object):
             self._add_registration(4, self._execute_phase_4, config)
 
         elif config[PHASE] == 5:
+            # Registration for normal phase 5 operations
             self._add_registration(5, self._execute_phase_5, config)
+            # Registering timestamping function
             self._add_registration("timestamp", self._execute_timestamping, config)
 
             # Setup phase 5 cron
