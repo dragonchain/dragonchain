@@ -640,8 +640,9 @@ class ProcessingNode(object):
         # set block_id and origin_id to None for the reason that the records can come from any phase
         if validate_verification_record(verification_record, verification_info):
             timestamp_db.insert_verification(verification_record)
-            verification_record['block_id'] = None
-            verification_record['origin_id'] = None
+            # TODO comment out and see if functionality changes
+            # verification_record['block_id'] = None
+            # verification_record['origin_id'] = None
             verification_db.insert_verification(verification_record)
             print "phase 5 executed"
 
@@ -676,7 +677,8 @@ class ProcessingNode(object):
         verification_info['public_transaction_id'] = bitcoin_tx_id
 
         prior_block_hash = None
-        lower_hash = None
+        # This is the hash of all of the lower elements
+        lower_hash = transaction_hash
         block_id = None
         phase = 5
         origin_id = None
