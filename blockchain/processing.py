@@ -315,8 +315,10 @@ class ProcessingNode(object):
         # reserved transaction smart contracts
         rtsc = self.scp.rtsc
         if txn_type in rtsc:
+            # TODO: if in reserved call function in smart_contracts that check which one to call
             if rtsc[txn["header"]["transaction_type"]](txn):
                 return True
+            # TODO: move these to provisions reserved
         elif txn_type == "TT_PROVISION_TSC":
             if self.scp.provision_tsc(txn):
                 return True
