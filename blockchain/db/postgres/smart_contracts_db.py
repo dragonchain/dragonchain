@@ -42,7 +42,7 @@ from blockchain.qry import format_sc
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
-SQL_GET_ALL = """SELECT * FROM smart_contracts"""
+SQL_GET_APPROVED = """SELECT * FROM smart_contracts WHERE status = 'approved'"""
 SQL_INSERT = """INSERT into smart_contracts (
                    sc_id,
                    sc_class,
@@ -90,13 +90,11 @@ def get_cursor_name():
 
 def get_all():
     """ query for all approved smart contracts """
-    query = SQL_GET_ALL
-    query += """ WHERE status = 'approved' """
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_APPROVED)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
