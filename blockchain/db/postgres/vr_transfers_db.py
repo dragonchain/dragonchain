@@ -33,7 +33,7 @@ import psycopg2
 import psycopg2.extras
 import uuid
 
-from blockchain.qry import format_verification_record
+from blockchain.qry import format_block_verification as format_verification_record
 
 from postgres import get_connection_pool
 
