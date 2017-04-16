@@ -636,13 +636,9 @@ class ProcessingNode(object):
         verification_info = verification['verification_info']
         verification_record['verification_info'] = verification_info
 
-
         # set block_id and origin_id to None for the reason that the records can come from any phase
         if validate_verification_record(verification_record, verification_info):
             timestamp_db.insert_verification(verification_record)
-            # TODO comment out and see if functionality changes
-            # verification_record['block_id'] = None
-            # verification_record['origin_id'] = None
             verification_db.insert_verification(verification_record)
             print "phase 5 executed"
 
@@ -650,7 +646,7 @@ class ProcessingNode(object):
         hashes = []
         verification_info = {
             'verification_records': {},
-            'blockchain_type':"BTC"
+            'blockchain_type': "BTC"
         }
         pending_records = timestamp_db.get_pending_timestamp()
 
