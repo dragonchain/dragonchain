@@ -676,6 +676,9 @@ class ProcessingNode(object):
         # takes the list of hashes to be transmitted and hashes with 256 bit to get in form to send
         transaction_hash = final_hash(hashes, type=256)
 
+        # normal SHA512 hash for all lower VR contents
+        lower_hash = final_hash(hashes)
+
         # sets the hash in the verification_info structure to the hash we just generated
         verification_info['hash'] = transaction_hash
 
@@ -686,7 +689,6 @@ class ProcessingNode(object):
 
         prior_block_hash = None
         # This is the hash of all of the lower elements
-        lower_hash = transaction_hash
         block_id = None
         phase = 5
         origin_id = None
