@@ -643,7 +643,18 @@ class ProcessingNode(object):
             print "phase 5 executed"
 
     def _execute_timestamping(self, config):
+        """
+        verification_info = {
+                            'verification_records': {
+                                origin_id: {
+                                    'timestamp_id': hash
+                                }
+                            },
+                            'blockchain_type': "BTC"
+                            }
+        """
         hashes = []
+        transaction_hash = "Dragonchain:"
         verification_info = {
             'verification_records': {},
             'blockchain_type': "BTC"
@@ -663,7 +674,7 @@ class ProcessingNode(object):
             verification_info['verification_records'][r['origin_id']][r['timestamp_id']] = r['signature']['hash']
 
         # takes the list of hashes to be transmitted and hashes with 256 bit to get in form to send
-        transaction_hash = final_hash(hashes,type=256)
+        transaction_hash += final_hash(hashes,type=256)
         # sets the hash in the verification_info structure to the hash we just generated
         verification_info['hash'] = transaction_hash
 
