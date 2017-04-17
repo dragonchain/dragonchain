@@ -500,7 +500,7 @@ class ConnectionManager(object):
                     if txns or vrs:
                         min_block_id = self.get_min_block_id(vrs)
                         # execute any present subscription smart contracts
-                        self._execute_ssc(min_block_id)
+                        self.processing_node.scp.execute_ssc(min_block_id)
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
                                      subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
@@ -566,14 +566,14 @@ class ConnectionManager(object):
         """ return minimum block id of given verification records """
         return min(v['block_id'] for v in vrs)
 
-    def _execute_ssc(self, min_block_id):
-        """ execute subscription smart contract """
-        for sc_key in self.processing_node.scp.ssc.keys():
-            (origin_id, txn_type, phase) = sc_key.split(":")
-            vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
-            for v in vrs:
-                txns = transaction_db.get_all(txn_type, v['block_id'])
-                self.processing_node.scp.ssc[sc_key](txns, v)
+    # def _execute_ssc(self, min_block_id):
+    #     """ execute subscription smart contract """
+    #     for sc_key in self.processing_node.scp.ssc.keys():
+    #         (origin_id, txn_type, phase) = sc_key.split(":")
+    #         vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
+    #         for v in vrs:
+    #             txns = transaction_db.get_all(txn_type, v['block_id'])
+    #             self.processing_node.scp.ssc[sc_key](txns, v)
 
     def resolve_data(self, verifications, phase):
         """ store received verifications from node, find replications and store them in transfers table """
@@ -582,8 +582,8 @@ class ConnectionManager(object):
                 verification = thrift_converter.convert_thrift_verification(verification)
                 if verification['signature']['signatory'] is not self.this_node.node_id:
                     # run broadcast smart contract (BSC) code here if phase matches
-                    if phase in self.processing_node.scp.bsc:
-                        self.processing_node.scp.bsc[phase](verification)
+                    if phase in self.processing_node.sch.bsc:
+                        self.processing_node.sch.bsc[phase](verification)
                     verification_db.insert_verification(verification, verification['verification_id'])
                     # check if there are nodes further down the chain interested in this record
                     replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])

@@ -39,6 +39,8 @@ import logging
 
 from blockchain.db.postgres import smart_contracts_db as sc_dao
 from blockchain.db.postgres import sub_to_db as sub_db
+from blockchain.db.postgres import verification_db
+from blockchain.db.postgres import transaction_db
 
 import time
 import uuid
@@ -48,14 +50,18 @@ def logger(name="verifier-service"):
     return logging.getLogger(name)
 
 
-class SmartContractProvisioning(object):
+class SmartContractsHandler(object):
     def __init__(self, network=None, public_key=None):
         # processing nodes network
         self.network = network
         # processing node's public key
         self.public_key = public_key
         self.rtsc = {"TT_SUB_REQ": self.subscription_request,
-                     "TT_PROVISION_SC": self.provision_sc}
+                     "TT_PROVISION_SC": self.provision_sc,
+                     "TT_PROVISION_TSC": self.provision_tsc,
+                     "TT_PROVISION_SSC": self.provision_ssc,
+                     "TT_PROVISION_LSC": self.provision_lsc,
+                     "TT_PROVISION_BSC": self.provision_bsc}
         # user/business transaction smart contracts (txn_type => function)
         self.tsc = {}
         # subscription smart contracts
@@ -65,7 +71,7 @@ class SmartContractProvisioning(object):
         # broadcast receipt smart contracts
         self.bsc = {}
 
-        # dictionary to hold smart contract structures sc_class => sc dict
+        # structure to hold smart contracts - sc_class => sc dict
         self.sc_container = {"tsc": self.tsc, "ssc": self.ssc, "lsc": self.lsc, "bsc": self.bsc}
 
         # load existing smart contracts from database
@@ -193,6 +199,15 @@ class SmartContractProvisioning(object):
             logger().warning(message)
             return False
         return True
+
+    def execute_ssc(self, min_block_id):
+        """ execute subscription smart contract """
+        for sc_key in self.ssc.keys():
+            (origin_id, txn_type, phase) = sc_key.split(":")
+            vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
+            for v in vrs:
+                txns = transaction_db.get_all(txn_type, v['block_id'])
+                self.ssc[sc_key](txns, v)
 
     def _insert_sc(self, pl, sc_class, sc_key):
         """ insert sc info into database """

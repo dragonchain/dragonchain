@@ -46,7 +46,7 @@ from db.postgres import vr_transfers_db
 
 import network
 
-from blockchain.smart_contracts import sc_trusted
+from blockchain.smart_contracts import smart_contracts
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -101,8 +101,8 @@ class ProcessingNode(object):
         phase = self.phase_config[0][PHASE]
         # this nodes network
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
-        # smart contract provisioning object used for running reserved and non-reserved smart contracts
-        self.scp = sc_trusted.SmartContractProvisioning(self.network, self.service_config['public_key'])
+        # smart contract handler used for running reserved and non-reserved smart contracts
+        self.sch = smart_contracts.SmartContractsHandler(self.network, self.service_config['public_key'])
 
     def start(self):
         """ Start the NON-blocking scheduler """
@@ -308,32 +308,13 @@ class ProcessingNode(object):
 
     def handle_transaction(self, txn):
         """
-            check if the given transaction falls under one of these smart contract types and execute
-            the appropriate smart contract provisioning function on it
+            check if the given transaction type is reserved and call the appropriate provisioning function
          """
         txn_type = txn["header"]["transaction_type"]
         # reserved transaction smart contracts
-        rtsc = self.scp.rtsc
+        rtsc = self.sch.rtsc
         if txn_type in rtsc:
-            # TODO: if in reserved call function in smart_contracts that check which one to call
-            if rtsc[txn["header"]["transaction_type"]](txn):
-                return True
-            # TODO: move these to provisions reserved
-        elif txn_type == "TT_PROVISION_TSC":
-            if self.scp.provision_tsc(txn):
-                return True
-        elif txn_type == "TT_PROVISION_SSC":
-            if self.scp.provision_ssc(txn):
-                return True
-        elif txn_type == "TT_PROVISION_LSC":
-            if self.scp.provision_lsc(txn):
-                return True
-        elif txn_type == "TT_PROVISION_BSC":
-            if self.scp.provision_bsc(txn):
-                return True
-        elif txn_type in self.scp.tsc:
-            self.scp.tsc[txn_type](self, txn)
-            return True
+            return self.sch.rtsc[txn_type](txn)
         return False
 
     def _execute_phase_2(self, config, phase_1_info):
