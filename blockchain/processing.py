@@ -307,15 +307,16 @@ class ProcessingNode(object):
                 transaction_db.update_transaction(tx)
 
     def handle_transaction(self, txn):
-        """
-            check if the given transaction type is reserved and call the appropriate provisioning function
-         """
+        """ check if the given transaction type is reserved and call the appropriate provisioning function """
         txn_type = txn["header"]["transaction_type"]
+        status = False
         # reserved transaction smart contracts
         rtsc = self.sch.rtsc
         if txn_type in rtsc:
-            return self.sch.rtsc[txn_type](txn)
-        return False
+            status = self.sch.rtsc[txn_type](txn)
+        elif txn_type in self.sch.tsc:
+            status = self.sch.execute_tsc(txn)
+        return status
 
     def _execute_phase_2(self, config, phase_1_info):
         """

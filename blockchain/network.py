@@ -581,9 +581,8 @@ class ConnectionManager(object):
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 if verification['signature']['signatory'] is not self.this_node.node_id:
-                    # run broadcast smart contract (BSC) code here if phase matches
-                    if phase in self.processing_node.sch.bsc:
-                        self.processing_node.sch.bsc[phase](verification)
+                    # run broadcast smart contract (BSC)
+                    self.processing_node.sch.execute_bsc(phase, verification)
                     verification_db.insert_verification(verification, verification['verification_id'])
                     # check if there are nodes further down the chain interested in this record
                     replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])

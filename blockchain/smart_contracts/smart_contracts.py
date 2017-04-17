@@ -56,7 +56,9 @@ class SmartContractsHandler(object):
         self.network = network
         # processing node's public key
         self.public_key = public_key
-        self.rtsc = {"TT_SUB_REQ": self.subscription_request,
+        # reserved smart contract handler
+        self.rsch = ReservedSmartContractsHandler(self.network, self.public_key)
+        self.rtsc = {"TT_SUB_REQ": self.rsch.subscription_request,
                      "TT_PROVISION_SC": self.provision_sc,
                      "TT_PROVISION_TSC": self.provision_tsc,
                      "TT_PROVISION_SSC": self.provision_ssc,
@@ -76,38 +78,6 @@ class SmartContractsHandler(object):
 
         # load existing smart contracts from database
         self.load_scs()
-        pass
-
-    def subscription_request(self, transaction):
-        """
-            attempts to make initial communication with subscription node
-            param transaction: transaction to retrieve subscription info from
-        """
-        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
-        if self.network and self.public_key:
-            if "subscription" in transaction["payload"]:
-                subscription = transaction["payload"]['subscription']
-                try:
-                    subscription_id = str(uuid.uuid4())
-                    criteria = subscription['criteria']
-                    phase_criteria = subscription['phase_criteria']
-                    subscription['create_ts'] = int(time.time())
-                    # store new subscription info
-                    sub_db.insert_subscription(subscription, subscription_id)
-                    # get subscription node
-                    subscription_node = self.network.get_subscription_node(subscription)
-                    # initiate communication with subscription node
-                    if subscription_node:
-                        subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, subscription['create_ts'], self.public_key)
-                    return True
-                except Exception as ex:  # likely already subscribed
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    logger().warning(message)
-                    return False
-        else:
-            logger().warning("Could not fulfill subscription request: no network or public key provided.")
-            return False
 
     def provision_sc(self, transaction):
         return True
@@ -156,6 +126,7 @@ class SmartContractsHandler(object):
             return False
         return self._sc_provisioning_helper(pl, "ssc", sc_key)
 
+    # TODO: implement lsc functionality
     def provision_lsc(self, transaction):
         """ provide name and python module to run sc """
         return True
@@ -178,6 +149,7 @@ class SmartContractsHandler(object):
         insert sc code into appropriate dictionary
         :param pl: transaction payload to extract sc from
         :param sc_class: type of sc being dealt with (e.g. tsc, ssc, etc.)
+        :param sc_key: transaction type
         """
         try:
             if 'smart_contract' in pl:
@@ -186,7 +158,7 @@ class SmartContractsHandler(object):
                     func = None
                     # define sc function
                     exec(sc[sc_class])
-                    # store sc function for this txn type
+                    # store sc function for this txn type (sc_key)
                     self.sc_container[sc_class][sc_key] = func
                 else:
                     logger().warning("No smart contract code provided...")
@@ -200,6 +172,15 @@ class SmartContractsHandler(object):
             return False
         return True
 
+    def execute_tsc(self, transaction):
+        txn_type = transaction["header"]["transaction_type"]
+        try:
+            self.tsc[txn_type](transaction)
+        except:
+            logger().warning("An error occurred during tsc execution on transaction: %s", transaction['owner'])
+            return False
+        return True
+
     def execute_ssc(self, min_block_id):
         """ execute subscription smart contract """
         for sc_key in self.ssc.keys():
@@ -208,6 +189,14 @@ class SmartContractsHandler(object):
             for v in vrs:
                 txns = transaction_db.get_all(txn_type, v['block_id'])
                 self.ssc[sc_key](txns, v)
+
+    def execute_lsc(self):
+        pass
+
+    def execute_bsc(self, phase, vr):
+        """ run broadcast smart contract on verification record if phase matches """
+        if phase in self.bsc:
+            self.bsc[phase](vr)
 
     def _insert_sc(self, pl, sc_class, sc_key):
         """ insert sc info into database """
@@ -237,3 +226,43 @@ class SmartContractsHandler(object):
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
             logger().warning(message)
+
+
+class ReservedSmartContractsHandler(object):
+    def __init__(self, network=None, public_key=None):
+        # processing nodes network
+        self.network = network
+        # processing node's public key
+        self.public_key = public_key
+
+    def subscription_request(self, transaction):
+        """
+            attempts to make initial communication with subscription node
+            param transaction: transaction to retrieve subscription info from
+        """
+        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
+        if self.network and self.public_key:
+            if "subscription" in transaction["payload"]:
+                subscription = transaction["payload"]['subscription']
+                try:
+                    subscription_id = str(uuid.uuid4())
+                    criteria = subscription['criteria']
+                    phase_criteria = subscription['phase_criteria']
+                    subscription['create_ts'] = int(time.time())
+                    # store new subscription info
+                    sub_db.insert_subscription(subscription, subscription_id)
+                    # get subscription node
+                    subscription_node = self.network.get_subscription_node(subscription)
+                    # initiate communication with subscription node
+                    if subscription_node:
+                        subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria,
+                                                                           subscription['create_ts'], self.public_key)
+                    return True
+                except Exception as ex:  # likely already subscribed
+                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    logger().warning(message)
+                    return False
+        else:
+            logger().warning("Could not fulfill subscription request: no network or public key provided.")
+            return False
