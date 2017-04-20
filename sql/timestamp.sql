@@ -31,10 +31,31 @@ __email__ = "joe@dragonchain.org"
 
 */
 
-\i types.sql
-\i txpool.sql
-\i net.sql
-\i vr_transfers.sql
-\i subscriptions.sql
-\i timestamp.sql
-\i smart_contracts.sql
+
+BEGIN;
+/* Don't drop tables unless you really want to */
+--DROP TABLE transactions;
+CREATE TABLE IF NOT EXISTS timestamps (
+
+    timestamp_id UUID PRIMARY KEY,
+
+    block_id INT,
+
+    origin_id VARCHAR(256),
+
+    /* confirm: when the transaction record was created */
+    create_ts timestamptz,
+
+    /* boolean field to indicate whether a transaction was successfully sent */
+    timestamp_receipt boolean not null DEFAULT FALSE,
+
+    /* Signature block - includes public key */
+    signature JSON,
+
+    /* arbitrary info per phase */
+    verification_info JSON
+);
+COMMIT;
+BEGIN;
+GRANT ALL ON timestamps to blocky;
+COMMIT;

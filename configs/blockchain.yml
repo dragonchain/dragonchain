@@ -11,7 +11,7 @@ smart_contracts:
 public_transmission: 
     p1_pub_trans: off
     p2_pub_trans: off
-    p3_pub_trans: off
+    p3_pub_trans: on
     p4_pub_trans: off
 
 # database query limits

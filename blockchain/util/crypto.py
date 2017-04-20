@@ -35,6 +35,7 @@ Utility library for transaction operations
 
 import time
 import logging
+logging.basicConfig()
 import hashlib
 
 try:
@@ -508,13 +509,18 @@ def deep_hash(thing):
     return deterministic_hash(list_to_hash)
 
 
-def final_hash(items):
+def final_hash(items, type=512):
     """
     Deterministic hashing function that should be used for any full hashing in the system.
     :param items: A list of items to hash deterministically.
     :return: finalized deterministic sha512 hash
     """
-    hash_object = hashlib.sha512(str(deterministic_hash(items)))
+    if type == 256:
+        """ returns final sha256 hash """
+        hash_object = hashlib.sha256(str(deterministic_hash(items)))
+    else:
+        """ returns final sha512 hash """
+        hash_object = hashlib.sha512(str(deterministic_hash(items)))
     hex_dig = hash_object.hexdigest()
 
     return hex_dig
