@@ -61,7 +61,12 @@ SQL_INSERT = """INSERT into transactions (
                             entity
                           ) VALUES  (%s, to_timestamp(%s), to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 SQL_UPDATE = """UPDATE transactions SET status = %s, block_id = %s WHERE transaction_id = %s"""
-SQL_FIXATE_BLOCK = """UPDATE transactions SET status='pending', block_id=%i WHERE status = 'new' AND transaction_ts >= to_timestamp(%i) AND transaction_ts <= to_timestamp(%i)"""
+SQL_FIXATE_BLOCK = """UPDATE transactions
+                            SET status='pending',
+                            block_id=%s
+                            WHERE status = 'new' AND
+                            transaction_ts >= to_timestamp(%s) AND
+                            transaction_ts <= to_timestamp(%s)"""
 
 
 def get_cursor_name():
@@ -86,109 +91,116 @@ def get_all(limit=None, offset=None, **params):
     query = SQL_GET_ALL
     separator_needed = False
     if params:
-        query += """ WHERE """
+        query += """ WHERE"""
 
     if "block_id" in params and params["block_id"]:
-        query += """ block_id = """ + str(params["block_id"])
+        query += """ block_id = %(block_id)s"""
         separator_needed = True
 
     if "transaction_type" in params and params["transaction_type"]:
         if separator_needed:
             query += """ AND """
-        query += """ transaction_type = '""" + str(params["transaction_type"]) + """'"""
+        query += """ transaction_type = %(transaction_type)s"""
         separator_needed = True
 
     if "business_unit" in params and params["business_unit"]:
         if separator_needed:
             query += """ AND """
-        query += """ business_unit = '""" + str(params["business_unit"]) + """'"""
+        query += """ business_unit = %(business_unit)s"""
         separator_needed = True
 
     if "family_of_business" in params and params["family_of_business"]:
         if separator_needed:
             query += """ AND """
-        query += """ family_of_business = '""" + str(params["family_of_business"]) + """'"""
+        query+= """ family_of_business = %(family_of_business)s"""
 
     if "line_of_business" in params and params["line_of_business"]:
         if separator_needed:
             query += """ AND """
-        query += """ line_of_business = '""" + str(params["line_of_business"]) + """'"""
+        query += """ line_of_business = %(line_of_business)s"""
         separator_needed = True
 
     if "signature" in params and params["signature"]:
         if separator_needed:
             query += """ AND """
-        query += """ signature = '""" + str(params["signature"]) + """'"""
+        query += """ signature = %(signature)s"""
         separator_needed = True
 
     if "status" in params and params["status"]:
         if separator_needed:
             query += """ AND """
-        query += """ status = '""" + str(params["status"]) + """'"""
+        query += """ status = %(status)s"""
         separator_needed = True
 
     if "owner" in params and params["owner"]:
         if separator_needed:
             query += """ AND """
-        query += """ owner = '""" + str(params["owner"]) + """'"""
+        query += """ owner = %(owner)s"""
         separator_needed = True
 
     if "actor" in params and params["actor"]:
         if separator_needed:
             query += """ AND """
-        query += """ actor = '""" + str(params["actor"]) + """'"""
+        query += """ actor = %(actor)s"""
         separator_needed = True
 
     if "entity" in params and params["entity"]:
         if separator_needed:
-            query += """ AND """
-        query += """ entity = '""" + str(params["entity"]) + """'"""
+            query += """ AND"""
+        query += """ entity = %(entity)s"""
         separator_needed = True
 
     if "create_ts" in params:
         if separator_needed:
-            query += """ AND """
+            query += """ AND"""
         if '-' in params["create_ts"]:
             # if it is timestamp >= UNIX-epoch timecode
             if params["create_ts"].index('-') == 0:
                 start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][1:])))
-                query += """ create_ts >= '""" + start_time + """'"""
+                params["start_time"] = start_time
+                query += """ create_ts >= %(start_time)s"""
             elif params["create_ts"].endswith('-'):
                 end_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:len(params["create_ts"])-1])))
-                query += """ create_ts <= '""" + end_time + """'"""
+                params["end_time"] = end_time
+                query += """ create_ts <= %(end_time)s"""
             else:
                 start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:params["create_ts"].index('-')])))
                 end_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"][params["create_ts"].index('-')+1:])))
-                query += """ create_ts >= '""" + start_time + """' AND create_ts <= '""" + end_time + """'"""
+                params["start_time"] = start_time
+                params["end_time"] = end_time
+                query += """ create_ts >= %(start_time)s AND create_ts <= %(end_time)s"""
         else:
             cur_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"])))
-            query += """ create_ts = '""" + cur_time + """'"""
+            params["cur_time"] = cur_time
+            query += """ create_ts = %(cur_time)s"""
         separator_needed = True
 
     if "transaction_ts" in params:
         print("transaction_ts")
         if separator_needed:
-            query += """ AND """
+            query += """ AND"""
         if '-' in params["transaction_ts"]:
-             # if it is timestamp >= UNIX-epoch timecode
+            # if it is timestamp >= UNIX-epoch timecode
             if params["transaction_ts"].index('-') == 0:
                 start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"][1:])))
-                query += """ transaction_ts >= '""" + start_time + """'"""
+                params["start_time"] = start_time
+                query += """ transaction_ts >= %(start_time)s"""
             elif params["transaction_ts"].endswith('-'):
-                end_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                             time.gmtime(float(params["create_ts"][:len(params["transaction_ts"]) - 1])))
-                query += """ transaction_ts <= '""" + end_time + """'"""
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][:len(params["transaction_ts"]) - 1])))
+                params["end_time"] = end_time
+                query += """ transaction_ts <= %(end_time)s"""
             else:
-                start_time = time.strftime('%Y-%m-%d %H:%M:%S',
-                                               time.gmtime(float(params["create_ts"][:params["transaction_ts"].index('-')])))
-                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(
-                        float(params["transaction_ts"][params["create_ts"].index('-') + 1:])))
-                query += """ transaction_ts >= '""" + start_time + """' AND transaction_ts <= '""" + end_time + """'"""
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:params["transaction_ts"].index('-')])))
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"][params["create_ts"].index('-') + 1:])))
+                params["start_time"] = start_time
+                params["end_time"] = end_time
+                query += """ transaction_ts >= %(start_time)s AND transaction_ts <= %(end_time)s"""
         else:
-             cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"])))
-             query += """ transaction_ts = '""" + cur_time + """'"""
-             separator_needed = True
-             # not used but left in place to handle future params
+            cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"])))
+            params["cur_time"] = cur_time
+            query += """ transaction_ts = %(cur_time)s"""
+            separator_needed = True
+            # not used but left in place to handle future params
 
     query += """ ORDER BY transaction_ts DESC """
 
@@ -196,15 +208,17 @@ def get_all(limit=None, offset=None, **params):
         limit = 10
 
     if limit:
-        query += """ LIMIT """ + str(limit)
+        params["limit"] = limit
+        query += """ LIMIT %(limit)s"""
 
     if offset:
-        query += """ OFFSET """ + str(offset)
+        params["offset"] = offset
+        query += """ OFFSET $(offset)s"""
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(query, params)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
@@ -313,11 +327,10 @@ def update_transaction(txn):
 
 def fixate_block(start_ts_range, end_ts_range, block_id):
     # get all tx within the previous block
-    update_query = SQL_FIXATE_BLOCK % (block_id, start_ts_range, end_ts_range)
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor()
-        cur.execute(update_query)
+        cur.execute(SQL_FIXATE_BLOCK, (block_id, start_ts_range, end_ts_range))
         conn.commit()
         cur.close()
     finally:

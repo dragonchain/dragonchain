@@ -54,7 +54,7 @@ import uuid
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
-SQL_GET_ALL = """SELECT * FROM sub_to"""
+SQL_GET_ALL = """SELECT * FROM sub_to WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) ORDER BY status LIMIT %s"""
 SQL_INSERT = """INSERT into sub_to (
                     subscription_id,
                     subscribed_node_id,
@@ -93,16 +93,11 @@ def insert_subscription(subscription, subscription_id=None):
 
 def get_all(limit=None):
     """ query for all subscriptions that have passed due synchronization periods """
-    query = SQL_GET_ALL
-    query += """ WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) """
-    query += """ ORDER BY status """
-    if limit:
-        query += """ LIMIT """ + str(limit)
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(query)
+        cur.execute(SQL_GET_ALL, (limit, ))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
