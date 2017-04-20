@@ -14,6 +14,10 @@ public_transmission: 
     p3_pub_trans: off
     p4_pub_trans: off
 
+# database query limits
+vr_db_limit: 1000
+txn_db_limit: 1000
+
 # time limit (in seconds) before request is made for verification receipts from peers.
 receipt_request_time: 600
 

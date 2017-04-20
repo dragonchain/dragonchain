@@ -181,13 +181,15 @@ class SmartContractsHandler(object):
             return False
         return True
 
-    def execute_ssc(self, min_block_id):
+    def execute_ssc(self, min_block_id, vr_limit, txn_limit):
         """ execute subscription smart contract """
         for sc_key in self.ssc.keys():
             (origin_id, txn_type, phase) = sc_key.split(":")
-            vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
+            vrs = verification_db.get_all(limit=vr_limit, origin_id=origin_id, phase=phase, min_block_id=min_block_id)
+            # dedupe vrs
+            vrs = {v['block_id']: v for v in vrs}.values()
             for v in vrs:
-                txns = transaction_db.get_all(txn_type, v['block_id'])
+                txns = transaction_db.get_all(txn_type, v['block_id'], limit=txn_limit)
                 self.ssc[sc_key](txns, v)
 
     def execute_lsc(self):

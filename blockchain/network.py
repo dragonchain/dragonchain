@@ -77,6 +77,8 @@ OWNER_PROPERTY_KEY = 'owner'
 BUSINESS_PROPERTY_KEY = 'business'
 LOCATION_PROPERTY_KEY = 'deploy_location'
 PUB_TRANS_PROPERTY_KEY = 'public_transmission'
+VR_DB_LIMIT = 'vr_db_limit'
+TXN_DB_LIMIT = 'txn_db_limit'
 INBOUND_TIMEOUT = 30  # seconds
 
 RECORD = 'record'
@@ -142,6 +144,8 @@ class ConnectionManager(object):
         self.port = port
         self.business = None
         self.deploy_location = None
+        self.vr_db_limit = None
+        self.txn_db_limit = None
         # phase_type => {nodes} (dictionary of connected nodes)
         self.peer_dict = {}
         self.config = None
@@ -173,6 +177,12 @@ class ConnectionManager(object):
 
         self.business = self.config[BUSINESS_PROPERTY_KEY]
         self.deploy_location = self.config[LOCATION_PROPERTY_KEY]
+
+        if VR_DB_LIMIT in self.config:
+            self.vr_db_limit = self.config[VR_DB_LIMIT]
+
+        if TXN_DB_LIMIT in self.config:
+            self.txn_db_limit = self.config[TXN_DB_LIMIT]
 
         # set public_transmission dictionary from yml config
         if self.processing_node:
@@ -500,7 +510,7 @@ class ConnectionManager(object):
                     if txns or vrs:
                         min_block_id = self.get_min_block_id(vrs)
                         # execute any present subscription smart contracts
-                        self.processing_node.scp.execute_ssc(min_block_id)
+                        self.processing_node.scp.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
                                      subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
