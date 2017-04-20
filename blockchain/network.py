@@ -533,7 +533,7 @@ class ConnectionManager(object):
                     if txns or vrs:
                         min_block_id = self.get_min_block_id(vrs)
                         # execute any present subscription smart contracts
-                        self.processing_node.scp.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
+                        self.processing_node.sch.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
                                      subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
@@ -598,15 +598,6 @@ class ConnectionManager(object):
     def get_min_block_id(self, vrs):
         """ return minimum block id of given verification records """
         return min(v['block_id'] for v in vrs)
-
-    # def _execute_ssc(self, min_block_id):
-    #     """ execute subscription smart contract """
-    #     for sc_key in self.processing_node.scp.ssc.keys():
-    #         (origin_id, txn_type, phase) = sc_key.split(":")
-    #         vrs = verification_db.get_all(origin_id=origin_id, phase=phase, min_block_id=min_block_id)
-    #         for v in vrs:
-    #             txns = transaction_db.get_all(txn_type, v['block_id'])
-    #             self.processing_node.scp.ssc[sc_key](txns, v)
 
     def resolve_data(self, verifications, phase):
         """ store received verifications from node, find replications and store them in transfers table """
