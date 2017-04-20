@@ -22,6 +22,18 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
+"""
+                ***** server-side subscription dao ******
+Stores subscription info from subscribers (client nodes) for the data provider.
+data stored:
+ - node id of subscriber (client)
+ - criteria to be met by subscription
+ - phase criteria to be met by subscription
+ - public key of subscriber (client)
+ - subscription create timestamp
+subscription data is queried based on subscriber ids and phase criteria.
+"""
+
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
