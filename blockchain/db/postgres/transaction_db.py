@@ -61,10 +61,10 @@ SQL_INSERT = """INSERT into transactions (
                             entity
                           ) VALUES  (%s, to_timestamp(%s), to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 SQL_UPDATE = """UPDATE transactions SET status = %s, block_id = %s WHERE transaction_id = %s"""
-SQL_FIXATE_BLOCK = """UPDATE transactions 
-                            SET status='pending', 
+SQL_FIXATE_BLOCK = """UPDATE transactions
+                            SET status='pending',
                             block_id=%s
-                            WHERE status = 'new' AND 
+                            WHERE status = 'new' AND
                             transaction_ts >= to_timestamp(%s) AND
                             transaction_ts <= to_timestamp(%s)"""
 
@@ -93,58 +93,58 @@ def get_all(limit=None, offset=None, **params):
     if params:
         query += """ WHERE"""
 
-    if "block_id" in params:
+    if "block_id" in params and params["block_id"]:
         query += """ block_id = %(block_id)s"""
         separator_needed = True
 
-    if "transaction_type" in params:
+    if "transaction_type" in params and params["transaction_type"]:
         if separator_needed:
             query += """ AND """
         query += """ transaction_type = %(transaction_type)s"""
         separator_needed = True
 
-    if "business_unit" in params:
+    if "business_unit" in params and params["business_unit"]:
         if separator_needed:
             query += """ AND """
         query += """ business_unit = %(business_unit)s"""
         separator_needed = True
 
-    if "family_of_business" in params:
+    if "family_of_business" in params and params["family_of_business"]:
         if separator_needed:
             query += """ AND """
         query+= """ family_of_business = %(family_of_business)s"""
 
-    if "line_of_business" in params:
+    if "line_of_business" in params and params["line_of_business"]:
         if separator_needed:
             query += """ AND """
         query += """ line_of_business = %(line_of_business)s"""
         separator_needed = True
 
-    if "signature" in params:
+    if "signature" in params and params["signature"]:
         if separator_needed:
             query += """ AND """
         query += """ signature = %(signature)s"""
         separator_needed = True
 
-    if "status" in params:
+    if "status" in params and params["status"]:
         if separator_needed:
             query += """ AND """
         query += """ status = %(status)s"""
         separator_needed = True
 
-    if "owner" in params:
+    if "owner" in params and params["owner"]:
         if separator_needed:
             query += """ AND """
         query += """ owner = %(owner)s"""
         separator_needed = True
 
-    if "actor" in params:
+    if "actor" in params and params["actor"]:
         if separator_needed:
             query += """ AND """
         query += """ actor = %(actor)s"""
         separator_needed = True
 
-    if "entity" in params:
+    if "entity" in params and params["entity"]:
         if separator_needed:
             query += """ AND"""
         query += """ entity = %(entity)s"""

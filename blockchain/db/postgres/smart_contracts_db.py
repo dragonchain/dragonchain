@@ -22,18 +22,6 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 """
 
-"""
-                ***** client-side subscription dao ******
-Stores subscription info for the subscriber node when a subscription transaction is received.
-data stored:
- - the subscription node's id, owner, host, and port.
- - the subscription criteria to be met.
- - the subscription create timestamp.
- - the status of the subscription (i.e. approved, pending, etc.).
-subscription data is queried based on synchronization periods. if a sub has not been called
-since a time greater than its synchronization period, it will be queried.
-"""
-
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
 __copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
 __license__ = "Apache"
@@ -45,41 +33,46 @@ __email__ = "joe@dragonchain.org"
 import psycopg2
 import psycopg2.extras
 
-from blockchain.qry import format_subscription
-
 from postgres import get_connection_pool
-
 import uuid
+
+from blockchain.qry import format_sc
+
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
 """ SQL Queries """
-SQL_GET_ALL = """SELECT * FROM sub_to WHERE (CURRENT_TIMESTAMP - last_time_called) > (synchronization_period * '1 sec'::interval) ORDER BY status LIMIT %s"""
-SQL_INSERT = """INSERT into sub_to (
-                    subscription_id,
-                    subscribed_node_id,
-                    node_owner,
-                    host,
-                    port,
-                    criteria,
-                    create_ts,
-                    status
-                ) VALUES (%s, %s, %s, %s, %s, %s, to_timestamp(%s), %s)"""
+SQL_GET_APPROVED = """SELECT * FROM smart_contracts WHERE status = 'approved'"""
+SQL_INSERT = """INSERT into smart_contracts (
+                   sc_id,
+                   sc_class,
+                   smart_contract,
+                   sc_key,
+                   criteria,
+                   test,
+                   requirements,
+                   version,
+                   status
+               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
 
-def insert_subscription(subscription, subscription_id=None):
-    """ insert given subscription into database """
-    if not subscription_id:
-        subscription_id = str(uuid.uuid4())
+def insert_sc(sc, sc_class, sc_key):
+    """
+    insert given smart contract into database
+    :param sc: smart contract payload
+    :param sc_class: type of smart contract being run
+    :param sc_key: dictionary key
+    """
     values = (
-        subscription_id,  # subscription uuid pk
-        subscription['subscribed_node_id'],  # id of subscription node
-        subscription['node_owner'],  # owner of subscription node
-        subscription['host'],  # subscription node's host
-        subscription['port'],  # subscription node's port
-        psycopg2.extras.Json(subscription['criteria']),  # criteria to be met by subscription
-        subscription['create_ts'],  # subscription creation time
-        "pending"  # subscription status
+        str(uuid.uuid4()),  # uuid pk
+        sc_class,
+        sc['smart_contract'][sc_class],  # code to be run
+        sc_key,  # dictionary key
+        sc['criteria'],  # criteria (i.e. transaction type)
+        sc['test'],  # unit test
+        sc['requirements'],  # required libraries
+        sc['version'],  # current version
+        "approved"  # sc status
     )
     conn = get_connection_pool().getconn()
     try:
@@ -91,24 +84,24 @@ def insert_subscription(subscription, subscription_id=None):
         get_connection_pool().putconn(conn)
 
 
-def get_all(limit=None):
-    """ query for all subscriptions that have passed due synchronization periods """
+def get_cursor_name():
+    return str(uuid.uuid4())
+
+
+def get_all():
+    """ query for all approved smart contracts """
 
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(SQL_GET_ALL, (limit, ))
+        cur.execute(SQL_GET_APPROVED)
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
             if not results:
                 break
             for result in results:
-                yield format_subscription(result)
+                yield format_sc(result)
         cur.close()
     finally:
         get_connection_pool().putconn(conn)
-
-
-def get_cursor_name():
-    return str(uuid.uuid4())

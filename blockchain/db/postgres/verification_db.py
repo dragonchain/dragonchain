@@ -136,20 +136,27 @@ def get_all(limit=None, offset=None, **params):
     if params:
         query += """ WHERE"""
 
-    if "block_id" in params:
+    if "block_id" in params and params["block_id"]:
         query += """ block_id = %(block_id)s"""
         separator_needed = True
 
-    if "phase" in params:
+    if "phase" in params and params["phase"]:
         if separator_needed:
             query += """ AND """
         query += """ phase = %(phase)s"""
         separator_needed = True
 
-    if "origin_id" in params:
+    if "origin_id" in params and params["origin_id"]:
         if separator_needed:
             query += """ AND """
         query += """ origin_id = %(origin_id)s"""
+        separator_needed = True
+
+    if "min_block_id" in params and params["min_block_id"]:
+        if separator_needed:
+            query += """ AND """
+        query += """ block_id >= %(min_block_id)s"""
+        separator_needed = True
 
     if not limit:
         limit = 10

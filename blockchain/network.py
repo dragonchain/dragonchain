@@ -79,6 +79,8 @@ OWNER_PROPERTY_KEY = 'owner'
 BUSINESS_PROPERTY_KEY = 'business'
 LOCATION_PROPERTY_KEY = 'deploy_location'
 PUB_TRANS_PROPERTY_KEY = 'public_transmission'
+VR_DB_LIMIT = 'vr_db_limit'
+TXN_DB_LIMIT = 'txn_db_limit'
 INBOUND_TIMEOUT = 30  # seconds
 
 RECORD = 'record'
@@ -144,6 +146,8 @@ class ConnectionManager(object):
         self.port = port
         self.business = None
         self.deploy_location = None
+        self.vr_db_limit = None
+        self.txn_db_limit = None
         # phase_type => {nodes} (dictionary of connected nodes)
         self.peer_dict = {}
         self.config = None
@@ -175,6 +179,12 @@ class ConnectionManager(object):
 
         self.business = self.config[BUSINESS_PROPERTY_KEY]
         self.deploy_location = self.config[LOCATION_PROPERTY_KEY]
+
+        if VR_DB_LIMIT in self.config:
+            self.vr_db_limit = self.config[VR_DB_LIMIT]
+
+        if TXN_DB_LIMIT in self.config:
+            self.txn_db_limit = self.config[TXN_DB_LIMIT]
 
         # set public_transmission dictionary from yml config
         if self.processing_node:
@@ -516,8 +526,14 @@ class ConnectionManager(object):
                 # subscription already approved, request data from server
                 if subscription['status'] == "approved":
                     subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
-                    self.insert_transactions(map(thrift_converter.convert_thrift_transaction, subscription_response.transactions))
-                    self.insert_verifications(map(thrift_converter.convert_thrift_verification, subscription_response.verification_records))
+                    txns = map(thrift_converter.convert_thrift_transaction, subscription_response.transactions)
+                    vrs = map(thrift_converter.convert_thrift_verification, subscription_response.verification_records)
+                    self.insert_transactions(txns)
+                    self.insert_verifications(vrs)
+                    if txns or vrs:
+                        min_block_id = self.get_min_block_id(vrs)
+                        # execute any present subscription smart contracts
+                        self.processing_node.sch.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
                 elif subscription['status'] == "pending":
                     logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
                                      subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
@@ -579,12 +595,18 @@ class ConnectionManager(object):
                 logger().error(message)
                 continue
 
+    def get_min_block_id(self, vrs):
+        """ return minimum block id of given verification records """
+        return min(v['block_id'] for v in vrs)
+
     def resolve_data(self, verifications, phase):
         """ store received verifications from node, find replications and store them in transfers table """
         for verification in verifications:
             try:
                 verification = thrift_converter.convert_thrift_verification(verification)
                 if verification['signature']['signatory'] is not self.this_node.node_id:
+                    # run broadcast smart contract (BSC)
+                    self.processing_node.sch.execute_bsc(phase, verification)
                     verification_db.insert_verification(verification, verification['verification_id'])
                     # check if there are nodes further down the chain interested in this record
                     replicated_verifications = verification_db.get_all_replication(verification['block_id'], phase, verification['origin_id'])

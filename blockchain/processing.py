@@ -50,6 +50,8 @@ from blockchain.db.postgres import timestamp_db
 
 import network
 
+from blockchain.smart_contracts import smart_contracts
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -92,8 +94,6 @@ class ProcessingNode(object):
     def __init__(self, phase_config, service_config):
         self.phase_config = phase_config
         self.service_config = service_config
-        self.smart_contracts = {"TT_SUB_REQ": self._subscription_request,
-                                "TT_PROVISION_SC": self.provision_sc}
         self._scheduler = BackgroundScheduler()
         self._config_handlers = {
             PHASE: self._phase_type_config_handler,
@@ -103,12 +103,14 @@ class ProcessingNode(object):
         self._registrations = {}
         self._configured_phases = []
         self._register_configs()
-
-        # dictionary of public transmission flags. set by network, obtained through yml config file.
+        # public transmission flags
         self.public_transmission = None
-
+        # this nodes phases provided
         phase = self.phase_config[0][PHASE]
+        # this nodes network
         self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
+        # smart contract handler used for running reserved and non-reserved smart contracts
+        self.sch = smart_contracts.SmartContractsHandler(self.network, self.service_config['public_key'])
 
     def start(self):
         """ Start the NON-blocking scheduler """
@@ -239,43 +241,12 @@ class ProcessingNode(object):
 
         return prior_hash
 
-    def _subscription_request(self, transaction):
-        """
-            attempts to make initial communication with subscription node
-            param transaction: transaction to retrieve subscription info from
-        """
-        # check if given transaction has one or more subscriptions tied to it and inserts into subscriptions database
-        if "subscription" in transaction["payload"]:
-            subscription = transaction["payload"]['subscription']
-            try:
-                subscription_id = str(uuid.uuid4())
-                criteria = subscription['criteria']
-                phase_criteria = subscription['phase_criteria']
-                subscription['create_ts'] = int(time.time())
-                public_key = self.service_config['public_key']
-                # store new subscription info
-                sub_db.insert_subscription(subscription, subscription_id)
-                # get subscription node
-                subscription_node = self.network.get_subscription_node(subscription)
-                # initiate communication with subscription node
-                if subscription_node:
-                    subscription_node.client.subscription_provisioning(subscription_id, criteria, phase_criteria, subscription['create_ts'], public_key)
-                return True
-            except Exception as ex:  # likely already subscribed
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                logger().warning(message)
-                return False
-
     def get_subscription_signature(self, subscription):
         """ return signature for given subscription """
         sign_subscription(self.network.this_node.node_id,
                           subscription,
                           self.service_config["private_key"],
                           self.service_config["public_key"])
-
-    def provision_sc(self, transaction):
-        return True
 
     def _execute_phase_1(self, config, current_block_id):
         """
@@ -305,12 +276,8 @@ class ProcessingNode(object):
         approved_transactions = []
 
         for txn in valid_transactions:
-            txn_type = txn["header"]["transaction_type"]
-            if txn_type in self.smart_contracts:
-                if self.smart_contracts[txn["header"]["transaction_type"]](txn):
-                    approved_transactions.append(txn)
-                else:
-                    rejected_transactions.append(txn)
+            if self.handle_transaction(txn):
+                approved_transactions.append(txn)
             else:
                 rejected_transactions.append(txn)
 
@@ -360,6 +327,18 @@ class ProcessingNode(object):
             for tx in rejected_transactions:
                 tx["header"]["status"] = "rejected"
                 transaction_db.update_transaction(tx)
+
+    def handle_transaction(self, txn):
+        """ check if the given transaction type is reserved and call the appropriate provisioning function """
+        txn_type = txn["header"]["transaction_type"]
+        status = False
+        # reserved transaction smart contracts
+        rtsc = self.sch.rtsc
+        if txn_type in rtsc:
+            status = self.sch.rtsc[txn_type](txn)
+        elif txn_type in self.sch.tsc:
+            status = self.sch.execute_tsc(txn)
+        return status
 
     def _execute_phase_2(self, config, phase_1_info):
         """

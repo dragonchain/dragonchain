@@ -53,7 +53,7 @@ $body$
 BEGIN;
 /* Don't drop tables unless you really want to */
 CREATE TABLE IF NOT EXISTS nodes (
-
+    /* node unique id */
     node_id UUID PRIMARY KEY,
 
     /* confirm who created the node */
