@@ -46,6 +46,7 @@ import time
 import uuid
 from collections import defaultdict
 
+
 def logger(name="verifier-service"):
     return logging.getLogger(name)
 
