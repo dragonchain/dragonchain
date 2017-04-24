@@ -1,5 +1,5 @@
 """
-Copyright 2016 Disney Connected and Advanced Technologies
+Copyright 2017, Dragonchain Foundation
 
 Licensed under the Apache License, Version 2.0 (the "Apache License")
 with the following modification; you may not use this file except in
@@ -29,7 +29,7 @@ invalid or malicious code.
 """
 
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
-__copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
+__copyright__ = "Copyright 2017, Dragonchain Foundation"
 __license__ = "Apache"
 __version__ = "2.0"
 __maintainer__ = "Joe Roets"
@@ -44,6 +44,7 @@ from blockchain.db.postgres import transaction_db
 
 import time
 import uuid
+from collections import defaultdict
 
 
 def logger(name="verifier-service"):
@@ -186,11 +187,20 @@ class SmartContractsHandler(object):
         for sc_key in self.ssc.keys():
             (origin_id, txn_type, phase) = sc_key.split(":")
             vrs = verification_db.get_all(limit=vr_limit, origin_id=origin_id, phase=phase, min_block_id=min_block_id)
-            # dedupe vrs
-            vrs = {v['block_id']: v for v in vrs}.values()
+            #dedupe block ids
+            block_ids = {v['block_id'] for v in vrs}
+            #group vr's by block id
+            block_vrs = defaultdict(list)
             for v in vrs:
-                txns = transaction_db.get_all(txn_type, v['block_id'], limit=txn_limit)
-                self.ssc[sc_key](txns, v)
+                block_vrs[v['block_id']].append(v)
+
+            # fetch all txns for each block
+            for block_id in block_ids:
+                #todo: filter by p1 signatory
+                txns = transaction_db.get_all(transaction_type=txn_type, block_id=block_id, limit=txn_limit)
+                # execute ssc for each vr in block
+                for v in block_vrs[block_id]:
+                    self.ssc[sc_key](txns, v)
 
     def execute_lsc(self):
         pass

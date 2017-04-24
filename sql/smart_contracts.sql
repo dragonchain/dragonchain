@@ -1,6 +1,6 @@
 /*
 
-Copyright 2016 Disney Connected and Advanced Technologies
+Copyright 2017, Dragonchain Foundation
 
 Licensed under the Apache License, Version 2.0 (the "Apache License")
 with the following modification; you may not use this file except in
@@ -23,7 +23,7 @@ KIND, either express or implied. See the Apache License for the specific
 language governing permissions and limitations under the Apache License.
 
 __author__ = "Joe Roets, Brandon Kite, Dylan Yelton, Michael Bachtel"
-__copyright__ = "Copyright 2016, Disney Connected and Advanced Technologies"
+__copyright__ = "Copyright 2017, Dragonchain Foundation"
 __license__ = "Apache"
 __version__ = "2.0"
 __maintainer__ = "Joe Roets"
