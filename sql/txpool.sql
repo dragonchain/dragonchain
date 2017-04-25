@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     /* what are a few examples? */
     payload JSON,
 
+    payload_hash VARCHAR(500),
+
     /* signatures */
     signature JSON,
 
