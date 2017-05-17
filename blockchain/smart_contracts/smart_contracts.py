@@ -176,11 +176,10 @@ class SmartContractsHandler(object):
     def execute_tsc(self, transaction):
         txn_type = transaction["header"]["transaction_type"]
         try:
-            self.tsc[txn_type](transaction)
+            return self.tsc[txn_type](transaction)
         except:
             logger().warning("An error occurred during tsc execution on transaction: %s", transaction['owner'])
             return False
-        return True
 
     def execute_ssc(self, min_block_id, vr_limit, txn_limit):
         """ execute subscription smart contract """
