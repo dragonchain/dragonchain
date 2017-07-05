@@ -157,7 +157,7 @@ def get_unregistered_nodes(limit=None):
     conn = get_connection_pool().getconn()
     try:
         cur = conn.cursor(get_cursor_name(), cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(SQL_GET_UNREGISTERED_NODES, limit)
+        cur.execute(SQL_GET_UNREGISTERED_NODES, (limit,))
         'An iterator that uses fetchmany to keep memory usage down'
         while True:
             results = cur.fetchmany(DEFAULT_PAGE_SIZE)
