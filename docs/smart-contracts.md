@@ -87,8 +87,8 @@ def func(self, transaction):
     if "lat" not in payload or "long" not in payload or "timestamp" not in payload:
         return False
 
-    lat = float(transaction["payload"]["lat"])
-    long = float(transaction["payload"]["long"])
+    lat = float(payload["lat"])
+    long = float(payload["long"])
     return lat >= -90 and lat <= 90 and long >= -180 and long <= 180
 ```
 
@@ -111,7 +111,7 @@ like the following:
     "smart_contract": {
       "transaction_type": "LOCATION_RECORD",
       "implementation": "trusted",
-      "tsc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiANCiAgICBwYXlsb2FkID0gdHJhbnNhY3Rpb25bInBheWxvYWQiXQ0KICAgIGlmICJsYXQiIG5vdCBpbiBwYXlsb2FkIG9yICJsb25nIiBub3QgaW4gcGF5bG9hZDoNCiAgICAgICAgcmV0dXJuIEZhbHNlDQoNCiAgICBsYXQgPSBmbG9hdCh0cmFuc2FjdGlvblsicGF5bG9hZCJdWyJsYXQiXSkNCiAgICBsb25nID0gZmxvYXQodHJhbnNhY3Rpb25bInBheWxvYWQiXVsibG9uZyJdKQ0KICAgIHJldHVybiBsYXQgPj0gLTkwIGFuZCBsYXQgPD0gOTAgYW5kIGxvbmcgPj0gLTE4MCBhbmQgbG9uZyA8PSAxODA="
+      "tsc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiANCiAgICBwYXlsb2FkID0gdHJhbnNhY3Rpb25bInBheWxvYWQiXQ0KICAgIGlmICJsYXQiIG5vdCBpbiBwYXlsb2FkIG9yICJsb25nIiBub3QgaW4gcGF5bG9hZCBvciAidGltZXN0YW1wIiBub3QgaW4gcGF5bG9hZDoNCiAgICAgICAgcmV0dXJuIEZhbHNlDQoNCiAgICBsYXQgPSBmbG9hdChwYXlsb2FkWyJsYXQiXSkNCiAgICBsb25nID0gZmxvYXQocGF5bG9hZFsibG9uZyJdKQ0KICAgIHJldHVybiBsYXQgPj0gLTkwIGFuZCBsYXQgPD0gOTAgYW5kIGxvbmcgPj0gLTE4MCBhbmQgbG9uZyA8PSAxODA="
     },
     "version": 1
   }
@@ -149,7 +149,7 @@ time they were accepted.
 
 It is an exercise left up to the reader to handle key-rotations. Since smart contracts are versioned one could 
 simply update the smart contract with the most up-to-date key. A more advanced implementation could store trusted
-public keys as a custom transactions type to be queried later as needed.
+public keys as a custom transaction type to be queried later as needed.
 
 Summary
 ===
