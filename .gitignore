@@ -90,6 +90,7 @@ ENV/
 
 # PyCharm
 .idea
+*.iml
 
 # logs
 logs/
@@ -112,6 +113,6 @@ docker/custom*compose.yml
 .pydevproject
 
 # Emacs
-*
+
 
 ~
