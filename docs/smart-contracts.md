@@ -25,12 +25,9 @@ Smart Contract (SC) Types
 Transaction SC
 ===
 
-The TSC is meant for implementing custom business logic on-top of transactions your node receives.
- It provides final the verification and guarantee your business domain transactions are accurate and valid 
- before being accepted into the current block and broadcast to the network. 
+The TSC is meant for implementing custom business logic on-top of transactions your node receives. It provides the final verification and guarantee your business domain transactions are accurate and valid before being accepted into the current block and broadcast to the network. 
 
-Smart Contracts are deployed by submitting a transaction to your node. The following payload schema is used by 
-Dragonchain for representing TSCs:
+Smart Contracts are deployed by submitting a transaction to your node. The following payload schema is used by Dragonchain for representing TSCs:
 
 ```
 {
@@ -42,9 +39,10 @@ Dragonchain for representing TSCs:
 }
 ```
 
-A handler called "func" must be defined in your smart contract. It will be invoked for each pre-phase 1 transaction 
- encountered in a given block period. If your function returns false or throws an exception the transaction will
- be rejected.
+A handler called "func" must be defined in your smart contract. It will be invoked for each pre-phase 1 transaction encountered in a given block period. 
+If your function returns false or throws an exception the transaction will be rejected. 
+
+*Note:* While the SC implementation is shown here, it should be base64 encoded in practice.
 
 Potential uses cases:
  
@@ -122,7 +120,7 @@ like the following:
 After submitting this transaction to the transaction service, future LOCATION_RECORD transactions will be validated by 
 the custom TSC.
 
-### Signature Authentication
+### Signature Authentication Example
 
 All transactions submitted to Dragonchain contain a signature block. Even if the transaction you submitted doesn't
 contain a signature the transaction service will always sign the payload before it enters the database. The signatures
