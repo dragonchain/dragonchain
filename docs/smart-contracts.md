@@ -7,8 +7,8 @@ are signed, provide higher level features for integrating with blockchain data a
 
 Since Dragonchain is a hybrid permissioned / public ledger, it's assumed that smart contracts are written and signed by 
 trusted parties. This loosens requirements that would apply to a public blockchain since your smart contracts only run 
-on trusted nodes. As such, Dragonchain doesn't require a proprietary VM and associated languages for executing smart 
-contracts avoiding the notion of gas and cost per instruction altogether. This is suitable for business-critical 
+on trusted nodes. As such, Dragonchain doesn't require a proprietary VM and associated custom languages for executing smart 
+contracts avoiding the notion of _gas_ and _cost per instruction_ altogether. This is suitable for business-critical 
 applications since operational costs are fixed and independent of currency speculation while still providing a 
 cryptographically secured immutable database environment.
 
@@ -19,13 +19,14 @@ Smart Contract (SC) Types
 
 - Transaction SC (TSC) - Primary business logic, runs on applicable transactions during phase 1
 - Subscription SC (SSC) - Processes blocks received from peers via subscriptions
-- Library SC (LSC) - Dragonchain core provided smart contracts
-- Broadcast Receipt SC (BSC) - Reacts to verification data received from higher phase nodes
+- Library SC (LSC) - Reusable or utility smart contracts deployed as libraries -- _(not yet implemented)_
+- Broadcast Receipt SC (BSC) - Processes consensus verification information from higher phase nodes
+- Cron/Scheduled SC (CSC) - Smart contract that will be executed on a schedule -- _(not yet implemented)_
 
 Transaction SC
 ===
 
-The TSC is meant for implementing custom business logic on-top of transactions your node receives. It provides the final verification and guarantee your business domain transactions are accurate and valid before being accepted into the current block and broadcast to the network. 
+The TSC allows implementation of custom business logic to process and *approve* or *deny* transactions that your node receives. It provides the final verification and guarantee that a transaction is accurate and valid according to your own business rules before being accepted into the current block and broadcast to the network. 
 
 Smart Contracts are deployed by submitting a transaction to your node. The following payload schema is used by Dragonchain for representing TSCs:
 
