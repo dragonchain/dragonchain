@@ -42,6 +42,7 @@ from blockchain.db.postgres import sub_to_db as sub_db
 from blockchain.db.postgres import verification_db
 from blockchain.db.postgres import transaction_db
 
+import base64
 import time
 import uuid
 from collections import defaultdict
@@ -155,10 +156,17 @@ class SmartContractsHandler(object):
         try:
             if 'smart_contract' in pl:
                 sc = pl['smart_contract']
-                if sc[sc_class]:
+                sc_impl = sc[sc_class]
+                if sc_impl:
+                    try:
+                        sc_impl = base64.standard_b64decode(sc_impl)
+                    except TypeError:
+                        raise Exception("The Smart Contract implementation for " + str(sc_key) +
+                                        " must be base64 encoded.")
+
                     func = None
                     # define sc function
-                    exec(sc[sc_class])
+                    exec(sc_impl)
                     # store sc function for this txn type (sc_key)
                     self.sc_container[sc_class][sc_key] = func
                 else:
