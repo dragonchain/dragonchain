@@ -62,7 +62,7 @@ class gen_thrift(Command):
                         os.path.join(self.root, 'thrift', f)])
 
 setup(name         = 'Blockchain',
-      version      = '0.0.1',
+      version      = '0.0.2',
       description  = 'blockchain stuff',
       author       = 'Folks',
       packages     = ['blockchain'],
