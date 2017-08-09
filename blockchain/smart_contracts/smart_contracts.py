@@ -161,8 +161,8 @@ class SmartContractsHandler(object):
                     try:
                         sc_impl = base64.standard_b64decode(sc_impl)
                     except TypeError:
-                        logger().warning("Smart contract not base 64 encoded")
-                        # attempt to run SC anyways for backwards compatibility
+                        raise Exception("The Smart Contract implementation for " + str(sc_key) +
+                                        " must be base64 encoded.")
 
                     func = None
                     # define sc function
