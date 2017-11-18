@@ -2,8 +2,7 @@ public_transmission:
     p1_pub_trans: on
     p2_pub_trans: on
     p3_pub_trans: on
-    p4_pub_trans: on
-    p5_pub_trans: off
+    p4_pub_trans: off
 # database query limits
 vr_db_limit: 1000
 txn_db_limit: 1000
@@ -12,18 +11,18 @@ txn_db_limit: 1000
 receipt_request_time: 600
 
 # host:port:id:phase
-# phase 4 -- 01000
-# WE ARE OFF OF THE BITCOIN NETWORK WHICH IS PHASE 5! - 10000
+# phase 4 -- 01111
+# WE ARE OFF OF THE BITCOIN NETWORK WHICH IS PHASE 5! - 11111 DO NOT TURN ON p4 BROADCAST FOR PHASE 5 REGISTRATION
 peers:
-    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - localhost:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - localhost:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - localhost:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - localhost:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - localhost:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
-    - 35.193.45.37:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01000
+    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
