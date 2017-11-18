@@ -50,8 +50,8 @@ def run():
     log.info("Setting up argparse")
 
     parser = argparse.ArgumentParser(description='Watch live blockchain transactions.', prog='')
-    parser.add_argument('-s', '--server', required=False, default="blockchain.cloud.corp.dig.com", help="Query Service server.")
-    parser.add_argument('-p', '--port', default=8080)
+    parser.add_argument('-s', '--server', required=False, default="localhost", help="Query Service server.")
+    parser.add_argument('-p', '--port', default=80)
     parser.add_argument('--debug', default=True, action = "store_true")
     parser.add_argument('-c', '--criteria', dest="criteria", required=False, help="Query criteria as URL query string.")
     parser.add_argument('-t', '--polling-time-delay', dest="polling_time", required=False, help="Time delay in seconds between query requests.")
@@ -62,7 +62,7 @@ def run():
 
     while True:
         conn = httplib.HTTPConnection(args.server, args.port)
-        url = "/transaction?" + args.criteria
+        url = "/transaction?" + str(args.criteria)
         conn.request("GET", url)
         resp = conn.getresponse()
         resp_json = resp.read()
