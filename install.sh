@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 sudo apt update
 sudo apt-get install openssl docker docker-compose python2.7 python-pip postgresql postgresql-server-dev-9.5
 export PYTHONPATH=./
