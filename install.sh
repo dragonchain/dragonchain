@@ -1,7 +1,7 @@
 #!/bin/bash
 sudo apt update
 sudo apt-get install openssl docker docker-compose python2.7 python-pip postgresql postgresql-server-dev-9.5
-sudo pip install -r requirements.txt
+sudo -H pip install -r requirements.txt
 sudo python setup.py install
 cd sql/
 sudo useradd blocky
