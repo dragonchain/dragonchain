@@ -6,10 +6,10 @@
     "line_of_business": "NemoTechnologies",
     "owner": "NemoTechnologies",
     "transaction_type": "ZenChain",
-    "entity": "randomgen" //the id of the asset being tracked
+    "entity": "randomgen"
   },
   "payload": {
-    "command": ""
+    "command": "",
     "timestamp": XXXXXXXXX
   }
 }
