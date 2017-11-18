@@ -707,15 +707,7 @@ class ConnectionManager(object):
 
             phase_5_request.verification_record = verification_record
 
-            # send block to all known phase 5 nodes
-            if phase_msg:
-                for node in self.peer_dict[PHASE_5_NODE]:
-                    try:
-                        node.client.phase_5_message(phase_5_request)
-                        logger().info('block sent for public transmission...')
-                    except:
-                        logger().warning('failed to submit to node %s', node.node_id)
-                        continue
+            # No more phase 5. No more!
 
 
 class BlockchainServiceHandler:
