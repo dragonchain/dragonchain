@@ -42,6 +42,9 @@ import time
 
 seen = []
 
+sys.stdout.write("\033[0;32m")
+print ("usage: [-h] [-s SERVER] [-p PORT] [--debug] [-c CRITERIA] [-t POLLING_TIME]")
+sys.stdout.write("\033[1;34m")
 
 def run():
     logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level=logging.DEBUG)
