@@ -1,0 +1,20 @@
+{
+  "header": {
+    "create_ts": XXXXXXXXX,
+    "business_unit": "NemoTechnologies",
+    "family_of_business": "NemoTechnologies",
+    "line_of_business": "NemoTechnologies",
+    "owner": "NemoTechnologies",
+    "transaction_type": "TT_PROVISION_SC",
+    "actor": "NemoTechnologies",
+    "entity": "NemoTechnologies"
+  },
+  "payload": {
+    "smart_contract": {
+      "transaction_type": "NemoTechnologies",
+      "implementation": "trusted",   
+      "tsc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="
+    },
+    "version": 1
+  }
+}
