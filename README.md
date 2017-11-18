@@ -1,4 +1,4 @@
-# Dragonchain
+# ZenChain - DragonChain Fork
 
 The Dragonchain platform attempts to simplify integration of real business applications onto a blockchain. Providing features such as easy integration, protection of business data, fixed 5 second blocks, currency agnosticism, and interop features, Dragonchain shines a new and interesting light on blockchain technology.
 
