@@ -77,7 +77,6 @@ a location record could be the following:
   }
 }
 ```
-
 The following TSC logic validates that a given payload contains "lat" and "long" as floating numbers 
 that don't exceed bounds:
 
@@ -103,7 +102,7 @@ like the following:
     "family_of_business": "Test Business Family",
     "line_of_business": "My Business",
     "owner": "Test Node",
-    "transaction_type": "TT_PROVISION_TSC",
+    "transaction_type": "TT_PROVISION_SC",
     "actor": "c26dd972-8683-11e6-977b-3c970e3bee11",
     "entity": "c78f4526-8683-11e6-b1c6-3c970e3bee11"
   },
@@ -117,7 +116,7 @@ like the following:
   }
 }
 ```
-
+### TT_PROVISION_SC -> payload -> smart_contract -> tsc -> Base64 Decode command
 After submitting this transaction to the transaction service, future LOCATION_RECORD transactions will be validated by 
 the custom TSC.
 
