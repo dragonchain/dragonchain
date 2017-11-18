@@ -5,16 +5,19 @@
     "family_of_business": "NemoTechnologies",
     "line_of_business": "NemoTechnologies",
     "owner": "NemoTechnologies",
-    "transaction_type": "TT_PROVISION_SC",
+    "transaction_type": "TT_PROVISION_SSC",
     "actor": "NemoTechnologies",
     "entity": "NemoTechnologies"
   },
   "payload": {
+    "phase": 2,
     "smart_contract": {
       "transaction_type": "NemoTechnologies",
-      "implementation": "trusted",   
-      "tsc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="
+      "ssc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="
     },
+    "criteria": ["phase"],
+    "test": "print 'TEST'",
+    "requirements": ["uuid", "time"],
     "version": 1
   }
 }
