@@ -1,0 +1,15 @@
+{
+  "header": {
+    "create_ts": XXXXXXXXX,
+    "business_unit": "ZenChain",
+    "family_of_business": "ZenChain",
+    "line_of_business": "NemoTechnologies",
+    "owner": "NemoTechnologies",
+    "transaction_type": "ZenChain",
+    "entity": "randomgen" //the id of the asset being tracked
+  },
+  "payload": {
+    "command": ""
+    "timestamp": XXXXXXXXX
+  }
+}

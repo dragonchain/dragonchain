@@ -1,6 +1,6 @@
 #!/bin/bash
-str=`cat valid_payload.json`
-find="1475180987"
+str=`cat transactionTSC.json`
+find="XXXXXXXXX"
 replace=`date +"%s"`
 result=${str//$find/$replace}
 echo "$result"
