@@ -21,19 +21,19 @@ txn_db_limit: 1000
 # time limit (in seconds) before request is made for verification receipts from peers.
 receipt_request_time: 600
 
-# host:port:id:phases
-# phase 1 = 00001
-# phase 2 = 00011 ...
+# host:port:id:phase
+# phase 4 -- 01111
+# WE ARE OFF OF THE BITCOIN NETWORK WHICH IS PHASE 5! - 11111
 peers:
-    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - localhost:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - localhost:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - localhost:80:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:80:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - localhost:81:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:81:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - localhost:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
-    - 35.193.45.37:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:11111
+    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:9080:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:9090:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:80:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:81:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - localhost:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
+    - 35.193.45.37:5432:31ce807a-868c-11e6-99f6-3c970e3bee11:01111
