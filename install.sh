@@ -1,8 +1,9 @@
-#!/bin/bash
+!/bin/bash
 sudo apt update
 sudo apt-get install openssl docker docker-compose python2.7 python-pip postgresql postgresql-server-dev-9.5
-sudo -H pip install -r requirements.txt
+export PYTHONPATH=./
 sudo python setup.py install
+sudo -H pip install -r requirements.txt
 cd sql/
 sudo useradd blocky
 sudo service postgresql start
@@ -21,6 +22,8 @@ sudo docker-compose up -d
 sudo docker-compose up -d
 cd ..
 cd scripts/
+echo "Please wait for a few moments... About to import nodes"
+sleep 10s
 sudo python insert_db.py
 echo "To bring down the container: sudo docker-compose down"
 echo "Make sure to do in shell: export PYTHONPATH=/home/yourusername/dragonchain"
