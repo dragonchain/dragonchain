@@ -1,15 +1,15 @@
 {
   "header": {
     "create_ts": XXXXXXXXX,
-    "business_unit": "ZenChain",
-    "family_of_business": "ZenChain",
+    "business_unit": "NemoTechnologies",
+    "family_of_business": "NemoTechnologies",
     "line_of_business": "NemoTechnologies",
     "owner": "NemoTechnologies",
-    "transaction_type": "ZenChain",
-    "entity": "randomgen"
+    "transaction_type": "NemoTechnologies",
+    "entity": "Some Data"
   },
   "payload": {
-    "command": "",
+    "command": "Some Data",
     "timestamp": XXXXXXXXX
   }
 }
