@@ -23,8 +23,10 @@ sudo docker-compose up -d
 cd ..
 cd scripts/
 echo "Please wait for a few moments... About to import nodes"
-sleep 10s
+sleep 5s
 sudo python insert_db.py
+sleep 5s
+sudo docker-compose up -d
 echo "To bring down the container: sudo docker-compose down"
 echo "Make sure to do in shell: export PYTHONPATH=/home/yourusername/dragonchain"
 echo "Make sure to run commands in docker with: sudo docker exec -it container_id_or_name commandhere"
