@@ -28,4 +28,4 @@ COPY ./configs/blockchain.yml .
 
 COPY ./docker/bootstrap.sh .
 
-CMD ["bash", "bootstrap.sh", "python transaction_svc.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 81"]
+CMD ["bash", "bootstrap.sh", "python -u transaction_svc.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 81"]

@@ -19,7 +19,7 @@ export PYTHONPATH=$PWD
 sudo service docker start
 cd docker/
 sudo docker-compose up -d
-echo "Containers have been brought up, to start and stop make sure you are in the docker/ directory and then do: sudo docker-compose up -d"
+echo "Containers have been created, make sure you are in docker/ directory and then do: sudo docker-compose up -d"
 echo "To bring down the container: sudo docker-compose down"
 echo "Make sure to do this in shell: export PYTHONPATH=/home/yourusername/dragonchain"
 echo "Make sure to run commands in docker with: docker exec -it container_id_or_name commandhere"
