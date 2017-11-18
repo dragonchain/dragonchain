@@ -19,7 +19,10 @@ export PYTHONPATH=$PWD
 sudo service docker start
 cd docker/
 sudo docker-compose up -d
-echo "Containers have been built, make sure you are in docker/ directory and then do: sudo docker-compose up -d"
+sudo docker-compose up -d
+cd ..
+cd scripts/
+sudo python insert_db.py
 echo "To bring down the container: sudo docker-compose down"
 echo "Make sure to do in shell: export PYTHONPATH=/home/yourusername/dragonchain"
 echo "Make sure to run commands in docker with: sudo docker exec -it container_id_or_name commandhere"
@@ -28,4 +31,4 @@ echo "To allow access to docker containers follow this template:"
 echo "iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT"
 echo "iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT"
 echo "route add -net <dockerip> netmask <net mask> gw <docker's host>"
-echo "See scripts directory for examples."
+echo "When you need to import peers run in scripts/ when dockers are up: sudo python insert_db.py"
