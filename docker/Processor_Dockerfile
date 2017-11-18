@@ -28,7 +28,6 @@ COPY ./configs/blockchain.yml .
 
 COPY ./docker/bootstrap.sh .
 
-CMD ["bash", "bootstrap.sh", "python -u processing.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 8083 --phase 4"]
 CMD ["bash", "bootstrap.sh", "python -u processing.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 8082 --phase 3"]
 CMD ["bash", "bootstrap.sh", "python -u processing.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 8081 --phase 2"]
 CMD ["bash", "bootstrap.sh", "python -u processing.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 8080 --phase 1"]
