@@ -15,7 +15,6 @@ sudo mkdir pki/
 sudo openssl ecparam -name secp224r1 -genkey -out pki/sk.pem
 sudo openssl ec -in pki/sk.pem -pubout -out pki/pk.pem
 sudo mkdir logs/
-export PYTHONPATH=$PWD
 sudo service docker start
 cd docker/
 sudo docker-compose up -d
