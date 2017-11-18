@@ -1,5 +1,5 @@
 #!/bin/bash
-str=`cat provisionTSC.json`
+str=`cat provisionSSC.json`
 find="XXXXXXXXX"
 replace=`date +"%s"`
 result=${str//$find/$replace}
