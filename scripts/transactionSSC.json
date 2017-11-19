@@ -12,10 +12,13 @@
   "payload": {
     "phase": 4,
     "smart_contract": {
-      "transaction_type": "NemoTechnologies",
-      "uuid": "3c78259e-cd71-11e7-b566-778c2d223d49",
-      "time": XXXXXXXXX
+      "transaction_type": "DIFFERENTTYPESPERPROVISION",
+      "ssc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="
     },
+    "data": "DATACANBEHERE",
+    "test": "print 'TEST'",
+    "criteria": ["phase"],
+    "requirements": ["uuid", "time"],
     "version": 1
   }
 }
