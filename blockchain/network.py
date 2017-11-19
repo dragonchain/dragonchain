@@ -684,7 +684,7 @@ class ConnectionManager(object):
         if block_info and phase <= PHASE_5_NODE:
             # being asked for public broadcast, connect to known phase 5 nodes at this point
             try:
-                if self.phases:
+                if self.phases & PHASE_5_NODE
                     self.connect_nodes(PHASE_5_NODE)
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
@@ -712,7 +712,7 @@ class ConnectionManager(object):
 
             # send block to all known phase 5 nodes
             if phase_msg:
-                if self.peer_dict[PHASE_5_NODE]:
+                if self.phases & PHASE_5_NODE
                     for node in self.peer_dict[PHASE_5_NODE]:
                         try:
                             node.client.phase_5_message(phase_5_request)
