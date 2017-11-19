@@ -1,44 +1,26 @@
 # DragonCluster - HPBC (High-performance blockchain computing)
+#### Based on DragonChain, all rights to this software are copyright to Disney.
+![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
 
-The Dragonchain platform attempts to simplify integration of real business applications onto a blockchain. Providing features such as easy integration, protection of business data, fixed 5 second blocks, currency agnosticism, and interop features, Dragonchain shines a new and interesting light on blockchain technology.
+======
+#### The DragonCluster - HPBC project is in alpha stages.
+The goals of the DragonCluster are as follows:
 
-#### No blockchain expertise required!
-Based on DragonChain, all rights to this software are copyright to Disney.
-
-1. Ease of integration of existing systems 
-1. Ease of development for traditional engineers and coders unfamiliar with blockchain, 
-distributed systems, and cryptography 
-1. Client server style and simple RESTful integration points for business integration 
-1. Simple architecture (flexible and usable for unforeseen applications) 
-1. Provide protection of business data by default
-1. Allow business focused control of processes
-1. Fixed length period blocks 
-1. Short/fast blocks 
-1. Currency agnostic blockchain (multi­currency support) 
-1. No base currency 
-1. Interoperability with other blockchains public and private 
-1. Adoption of standards as they become available (see ​W3C Blockchain Community 
-Group blockchain standardization​) 
+* Easily install and join the mesh cluster using provided install script.
+* Buffer overflow prevention and docker security implementations on node set-up.
+* Automatic docker heartbeat and repair rebuilding.
+* Secure docker rebuild TTL based on max command execution TTL in Subscription Smart Contract transaction.
+* Command provisioning based on resource availability and resources needed specified in Subscription Smart Contract transaction.
+* Secure host but allow apt-get install within docker.
+* Web GUI to run commands from on the global network.
 
 
-## Quick Links
-* [Dragonchain Organization](https://dragonchain.github.io/)
-* [Dragonchain Architecture Document](https://dragonchain.github.io/architecture) - [PDF](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
-* [Use Cases](https://dragonchain.github.io/blockchain-use-cases)
-* [Disney Blockchain Standardization Notes](https://dragonchain.github.io/blockchain-standardization) - [W3C](https://github.com/w3c/blockchain/blob/master/standards.md)
-
-## Support
-
-* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/) sign up: [![Slack Status](https://dragonchain-slack.herokuapp.com/badge.svg)](https://dragonchain-slack.herokuapp.com)
-* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
-* Email: support@dragonchain.org
-
-## Maintainer
-Joe Roets (j03)
-joe@dragonchain.org
+#### Maintainer
+Jacob McQueen
+desenigma@gmail.com
 
 # Setup and Installation
-
+======
 ```git clone https://github.com/TheRoboKitten/TheRoboKitten.Github.io.git zenchain/```
 
 Then do:
@@ -65,12 +47,8 @@ iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT
 route add -net <dockerip> netmask <net mask> gw <docker's host>
 ```
 
-Then,
-
-If you want to send or provision a transaction:
-
 #### To provision a subscription smart contract transaction:
-
+======
 ```cd scripts/```
 
 ```sudo ./provisiontx.sh```
@@ -118,10 +96,8 @@ In theory, you could run any python code here to check or execute future transac
 
 ```def func(self, transaction):```
 
-# The Below Notes Are In-Progress!
-
 #### To send a Subscription Smart Contract transaction:
-
+======
 ```cd scripts/```
 
 ```sudo ./sendtx.sh```
@@ -149,7 +125,7 @@ Template:
 ```
 
 #### As a note to send a POST request in python, some checks must be made for access control in the HTML header (not the HTML payload!)
-
+======
 Example:
 
 ```
@@ -171,7 +147,7 @@ print(rt)
 ```
 
 #### To make a curl POST request to port 81 in bash:
-
+======
 As an example:
 
 ```
@@ -184,9 +160,8 @@ echo "$result"
 
 curl -H 'Accept-Encoding: gzip,deflate' -X POST http://localhost:81/transaction -d "$result"
 ```
-
+======
 #### Navigate to your http://localhost:80/transaction to view transactions or http://localhost:80/transaction/TRANSACTIONID to view a transaction.
-
 #### Or to view live transactions, navigate to scripts/ then run:
 
 ```python tx-viewer.py```
@@ -195,7 +170,7 @@ curl -H 'Accept-Encoding: gzip,deflate' -X POST http://localhost:81/transaction 
 # That's pretty much it! Have fun!
 
 # Contribution
-
+======
 Dragonchain uses a standard Feature Branch Workflow.
 
 All feature development should take place in Git branch dedicated to that feature. A feature branch should be named starting with the ticket ID followed by a dash and a short description.
@@ -203,11 +178,19 @@ All feature development should take place in Git branch dedicated to that featur
 Issues are tracked within Github: [Dragonchain Issues](https://github.com/dragonchain/dragonchain/issues)
 
 ## Formatting
-
+======
 Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0008/) for Python code where possible. 
 
-## Contributors
 
+## Quick Links
+======
+* [Dragonchain Organization](https://dragonchain.github.io/)
+* [Dragonchain Architecture Document](https://dragonchain.github.io/architecture) - [PDF](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
+* [Use Cases](https://dragonchain.github.io/blockchain-use-cases)
+* [Disney Blockchain Standardization Notes](https://dragonchain.github.io/blockchain-standardization) - [W3C](https://github.com/w3c/blockchain/blob/master/standards.md)
+
+## Contributors
+======
 - [Joe Roets - Principal Architect / Vision](https://www.linkedin.com/in/j0j0r0)
 - [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
 - [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
@@ -233,13 +216,13 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - Chris Moore - Reviewer
 
 # Disclaimer
-
+======
 The comments, views, and opinions expressed in this forum are those of the authors and do not necessarily reflect the official policy or position of the Walt Disney Company, Disney Connected and Advanced Technologies, or any affiliated companies.
 
 All code contained herein is provided “AS IS” without warranties of any kind. Any implied warranties of non-infringement, merchantability, and fitness for a particular purpose are expressly disclaimed by the author(s).
 
 # License
-
+======
 ```
 Copyright 2016 Disney Connected and Advanced Technologies
 
