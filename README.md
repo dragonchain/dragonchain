@@ -22,11 +22,11 @@ desenigma@gmail.com
 # Setup and Installation
 
 
-```git clone https://github.com/TheRoboKitten/TheRoboKitten.Github.io.git zenchain/```
+```git clone https://github.com/TheRoboKitten/TheRoboKitten.Github.io.git DragonCluster/```
 
 Then do:
 
-```cd zenchain/```
+```cd DragonCluster/```
 
 Then do:
 
