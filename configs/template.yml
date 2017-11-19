@@ -12,7 +12,7 @@ public_transmission:
     p1_pub_trans: on
     p2_pub_trans: on
     p3_pub_trans: on
-    p4_pub_trans: on
+    p4_pub_trans: off
 
 # database query limits
 vr_db_limit: 1000
