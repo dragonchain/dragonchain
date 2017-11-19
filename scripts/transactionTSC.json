@@ -5,11 +5,17 @@
     "family_of_business": "NemoTechnologies",
     "line_of_business": "NemoTechnologies",
     "owner": "NemoTechnologies",
-    "transaction_type": "NemoTechnologies",
-    "entity": "Some Data"
+    "transaction_type": "TT_PROVISION_SSC",
+    "actor": "NemoTechnologies",
+    "entity": "NemoTechnologies"
   },
   "payload": {
-    "command": "Some Data",
-    "timestamp": XXXXXXXXX
+    "phase": 4,
+    "smart_contract": {
+      "transaction_type": "NemoTechnologies",
+      "uuid": "3c78259e-cd71-11e7-b566-778c2d223d49",
+      "time": XXXXXXXXX
+    },
+    "version": 1
   }
 }
