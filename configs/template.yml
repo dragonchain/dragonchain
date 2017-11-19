@@ -33,8 +33,8 @@ peers:
     - localhost:8080:XXXXXXXXX:00001
     - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00001
     - localhost:8081:XXXXXXXXX:00010
-    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00010
+    - 35.193.45.37:8081:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00010
     - localhost:8082:XXXXXXXXX:00011
-    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00011
+    - 35.193.45.37:8082:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00011
     - localhost:8083:XXXXXXXXX:00100
-    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00100
+    - 35.193.45.37:8083:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00100
