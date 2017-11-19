@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo apt update
-sudo apt-get install openssl uuid docker docker-compose python2.7 python-pip postgresql postgresql-server-dev-9.5
+sudo apt-get install openssl uuid docker docker-compose python2.7 python-pip postgresql postgresql-server-dev-9.5 screen
 export PYTHONPATH=./
 sudo python setup.py install
 sudo -H pip install -r requirements.txt
@@ -52,12 +52,14 @@ sleep 7s
 cd ..
 cd docker/
 sudo docker-compose restart
-echo "To bring down the container: sudo docker-compose down"
-echo "Make sure to do in shell: export PYTHONPATH=/home/yourusername/dragonchain"
-echo "Make sure to run commands in docker with: sudo docker exec -it container_id_or_name commandhere"
-echo "To remove docker and rebuild/wipe DB, run: sudo docker system prune -a -f"
-echo "To allow access to docker containers follow this template:"
-echo "iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT"
-echo "iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT"
-echo "route add -net <dockerip> netmask <net mask> gw <docker's host>"
-echo "When you need to import peers run in scripts/ when dockers are up: sudo python insert_db.py"
+echo -e "Default \e[44mTo bring down the container: sudo docker-compose down"
+echo -e "Default \e[44mMake sure to run commands in docker with: sudo docker exec -it container_id_or_name commandhere"
+echo -e "Default \e[44mTo remove docker and rebuild/wipe DB, run: sudo docker system prune -a -f"
+echo -e "Default \e[44mTo attach to a docker container to view output do: screen -S docker sudo docker attach docker_processor_1"
+echo -e "Default \e[44mTo to disconnect from docker do ctrl+a then press d"
+echo -e "Default \e[44mTo to reconnect to docker screen do: screen -x docker"
+echo -e "Default \e[44mTo allow access to docker containers follow this template:"
+echo -e "Default \e[44miptables -A FORWARD -i docker0 -o eth0 -j ACCEPT"
+echo -e "Default \e[44miptables -A FORWARD -i eth0 -o docker0 -j ACCEPT"
+echo -e "Default \e[44mroute add -net <dockerip> netmask <net mask> gw <docker's host>"
+echo -e "Default \e[44mIf you need to import more peers run in scripts/ when dockers are up as an example: python insert_db.py --owner=blocky -p=8080 --phases=00001"
