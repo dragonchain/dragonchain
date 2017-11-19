@@ -133,7 +133,7 @@ Template:
 ```
 {
   "header": {
-    "create_ts": XXXXXXXXX, <--- Is current epoch in seconds `date "%s"`
+    "create_ts": XXXXXXXXX, <--- Is current epoch in seconds `date +"%s"`
     "business_unit": "NemoTechnologies",
     "family_of_business": "NemoTechnologies",
     "line_of_business": "NemoTechnologies",
@@ -143,7 +143,7 @@ Template:
   },
   "payload": {
     "command": "Some data to be checked or stored",
-    "timestamp": XXXXXXXXX <--- Is current epoch in seconds `date "%s"`
+    "timestamp": XXXXXXXXX <--- Is current epoch in seconds `date +"%s"`
   }
 }
 ```
@@ -153,10 +153,13 @@ Template:
 Example:
 
 ```
+import time
+import requests
+import json
 postpost = "http://localhost:81/transaction" <---- NOTE NO TRAILING SLASH
 timestamp = time.time() <---- EPOCH IN SECONDS
 times = str(timestamp) <---- STRINGIFY TIMESTAMP FOR JSON
-js0n = {"header":{"create_ts":times,"business_unit":"NemoTechnologies","family_of_business":"NemoTechnologies","line_of_business":"NemoTechnologies","owner":"NemoTechnologies","transaction_type":"TT_PROVISION_SC","actor":"NemoTechnologies","entity":"NemoTechnologies"},"payload":{"smart_contract":{"transaction_type":"NemoTechnologies","implementation":"trusted","tsc":"ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="},"version":1}}
+js0n = {"header":{"create_ts":times,"business_unit":"NemoTechnologies","family_of_business":"NemoTechnologies","line_of_business":"NemoTechnologies","owner":"NemoTechnologies","transaction_type":"TT_PROVISION_SSC","actor":"NemoTechnologies","entity":"NemoTechnologies"},"payload":{"phase":2,"smart_contract":{"transaction_type":"NemoTechnologies","ssc":"ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="},"criteria":["phase"],"test":"print 'TEST'","requirements":["uuid","time"],"version":1}}
 
 headers = {'Access-Control-Allow-Methods': 'POST', 'Allow': 'POST'} <------- SEE HERE
 
