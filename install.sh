@@ -38,6 +38,8 @@ echo "$result" > blockchain.yml
 cd ..
 sudo service docker start
 cd docker/
+echo "Making sure docker containers are ABSOLUTELY UP"
+sudo docker-compose up -d
 sudo docker-compose up -d
 sudo docker-compose up -d
 sudo docker-compose up -d
@@ -52,13 +54,5 @@ sudo python insert_db.py --owner=blocky -p=8082 --phases=00011
 sudo python insert_db.py --owner=blocky -p=8083 --phases=00100
 sleep 7s
 cd ..
-cd docker/
-sudo docker-compose restart
-sudo docker-compose up -d
-sudo docker-compose up -d
-sudo docker-compose up -d
-sudo docker-compose up -d
-cd ..
 export PS1="\e[0;44m[\u@\h \W]\$ \e[m "
 cat docs/install.txt
-export PS1="\e[0;39m[\u@\h \W]\$ \e[m "
