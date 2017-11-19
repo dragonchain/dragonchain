@@ -712,7 +712,7 @@ class ConnectionManager(object):
 
             # send block to all known phase 5 nodes
             if phase_msg:
-                if node in self.peer_dict[PHASE_5_NODE]:
+                if self.peer_dict[PHASE_5_NODE]:
                     for node in self.peer_dict[PHASE_5_NODE]:
                         try:
                             node.client.phase_5_message(phase_5_request)
