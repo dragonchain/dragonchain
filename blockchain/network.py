@@ -466,9 +466,10 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_2_message(phase_2_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 2)
-            except:
-                logger().warning('failed to submit to node %s', node.node_id)
-                continue
+           except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
 
     def phase_3_broadcast(self, block_info, phase_type):
         """ send phase_3 information for phase_4 execution """
@@ -480,9 +481,10 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_3_message(phase_3_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 3)
-            except:
-                logger().warning('failed to submit to node %s', node.node_id)
-                continue
+           except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
 
     def phase_4_broadcast(self, block_info, phase_type):
         """ send phase_4 information for phase_5 execution """
@@ -500,9 +502,10 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_4_message(phase_4_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 4)
-            except:
-                logger().warning('failed to submit to node %s', node.node_id)
-                continue
+           except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logger().warning(message)
 
     def timed_receipt_request(self):
         """ time based receipt request """
@@ -713,9 +716,10 @@ class ConnectionManager(object):
                     try:
                         node.client.phase_5_message(phase_5_request)
                         logger().info('block sent for public transmission...')
-                    except:
-                        logger().warning('failed to submit to node %s', node.node_id)
-                        continue
+                    except Exception as ex:
+                        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                        message = template.format(type(ex).__name__, ex.args)
+                        logger().warning(message)
 
 
 class BlockchainServiceHandler:
