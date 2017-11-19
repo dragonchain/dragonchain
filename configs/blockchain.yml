@@ -29,5 +29,9 @@ receipt_request_time: 600
 # phase 5 -- 00101
 # I think this is binary but I'm not sure
 peers:
-    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00100
-    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00100
+    - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00001
+    - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00001
+    - localhost:8081:31ce807a-868c-11e6-99f6-3c970e3bee11:00010
+    - 35.193.45.37:8081:31ce807a-868c-11e6-99f6-3c970e3bee11:00010
+    - localhost:8082:31ce807a-868c-11e6-99f6-3c970e3bee11:00011
+    - 35.193.45.37:8082:31ce807a-868c-11e6-99f6-3c970e3bee11:00011
