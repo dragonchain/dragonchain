@@ -18,4 +18,6 @@ sudo python insert_db.py --owner=blocky -p=8083 --phases=00100
 sleep 5s
 cd ..
 export PS1="\e[0;44m[\u@\h \W]\$ \e[m "
+echo "DONE"
 cat docs/install.txt
+echo "DONE"
