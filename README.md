@@ -1,6 +1,6 @@
 # DragonCluster - HPBC (High-performance blockchain computing)
 #### Based on DragonChain, all rights to this software are copyright to Disney.
-![DragonCluster Logo Dragon Cluster Dragon Chain Dragonchain](docs/vector.png "DragonCluster Logo")
+![DragonCluster Logo Dragon Cluster Dragon Chain Dragonchain](docs/dragon.png "DragonCluster Logo")
 
 
 #### The DragonCluster - HPBC project is in alpha stages.
