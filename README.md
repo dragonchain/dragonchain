@@ -38,19 +38,25 @@ Joe Roets (j03)
 joe@dragonchain.org
 
 # Setup and Installation
+
 ```git clone https://github.com/TheRoboKitten/TheRoboKitten.Github.io.git zenchain/```
 
 Then do:
+
 ```cd zenchain/```
+
 Then do:
+
 ```sudo chmod +x install.sh```
+
 Then do:
+
 ```sudo ./install.sh```
 
-Read the output at the end of the setup for more information.
-
+Read the output at the end of the setup for more information. Check scripts directory for more information.
 Make sure to establish IPTABLES and ROUTE to docker bi-directional:
 Follow this template, but it will more than likely need to be modified on a per-host basis:
+
 ```
 iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT
 
@@ -60,48 +66,70 @@ route add -net <dockerip> netmask <net mask> gw <docker's host>
 ```
 
 Then,
+
 If you want to send or provision a transaction:
-#### To provision a trusted transaction:
+
+#### To provision a subscription transaction:
+
 ```cd scripts/```
+
 ```sudo ./provisiontx.sh```
-Notes on provisioning trusted transactions:
+
+Notes on provisioning subscription transactions:
+
 Template:
+
 ```
 {
   "header": {
-    "create_ts": XXXXXXXXX, <--- Is current epoch in seconds `date "%s"`
+    "create_ts": XXXXXXXXX,
     "business_unit": "NemoTechnologies",
     "family_of_business": "NemoTechnologies",
     "line_of_business": "NemoTechnologies",
     "owner": "NemoTechnologies",
-    "transaction_type": "TT_PROVISION_SC", <-- Must be TT_PROVISION_SC to provision a smart contract
+    "transaction_type": "TT_PROVISION_SSC",
     "actor": "NemoTechnologies",
     "entity": "NemoTechnologies"
   },
   "payload": {
+    "phase": 2,
     "smart_contract": {
       "transaction_type": "NemoTechnologies",
-      "implementation": "trusted",   
-      "tsc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ==" <--- Is a base-64 python command to aggregate data
+      "ssc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ==" <- Base 64 encoded python data aggregation command!
     },
+    "criteria": ["phase"],
+    "test": "print 'TEST'",
+    "requirements": ["uuid", "time"],
     "version": 1
   }
 }
 ```
 The flow is: 
+
 #### TT_PROVISION_SC -> payload -> smart_contract -> tsc -> Base64 Decode command -> Returns True -> Command to aggregate and verify transactions is stored in database for trusted future transactions.
 
 In this case the base64 command is:
+
 ```
 def func(self, transaction): return True
 ```
-In theory, you could run any python code here to check or execute future transactions once base-64 decoded.
 
-#### To send a trusted transaction:
+In theory, you could run any python code here to check or execute future transactions once base-64 decoded. But it MUST START WITH:
+
+```def func(self, transaction):```
+
+# The Below Notes Are In-Progress!
+
+#### To send a SSC transaction:
+
 ```cd scripts/```
+
 ```sudo ./sendtx.sh```
-Notes on provisioning trusted transactions:
+
+Notes on SSC transactions:
+
 Template:
+
 ```
 {
   "header": {
@@ -121,7 +149,9 @@ Template:
 ```
 
 #### As a note to send a POST request in python, some checks must be made for access control in the HTML header (not the HTML payload!)
+
 Example:
+
 ```
 postpost = "http://localhost:81/transaction" <---- NOTE NO TRAILING SLASH
 timestamp = time.time() <---- EPOCH IN SECONDS
@@ -138,7 +168,9 @@ print(rt)
 ```
 
 #### To make a curl POST request to port 81 in bash:
+
 As an example:
+
 ```
 #!/bin/bash
 str=`cat provisionTSC.json`
@@ -151,7 +183,9 @@ curl -H 'Accept-Encoding: gzip,deflate' -X POST http://localhost:81/transaction 
 ```
 
 #### Navigate to your http://localhost:80/transaction to view transactions or http://localhost:80/transaction/TRANSACTIONID to view a transaction.
+
 #### Or to view live transactions, navigate to scripts/ then run:
+
 ```python tx-viewer.py```
 
 
