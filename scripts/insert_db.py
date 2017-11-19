@@ -54,7 +54,7 @@ def load_required_nodes(owner, host, port, phases, node_id=str(uuid.uuid4())):
     node = Node(node_id, owner, host, port, phases)
     net_dao.insert_node(node)
     print('inserted node into database ' + os.environ.get('BLOCKCHAIN_DB_NAME') + " " + node.node_id)
-
+     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process node data.')
     parser.add_argument('--owner', default="TEST_OWNER")
