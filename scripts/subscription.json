@@ -1,1 +1,21 @@
-
+{
+  "header": {
+    "create_ts": XXXXXXXXX,
+    "business_unit": "NemoTechnologies",
+    "family_of_business": "NemoTechnologies",
+    "line_of_business": "NemoTechnologies",
+    "owner": "NemoTechnologies",
+    "transaction_type": "TT_SUB_REQ",
+    "actor": "NemoTechnologies",
+    "entity": "NemoTechnologies"
+  },
+  "payload": {
+    "phase": 4,
+    "subscription": {
+      "criteria": ["phase"],
+      "phase_criteria": 4,
+      "create_ts": XXXXXXXXX
+    },
+    "version": 1
+  }
+}
