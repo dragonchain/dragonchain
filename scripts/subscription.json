@@ -10,12 +10,14 @@
     "entity": "NemoTechnologies"
   },
   "payload": {
-    "phase": 4,
     "subscription": {
+      "create_ts": XXXXXXXXX,
       "criteria": ["phase"],
       "phase_criteria": 4,
-      "create_ts": XXXXXXXXX
-    },
-    "version": 1
+      "subscribed_node_id": "6228494e-cd45-11e7-b348-a34a6b242897",
+      "node_owner": "NemoTechnologies",
+      "host": "35.193.45.37",
+      "port": "8083"
+    }
   }
 }
