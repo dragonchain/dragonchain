@@ -10,13 +10,14 @@
     "entity": "NemoTechnologies"
   },
   "payload": {
-    "phase": 2,
+    "phase": 4,
     "smart_contract": {
-      "transaction_type": "NemoTechnologies",
+      "transaction_type": "DIFFERENTTYPESPERPROVISION",
       "ssc": "ZGVmIGZ1bmMoc2VsZiwgdHJhbnNhY3Rpb24pOiByZXR1cm4gVHJ1ZQ=="
     },
-    "criteria": ["phase"],
+    "data": "DATACANBEHERE",
     "test": "print 'TEST'",
+    "criteria": ["phase"],
     "requirements": ["uuid", "time"],
     "version": 1
   }
