@@ -15,7 +15,9 @@
 # sudo docker system prune -a -f
 # 
 # To attach to a docker container to view output do: 
-# sudo screen -S processor1 sudo docker attach docker_processor1_1
+# sudo screen -S processor1
+# then
+# sudo docker attach docker_processor1_1
 #
 # To to disconnect from docker do ctrl+a then press d
 # To to reconnect to docker screen do: screen -x processor1
