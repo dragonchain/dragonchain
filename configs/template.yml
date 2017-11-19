@@ -9,10 +9,10 @@ smart_contracts:
 
 # dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
 public_transmission:
-    p1_pub_trans: off
-    p2_pub_trans: off
-    p3_pub_trans: off
-    p4_pub_trans: off
+    p1_pub_trans: on
+    p2_pub_trans: on
+    p3_pub_trans: on
+    p4_pub_trans: on
 
 # database query limits
 vr_db_limit: 1000
@@ -31,10 +31,14 @@ receipt_request_time: 600
 # Phase 5 operation requires a bitcoin wallet and such to operate! See main dragonchain git repository for more information on that!
 peers:
     - localhost:8080:XXXXXXXXX:00001
-    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00001
     - localhost:8081:XXXXXXXXX:00010
-    - 35.193.45.37:8081:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00010
     - localhost:8082:XXXXXXXXX:00011
-    - 35.193.45.37:8082:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00011
     - localhost:8083:XXXXXXXXX:00100
-    - 35.193.45.37:8083:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00100
+    - 71.52.69.194:8080:df2c3476-cd47-11e7-befb-33563708545a:00001
+    - 71.52.69.194:8081:df2c3476-cd47-11e7-befb-33563708545a:00010
+    - 71.52.69.194:8082:df2c3476-cd47-11e7-befb-33563708545a:00011
+    - 71.52.69.194:8083:df2c3476-cd47-11e7-befb-33563708545a:00100
+    - 35.193.45.37:8080:6228494e-cd45-11e7-b348-a34a6b242897:00001
+    - 35.193.45.37:8081:6228494e-cd45-11e7-b348-a34a6b242897:00010
+    - 35.193.45.37:8082:6228494e-cd45-11e7-b348-a34a6b242897:00011
+    - 35.193.45.37:8083:6228494e-cd45-11e7-b348-a34a6b242897:00100
