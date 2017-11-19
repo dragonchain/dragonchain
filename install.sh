@@ -40,6 +40,8 @@ sudo service docker start
 cd docker/
 sudo docker-compose up -d
 sudo docker-compose up -d
+sudo docker-compose up -d
+sudo docker-compose up -d
 cd ..
 cd scripts/
 echo "Please wait for a few moments... About to import nodes (For phase 4 node operation!!)"
@@ -52,6 +54,10 @@ sleep 7s
 cd ..
 cd docker/
 sudo docker-compose restart
+sudo docker-compose up -d
+sudo docker-compose up -d
+sudo docker-compose up -d
+sudo docker-compose up -d
 cd ..
 export PS1="\e[0;44m[\u@\h \W]\$ \e[m "
 cat docs/install.txt
