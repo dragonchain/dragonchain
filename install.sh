@@ -28,6 +28,7 @@ sudo python insert_db.py
 sleep 5s
 cd ..
 cd docker/
+sudo docker-compose down
 sudo docker-compose up -d
 echo "To bring down the container: sudo docker-compose down"
 echo "Make sure to do in shell: export PYTHONPATH=/home/yourusername/dragonchain"
