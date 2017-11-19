@@ -21,12 +21,13 @@ txn_db_limit: 1000
 # time limit (in seconds) before request is made for verification receipts from peers.
 receipt_request_time: 600
 
+# The below is Binary -> Decimal
 # host:port:id:phase
 # phase 1 -- 00001
 # phase 2 -- 00010
 # phase 3 -- 00011
 # phase 4 -- 00100 (This is what we are operating at for now!)
-# phase 5 -- 00101 Note you must pass --bitcoin-network to processors.py in Processor_docker under docker/
+# phase 5 -- 00101 Note you must pass --bitcoin-network = BITCOIN_NETWORK in Processor_Dockerfile under docker/ for phase 5 operation!
 peers:
     - localhost:8080:XXXXXXXXX:00001
     - 35.193.45.37:8080:XXXXXXXXX:00001
