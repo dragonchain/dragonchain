@@ -1,8 +1,8 @@
 # DragonCluster - HPBC (High-performance blockchain computing)
 #### Based on DragonChain, all rights to this software are copyright to Disney.
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
+![DragonCluster Logo Dragon Cluster Dragon Chain Dragonchain](docs/vector.png "DragonCluster Logo")
 
-======
+
 #### The DragonCluster - HPBC project is in alpha stages.
 The goals of the DragonCluster are as follows:
 
@@ -20,7 +20,7 @@ Jacob McQueen
 desenigma@gmail.com
 
 # Setup and Installation
-======
+
 
 ```git clone https://github.com/TheRoboKitten/TheRoboKitten.Github.io.git zenchain/```
 
@@ -49,7 +49,7 @@ route add -net <dockerip> netmask <net mask> gw <docker's host>
 ```
 
 #### To provision a subscription smart contract transaction:
-======
+
 ```cd scripts/```
 
 ```sudo ./provisiontx.sh```
@@ -98,7 +98,7 @@ In theory, you could run any python code here to check or execute future transac
 ```def func(self, transaction):```
 
 #### To send a Subscription Smart Contract transaction:
-======
+
 ```cd scripts/```
 
 ```sudo ./sendtx.sh```
@@ -126,7 +126,7 @@ Template:
 ```
 
 #### As a note to send a POST request in python, some checks must be made for access control in the HTML header (not the HTML payload!)
-======
+
 Example:
 
 ```
@@ -148,7 +148,7 @@ print(rt)
 ```
 
 #### To make a curl POST request to port 81 in bash:
-======
+
 As an example:
 
 ```
@@ -161,7 +161,7 @@ echo "$result"
 
 curl -H 'Accept-Encoding: gzip,deflate' -X POST http://localhost:81/transaction -d "$result"
 ```
-======
+
 #### Navigate to your http://localhost:80/transaction to view transactions or http://localhost:80/transaction/TRANSACTIONID to view a transaction.
 #### Or to view live transactions, navigate to scripts/ then run:
 
@@ -171,7 +171,7 @@ curl -H 'Accept-Encoding: gzip,deflate' -X POST http://localhost:81/transaction 
 # That's pretty much it! Have fun!
 
 # Contribution
-======
+
 Dragonchain uses a standard Feature Branch Workflow.
 
 All feature development should take place in Git branch dedicated to that feature. A feature branch should be named starting with the ticket ID followed by a dash and a short description.
@@ -179,19 +179,19 @@ All feature development should take place in Git branch dedicated to that featur
 Issues are tracked within Github: [Dragonchain Issues](https://github.com/dragonchain/dragonchain/issues)
 
 ## Formatting
-======
+
 Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0008/) for Python code where possible. 
 
 
 ## Quick Links
-======
+
 * [Dragonchain Organization](https://dragonchain.github.io/)
 * [Dragonchain Architecture Document](https://dragonchain.github.io/architecture) - [PDF](https://dragonchain.github.io/doc/DragonchainArchitecture.pdf)
 * [Use Cases](https://dragonchain.github.io/blockchain-use-cases)
 * [Disney Blockchain Standardization Notes](https://dragonchain.github.io/blockchain-standardization) - [W3C](https://github.com/w3c/blockchain/blob/master/standards.md)
 
 ## Contributors
-======
+
 - [Joe Roets - Principal Architect / Vision](https://www.linkedin.com/in/j0j0r0)
 - [Eileen Quenin - Product Manager / Evangelist](https://www.linkedin.com/in/eileenquenin)
 - [Brandon Kite - Lead Developer](https://www.linkedin.com/in/bkite)
@@ -217,13 +217,13 @@ Code should follow the [PEP 8 Style Guide](https://www.python.org/dev/peps/pep-0
 - Chris Moore - Reviewer
 
 # Disclaimer
-======
+
 The comments, views, and opinions expressed in this forum are those of the authors and do not necessarily reflect the official policy or position of the Walt Disney Company, Disney Connected and Advanced Technologies, or any affiliated companies.
 
 All code contained herein is provided “AS IS” without warranties of any kind. Any implied warranties of non-infringement, merchantability, and fitness for a particular purpose are expressly disclaimed by the author(s).
 
 # License
-======
+
 ```
 Copyright 2016 Disney Connected and Advanced Technologies
 
