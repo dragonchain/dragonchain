@@ -33,25 +33,12 @@ services:
     volumes:
       - keyvolume:/opt/dragonchain/pki
       
-  processor1:
+  processor4:
     build:
-      dockerfile: docker/Processor_Dockerfile1
+      dockerfile: docker/Processor_Dockerfile4
       context: ../
     ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    environment:
-      - BLOCKCHAIN_DB_HOSTNAME=db
-    volumes:
-      - keyvolume:/opt/dragonchain/pki
-      
-  processor2:
-    build:
-      dockerfile: docker/Processor_Dockerfile2
-      context: ../
-    ports:
-      - "8081:8081"
+      - "8083:8083"
     depends_on:
       - db
     environment:
@@ -72,12 +59,25 @@ services:
     volumes:
       - keyvolume:/opt/dragonchain/pki
       
-  processor4:
+  processor3:
     build:
-      dockerfile: docker/Processor_Dockerfile4
+      dockerfile: docker/Processor_Dockerfile2
       context: ../
     ports:
-      - "8083:8083"
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      - BLOCKCHAIN_DB_HOSTNAME=db
+    volumes:
+      - keyvolume:/opt/dragonchain/pki
+      
+  processor1:
+    build:
+      dockerfile: docker/Processor_Dockerfile1
+      context: ../
+    ports:
+      - "8080:8080"
     depends_on:
       - db
     environment:
