@@ -1,0 +1,36 @@
+# Installation is complete...
+# 
+# To bring down the containers:
+# cd docker/
+# sudo docker-compose down
+# 
+# To bring up the containers:
+# cd docker/
+# sudo docker-compose up -d
+# 
+# Make sure to run commands in docker with:
+# sudo docker exec -it container_id_or_name commandhere
+# 
+# To remove docker and rebuild/wipe DB, run:
+# sudo docker system prune -a -f
+# 
+# To attach to a docker container to view output do: screen -S docker sudo docker attach docker_processor_1
+# To to disconnect from docker do ctrl+a then press d
+# To to reconnect to docker screen do: screen -x docker
+# 
+# To allow access to docker containers follow this template:
+# sudo iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT
+# sudo iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT
+# sudo route add -net <dockerip> netmask <net mask> gw <docker's host>
+# 
+# If you need to import more peers run in scripts/ when dockers are up as an example:
+# For Phase 1 nodes: python insert_db.py --owner=blocky -p=8080 --phases=00001
+# For Phase 2 nodes: python insert_db.py --owner=blocky -p=8081 --phases=00010
+# For Phase 3 nodes: python insert_db.py --owner=blocky -p=8082 --phases=00011
+# For Phase 4 nodes: python insert_db.py --owner=blocky -p=8083 --phases=00100
+# For Phase 5 nodes: python insert_db.py --owner=blocky -p=8084 --phases=00101
+# ...Just make sure docker containers are UP AND RUNNING first ;)
+# 
+# 
+# You should be all set for phase 4 transactions!
+# Have a good day!
