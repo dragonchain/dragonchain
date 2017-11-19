@@ -26,6 +26,7 @@ receipt_request_time: 600
 # phase 2 -- 00010
 # phase 3 -- 00011
 # phase 4 -- 00100
+# phase 5 -- 00101
 # I think this is binary but I'm not sure
 peers:
     - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00100
