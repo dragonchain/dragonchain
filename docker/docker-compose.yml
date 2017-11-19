@@ -59,7 +59,7 @@ services:
     volumes:
       - keyvolume:/opt/dragonchain/pki
       
-  processor3:
+  processor2:
     build:
       dockerfile: docker/Processor_Dockerfile2
       context: ../
