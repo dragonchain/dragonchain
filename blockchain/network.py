@@ -466,7 +466,7 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_2_message(phase_2_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 2)
-           except Exception as ex:
+            except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
@@ -481,7 +481,7 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_3_message(phase_3_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 3)
-           except Exception as ex:
+            except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
@@ -502,7 +502,7 @@ class ConnectionManager(object):
                 ver_ids += node.client.phase_4_message(phase_4_msg)
                 vrs = self.get_vrs(node, ver_ids)
                 self.resolve_data(vrs, 4)
-           except Exception as ex:
+            except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
                 logger().warning(message)
