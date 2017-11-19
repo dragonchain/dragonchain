@@ -712,14 +712,15 @@ class ConnectionManager(object):
 
             # send block to all known phase 5 nodes
             if phase_msg:
-                for node in self.peer_dict[PHASE_5_NODE]:
-                    try:
-                        node.client.phase_5_message(phase_5_request)
-                        logger().info('block sent for public transmission...')
-                    except Exception as ex:
-                        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                        message = template.format(type(ex).__name__, ex.args)
-                        logger().warning(message)
+                if node in self.peer_dict[PHASE_5_NODE]:
+                    for node in self.peer_dict[PHASE_5_NODE]:
+                        try:
+                            node.client.phase_5_message(phase_5_request)
+                            logger().info('block sent for public transmission...')
+                        except Exception as ex:
+                            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                            message = template.format(type(ex).__name__, ex.args)
+                            logger().warning(message)
 
 
 class BlockchainServiceHandler:
