@@ -23,7 +23,7 @@ sudo openssl ecparam -name secp224r1 -genkey -out pki/sk.pem
 sudo openssl ec -in pki/sk.pem -pubout -out pki/pk.pem
 sudo mkdir logs/
 cd ..
-cd config/
+cd configs/
 str=`cat template.yml`
 find="XXXXXXXXX"
 replace=`uuid`
