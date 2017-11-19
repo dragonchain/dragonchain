@@ -27,7 +27,7 @@
 # sudo iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT
 # sudo route add -net <dockerip> netmask <net mask> gw <docker's host>
 # 
-# If you need to import more peers run in scripts/ when dockers are up as an example:
+# If you need to import more peers run in scripts/ WHEN DOCKER CONTAINERS ARE UP as an example:
 # For Phase 1 nodes: python insert_db.py --owner=blocky -p=8080 --phases=00001
 # For Phase 2 nodes: python insert_db.py --owner=blocky -p=8081 --phases=00010
 # For Phase 3 nodes: python insert_db.py --owner=blocky -p=8082 --phases=00011
