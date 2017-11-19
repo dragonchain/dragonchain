@@ -38,6 +38,9 @@ services:
       dockerfile: docker/Processor_Dockerfile
       context: ../
     ports:
+      - "8083:8083"
+      - "8082:8082"
+      - "8081:8081"
       - "8080:8080"
     depends_on:
       - db
