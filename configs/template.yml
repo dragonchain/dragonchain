@@ -31,10 +31,10 @@ receipt_request_time: 600
 # Phase 5 operation requires a bitcoin wallet and such to operate! See main dragonchain git repository for more information on that!
 peers:
     - localhost:8080:XXXXXXXXX:00001
-    - 35.193.45.37:8080:XXXXXXXXX:00001
+    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00001
     - localhost:8081:XXXXXXXXX:00010
-    - 35.193.45.37:8081:XXXXXXXXX:00010
+    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00010
     - localhost:8082:XXXXXXXXX:00011
-    - 35.193.45.37:8082:XXXXXXXXX:00011
+    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00011
     - localhost:8083:XXXXXXXXX:00100
-    - 35.193.45.37:8083:XXXXXXXXX:00100
+    - 35.193.45.37:8080:8cc62b6a-cd15-11e7-ad2d-abf0cf8e082c:00100
