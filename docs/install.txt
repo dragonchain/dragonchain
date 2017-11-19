@@ -14,9 +14,11 @@
 # To remove docker and rebuild/wipe DB, run:
 # sudo docker system prune -a -f
 # 
-# To attach to a docker container to view output do: screen -S docker sudo docker attach docker_processor_1
+# To attach to a docker container to view output do: 
+# sudo screen -S processor1 sudo docker attach docker_processor1_1
+#
 # To to disconnect from docker do ctrl+a then press d
-# To to reconnect to docker screen do: screen -x docker
+# To to reconnect to docker screen do: screen -x processor1
 # 
 # To allow access to docker containers follow this template:
 # sudo iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT
