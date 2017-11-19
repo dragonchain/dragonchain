@@ -13,7 +13,9 @@
 # 
 # To remove docker and rebuild/wipe DB, run:
 # sudo docker system prune -a -f
-# 
+# OR TO JUST REBUILD: cd docker/ then:
+# sudo docker-compose build
+#
 # To attach to a docker container to view output do: 
 # sudo screen -S processor1
 # then
