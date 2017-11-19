@@ -12,7 +12,7 @@ public_transmission:
     p1_pub_trans: on
     p2_pub_trans: on
     p3_pub_trans: on
-    p4_pub_trans: on
+    p4_pub_trans: off
 
 # database query limits
 vr_db_limit: 1000
@@ -23,10 +23,10 @@ receipt_request_time: 600
 
 # host:port:id:phase
 # phase 1 -- 00001
-# phase 2 -- 00011
-# phase 3 -- 00111
-# phase 4 -- 01111
-# phase 5 -- 11111
+# phase 2 -- 00010
+# phase 3 -- 00100
+# phase 4 -- 01000
+# phase 5 -- 10000
 peers:
     - localhost:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00001
     - 35.193.45.37:8080:31ce807a-868c-11e6-99f6-3c970e3bee11:00001
