@@ -69,13 +69,13 @@ Then,
 
 If you want to send or provision a transaction:
 
-#### To provision a subscription transaction:
+#### To provision a subscription smart contract transaction:
 
 ```cd scripts/```
 
 ```sudo ./provisiontx.sh```
 
-Notes on provisioning subscription transactions:
+Notes on provisioning subscription smart contract transactions:
 
 Template:
 
@@ -106,7 +106,7 @@ Template:
 ```
 The flow is: 
 
-#### TT_PROVISION_SC -> payload -> smart_contract -> tsc -> Base64 Decode command -> Returns True -> Command to aggregate and verify transactions is stored in database for trusted future transactions.
+#### TT_PROVISION_SSC -> payload -> smart_contract -> tsc -> Base64 Decode command -> Returns True -> Command to aggregate and verify transactions is stored in database for trusted future transactions.
 
 In this case the base64 command is:
 
@@ -120,13 +120,13 @@ In theory, you could run any python code here to check or execute future transac
 
 # The Below Notes Are In-Progress!
 
-#### To send a SSC transaction:
+#### To send a Subscription Smart Contract transaction:
 
 ```cd scripts/```
 
 ```sudo ./sendtx.sh```
 
-Notes on SSC transactions:
+Notes on Subscription Smart Contract transactions:
 
 Template:
 
