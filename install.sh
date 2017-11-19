@@ -41,11 +41,12 @@ sudo docker-compose up -d
 sudo docker-compose up -d
 cd ..
 cd scripts/
-echo "Please wait for a few moments... About to import nodes"
+echo "Please wait for a few moments... About to import nodes (For phase 4 node operation)"
 sleep 7s
 sudo python insert_db.py --owner=blocky -p=8080 --phases=00001
 sudo python insert_db.py --owner=blocky -p=8081 --phases=00010
 sudo python insert_db.py --owner=blocky -p=8082 --phases=00011
+sudo python insert_db.py --owner=blocky -p=8083 --phases=00100
 sleep 7s
 cd ..
 cd docker/
