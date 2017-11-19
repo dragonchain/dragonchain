@@ -85,7 +85,7 @@ Template:
 ```
 The flow is: 
 
-#### TT_PROVISION_SSC -> payload -> TT_PROVISION_SSC -> SSC -> Base64 Decode aggregate command -> Returns True -> Command to aggregate and verify transactions is stored in database for trusted future transactions.
+#### TT_PROVISION_SSC -> payload -> SMART_CONTRACT -> SSC -> Base64 Decode aggregate command -> Returns True -> Command to aggregate and verify transactions is stored in database for trusted future transactions.
 
 In this case the base64 command is:
 
