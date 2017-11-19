@@ -9,13 +9,19 @@ sudo useradd blocky
 sudo service postgresql start
 sudo -u postgres createuser  blocky
 sudo -u postgres createdb -O blocky blockchain
+sudo -u postgres createdb -O blocky blockchain0
 sudo -u postgres createdb -O blocky blockchain1
 sudo -u postgres createdb -O blocky blockchain2
 sudo -u postgres createdb -O blocky blockchain3
+sudo -u postgres createdb -O blocky blockchain4
+sudo -u postgres createdb -O blocky blockchain5
 sudo -u blocky psql -U blocky -d blockchain -a -f depl.sql
+sudo -u blocky psql -U blocky -d blockchain0 -a -f depl.sql
 sudo -u blocky psql -U blocky -d blockchain1 -a -f depl.sql
 sudo -u blocky psql -U blocky -d blockchain2 -a -f depl.sql
 sudo -u blocky psql -U blocky -d blockchain3 -a -f depl.sql
+sudo -u blocky psql -U blocky -d blockchain4 -a -f depl.sql
+sudo -u blocky psql -U blocky -d blockchain5 -a -f depl.sql
 sudo service postgresql stop
 cd ..
 sudo mkdir pki/
