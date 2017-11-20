@@ -82,10 +82,10 @@ class TransactionHandler(tornado.web.RequestHandler):
         log = self.application.log
         log.debug("Parsing JSON")
         try:
-            txn = tornado.escape.json_decode(txn)
+            txn = int(tornado.escape.json_decode(txn))
             print(txn)
             txn["header"]["transaction_id"] = str(uuid.uuid4())
-            txn["header"]["transaction_ts"] = str(time.time())
+            txn["header"]["transaction_ts"] = int(time.time())
         except:
             log.error("Failed to parse JSON.  Details: " + str(sys.exc_info()[1]))
             self.clear()
