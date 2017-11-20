@@ -66,8 +66,10 @@ class TransactionHandler(tornado.web.RequestHandler):
         dragonkey = key.read()
         data = self.request.body
         missing_padding = len(data) % 4
-        if missing_padding != 0:
-            data += b'='* (4 - missing_padding)
+        if missing_padding == 3:
+            data += b'A==';
+        elif missing_padding == 1 or missing_padding == 2:
+            data += b'=' * missing_padding
         iv = base64.b64decode(data)[:16]
         data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(base64.b64decode(data)[16:])
         data = data[:-data[-1]]
