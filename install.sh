@@ -37,6 +37,10 @@ replace=`uuid`
 result=${str//$find/$replace}
 echo "$result" > blockchain.yml
 cd ..
+cd scripts/
+echo "GENERATING A FRESH LOCAL NETWORK KEY - MATCH THESE FOR MULTI-NODES"
+sudo python genkey.py
+echo "STARTING DOCKER"
 sudo service docker start
 cd docker/
 echo "Making sure docker containers are ABSOLUTELY UP"
