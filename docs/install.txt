@@ -34,7 +34,13 @@
 # If you need to import more peers run after adding them to config in main directory:
 # sudo ./addnodes.sh
 # ...Just make sure docker containers are UP AND RUNNING first ;)
+#
+# ...OR you could subscribe to the node's transactions:
+# Edit the subscription0.json or subscription1.json in scripts/
+# sudo nano subscription0.json
+# INPUT the phase requirement, phase, host, and node ID then: ctrl + o to save ctrl + x to exit then:
+# sudo python sendtransaction.py
+# Input the filename as "subscription0.json" and hit enter. Use the outputted transaction string (at the very bottom) to check that tx.
+# Check docker for errors if any please report them as an issue.
 # 
-# 
-# You should be all set for phase 4 transactions!
 # Have a good day!
