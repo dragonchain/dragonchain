@@ -1,0 +1,23 @@
+{
+  "header": {
+    "create_ts": XXXXXXXXX,
+    "business_unit": "NemoTechnologies",
+    "family_of_business": "NemoTechnologies",
+    "line_of_business": "NemoTechnologies",
+    "owner": "NemoTechnologies",
+    "transaction_type": "TT_SUB_REQ",
+    "actor": "NemoTechnologies",
+    "entity": "NemoTechnologies"
+  },
+  "payload": {
+    "subscription": {
+      "create_ts": XXXXXXXXX,
+      "criteria": ["phase"],
+      "phase_criteria": 4,
+      "subscribed_node_id": "8a7b667a-ce11-11e7-8484-d7d79ad3d5b2",
+      "node_owner": "NemoTechnologies",
+      "host": "71.52.69.194",
+      "port": "8083"
+    }
+  }
+}
