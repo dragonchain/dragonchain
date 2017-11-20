@@ -82,7 +82,7 @@ class TransactionHandler(tornado.web.RequestHandler):
         log = self.application.log
         log.debug("Parsing JSON")
         try:
-            txn = int(tornado.escape.json_decode(txn))
+            txn = tornado.escape.json_decode(txn)
             print(txn)
             txn["header"]["transaction_id"] = str(uuid.uuid4())
             txn["header"]["transaction_ts"] = int(time.time())
