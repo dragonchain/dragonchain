@@ -42,6 +42,7 @@ echo "GENERATING A FRESH LOCAL NETWORK KEY - MATCH THESE FOR MULTI-NODES"
 sudo python genkey.py
 echo "STARTING DOCKER"
 sudo service docker start
+cd ..
 cd docker/
 echo "Making sure docker containers are ABSOLUTELY UP"
 sudo docker-compose up -d
