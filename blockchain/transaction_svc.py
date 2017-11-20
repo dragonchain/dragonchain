@@ -58,19 +58,16 @@ def format_error(category, msg):
 class TransactionHandler(tornado.web.RequestHandler):
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
-
-    def aes_decrypt(plaintext):
-        data = '../key.pem'
-        key = open(data, "r")
-        dragonkey = key.read()
-        iv = b64decode(plaintext)[:16]
-        data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(b64decode(plaintext)[16:])
-        data = data[:-data[-1]]
-        return data
               
-     # TODO: consider storing original payload for hashing
-    def post(self, aes_decrypt):
-        txn = aes_decrypt(self.request.body)
+     # TODO: consider storing original payload for hashing - be careful here.
+    def post(self):
+        dragon = '../key.pem'
+        key = open(dragon, "r")
+        dragonkey = key.read()
+        iv = b64decode(self.request.body)[:16]
+        data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(b64decode(self.request.body)[16:])
+        data = data[:-data[-1]]
+        txn = data
         log = self.application.log
         log.debug("Parsing JSON")
 
