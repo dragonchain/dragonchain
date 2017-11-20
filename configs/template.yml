@@ -1,0 +1,36 @@
+node_id: XXXXXXXXX
+owner: NemoTechnologies
+business: NemoTechnologies
+deploy_location: HOUSTON
+
+# smart contract data
+smart_contracts:
+    TT_EXAMPLE: valid_transaction_sig
+
+# dictionary of public transmission flags (BitCoin, LiteCoin, etc...)
+public_transmission:
+    p1_pub_trans: off
+    p2_pub_trans: off
+    p3_pub_trans: off
+    p4_pub_trans: off
+
+# database query limits
+vr_db_limit: 1000
+txn_db_limit: 1000
+
+# time limit (in seconds) before request is made for verification receipts from peers.
+receipt_request_time: 10
+
+# The below is Binary -> Decimal
+# host:port:id:phase
+# phase 1 -- 00001
+# phase 2 -- 00010
+# phase 3 -- 00011
+# phase 4 -- 00100 (This is what we are operating at for now!)
+# phase 5 -- 00101 Note you must pass --bitcoin-network=bitcoin_network in Processor_Dockerfile under docker/ for phase 5 operation!
+# Phase 5 operation requires a bitcoin wallet and such to operate! See main dragonchain git repository for more information on that!
+peers:
+    - localhost:8080:XXXXXXXXX:00001
+    - localhost:8081:XXXXXXXXX:00010
+    - localhost:8082:XXXXXXXXX:00011
+    - localhost:8083:XXXXXXXXX:00100

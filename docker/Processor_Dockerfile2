@@ -25,8 +25,7 @@ COPY ./blockchain/ blockchain/
 #Start processing
 COPY ./configs/ configs/
 COPY ./configs/blockchain.yml .
-COPY ./key.pem .
 
 COPY ./docker/bootstrap.sh .
 
-CMD ["bash", "bootstrap.sh", "python -u transaction_svc.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 81"]
+CMD ["bash", "bootstrap.sh", "python -u processing.py --private-key $PRIVATE_KEY --public-key $PUBLIC_KEY --port 8081 --phase 2"]
