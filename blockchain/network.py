@@ -524,17 +524,19 @@ class ConnectionManager(object):
                 # convert to thrift signature for sending to server
                 subscription_signature = thrift_converter.convert_to_thrift_signature(subscription['signature'])
                 # subscription already approved, request data from server
-                subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
-                txns = map(thrift_converter.convert_thrift_transaction, subscription_response.transactions)
-                vrs = map(thrift_converter.convert_thrift_verification, subscription_response.verification_records)
-                self.insert_transactions(txns)
-                self.insert_verifications(vrs)
-                print("TESTING FORCE SUBSCRIBE0")
-                if txns or vrs:
-                    min_block_id = self.get_min_block_id(vrs)
-                    # execute any present subscription smart contracts
-                    self.processing_node.sch.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
-                    print("TESTING FORCE SUBSCRIBE1")
+                if subscription['status'] == "approved":
+                    subscription_response = subscription_node.client.subscription_request(subscription_id, subscription_signature)
+                    txns = map(thrift_converter.convert_thrift_transaction, subscription_response.transactions)
+                    vrs = map(thrift_converter.convert_thrift_verification, subscription_response.verification_records)
+                    self.insert_transactions(txns)
+                    self.insert_verifications(vrs)
+                    if txns or vrs:
+                        min_block_id = self.get_min_block_id(vrs)
+                        # execute any present subscription smart contracts
+                        self.processing_node.sch.execute_ssc(min_block_id, self.vr_db_limit, self.txn_db_limit)
+                elif subscription['status'] == "pending":
+                    logger().warning("Subscription[sub_id:%s][node_id:%s][node_owner:%s] still in pending status... Waiting for admin(s) approval.",
+                                     subscription['subscription_id'], subscription['subscribed_node_id'], subscription['node_owner'])
 
     def get_subscription_node(self, subscription):
         """ check if client is connected to node subscribed to and return that node. if not, attempt to connect to it and return. """
