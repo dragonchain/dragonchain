@@ -42,15 +42,14 @@ import tornado
 import tornado.web
 import tornado.ioloop
 from db.postgres import postgres
-
 from blockchain.util.crypto import sign_transaction, valid_transaction_sig
-
 from blockchain.db.postgres import transaction_db as tx_dao
-
 import uuid
-
 import time
-
+import binascii
+import os
+from Crypto.Cipher import AES
+import base64
 
 def format_error(category, msg):
     return json.dumps({"error": {"type": category, "details": msg}})
@@ -60,9 +59,18 @@ class TransactionHandler(tornado.web.RequestHandler):
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
 
-    # TODO: consider storing original payload for hashing
+   def aes_decrypt(plaintext):
+       data = '../key.pem'
+       key = open(data, "r")
+       dragonkey = key.read()
+       iv = b64decode(plaintext)[:16]
+       data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(b64decode(plaintext)[16:])
+       data = data[:-data[-1]]
+       return data
+              
+     # TODO: consider storing original payload for hashing
     def post(self):
-        txn = self.request.body
+        txn = aes_decrypt(self.request.body)
         log = self.application.log
         log.debug("Parsing JSON")
 
