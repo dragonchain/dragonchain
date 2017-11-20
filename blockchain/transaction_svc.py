@@ -48,8 +48,17 @@ import uuid
 import time
 import binascii
 import os
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from Crypto.Cipher import AES
-import base64
+from Crypto import Random
+
+
+BS = 16
+pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+
+base64pad = lambda s: s + '=' * (4 - len(s) % 4)
+base64unpad = lambda s: s.rstrip("=")
 
 def format_error(category, msg):
     return json.dumps({"error": {"type": category, "details": msg}})
@@ -65,15 +74,11 @@ class TransactionHandler(tornado.web.RequestHandler):
         key = open(dragon, "r")
         dragonkey = key.read()
         data = self.request.body
-        missing_padding = len(data) % 4
-        if missing_padding == 3:
-            data += b'A==';
-        elif missing_padding == 1 or missing_padding == 2:
-            data += b'=' * missing_padding
-        iv = base64.b64decode(data)[:16]
-        data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(base64.b64decode(data)[16:])
-        data = data[:-data[-1]]
-        txn = data
+        decoded_msg = urlsafe_b64decode(base64pad(data))
+        iv = decoded_msg[:BS]
+        encrypted_msg = decoded_msg[BS:]
+        cipher = AES.new(dragonkey, AES.MODE_CFB, iv, segment_size=AES.block_size * 8
+        txn = unpad(cipher.decrypt(encrypted_msg))
         log = self.application.log
         log.debug("Parsing JSON")
 
