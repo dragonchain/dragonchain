@@ -19,7 +19,8 @@ def aes_encrypt(plaintext):
 postpost = "http://localhost:81/transaction"
 timestamp = time.time()
 times = str(timestamp)
-rawdata = "provisionSSC.json"
+rawdata = input("INPUT A JSON FILENAME TO SEND, IT -MAY- NEED QUOTES: ")
+print(rawdata)
 plain = open(rawdata, "r")
 opened = plain.read()
 timestamped = opened.replace("XXXXXXXXX", times)
