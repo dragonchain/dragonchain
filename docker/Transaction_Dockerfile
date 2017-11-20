@@ -25,6 +25,7 @@ COPY ./blockchain/ blockchain/
 #Start processing
 COPY ./configs/ configs/
 COPY ./configs/blockchain.yml .
+COPY ./key.pem .
 
 COPY ./docker/bootstrap.sh .
 
