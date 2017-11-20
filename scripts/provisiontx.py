@@ -6,7 +6,7 @@ import os
 from Crypto.Cipher import AES
 import base64
 def aes_encrypt(plaintext):
-    data = './key.pem'
+    data = '../key.pem'
     key = open(data, "r")
     dragonkey = key.read()
     print(dragonkey)
