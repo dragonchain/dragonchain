@@ -38,9 +38,9 @@
 # ...OR you could subscribe to the node's transactions:
 # Edit the subscription0.json or subscription1.json in scripts/
 # sudo nano subscription0.json
-# INPUT the phase requirement, phase, host, and node ID then: ctrl + o to save ctrl + x to exit then:
+# INPUT the phase requirement, phase port, node ID, and host then: ctrl + o to save ctrl + x to exit then:
 # sudo python sendtransaction.py
-# Input the filename as "subscription0.json" and hit enter. Use the outputted transaction string (at the very bottom) to check that tx.
-# Check docker for errors if any please report them as an issue.
+# Input the filename as "subscription0.json" and hit enter (use quotes). That transaction ID will output at the bottom of the screen.
+# Check the transaction in http://localhost:80/transaction/transactionidhere (maybe check docker for more info)
 # 
 # Have a good day!
