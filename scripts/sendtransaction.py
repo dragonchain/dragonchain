@@ -31,7 +31,7 @@ timestamp = int(time.time())
 times = str(timestamp)
 timestamped = opened.replace("XXXXXXXXX", times)
 print(timestamped)
-decrypted = json.dumps(timestamped)
+decrypted = timestamped
 encrypted = aes_encrypt(decrypted)
 headers = {'Access-Control-Allow-Methods': 'POST', 'Allow': 'POST'}
 rt = requests.post(postpost, data=encrypted, headers=headers)
