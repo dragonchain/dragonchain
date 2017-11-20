@@ -64,8 +64,8 @@ class TransactionHandler(tornado.web.RequestHandler):
         dragon = '../key.pem'
         key = open(dragon, "r")
         dragonkey = key.read()
-        iv = b64decode(self.request.body)[:16]
-        data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(b64decode(self.request.body)[16:])
+        iv = base64.b64decode(self.request.body)[:16]
+        data = AES.new(dragonkey, AES.MODE_CBC, iv).decrypt(base64.b64decode(self.request.body)[16:])
         data = data[:-data[-1]]
         txn = data
         log = self.application.log
