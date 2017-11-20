@@ -8,6 +8,7 @@ cd sql/
 echo "Setting up databases... UP TO NODE 5 operation. PLEASE be patient"
 sudo useradd blocky
 sudo service postgresql start
+sleep 5s
 sudo -u postgres createuser  blocky
 sudo -u postgres createdb -O blocky blockchain
 sudo -u postgres createdb -O blocky blockchain0
