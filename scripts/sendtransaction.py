@@ -17,12 +17,12 @@ def aes_encrypt(plaintext):
     return ciphertext
 
 postpost = "http://localhost:81/transaction"
-timestamp = time.time()
-times = str(timestamp)
 rawdata = input("INPUT A JSON FILENAME TO SEND, IT -MAY- NEED QUOTES: ")
 print(rawdata)
 plain = open(rawdata, "r")
 opened = plain.read()
+timestamp = time.time()
+times = str(timestamp)
 timestamped = opened.replace("XXXXXXXXX", times)
 decrypted = json.dumps(timestamped)
 encrypted = aes_encrypt(decrypted)
