@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "About to drop databases... you've got 15 seconds to cancel..."
 sleep 15s
+cd sql/
 sudo service postgresql start
 sudo -u blocky dropdb blockchain
 sudo -u blocky dropdb blockchain0
@@ -25,4 +26,5 @@ sudo -u blocky psql -U blocky -d blockchain3 -a -f depl.sql
 sudo -u blocky psql -U blocky -d blockchain4 -a -f depl.sql
 sudo -u blocky psql -U blocky -d blockchain5 -a -f depl.sql
 sudo service postgresql stop
+cd ..
 echo "databases have been recreated after being dropped..."
