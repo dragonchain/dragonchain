@@ -77,7 +77,7 @@ class TransactionHandler(tornado.web.RequestHandler):
         decoded_msg = urlsafe_b64decode(base64pad(data))
         iv = decoded_msg[:BS]
         encrypted_msg = decoded_msg[BS:]
-        cipher = AES.new(dragonkey, AES.MODE_CFB, iv, segment_size=AES.block_size * 8
+        cipher = AES.new(dragonkey, AES.MODE_CFB, iv, segment_size=AES.block_size * 8)
         txn = unpad(cipher.decrypt(encrypted_msg))
         log = self.application.log
         log.debug("Parsing JSON")
