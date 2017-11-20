@@ -69,7 +69,7 @@ class TransactionHandler(tornado.web.RequestHandler):
         return data
               
      # TODO: consider storing original payload for hashing
-    def post(self):
+    def post(self, aes_decrypt):
         txn = aes_decrypt(self.request.body)
         log = self.application.log
         log.debug("Parsing JSON")
