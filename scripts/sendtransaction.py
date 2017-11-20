@@ -27,10 +27,10 @@ postpost = "http://localhost:81/transaction"
 rawdata = input("INPUT A JSON FILENAME TO SEND, IT -MAY- NEED QUOTES: ")
 plain = open(rawdata, "r")
 opened = plain.read()
-print(opened)
-timestamp = time.time()
+timestamp = int(time.time())
 times = str(timestamp)
 timestamped = opened.replace("XXXXXXXXX", times)
+print(timestamped)
 decrypted = json.dumps(timestamped)
 encrypted = aes_encrypt(decrypted)
 headers = {'Access-Control-Allow-Methods': 'POST', 'Allow': 'POST'}
