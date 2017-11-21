@@ -1,0 +1,52 @@
+# Installation is complete...
+# 
+# To bring down the containers:
+# sudo chmod +x stop.sh
+# sudo ./start.sh
+# 
+# 
+# To bring up the containers:
+# sudo chmod +x start.sh
+# sudo ./stop.sh
+# 
+# 
+# Make sure to run (some) commands in docker with:
+# sudo docker exec -it container_id_or_name commandhere
+# 
+# To remove docker and rebuild from scratch, run:
+# sudo docker system prune -a -f
+# OR TO JUST REBUILD: cd docker/ then:
+# sudo docker-compose build
+#
+# To attach to ALL containers to view output do: 
+# sudo screen -S docker
+# then
+# sudo docker-compose up
+#
+# To to disconnect from docker do ctrl+a then press d
+# To to reconnect to docker screen do: screen -x docker
+# 
+# To allow access to docker containers follow this template:
+# sudo iptables -A FORWARD -i docker0 -o eth0 -j ACCEPT
+# sudo iptables -A FORWARD -i eth0 -o docker0 -j ACCEPT
+# sudo route add -net <dockerip> netmask <net mask> gw <docker's host>
+# 
+# If you need to import more peers run after adding them to config in main directory:
+# sudo ./addnodes.sh
+# ...Just make sure docker containers are UP AND RUNNING first ;)
+#
+# ...OR you could subscribe to the node's transactions:
+# Edit the subscription0.json or subscription1.json in scripts/
+# sudo nano subscription0.json
+# INPUT the phase requirement, phase port, node ID, and host then: ctrl + o to save ctrl + x to exit then:
+# sudo python sendtransaction.py
+# Input the filename as "subscription0.json" and hit enter (use quotes). That transaction ID will output at the bottom of the screen.
+# Check the transaction in http://localhost:80/transaction/transactionidhere (maybe check docker for more info)
+# 
+# To generate your OWN network key, run:
+# cd scripts/
+# sudo python genkey.py
+# cd ..
+# cd docker/
+# sudo docker-compose build
+# Have a good day!
