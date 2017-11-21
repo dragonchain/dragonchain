@@ -142,7 +142,6 @@ class TestAssembleSigBlock(TestCase):
         """ testing crypto assemble_sig_block """
         digest = "tvyb6yj6TqmmbpwiCBz9WsGmx6sOJBCvcDkw1GW5jCRWgusILKDWgn5wieDsqWEoKQtfzEgNRI4="
         transaction = TRANSACTION.copy()
-
         crypto.assemble_sig_block(transaction, SIGNATORY, PUBLIC_KEY, digest, HASH, SIG_TS, STRIPPED_HASH)
 
         self.assertTrue('signature' in transaction and transaction['signature'] is not None, True)
@@ -165,7 +164,6 @@ class TestSignTransaction(TestCase):
         transaction = TRANSACTION.copy()
 
         test_transaction = crypto.sign_transaction(SIGNATORY, PRIVATE_KEY, PUBLIC_KEY, transaction)
-
         # checking if signature made it into transaction
         self.assertEqual('signature' in test_transaction, True)
 
@@ -212,6 +210,7 @@ class TestSignSubscription(TestCase):
     def test_sign_subscription(self):
         """ testing crypto sign_subscription """
         subscription = SUBSCRIPTION.copy()
+
         crypto.sign_subscription(SIGNATORY, subscription, PRIVATE_KEY, PUBLIC_KEY)
 
         # checking if signature made it into subscription

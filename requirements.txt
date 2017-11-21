@@ -10,6 +10,7 @@ pytest==2.8.0
 rx==1.2.3
 pyyaml==3.11
 python-bitcoinlib==0.6.1
+pycrypto==2.6.1
 merkle-proofs==0.0.6
 requests==2.11.1
 -e .

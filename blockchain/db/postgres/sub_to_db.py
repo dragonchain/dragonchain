@@ -79,7 +79,7 @@ def insert_subscription(subscription, subscription_id=None):
         subscription['port'],  # subscription node's port
         psycopg2.extras.Json(subscription['criteria']),  # criteria to be met by subscription
         subscription['create_ts'],  # subscription creation time
-        "pending"  # subscription status
+        "approved"  # subscription status
     )
     conn = get_connection_pool().getconn()
     try:

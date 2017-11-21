@@ -42,15 +42,23 @@ import tornado
 import tornado.web
 import tornado.ioloop
 from db.postgres import postgres
-
 from blockchain.util.crypto import sign_transaction, valid_transaction_sig
-
 from blockchain.db.postgres import transaction_db as tx_dao
-
 import uuid
-
 import time
+import binascii
+import os
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+from Crypto.Cipher import AES
+from Crypto import Random
 
+
+BS = 16
+pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+
+base64pad = lambda s: s + '=' * (4 - len(s) % 4)
+base64unpad = lambda s: s.rstrip("=")
 
 def format_error(category, msg):
     return json.dumps({"error": {"type": category, "details": msg}})
@@ -59,15 +67,23 @@ def format_error(category, msg):
 class TransactionHandler(tornado.web.RequestHandler):
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
-
-    # TODO: consider storing original payload for hashing
+              
+     # TODO: consider storing original payload for hashing - be careful here.
     def post(self):
-        txn = self.request.body
+        dragon = '../key.pem'
+        key = open(dragon, "r")
+        dragonkey = key.read()
+        data = self.request.body
+        decoded_msg = urlsafe_b64decode(base64pad(data))
+        iv = decoded_msg[:BS]
+        encrypted_msg = decoded_msg[BS:]
+        cipher = AES.new(dragonkey, AES.MODE_CFB, iv, segment_size=AES.block_size * 8)
+        txn = unpad(cipher.decrypt(encrypted_msg))
         log = self.application.log
         log.debug("Parsing JSON")
-
         try:
             txn = tornado.escape.json_decode(txn)
+            print(txn)
             txn["header"]["transaction_id"] = str(uuid.uuid4())
             txn["header"]["transaction_ts"] = int(time.time())
         except:
