@@ -34,8 +34,7 @@ The payload section can hold any data encoded in a json format that you wish to 
 
 As long as the json passes validation it should post to the transaction service correctly. 
 
-Header Notes
-===
+###Header Notes
 You probably want to devote some time to thinking about your prefered scheme for dragonchain headers since they are searchable. 
 
 create_ts - This should be a time stamp, and is typically the number of seconds since unix epoch. You can find out more about that at this (link)[https://en.wikipedia.org/wiki/Unix_time]
