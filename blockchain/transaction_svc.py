@@ -74,7 +74,7 @@ class TransactionHandler(tornado.web.RequestHandler):
             log.error("Failed to parse JSON.  Details: " + str(sys.exc_info()[1]))
             self.clear()
             self.set_txn_status(log, 400)
-            self.write(format_error("invalid input", "ERROR:  Failed to parse JSON\n"))
+            self.write(format_error("invalid input", "ERROR: malformed json\nDocumentation for transaction format can be found at \nhttps://github.com/dragonchain/dragonchain/blob/master/docs/transaction.md"))
             return
 
         try:
