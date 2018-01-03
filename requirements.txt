@@ -3,7 +3,7 @@ certifi==2015.4.28
 tornado==4.2.1
 wheel==0.24.0
 ecdsa==0.13
-psycopg2==2.6.1
+psycopg2==2.7
 apscheduler==3.0.3
 thrift==0.9.3
 pytest==2.8.0
