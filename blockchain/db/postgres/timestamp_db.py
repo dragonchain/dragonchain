@@ -29,21 +29,20 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
+import uuid
+
 import psycopg2
 import psycopg2.extras
-from psycopg2.extras import Json
-import uuid
-import time
 
-from blockchain.qry import format_block_verification, format_pending_transaction
-from postgres import get_connection_pool
+from blockchain.qry import format_pending_transaction
+from blockchain.db.postgres.postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 256
 
 """ SQL QUERIES """
 SQL_GET_PENDING_QUERY = """SELECT * FROM timestamps WHERE timestamp_receipt IS FALSE"""
-SQL_TIMESTAMP_QUERY   = """UPDATE timestamps SET timestamp_receipt = TRUE WHERE timestamp_id = %s"""
+SQL_TIMESTAMP_QUERY = """UPDATE timestamps SET timestamp_receipt = TRUE WHERE timestamp_id = %s"""
 
 SQL_INSERT_QUERY = """
     INSERT INTO timestamps (

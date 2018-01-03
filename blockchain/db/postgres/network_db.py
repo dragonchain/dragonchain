@@ -29,15 +29,15 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
+import time
+import uuid
 
 import psycopg2
 import psycopg2.extras
-import time
 
 from blockchain.qry import format_node
 
-from postgres import get_connection_pool
-import uuid
+from blockchain.db.postgres.postgres import get_connection_pool
 
 """ CONSTANTS """
 # TODO: CONST for interval time, limit - import from file
@@ -47,18 +47,18 @@ MAX_CONN_LIMIT = 5
 """ SQL Queries """
 SQL_GET_BY_ID = """SELECT * FROM nodes WHERE node_id = %s"""
 SQL_GET_ALL = """SELECT * FROM nodes"""
-SQL_GET_BY_PHASE = """SELECT * FROM nodes 
-                            WHERE 
-                            phases & %s::bit(%s) != 0::bit(%s) AND 
-                            connection_attempts IS NULL 
-                            ORDER BY priority_level ASC, latency DESC 
+SQL_GET_BY_PHASE = """SELECT * FROM nodes
+                            WHERE
+                            phases & %s::bit(%s) != 0::bit(%s) AND
+                            connection_attempts IS NULL
+                            ORDER BY priority_level ASC, latency DESC
                             LIMIT %s"""
-SQL_GET_UNREGISTERED_NODES = """SELECT * FROM nodes 
-                            WHERE last_conn_attempt_ts IS NULL OR 
-                            last_conn_attempt_ts < NOW() - INTERVAL '7 days' AND 
-                            start_conn_ts IS NULL AND 
-                            last_activity_ts < NOW() - INTERVAL '7 days' 
-                            ORDER BY priority_level ASC, last_conn_attempt_ts ASC, connection_attempts ASC 
+SQL_GET_UNREGISTERED_NODES = """SELECT * FROM nodes
+                            WHERE last_conn_attempt_ts IS NULL OR
+                            last_conn_attempt_ts < NOW() - INTERVAL '7 days' AND
+                            start_conn_ts IS NULL AND
+                            last_activity_ts < NOW() - INTERVAL '7 days'
+                            ORDER BY priority_level ASC, last_conn_attempt_ts ASC, connection_attempts ASC
                             LIMIT %s"""
 SQL_INSERT = """INSERT into nodes (
                             node_id,

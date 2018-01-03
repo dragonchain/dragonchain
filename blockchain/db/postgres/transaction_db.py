@@ -29,15 +29,16 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-import psycopg2
-import psycopg2.extras
-from psycopg2.extras import Json
 import uuid
 import time
 
+import psycopg2
+import psycopg2.extras
+from psycopg2.extras import Json
+
 from blockchain.qry import format_transaction
 
-from postgres import get_connection_pool
+from blockchain.db.postgres.postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000
@@ -112,7 +113,7 @@ def get_all(limit=None, offset=None, **params):
     if "family_of_business" in params and params["family_of_business"]:
         if separator_needed:
             query += """ AND """
-        query+= """ family_of_business = %(family_of_business)s"""
+        query += """ family_of_business = %(family_of_business)s"""
 
     if "line_of_business" in params and params["line_of_business"]:
         if separator_needed:
@@ -156,21 +157,21 @@ def get_all(limit=None, offset=None, **params):
         if '-' in params["create_ts"]:
             # if it is timestamp >= UNIX-epoch timecode
             if params["create_ts"].index('-') == 0:
-                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][1:])))
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][1:])))
                 params["start_time"] = start_time
                 query += """ create_ts >= %(start_time)s"""
             elif params["create_ts"].endswith('-'):
-                end_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:len(params["create_ts"])-1])))
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][:len(params["create_ts"])-1])))
                 params["end_time"] = end_time
                 query += """ create_ts <= %(end_time)s"""
             else:
-                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:params["create_ts"].index('-')])))
-                end_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"][params["create_ts"].index('-')+1:])))
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][:params["create_ts"].index('-')])))
+                end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][params["create_ts"].index('-')+1:])))
                 params["start_time"] = start_time
                 params["end_time"] = end_time
                 query += """ create_ts >= %(start_time)s AND create_ts <= %(end_time)s"""
         else:
-            cur_time = time.strftime('%Y-%m-%d %H:%M:%S',  time.gmtime(float(params["create_ts"])))
+            cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"])))
             params["cur_time"] = cur_time
             query += """ create_ts = %(cur_time)s"""
         separator_needed = True
@@ -190,7 +191,7 @@ def get_all(limit=None, offset=None, **params):
                 params["end_time"] = end_time
                 query += """ transaction_ts <= %(end_time)s"""
             else:
-                start_time = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime(float(params["create_ts"][:params["transaction_ts"].index('-')])))
+                start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["create_ts"][:params["transaction_ts"].index('-')])))
                 end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(float(params["transaction_ts"][params["create_ts"].index('-') + 1:])))
                 params["start_time"] = start_time
                 params["end_time"] = end_time

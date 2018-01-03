@@ -29,13 +29,13 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-import psycopg2
-import psycopg2.extras
-from psycopg2.extras import Json
 import uuid
 
+import psycopg2
+import psycopg2.extras
+
 from blockchain.qry import format_block_verification
-from postgres import get_connection_pool
+from blockchain.db.postgres.postgres import get_connection_pool
 
 """ CONSTANTS """
 DEFAULT_PAGE_SIZE = 1000

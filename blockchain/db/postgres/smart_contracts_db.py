@@ -29,12 +29,12 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
+import uuid
 
 import psycopg2
 import psycopg2.extras
 
-from postgres import get_connection_pool
-import uuid
+from blockchain.db.postgres.postgres import get_connection_pool
 
 from blockchain.qry import format_sc
 

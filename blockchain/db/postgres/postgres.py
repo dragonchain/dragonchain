@@ -29,8 +29,8 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-from psycopg2.pool import ThreadedConnectionPool
 import os
+from psycopg2.pool import ThreadedConnectionPool
 
 """
 Define environment variables
