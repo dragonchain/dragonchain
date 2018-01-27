@@ -31,22 +31,34 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-from blockchain.block import Block, \
-    BLOCK_FIXATE_OFFSET, \
-    BLOCK_INTERVAL, \
-    get_block_time, \
+from blockchain.block import (
+    Block,
+    BLOCK_FIXATE_OFFSET,
+    BLOCK_INTERVAL,
+    get_block_time,
     get_current_block_id
+)
 
-from blockchain.util.crypto import valid_transaction_sig, sign_verification_record, validate_verification_record, sign_subscription, final_hash
+from blockchain.util.crypto import (
+     valid_transaction_sig,
+     sign_verification_record,
+     validate_verification_record,
+     sign_subscription,
+     final_hash
+)
 
 from bitcoin.core import *
 
-from blockchain.db.postgres import postgres
-from blockchain.db.postgres import transaction_db
-from blockchain.db.postgres import verification_db
-from blockchain.db.postgres import vr_transfers_db
+
+from blockchain.db.postgres import (
+     postgres,
+     transaction_db,
+     verification_db,
+     vr_transfers_db,
+     timestamp_db
+)
 from blockchain.db.postgres import sub_to_db as sub_db
-from blockchain.db.postgres import timestamp_db
+
 
 import network
 
@@ -55,7 +67,10 @@ from blockchain.smart_contracts import smart_contracts
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from blockchain.timestamping import BitcoinTimestamper, BitcoinFeeProvider
+from blockchain.timestamping import (
+     BitcoinTimestamper,
+     BitcoinFeeProvider
+)
 from blockchain.util.crypto import final_hash
 
 import logging
@@ -108,7 +123,11 @@ class ProcessingNode(object):
         # this nodes phases provided
         phase = self.phase_config[0][PHASE]
         # this nodes network
-        self.network = network.ConnectionManager(self.service_config['host'], self.service_config['port'], 0b00001 << phase - 1, self)
+        self.network = network.ConnectionManager(
+             self.service_config['host'],
+             self.service_config['port'],
+             0b00001 << phase - 1,
+             self)
         # smart contract handler used for running reserved and non-reserved smart contracts
         self.sch = smart_contracts.SmartContractsHandler(self.network, self.service_config['public_key'])
 
@@ -299,17 +318,19 @@ class ProcessingNode(object):
             lower_hash = str(final_hash([0]))
 
             # sign approved transactions
-            block_info = sign_verification_record(signatory,
-                                                  prior_block_hash,
-                                                  lower_hash,
-                                                  self.service_config['public_key'],
-                                                  self.service_config['private_key'],
-                                                  current_block_id,
-                                                  phase,
-                                                  origin_id,
-                                                  int(time.time()),
-                                                  self.public_transmission,
-                                                  verification_info)
+            block_info = sign_verification_record(
+                 signatory,
+                 prior_block_hash,
+                 lower_hash,
+                 self.service_config['public_key'],
+                 self.service_config['private_key'],
+                 current_block_id,
+                 phase,
+                 origin_id,
+                 int(time.time()),
+                 self.public_transmission,
+                 verification_info
+            )
             # store signed phase specific data
             verification_id = str(uuid.uuid4())
             verification_db.insert_verification(block_info['verification_record'], verification_id)
@@ -383,25 +404,30 @@ class ProcessingNode(object):
             lower_hash = phase_1_record[SIGNATURE][HASH]
 
             # sign verification and rewrite record
-            block_info = sign_verification_record(self.network.this_node.node_id,
-                                                  prior_block_hash,
-                                                  lower_hash,
-                                                  self.service_config['public_key'],
-                                                  self.service_config['private_key'],
-                                                  phase_1_record[BLOCK_ID],
-                                                  phase_1_record[PHASE],
-                                                  phase_1_record[ORIGIN_ID],
-                                                  int(time.time()),
-                                                  phase_1_record['public_transmission'],
-                                                  verification_info
-                                                  )
+            block_info = sign_verification_record(
+                 self.network.this_node.node_id,
+                 prior_block_hash,
+                 lower_hash,
+                 self.service_config['public_key'],
+                 self.service_config['private_key'],
+                 phase_1_record[BLOCK_ID],
+                 phase_1_record[PHASE],
+                 phase_1_record[ORIGIN_ID],
+                 int(time.time()),
+                 phase_1_record['public_transmission'],
+                 verification_info
+            )
 
             # inserting verification info after signing
             verification_id = str(uuid.uuid4())
             verification_db.insert_verification(block_info['verification_record'], verification_id)
 
             # inserting receipt of signed verification for data transfer
-            vr_transfers_db.insert_transfer(phase_1_record['origin_id'], phase_1_record['signature']['signatory'], verification_id)
+            vr_transfers_db.insert_transfer(
+                 phase_1_record['origin_id'],
+                 phase_1_record['signature']['signatory'],
+                 verification_id
+            )
 
             # send block info off for public transmission if configured to do so
             if phase_1_record['public_transmission']['p2_pub_trans']:
@@ -494,18 +520,19 @@ class ProcessingNode(object):
                 lower_hash = str(final_hash(lower_hashes))
 
                 # sign verification and rewrite record
-                block_info = sign_verification_record(self.network.this_node.node_id,
-                                                      prior_block_hash,
-                                                      lower_hash,
-                                                      self.service_config['public_key'],
-                                                      self.service_config['private_key'],
-                                                      phase_2_record[BLOCK_ID],
-                                                      phase_2_record[PHASE],
-                                                      phase_2_record[ORIGIN_ID],
-                                                      int(time.time()),
-                                                      phase_2_record['public_transmission'],
-                                                      verification_info
-                                                      )
+                block_info = sign_verification_record(
+                     self.network.this_node.node_id,
+                     prior_block_hash,
+                     lower_hash,
+                     self.service_config['public_key'],
+                     self.service_config['private_key'],
+                     phase_2_record[BLOCK_ID],
+                     phase_2_record[PHASE],
+                     phase_2_record[ORIGIN_ID],
+                     int(time.time()),
+                     phase_2_record['public_transmission'],
+                     verification_info
+                )
 
                 # inserting verification info after signing
                 verification_id = str(uuid.uuid4())
@@ -513,7 +540,11 @@ class ProcessingNode(object):
 
                 # inserting receipt for each phase 2 record received
                 for record in phase_2_records:
-                    vr_transfers_db.insert_transfer(record['origin_id'], record['signature']['signatory'], verification_id)
+                    vr_transfers_db.insert_transfer(
+                         record['origin_id'],
+                         record['signature']['signatory'],
+                         verification_id
+                    )
 
                 # send block info off for public transmission if configured to do so
                 if phase_2_record['public_transmission']['p3_pub_trans']:
@@ -582,18 +613,19 @@ class ProcessingNode(object):
             verification_info = lower_hash
 
             # sign verification and rewrite record
-            block_info = sign_verification_record(self.network.this_node.node_id,
-                                                  prior_block_hash,
-                                                  lower_hash,
-                                                  self.service_config['public_key'],
-                                                  self.service_config['private_key'],
-                                                  phase_3_record[BLOCK_ID],
-                                                  phase_3_record[PHASE],
-                                                  phase_3_record[ORIGIN_ID],
-                                                  int(time.time()),
-                                                  phase_3_record['public_transmission'],
-                                                  verification_info
-                                                  )
+            block_info = sign_verification_record(
+                 self.network.this_node.node_id,
+                 prior_block_hash,
+                 lower_hash,
+                 self.service_config['public_key'],
+                 self.service_config['private_key'],
+                 phase_3_record[BLOCK_ID],
+                 phase_3_record[PHASE],
+                 phase_3_record[ORIGIN_ID],
+                 int(time.time()),
+                 phase_3_record['public_transmission'],
+                 verification_info
+            )
 
             # inserting verification info after signing
             verification_id = str(uuid.uuid4())
@@ -672,18 +704,19 @@ class ProcessingNode(object):
         phase = 5
         origin_id = None
         public_transmission = False
-        block_info = sign_verification_record(self.network.this_node.node_id,
-                                              prior_block_hash,
-                                              lower_hash,
-                                              self.service_config['public_key'],
-                                              self.service_config['private_key'],
-                                              block_id,
-                                              phase,
-                                              origin_id,
-                                              int(time.time()),
-                                              public_transmission,
-                                              verification_info
-                                              )
+        block_info = sign_verification_record(
+             self.network.this_node.node_id,
+             prior_block_hash,
+             lower_hash,
+             self.service_config['public_key'],
+             self.service_config['private_key'],
+             block_id,
+             phase,
+             origin_id,
+             int(time.time()),
+             public_transmission,
+             verification_info
+        )
 
         # inserts a new verification record for the new record created to be sent
         verification_db.insert_verification(block_info['verification_record'])
