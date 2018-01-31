@@ -1,0 +1,4 @@
+sudo:required
+distdist:trusty
+group:deprecated-2017Q4
+.travis.yml file
