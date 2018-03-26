@@ -85,8 +85,7 @@ class TransactionHandler(tornado.web.RequestHandler):
                       str(sys.exc_info()[1]))
             self.clear()
             self.set_txn_status(log, 400)
-            self.write(format_error(
-                "invalid input", "ERROR: malformed json\nDocumentation for transaction format can be found at \nhttps://github.com/dragonchain/dragonchain/blob/master/docs/transaction.md"))
+            self.write(format_error("invalid input", "ERROR: malformed json\nDocumentation for transaction format can be found at \nhttps://github.com/dragonchain/dragonchain/blob/master/docs/transaction.md"))
             return
 
         try:

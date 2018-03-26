@@ -29,10 +29,9 @@ Group blockchain standardization​)
 * [Disney Blockchain Standardization Notes](https://dragonchain.github.io/blockchain-standardization) - [W3C](https://github.com/w3c/blockchain/blob/master/standards.md)
 
 ## Support
-
-* Slack Team: [Dragonchain Slack Team](https://dragonchain.slack.com/) sign up: [![Slack Status](https://dragonchain-slack.herokuapp.com/badge.svg)](https://dragonchain-slack.herokuapp.com)
-* Slack Support Channel: [#support](https://dragonchain.slack.com/messages/support/)
 * Email: support@dragonchain.org
+* Telegram Dev Chat: [Dragonchain Developer Telegram](https://t.me/DragonchainDev)
+* General Dragonchain Chat: [Dragonchain Telegram] (https://t.me/dragontalk)
 
 ## Maintainer
 Joe Roets (j03)
