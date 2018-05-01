@@ -29,16 +29,13 @@ __version__ = "2.0"
 __maintainer__ = "Joe Roets"
 __email__ = "joe@dragonchain.org"
 
-
-""" only used for manually inserting data into nodes table """
-from blockchain.db.postgres import network_db as net_dao
-from blockchain.network import Node
-
+import argparse
 import os
-
 import uuid
 
-import argparse
+# only used for manually inserting data into nodes table
+from blockchain.db.postgres import network_db as net_dao
+from blockchain.network import Node
 
 
 def load_required_nodes(owner, host, port, phases, node_id=str(uuid.uuid4())):
@@ -53,7 +50,7 @@ def load_required_nodes(owner, host, port, phases, node_id=str(uuid.uuid4())):
     """
     node = Node(node_id, owner, host, port, phases)
     net_dao.insert_node(node)
-    print('inserted node into database ' + os.environ.get('BLOCKCHAIN_DB_NAME') + " " + node.node_id)
+    print('inserted node into database {} {}'.format(os.environ.get('BLOCKCHAIN_DB_NAME'), node.node_id)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process node data.')
@@ -61,12 +58,6 @@ if __name__ == '__main__':
     parser.add_argument('--host', default="localhost")
     parser.add_argument('-p', '--port')
     parser.add_argument('--phases', default="00001")
+    args = parser.parse_args()
 
-    args = vars(parser.parse_args())
-
-    owner = args['owner']
-    host = args['host']
-    port = args['port']
-    phases = args['phases']
-
-    load_required_nodes(owner, host, port, phases)
+    load_required_nodes(args.owner, args.host, args.port, argsphases)
