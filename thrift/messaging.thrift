@@ -148,6 +148,11 @@ struct Phase_4_msg {
     2: string lower_hash
 }
 
+struct Phase_5_msg {
+    1: VerificationRecordCommonInfo record,
+    2: string lower_hash
+}
+
 union VerificationRecord {
     1: Phase_1_msg p1,
     2: Phase_2_msg p2,
