@@ -57,8 +57,18 @@ def format_error(category, msg):
 
 
 class TransactionHandler(tornado.web.RequestHandler):
+
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
+
+    def prepare(self):
+        self.add_header("Access-Control-Allow-Origin", "*")
+
+    def options(self):
+        self.add_header("Access-Control-Allow-Methods", "POST")
+        self.add_header("Access-Control-Allow-Headers",
+                        "Origin, X-Requested-With, Content-Type, Accept")
+        self.add_header("Access-Control-Max-Age", 60)
 
     # TODO: consider storing original payload for hashing
     def post(self):
@@ -71,7 +81,8 @@ class TransactionHandler(tornado.web.RequestHandler):
             txn["header"]["transaction_id"] = str(uuid.uuid4())
             txn["header"]["transaction_ts"] = int(time.time())
         except:
-            log.error("Failed to parse JSON.  Details: " + str(sys.exc_info()[1]))
+            log.error("Failed to parse JSON.  Details: " +
+                      str(sys.exc_info()[1]))
             self.clear()
             self.set_txn_status(log, 400)
             self.write(format_error("invalid input", "ERROR: malformed json\nDocumentation for transaction format can be found at \nhttps://github.com/dragonchain/dragonchain/blob/master/docs/transaction.md"))
@@ -106,11 +117,14 @@ class TransactionHandler(tornado.web.RequestHandler):
 
     def set_txn_status(self, log, status_code):
         if status_code == 400:
-            log.error("400: Bad Request. The request could not be understood by the server due to malformed syntax.")
+            log.error(
+                "400: Bad Request. The request could not be understood by the server due to malformed syntax.")
         elif status_code == 201:
-            log.info("201: Created. The request has been fulfilled and resulted in a new resource being created.")
+            log.info(
+                "201: Created. The request has been fulfilled and resulted in a new resource being created.")
         elif status_code == 500:
-            log.error("500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
+            log.error(
+                "500: Internal Error: The server encountered an unexpected condition which prevented it from fulfilling the request.")
         self.set_status(status_code)
 
 
@@ -131,6 +145,7 @@ def valid_vestal_transaction(transaction):
 
 
 class TransactionService(tornado.web.Application):
+
     def __init__(self, *args, **kwargs):
 
         self.private_key = kwargs["private_key"]
@@ -154,14 +169,18 @@ class TransactionService(tornado.web.Application):
 
 def run():
 
-    logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level=logging.DEBUG)
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s - %(message)s", level=logging.DEBUG)
     log = logging.getLogger("txn-service")
     log.info("Setting up argparse")
-    parser = argparse.ArgumentParser(description='Process some integers.', prog='python -m blockchain')
+    parser = argparse.ArgumentParser(
+        description='Process some integers.', prog='python -m blockchain')
     parser.add_argument('-p', '--port', default=8000)
     parser.add_argument('--debug', default=True, action="store_true")
-    parser.add_argument('--private-key', dest="private_key", required=True, help="ECDSA private key for signing")
-    parser.add_argument('--public-key', dest="public_key", required=True, help="ECDSA private key for signing")
+    parser.add_argument('--private-key', dest="private_key",
+                        required=True, help="ECDSA private key for signing")
+    parser.add_argument('--public-key', dest="public_key",
+                        required=True, help="ECDSA private key for signing")
 
     log.info("Parsing arguments")
     args = parser.parse_args()
@@ -173,8 +192,8 @@ def run():
 
     log.info("Creating new tornado.web.Application")
     application = TransactionService(hdlrs,
-        log = log,
-        **vars(args))
+                                     log=log,
+                                     **vars(args))
 
     log.info("Starting transaction service on port %s" % args.port)
     application.listen(args.port)

@@ -49,10 +49,11 @@ from blockchain.db.postgres import verification_db
 
 
 def format_error(category, msg):
-    return json.dumps({"error": { "type": category, "details": msg } })
+    return json.dumps({"error": {"type": category, "details": msg}})
 
 
 class QueryHandler(tornado.web.RequestHandler):
+
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
         self.query_fields = {
@@ -69,6 +70,15 @@ class QueryHandler(tornado.web.RequestHandler):
             'entity': None,
             'owner': None
         }
+
+    def prepare(self):
+        self.add_header("Access-Control-Allow-Origin", "*")
+
+    def options(self):
+        self.add_header("Access-Control-Allow-Methods", "GET")
+        self.add_header("Access-Control-Allow-Headers",
+                        "Origin, X-Requested-With, Content-Type, Accept")
+        self.add_header("Access-Control-Max-Age", 60)
 
     def get(self, transaction_id=None):
         try:
@@ -102,6 +112,7 @@ class QueryHandler(tornado.web.RequestHandler):
 
 
 class QueryService(tornado.web.Application):
+
     def __init__(self, *args, **kwargs):
         self.log = kwargs["log"]
         del kwargs["log"]
@@ -111,6 +122,7 @@ class QueryService(tornado.web.Application):
 
 
 class BlockVerificationHandler(tornado.web.RequestHandler):
+
     def __init__(self, *args, **kwargs):
         tornado.web.RequestHandler.__init__(self, *args, **kwargs)
 
@@ -121,17 +133,21 @@ class BlockVerificationHandler(tornado.web.RequestHandler):
             rows = None
         if offset < 1:
             offset = None
-        results = [verification for verification in verification_db.get_all(limit=rows, offset=offset, block_id=block_id)]
+        results = [verification for verification in verification_db.get_all(
+            limit=rows, offset=offset, block_id=block_id)]
         self.write(json.dumps(results))
+
 
 def run():
 
-    logging.basicConfig(format="%(asctime)s %(levelname)s - %(message)s", level = logging.DEBUG)
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s - %(message)s", level=logging.DEBUG)
     log = logging.getLogger("txn-service")
     log.info("Setting up argparse")
-    parser = argparse.ArgumentParser(description='Process query info.', prog='python -m blockchain')
-    parser.add_argument('-p', '--port', default = 8080)
-    parser.add_argument('--debug', default = True, action = "store_true")
+    parser = argparse.ArgumentParser(
+        description='Process query info.', prog='python -m blockchain')
+    parser.add_argument('-p', '--port', default=8080)
+    parser.add_argument('--debug', default=True, action="store_true")
 
     log.info("Parsing arguments")
     args = parser.parse_args()
@@ -145,8 +161,8 @@ def run():
 
     log.info("Creating new tornado.web.Application")
     application = QueryService(query_hdlrs,
-        log = log,
-        **vars(args))
+                               log=log,
+                               **vars(args))
 
     log.info("Starting query service on port %s" % args.port)
     application.listen(args.port)
