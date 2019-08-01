@@ -1,0 +1,255 @@
+Description: CI/CD Pipeline for Dragonchain Docker Builds
+
+Parameters:
+  GitHubSecret:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: GitHubReadOnlyToken
+
+Resources:
+  PullRequestCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-pull-request"
+      ServiceRole: !Ref CICDPipelineRole
+      Artifacts:
+        Type: no_artifacts
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:2.0
+        PrivilegedMode: true
+      Source:
+        Type: GITHUB
+        InsecureSsl: false
+        Auth:
+          Type: OAUTH
+          Resource: !Ref GitHubSecret
+        Location: https://github.com/dragonchain-inc/Dragonchain.git
+        BuildSpec: cicd/buildspec.pull-request.yml
+      Triggers:
+        Webhook: true
+      TimeoutInMinutes: 60
+
+  DevCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-dev"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:2.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: dev
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  ProdCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-prod"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:2.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: prod
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  CICDPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: dragonchain-cicd-role
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: ["sts:AssumeRole"]
+            Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com, codepipeline.amazonaws.com]
+        Version: "2012-10-17"
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "logs:*"
+                  - "ssm:GetParameters"
+                  - "sts:AssumeRole"
+                  - "codebuild:*"
+                  - "ecr:*"
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - "s3:*"
+                Effect: Allow
+                Resource:
+                  - !Join ["", [!GetAtt Bucket.Arn, /*]]
+                  - !GetAtt Bucket.Arn
+                  - !Join ["", [!GetAtt DocsWebsiteBucket.Arn, /*]]
+                  - !GetAtt DocsWebsiteBucket.Arn
+              - Action:
+                  - "secretsmanager:GetSecretValue"
+                Effect: Allow
+                Resource: "arn:aws:secretsmanager:us-west-2:381978683274:secret:dockerHubPassword-??????"
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: dragonchain-codebuild-artifacts
+
+  CodePipelineStaging:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: DragonchainCodePipelineStaging
+      ArtifactStore:
+        Location: !Ref Bucket
+        Type: S3
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CICDPipelineRole.Arn
+      Stages:
+        - Name: GitHub
+          Actions:
+            - Name: master
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: dragonchain-inc
+                Repo: Dragonchain
+                Branch: master
+                OAuthToken:
+                  Ref: GitHubSecret
+              OutputArtifacts:
+                - Name: MasterDragonchainCode
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Test-Build-Deploy
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: DevCodeBuild
+              InputArtifacts:
+                - Name: MasterDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
+
+  CodePipelineProduction:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: DragonchainCodePipelineProduction
+      ArtifactStore:
+        Location: !Ref Bucket
+        Type: S3
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CICDPipelineRole.Arn
+      Stages:
+        - Name: GitHub
+          Actions:
+            - Name: production
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: dragonchain-inc
+                Repo: Dragonchain
+                Branch: production
+                OAuthToken:
+                  Ref: GitHubSecret
+              OutputArtifacts:
+                - Name: ProductionDragonchainCode
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Test-Build-Deploy
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: ProdCodeBuild
+              InputArtifacts:
+                - Name: ProductionDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
+
+  DocsWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: dragonchain-core-docs
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - dragonchain-core-docs.dragonchain.com
+        Enabled: true
+        Origins:
+          - DomainName: dragonchain-core-docs.s3-website-us-west-2.amazonaws.com
+            Id: origin
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: origin
+          DefaultTTL: 5
+          MaxTTL: 30
+          ForwardedValues:
+            QueryString: false
+          ViewerProtocolPolicy: redirect-to-https
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:381978683274:certificate/66d32202-ed2c-4d1c-8d69-f96dcb03e34f
+          SslSupportMethod: sni-only
+
+  RecordRoute53Configurations:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName:
+          Fn::GetAtt: [CloudFrontDistribution, DomainName]
+      HostedZoneId: Z2ADV4KXMZWAVJ
+      Name: dragonchain-core-docs.dragonchain.com
+      Type: A
+
+  ReadPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DocsWebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Action: "s3:GetObject"
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${DocsWebsiteBucket}/*"
+            Principal: "*"
