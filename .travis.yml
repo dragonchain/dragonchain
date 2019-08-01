@@ -1,3 +1,7 @@
+branches:
+  only:
+    - master
+    - production
 services:
   - docker
 before_script:
