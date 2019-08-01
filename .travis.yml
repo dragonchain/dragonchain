@@ -2,6 +2,7 @@ branches:
   only:
     - master
     - production
+language: minimal
 services:
   - docker
 before_script:
