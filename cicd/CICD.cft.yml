@@ -6,30 +6,6 @@ Parameters:
     Default: GitHubReadOnlyToken
 
 Resources:
-  PullRequestCodeBuild:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: "dragonchain-pull-request"
-      ServiceRole: !Ref CICDPipelineRole
-      Artifacts:
-        Type: no_artifacts
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_LARGE
-        Image: aws/codebuild/standard:2.0
-        PrivilegedMode: true
-      Source:
-        Type: GITHUB
-        InsecureSsl: false
-        Auth:
-          Type: OAUTH
-          Resource: !Ref GitHubSecret
-        Location: https://github.com/dragonchain-inc/Dragonchain.git
-        BuildSpec: cicd/buildspec.pull-request.yml
-      Triggers:
-        Webhook: true
-      TimeoutInMinutes: 60
-
   DevCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -135,8 +111,8 @@ Resources:
                 Provider: GitHub
                 Version: 1
               Configuration:
-                Owner: dragonchain-inc
-                Repo: Dragonchain
+                Owner: dragonchain
+                Repo: dragonchain
                 Branch: master
                 OAuthToken:
                   Ref: GitHubSecret
@@ -178,8 +154,8 @@ Resources:
                 Provider: GitHub
                 Version: 1
               Configuration:
-                Owner: dragonchain-inc
-                Repo: Dragonchain
+                Owner: dragonchain
+                Repo: dragonchain
                 Branch: production
                 OAuthToken:
                   Ref: GitHubSecret
