@@ -1,15 +1,13 @@
-language: python
-python:
-  - "2.7"
-
-env:
-  - PYTHONPATH=~/build/dragonchain/dragonchain
-
-sudo: required
-
-# command to install dependencies
-install: "pip install -r requirements.txt"
-
-# command to run tests
+services:
+  - docker
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 script:
-  - python blockchain/tests/crypto_utest.py
+  - docker build . -f cicd/Dockerfile.test -t built
+  - docker run -v $(pwd)/docs:/usr/src/core/docs built
+  - if [ ! -d "./docs/.build/html" ]; then echo "Docs did not build correctly!"; exit 1; fi
+  - mv docs/coverage.xml ./coverage.xml
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

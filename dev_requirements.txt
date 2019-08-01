@@ -1,0 +1,16 @@
+pep8-naming
+flake8
+flake8-bugbear
+flake8-comprehensions
+flake8-assertive
+flake8-builtins
+flake8-import-order
+flake8-mypy
+mypy
+mypy-extensions
+coverage
+bandit
+sphinx
+sphinx_rtd_theme
+recommonmark
+black>=19.3b0

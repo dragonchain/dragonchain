@@ -1,0 +1,40 @@
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache
+
+# testing / development
+coverage.xml
+.coverage
+.env
+.envrc
+.direnv
+.venv
+
+# CI/CD (Docker only)
+.git
+.gitignore
+.dockerignore
+Dockerfile
+cicd/
+scripts/
+README*
+.github
+docs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ide
+.idea
+.vscode
+*.swp
+
+# OS Files
+.DS_Store
+desktop.ini
+
+# redis
+dump.rdb

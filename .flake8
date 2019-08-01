@@ -1,0 +1,8 @@
+[flake8]
+ignore = E203, E266, E501, W503
+max-line-length = 150
+max-complexity = 15
+import-order-style = pep8
+application-import-names = dragonchain
+select = A,B,B9,C,E,F,I,N,T4,W
+mypy-config = mypy.ini
