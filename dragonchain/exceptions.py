@@ -157,3 +157,7 @@ class MatchmakingError(DragonchainException):
 
 class PartyError(DragonchainException):
     """Exception raised by party client when a problem has occurred"""
+
+
+class SecretClientBadResponse(DragonchainException):
+    """Exception raised when reading from dragonchain on-disk secrets fails"""
