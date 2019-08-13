@@ -60,13 +60,13 @@ def delete_api_key_v1(key_id: str) -> None:
     Args:
         key_id: ID of api key to delete
     """
+    # Don't allow removal of reserved keys
+    if key_id.startswith("SC_") or key_id.startswith("INTERCHAIN") or key_id.startswith("WEB_"):
+        raise exceptions.ActionForbidden("cannot delete reserved API keys")
     # Don't allow removal of root keys
     root_key_id = secrets.get_dc_secret("hmac-id")
     if root_key_id == key_id:
         raise exceptions.ActionForbidden("Cannot remove root API key")
-    # Don't allow removal of reserved keys
-    if key_id.startswith("SC_") or key_id.startswith("INTERCHAIN") or key_id.startswith("WEB_"):
-        raise exceptions.ActionForbidden("cannot delete reserved API keys")
     # Delete the actual key after previous checks pass
     if not authorization.remove_auth_key(auth_key_id=key_id, interchain=False):
         raise RuntimeError("Unkown error deleting key from storage")

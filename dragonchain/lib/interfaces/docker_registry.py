@@ -26,14 +26,13 @@ if TYPE_CHECKING:
     from dragonchain.lib.types import DockerLogin
 
 REGISTRY_USERNAME = os.environ["REGISTRY_USERNAME"]
-REGISTRY_PASSWORD = secrets.get_dc_secret("registry-password")
 
 
 def get_login(as_token: bool = False) -> "DockerLogin":
     """
     returns auth from container registry service which will be stored in environment variable
     """
-    return {"username": REGISTRY_USERNAME, "password": REGISTRY_PASSWORD}
+    return {"username": REGISTRY_USERNAME, "password": secrets.get_dc_secret("registry-password")}
 
 
 def delete_image(repository: Any, image_digest: str) -> None:

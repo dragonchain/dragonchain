@@ -44,7 +44,6 @@ IAM_ROLE = os.environ["IAM_ROLE"]
 FAAS_GATEWAY = os.environ["FAAS_GATEWAY"]
 FAAS_REGISTRY = os.environ["FAAS_REGISTRY"]
 INTERNAL_ID = os.environ["INTERNAL_ID"]
-DRAGONCHAIN_ID = keys.get_public_id()
 DRAGONCHAIN_ENDPOINT = os.environ["DRAGONCHAIN_ENDPOINT"]
 
 _log = logger.get_logger()
@@ -124,7 +123,7 @@ class ContractJob(object):
         """Populate environment variables for the job"""
         self.model.env["STAGE"] = STAGE
         self.model.env["INTERNAL_ID"] = INTERNAL_ID
-        self.model.env["DRAGONCHAIN_ID"] = DRAGONCHAIN_ID
+        self.model.env["DRAGONCHAIN_ID"] = keys.get_public_id()
         self.model.env["DRAGONCHAIN_ENDPOINT"] = DRAGONCHAIN_ENDPOINT
         self.model.env["SMART_CONTRACT_ID"] = self.model.id
         self.model.env["SMART_CONTRACT_NAME"] = self.model.txn_type

@@ -142,21 +142,23 @@ class TestAuthorization(unittest.TestCase):
         self.assertEqual(authorization.register_new_interchain_key_with_remote(remote_dcid), "key")
         mock_post.assert_called_with(url, json=expected_key, timeout=30)
 
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.lib.authorization.keys.get_my_keys")
     @patch("dragonchain.lib.authorization.save_interchain_auth_key", return_value=True)
     @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=100))
     @patch("dragonchain.lib.authorization.gen_auth_key", return_value="key")
     @patch("dragonchain.lib.authorization.matchmaking.get_dragonchain_address", return_value="https://someurl")
-    def test_register_interchain_key_raises_with_bad_status_code(self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys):
+    def test_register_interchain_key_raises_with_bad_status_code(self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys, mock_get_id):
         self.assertRaises(RuntimeError, authorization.register_new_interchain_key_with_remote, "thing")
 
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.lib.authorization.keys.get_my_keys")
     @patch("dragonchain.lib.authorization.save_interchain_auth_key", return_value=False)
     @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=201))
     @patch("dragonchain.lib.authorization.gen_auth_key", return_value="key")
     @patch("dragonchain.lib.authorization.matchmaking.get_dragonchain_address", return_value="https://someurl")
     def test_register_interchain_key_raises_with_failure_to_register_interchain_key(
-        self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys
+        self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys, mock_get_id
     ):
         self.assertRaises(RuntimeError, authorization.register_new_interchain_key_with_remote, "thing")
 
