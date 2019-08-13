@@ -31,9 +31,6 @@ os.environ["SECRET_LOCATION"] = "SECRETSTRING"
 os.environ["DRAGONCHAIN_EMAIL"] = ""
 os.environ["DRAGONCHAIN_NAME"] = ""
 os.environ["DRAGONCHAIN_ENDPOINT"] = "http://fake.org"
-os.environ[
-    "SECRETSTRING"
-] = '{"private-key":"aPp5V10MRkZiW/XAH2wMaW72T4UD/q0V122pOPi3Jbk=","hmac-id":"$HMAC_ID","hmac-key":"$HMAC_KEY","registry-password":"$REGISTRY_PASSWORD"}'  # noqa: B950
 os.environ["INTERNAL_ID"] = ""
 os.environ["REDIS_ENDPOINT"] = ""
 os.environ["REDIS_PORT"] = "1"
