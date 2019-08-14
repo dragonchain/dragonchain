@@ -20,7 +20,7 @@ from unittest.mock import patch, MagicMock
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain import exceptions
-from dragonchain.lib.interfaces.networks import btc
+from dragonchain.lib.dto import btc
 
 
 class TestBitcoinMethods(unittest.TestCase):
@@ -59,8 +59,8 @@ class TestBitcoinMethods(unittest.TestCase):
         self.assertEqual(response, 10)
 
     @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value=1.543543)
-    def test_check_address_balance(self, mock_call):
-        response = self.client.check_address_balance()
+    def test_check_balance(self, mock_call):
+        response = self.client.check_balance()
         self.assertEqual(response, int(1.543543 * 100000000))
 
         mock_call.assert_called_once_with("getreceivedbyaddress", "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK", 6)

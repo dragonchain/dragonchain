@@ -51,7 +51,7 @@ class InterchainInterface(object):
         return self.client.is_transaction_confirmed(transaction_hash)
 
     def check_balance(self) -> int:
-        return self.client.check_address_balance()
+        return self.client.check_balance()
 
     def get_transaction_fee_estimate(self) -> int:
         return self.client.get_transaction_fee_estimate()

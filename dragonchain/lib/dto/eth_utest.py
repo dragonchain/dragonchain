@@ -19,7 +19,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from dragonchain import test_env  # noqa: F401
-from dragonchain.lib.interfaces.networks import eth
+from dragonchain.lib.dto import eth
 
 
 class TestEthereumMethods(unittest.TestCase):
@@ -54,10 +54,10 @@ class TestEthereumMethods(unittest.TestCase):
         response = self.client.get_retry_threshold()
         self.assertEqual(response, 30)
 
-    def test_check_address_balance(self):
+    def test_check_balance(self):
         self.client.w3.eth.getBalance = MagicMock(return_value=99241288782895)
 
-        response = self.client.check_address_balance()
+        response = self.client.check_balance()
         self.assertEqual(response, 99241288782895)
 
         self.client.w3.eth.getBalance.assert_called_once_with("0xe49E4BDA371C97ac89332bCd1281d1Bc17D55955")

@@ -116,7 +116,7 @@ class ETHClient(object):
     def get_retry_threshold(self) -> int:
         return BLOCK_THRESHOLD
 
-    def check_address_balance(self) -> int:
+    def check_balance(self) -> int:
         _log.info(f"[ETHEREUM] Checking balance for {self.interchain_address}")
         return self.w3.eth.getBalance(self.interchain_address)
 

@@ -86,7 +86,7 @@ class BTCClient(object):
     def get_retry_threshold(self) -> int:
         return BLOCK_THRESHOLD
 
-    def check_address_balance(self) -> int:
+    def check_balance(self) -> int:
         _log.info(f"[BTC] Checking balance for {self.interchain_address}")
         btc_balance = self.call("getreceivedbyaddress", self.interchain_address, 6)
         return self.btc_to_satoshi(btc_balance)

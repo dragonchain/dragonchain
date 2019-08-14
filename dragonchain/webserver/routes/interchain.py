@@ -15,6 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
+import os
 from typing import Tuple, Dict
 
 import flask
@@ -26,15 +27,90 @@ from dragonchain.webserver import request_authorizer
 from dragonchain.lib.dto import schema
 from dragonchain import exceptions
 
+LEVEL = os.environ["LEVEL"]
+
 _validate_bitcoin_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("BTC"))
 _validate_ethereum_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("ETH"))
 
 
 def apply_routes(app: flask.Flask):
+    # Create Interchain Network
+    app.add_url_rule("/v1/interchains/bitcoin", "create_bitcoin_interchain_v1", create_bitcoin_interchain_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/ethereum", "create_ethereum_interchain_v1", create_ethereum_interchain_v1, methods=["POST"])
+    # Update Interchain Network
+    app.add_url_rule("/v1/interchains/bitcoin/<id>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
+    app.add_url_rule("/v1/interchains/ethereum/<id>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
+    # Create Interchain Transaction
+    app.add_url_rule("/v1/interchains/bitcoin/<id>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/ethereum/<id>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"])
+    # List
+    app.add_url_rule("/v1/interchains/<blockchain>", "list_interchains_v1", list_interchains_v1, methods=["GET"])
+    # Get
+    app.add_url_rule("/v1/interchains/<blockchain>/<id>", "get_interchain_v1", get_interchain_v1, methods=["GET"])
+    # Delete
+    app.add_url_rule("/v1/interchains/<blockchain>/<id>", "delete_interchain_v1", delete_interchain_v1, methods=["DELETE"])
+    # Set Default
+    if LEVEL == "5":
+        app.add_url_rule("/v1/interchains/default", "set_default_network_v1", set_default_network_v1, methods=["POST"])
+
+    # Kept for backwards compatibility
     app.add_url_rule("/public-blockchain-address", "public_blockchain_address_v1", public_blockchain_address_v1, methods=["GET"])
     app.add_url_rule("/v1/public-blockchain-address", "public_blockchain_address_v1", public_blockchain_address_v1, methods=["GET"])
     app.add_url_rule("/public-blockchain-transaction", "public_blockchain_transaction_v1", public_blockchain_transaction_v1, methods=["POST"])
     app.add_url_rule("/v1/public-blockchain-transaction", "public_blockchain_transaction_v1", public_blockchain_transaction_v1, methods=["POST"])
+
+
+@request_authorizer.Authenticated()
+def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def update_bitcoin_interchain_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def update_ethereum_interchain_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def create_bitcoin_transaction_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def create_ethereum_transaction_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def list_interchains_v1(blockchain: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def get_interchain_v1(blockchain: str, id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def delete_interchain_v1(blockchain: str, id: str) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+@request_authorizer.Authenticated()
+def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, True)
+
+
+# Backwards compatibility routes
 
 
 @request_authorizer.Authenticated()
