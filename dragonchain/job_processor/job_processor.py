@@ -37,6 +37,7 @@ NAMESPACE = os.environ["NAMESPACE"]
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"]
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
+SECRET_LOCATION = os.environ["SECRET_LOCATION"]
 
 _log = logger.get_logger()
 _kube: kubernetes.client.BatchV1Api = cast(kubernetes.client.BatchV1Api, None)  # This will always be defined before starting by being set in start()
@@ -166,10 +167,12 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
         volume_mounts = [
             kubernetes.client.V1VolumeMount(name="dockersock", mount_path="/var/run/docker.sock"),
             kubernetes.client.V1VolumeMount(name="faas", mount_path="/etc/openfaas-secret", read_only=True),
+            kubernetes.client.V1VolumeMount(name="secrets", mount_path=SECRET_LOCATION[: SECRET_LOCATION.rfind("/")], read_only=True),
         ]
         volumes = [
             kubernetes.client.V1Volume(name="dockersock", host_path=kubernetes.client.V1HostPathVolumeSource(path="/var/run/docker.sock")),
             kubernetes.client.V1Volume(name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")),
+            kubernetes.client.V1Volume(name="secrets", secret=kubernetes.client.V1SecretVolumeSource(secret_name=f"d-{INTERNAL_ID}-secrets")),
         ]
         if STORAGE_TYPE == "disk":
             volume_mounts.append(kubernetes.client.V1VolumeMount(name="main-storage", mount_path=STORAGE_LOCATION))
@@ -203,14 +206,6 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                                     env=[
                                         kubernetes.client.V1EnvVar(name="EVENT", value=json.dumps(event, separators=(",", ":"))),
                                         kubernetes.client.V1EnvVar(name="SERVICE", value="contract-job"),
-                                        kubernetes.client.V1EnvVar(
-                                            name="SECRETSTRING",
-                                            value_from=kubernetes.client.V1EnvVarSource(
-                                                secret_key_ref=kubernetes.client.V1SecretKeySelector(
-                                                    key="SecretString", name=f"d-{INTERNAL_ID}-secrets"
-                                                )
-                                            ),
-                                        ),
                                     ],
                                     env_from=[
                                         kubernetes.client.V1EnvFromSource(
