@@ -38,17 +38,19 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/interchains/bitcoin", "create_bitcoin_interchain_v1", create_bitcoin_interchain_v1, methods=["POST"])
     app.add_url_rule("/v1/interchains/ethereum", "create_ethereum_interchain_v1", create_ethereum_interchain_v1, methods=["POST"])
     # Update Interchain Network
-    app.add_url_rule("/v1/interchains/bitcoin/<id>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
-    app.add_url_rule("/v1/interchains/ethereum/<id>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
+    app.add_url_rule("/v1/interchains/bitcoin/<name>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
+    app.add_url_rule("/v1/interchains/ethereum/<name>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
     # Create Interchain Transaction
-    app.add_url_rule("/v1/interchains/bitcoin/<id>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
-    app.add_url_rule("/v1/interchains/ethereum/<id>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/bitcoin/<name>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
+    app.add_url_rule(
+        "/v1/interchains/ethereum/<name>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"]
+    )
     # List
     app.add_url_rule("/v1/interchains/<blockchain>", "list_interchains_v1", list_interchains_v1, methods=["GET"])
     # Get
-    app.add_url_rule("/v1/interchains/<blockchain>/<id>", "get_interchain_v1", get_interchain_v1, methods=["GET"])
+    app.add_url_rule("/v1/interchains/<blockchain>/<name>", "get_interchain_v1", get_interchain_v1, methods=["GET"])
     # Delete
-    app.add_url_rule("/v1/interchains/<blockchain>/<id>", "delete_interchain_v1", delete_interchain_v1, methods=["DELETE"])
+    app.add_url_rule("/v1/interchains/<blockchain>/<name>", "delete_interchain_v1", delete_interchain_v1, methods=["DELETE"])
     # Set Default
     if LEVEL == "5":
         app.add_url_rule("/v1/interchains/default", "set_default_network_v1", set_default_network_v1, methods=["POST"])
@@ -71,22 +73,22 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated()
-def update_bitcoin_interchain_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
 @request_authorizer.Authenticated()
-def update_ethereum_interchain_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
 @request_authorizer.Authenticated()
-def create_bitcoin_transaction_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
 @request_authorizer.Authenticated()
-def create_ethereum_transaction_v1(id: str) -> Tuple[str, int, Dict[str, str]]:
+def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
@@ -96,12 +98,12 @@ def list_interchains_v1(blockchain: str) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated()
-def get_interchain_v1(blockchain: str, id: str) -> Tuple[str, int, Dict[str, str]]:
+def get_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
 @request_authorizer.Authenticated()
-def delete_interchain_v1(blockchain: str, id: str) -> Tuple[str, int, Dict[str, str]]:
+def delete_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 

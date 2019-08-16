@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import web3
 
@@ -34,13 +34,13 @@ class TestEthereumMethods(unittest.TestCase):
             {
                 "version": "1",
                 "name": "banana",
-                "network_address": "http://yeah",
+                "rpc_address": "http://yeah",
                 "chain_id": 3,
                 "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
             }
         )
         self.assertEqual(client.name, "banana")
-        self.assertEqual(client.network_address, "http://yeah")
+        self.assertEqual(client.rpc_address, "http://yeah")
         self.assertEqual(client.chain_id, 3)
         self.assertEqual(client.address, "0xe49E4BDA371C97ac89332bCd1281d1Bc17D55955")
 
@@ -145,9 +145,76 @@ class TestEthereumMethods(unittest.TestCase):
             self.client.export_as_at_rest(),
             {
                 "version": "1",
+                "blockchain": "ethereum",
                 "name": "banana",
-                "network_address": "http://whatever",
+                "rpc_address": "http://whatever",
                 "chain_id": 3,
                 "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
             },
         )
+
+    @patch("dragonchain.lib.dto.eth.EthereumNetwork.check_rpc_chain_id", return_value=1)
+    def test_new_from_user_input_defaults(self, mock_check_chain_id):
+        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 1})
+        self.assertEqual(client.chain_id, 1)
+        self.assertTrue(bool(client.address))  # Ensure we got an address (private key was generated for us)
+        self.assertEqual(client.rpc_address, "http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545")
+        mock_check_chain_id.return_value = 2
+        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 2})
+        self.assertEqual(client.rpc_address, "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545")
+        mock_check_chain_id.return_value = 3
+        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 3})
+        self.assertEqual(client.rpc_address, "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545")
+        mock_check_chain_id.return_value = 1
+        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 61})
+        self.assertEqual(client.rpc_address, "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545")
+        self.assertEqual(client.chain_id, 1)  # Ensure the chain id for ETC mainnet with our node got switche properly
+
+    @patch("dragonchain.lib.dto.eth.EthereumNetwork.check_rpc_chain_id", return_value=1)
+    def test_new_from_user_input_sets_good_private_keys(self, mock_check_chain_id):
+        # Good hex key without 0x
+        clienta = eth.new_from_user_input(
+            {"version": "1", "name": "banana", "chain_id": 1, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+        )
+        # Good hex key with 0x
+        clientb = eth.new_from_user_input(
+            {"version": "1", "name": "banana", "chain_id": 1, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+        )
+        # Good base64 key
+        clientc = eth.new_from_user_input(
+            {"version": "1", "name": "banana", "chain_id": 1, "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="}
+        )
+        self.assertEqual(clienta.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
+        self.assertEqual(clientb.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
+        self.assertEqual(clientc.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
+
+    def test_new_from_user_input_throws_with_bad_keys(self):
+        # Bad hex
+        self.assertRaises(
+            exceptions.BadRequest,
+            eth.new_from_user_input,
+            {"version": "1", "name": "banana", "chain_id": 1, "private_key": "0xnothexnothexab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"},
+        )
+        # Bad base64
+        self.assertRaises(
+            exceptions.BadRequest,
+            eth.new_from_user_input,
+            {"version": "1", "name": "banana", "chain_id": 1, "private_key": "badrEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="},
+        )
+
+    def test_new_from_user_inputs_throws_with_no_rpc_and_bad_chain_id(self):
+        # No rpc or chain id
+        self.assertRaises(exceptions.BadRequest, eth.new_from_user_input, {"version": "1", "name": "banana"})
+        # No rpc and bad chain id
+        self.assertRaises(exceptions.BadRequest, eth.new_from_user_input, {"version": "1", "name": "banana", "chain_id": 999})
+
+    @patch("dragonchain.lib.dto.eth.EthereumNetwork.check_rpc_chain_id", return_value=1)
+    def test_new_from_user_input_throws_with_mismatching_chain_id(self, mock_check_chain_id):
+        self.assertRaises(exceptions.BadRequest, eth.new_from_user_input, {"version": "1", "name": "banana", "rpc_address": "hi", "chain_id": 999})
+
+    @patch("dragonchain.lib.dto.eth.EthereumNetwork.check_rpc_chain_id", side_effect=RuntimeError)
+    def test_new_from_user_input_throws_with_inaccessable_rpc(self, mock_check_chain_id):
+        self.assertRaises(exceptions.BadRequest, eth.new_from_user_input, {"version": "1", "name": "banana", "rpc_address": "hi", "chain_id": 999})
+
+    def test_new_from_user_input_throws_with_bad_version(self):
+        self.assertRaises(exceptions.BadRequest, eth.new_from_user_input, {"version": "999"})

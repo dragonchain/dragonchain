@@ -46,7 +46,6 @@ class BlockModel(Model):
 
 class InterchainModel(Model):
     name: str
-    network_address: str
 
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network

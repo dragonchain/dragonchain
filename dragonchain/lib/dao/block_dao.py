@@ -43,14 +43,14 @@ def get_verifications_for_l1_block(block_id: str, level: int) -> List[Dict[str, 
         if len(keys) != 0:
             for i in range(len(keys)):
                 keys[i] = f"{FOLDER}/{block_id}-l{level}-{keys[i].decode('utf8')}"
-            return list(map(lambda key: storage.get_json_from_object(key), keys))
+            return [storage.get_json_from_object(x) for x in keys]
     except Exception:
         pass
     # Only fall back to listing from storage if we don't have verifications already saved in redis
     prefix = f"{FOLDER}/{block_id}-l{level}"
     keys = storage.list_objects(prefix)
     _log.info(f"Verification keys by prefix {prefix}: {keys}")
-    return [] if len(keys) == 0 else list(map(lambda key: storage.get_json_from_object(key), keys))
+    return [] if len(keys) == 0 else [storage.get_json_from_object(key) for key in keys]
 
 
 def get_broadcast_dto(higher_level: int, block_id: str) -> Dict[str, Any]:

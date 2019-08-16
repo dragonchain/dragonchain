@@ -19,6 +19,7 @@ import math
 import base64
 from typing import Optional, Dict, Any
 
+import secp256k1
 import requests
 import bit
 
@@ -27,11 +28,74 @@ from dragonchain import exceptions
 from dragonchain import logger
 
 
+DRAGONCHAIN_MAINNET_NODE = "http://internal-Btc-Mainnet-Internal-297595751.us-west-2.elb.amazonaws.com:8332"
+DRAGONCHAIN_TESTNET_NODE = "http://internal-Btc-Testnet-Internal-1334656512.us-west-2.elb.amazonaws.com:18332"
+DRAGONCHAIN_NODE_AUTHORIZATION = "Yml0Y29pbnJwYzpkcmFnb24="  # Username: bitcoinrpc | Password: dragon
+
 CONFIRMATIONS_CONSIDERED_FINAL = 6
 BLOCK_THRESHOLD = 10  # The number of blocks that can pass by before trying to send another transaction
 MINIMUM_SATOSHI_PER_BYTE = 10
 
 _log = logger.get_logger()
+
+
+def new_from_user_input(user_input: Dict[str, Any]) -> "BitcoinNetwork":
+    """Create a new BitcoinNetwork model from user input
+    Args:
+        user_input: User dictionary input (assumed already passing create_bitcoin_interchain_schema)
+    Returns:
+        Instantiated BitcoinNetwork client
+    Raises:
+        exceptions.BadRequest: With bad input
+    """
+    dto_version = user_input.get("version")
+    if dto_version == "1":
+        if not user_input.get("private_key"):
+            # We need to create a private key if not provided
+            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+            user_input["utxo_scan"] = False
+        try:
+            # Check if the provided private key is in WIF format
+            key = bit.wif_to_key(user_input["private_key"])
+            testnet = key.version == "test"
+            if isinstance(user_input.get("testnet"), bool) and testnet != user_input["testnet"]:
+                raise exceptions.BadRequest(f"WIF key was {'testnet' if testnet else 'mainnet'} which doesn't match provided testnet bool")
+            # Extract values from WIF
+            user_input["testnet"] = testnet
+            user_input["private_key"] = base64.b64encode(key.to_bytes()).decode("ascii")
+        except Exception as e:
+            if isinstance(e, exceptions.BadRequest):
+                raise
+            # Provided key is not WIF
+            if not isinstance(user_input.get("testnet"), bool):
+                raise exceptions.BadRequest("Parameter boolean 'testnet' must be provided if key is not WIF")
+
+        # Check for bitcoin node address
+        if not user_input.get("rpc_address"):
+            # Default to Dragonchain managed nodes if not provided
+            user_input["rpc_address"] = DRAGONCHAIN_TESTNET_NODE if user_input["testnet"] else DRAGONCHAIN_MAINNET_NODE
+            user_input["rpc_authorization"] = DRAGONCHAIN_NODE_AUTHORIZATION
+
+        # Create the actual client and check that the given node is reachable
+        try:
+            client = BitcoinNetwork(
+                name=user_input["name"],
+                testnet=user_input["testnet"],
+                b64_private_key=user_input["private_key"],
+                rpc_address=user_input["rpc_address"],
+                authorization=user_input.get("rpc_authorization"),  # Can be none
+            )
+        except Exception:
+            raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
+        try:
+            client.ping()
+        except Exception as e:
+            raise exceptions.BadRequest(f"Provided bitcoin node doesn't seem reachable. Error: {e}")
+        # Now finally register the given address
+        client.register_address(user_input.get("utxo_scan") or False)
+        return client
+    else:
+        raise exceptions.BadRequest(f"User input version {dto_version} not supported")
 
 
 def new_from_at_rest(bitcoin_network_at_rest: Dict[str, Any]) -> "BitcoinNetwork":
@@ -47,7 +111,7 @@ def new_from_at_rest(bitcoin_network_at_rest: Dict[str, Any]) -> "BitcoinNetwork
     if dto_version == "1":
         return BitcoinNetwork(
             name=bitcoin_network_at_rest["name"],
-            network_address=bitcoin_network_at_rest["network_address"],
+            rpc_address=bitcoin_network_at_rest["rpc_address"],
             testnet=bitcoin_network_at_rest["testnet"],
             b64_private_key=bitcoin_network_at_rest["private_key"],
             authorization=bitcoin_network_at_rest["authorization"],
@@ -57,15 +121,19 @@ def new_from_at_rest(bitcoin_network_at_rest: Dict[str, Any]) -> "BitcoinNetwork
 
 
 class BitcoinNetwork(model.InterchainModel):
-    def __init__(self, name: str, network_address: str, testnet: bool, b64_private_key: str, authorization: Optional[str] = None):
+    def __init__(self, name: str, rpc_address: str, testnet: bool, b64_private_key: str, authorization: Optional[str] = None):
         self.name = name
-        self.network_address = network_address
+        self.rpc_address = rpc_address
         self.authorization = authorization
         self.testnet = testnet
         if testnet:
             self.priv_key = bit.PrivateKeyTestnet.from_bytes(base64.b64decode(b64_private_key))
         else:
             self.priv_key = bit.Key.from_bytes(base64.b64decode(b64_private_key))
+
+    def ping(self) -> None:
+        """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
+        self._call("ping")
 
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network
@@ -213,14 +281,19 @@ class BitcoinNetwork(model.InterchainModel):
         Raises:
             exceptions.RPCError: If the remote call returned an error
         """
-        response = requests.post(
-            self.network_address,
+        # Note: Even though sending json, documentation still says to use text/plain content type header
+        # https://bitcoin.org/en/developer-reference#remote-procedure-calls-rpcs
+        r = requests.post(
+            self.rpc_address,
             json={"method": method, "params": list(args), "id": "1", "jsonrpc": "1.0"},
-            headers={"Authorization": f"Basic {self.authorization}"},
+            headers={"Authorization": f"Basic {self.authorization}", "Content-Type": "text/plain"},
             timeout=30,
-        ).json()
+        )
+        if r.status_code != 200:
+            raise exceptions.RPCError(f"Error from bitcoin node with http status code {r.status_code}")
+        response = r.json()
         if response.get("error") or response.get("errors"):
-            raise exceptions.RPCError(f"The RPC client got an error response: {response}")
+            raise exceptions.RPCError(f"The RPC call got an error response: {response}")
         return response["result"]
 
     def export_as_at_rest(self) -> Dict[str, Any]:
@@ -230,8 +303,9 @@ class BitcoinNetwork(model.InterchainModel):
         """
         return {
             "version": "1",
+            "blockchain": "bitcoin",
             "name": self.name,
-            "network_address": self.network_address,
+            "rpc_address": self.rpc_address,
             "authorization": self.authorization,
             "testnet": self.testnet,
             "private_key": base64.b64encode(self.priv_key.to_bytes()).decode("ascii"),

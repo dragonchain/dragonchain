@@ -18,6 +18,7 @@
 import base64
 from typing import Dict, Any
 
+import secp256k1
 import web3
 import web3.gas_strategies.time_based
 import eth_keys
@@ -26,11 +27,82 @@ from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
 
+# Mainnet ETH
+DRAGONCHAIN_MAINNET_NODE = "http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545"
+# Testnet ETH
+DRAGONCHAIN_ROPSTEN_NODE = "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545"
+# Mainnet ETC
+DRAGONCHAIN_CLASSIC_NODE = "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545"
+# Testnet ETC
+DRAGONCHAIN_MORDEN_NODE = "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545"
+
+
 CONFIRMATIONS_CONSIDERED_FINAL = 12
 BLOCK_THRESHOLD = 30  # The number of blocks that can pass by before trying to send another transaction
 STANDARD_GAS_LIMIT = 60000
 
 _log = logger.get_logger()
+
+
+def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":
+    """Create a new EthereumNetwork model from user input
+    Args:
+        user_input: User dictionary input (assumed already passing create_ethereum_interchain_schema)
+    Returns:
+        Instantiated EthereumNetwork client
+    Raises:
+        exceptions.BadRequest: With bad input
+    """
+    dto_version = user_input.get("version")
+    if dto_version == "1":
+        if not user_input.get("private_key"):
+            # We need to create a private key if not provided
+            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+        else:
+            try:
+                # Check if user provided key is hex and convert if necessary
+                if len(user_input["private_key"]) == 66:  # Ethereum private keys in hex are 66 chars with leading 0x
+                    user_input["private_key"] = user_input["private_key"][2:]  # Trim the 0x
+                if len(user_input["private_key"]) == 64:  # Ethereum private keys in hex are 64 chars
+                    user_input["private_key"] = base64.b64encode(bytes.fromhex(user_input["private_key"])).decode("ascii")
+            except Exception:
+                # If there's an error here, it's a bad key. Just set it to something bad as bad keys are caught later when making the client
+                user_input["private_key"] = "a"
+        # Use preset rpc addresses if user didn't provide one
+        if not user_input.get("rpc_address"):
+            if user_input.get("chain_id") == 1:
+                user_input["rpc_address"] = DRAGONCHAIN_MAINNET_NODE
+            elif user_input.get("chain_id") == 3:
+                user_input["rpc_address"] = DRAGONCHAIN_ROPSTEN_NODE
+            elif user_input.get("chain_id") == 61:
+                user_input["rpc_address"] = DRAGONCHAIN_CLASSIC_NODE
+                user_input["chain_id"] = 1  # Our parity ETC mainnet node reports chain id 1
+            elif user_input.get("chain_id") == 2:
+                user_input["rpc_address"] = DRAGONCHAIN_MORDEN_NODE
+            else:
+                raise exceptions.BadRequest(
+                    "If an rpc address is not provided, a valid chain id must be provided. ETH_MAIN = 1, ETH_ROPSTEN = 3, ETC_MAIN = 61, ETC_MORDEN = 2"
+                )
+        # Create our client with a still undetermined chain id
+        try:
+            client = EthereumNetwork(
+                name=user_input["name"], rpc_address=user_input["rpc_address"], b64_private_key=user_input["private_key"], chain_id=0
+            )
+        except Exception:
+            raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
+        # Check that we can connect and get the rpc's reported chain id
+        try:
+            reported_chain_id = client.check_rpc_chain_id()
+        except Exception as e:
+            raise exceptions.BadRequest(f"Error trying to contact ethereum rpc node. Error: {e}")
+        # Sanity check if user provided chain id that it matches the what the RPC node reports
+        if user_input.get("chain_id") and user_input["chain_id"] != reported_chain_id:
+            raise exceptions.BadRequest(f"User provided chain id {user_input['chain_id']}, but RPC reported chain id {reported_chain_id}")
+        # Now set the chain id after it's been checked
+        client.chain_id = reported_chain_id
+        return client
+    else:
+        raise exceptions.BadRequest(f"User input version {dto_version} not supported")
 
 
 def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwork":
@@ -46,7 +118,7 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
     if dto_version == "1":
         return EthereumNetwork(
             name=ethereum_network_at_rest["name"],
-            network_address=ethereum_network_at_rest["network_address"],
+            rpc_address=ethereum_network_at_rest["rpc_address"],
             chain_id=ethereum_network_at_rest["chain_id"],
             b64_private_key=ethereum_network_at_rest["private_key"],
         )
@@ -55,15 +127,19 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
 
 
 class EthereumNetwork(model.InterchainModel):
-    def __init__(self, name: str, network_address: str, chain_id: int, b64_private_key: str):
+    def __init__(self, name: str, rpc_address: str, chain_id: int, b64_private_key: str):
         self.name = name
-        self.network_address = network_address
+        self.rpc_address = rpc_address
         self.chain_id = chain_id
         self.priv_key = eth_keys.keys.PrivateKey(base64.b64decode(b64_private_key))
         self.address = self.priv_key.public_key.to_checksum_address()
-        self.w3 = web3.Web3(web3.HTTPProvider(self.network_address))
+        self.w3 = web3.Web3(web3.HTTPProvider(self.rpc_address))
         # Set gas strategy
         self.w3.eth.setGasPriceStrategy(web3.gas_strategies.time_based.medium_gas_price_strategy)
+
+    def check_rpc_chain_id(self) -> int:
+        """Get the network ID that the RPC node returns. This can also act as a ping for the RPC"""
+        return int(self.w3.net.version)
 
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network
@@ -174,8 +250,9 @@ class EthereumNetwork(model.InterchainModel):
         """
         return {
             "version": "1",
+            "blockchain": "ethereum",
             "name": self.name,
-            "network_address": self.network_address,
+            "rpc_address": self.rpc_address,
             "chain_id": self.chain_id,
             "private_key": base64.b64encode(self.priv_key.to_bytes()).decode("ascii"),
         }

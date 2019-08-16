@@ -32,14 +32,14 @@ class TestBitcoinMethods(unittest.TestCase):
             {
                 "version": "1",
                 "name": "banana",
-                "network_address": "http://yeah",
+                "rpc_address": "http://yeah",
                 "testnet": True,
                 "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
                 "authorization": None,
             }
         )
         self.assertEqual(client.name, "banana")
-        self.assertEqual(client.network_address, "http://yeah")
+        self.assertEqual(client.rpc_address, "http://yeah")
         self.assertTrue(client.testnet)
         self.assertEqual(client.priv_key.address, "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK")
         self.assertIsNone(client.authorization)
@@ -144,31 +144,95 @@ class TestBitcoinMethods(unittest.TestCase):
             self.client.export_as_at_rest(),
             {
                 "version": "1",
+                "blockchain": "bitcoin",
                 "name": "banana",
-                "network_address": "http://whatever",
+                "rpc_address": "http://whatever",
                 "authorization": "auth",
                 "testnet": True,
                 "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
             },
         )
 
-    @patch("requests.post", return_value=MagicMock(json=MagicMock(return_value={"result": "MyResult"})))
+    @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
     def test_rpc_request_success(self, mock_post):
         response = self.client._call("myMethod", "arg1", 2, True)
         self.assertEqual(response, "MyResult")
         mock_post.assert_called_once_with(
             "http://whatever",
             json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
-            headers={"Authorization": "Basic auth"},
+            headers={"Authorization": "Basic auth", "Content-Type": "text/plain"},
             timeout=30,
         )
 
-    @patch("requests.post", return_value=MagicMock(json=MagicMock(return_value={"error": "MyResult"})))
+    @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
     def test_rpc_request_error(self, mock_post):
         self.assertRaises(exceptions.RPCError, self.client._call, "myMethod", "arg1", 2, True)
         mock_post.assert_called_once_with(
             "http://whatever",
             json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
-            headers={"Authorization": "Basic auth"},
+            headers={"Authorization": "Basic auth", "Content-Type": "text/plain"},
             timeout=30,
         )
+
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping")
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.register_address")
+    def test_from_user_input_wif_defaults(self, mock_register, mock_ping):
+        client = btc.new_from_user_input({"version": "1", "name": "banana", "private_key": "L1EB9j5D3PN3dZFoKKczBy9ieav5cx2dAWASBHmhS9Yn7Go5U4dh"})
+        mock_ping.assert_called_once()
+        mock_register.assert_called_once_with(False)
+        self.assertEqual(client.name, "banana")
+        self.assertEqual(client.rpc_address, "http://internal-Btc-Mainnet-Internal-297595751.us-west-2.elb.amazonaws.com:8332")
+        self.assertEqual(client.authorization, "Yml0Y29pbnJwYzpkcmFnb24=")
+        self.assertEqual(client.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
+        self.assertFalse(client.testnet)
+
+    def test_from_user_input_wif_throws_with_mismatching_testnet(self):
+        self.assertRaises(
+            exceptions.BadRequest,
+            btc.new_from_user_input,
+            {"version": "1", "name": "banana", "testnet": True, "private_key": "L1EB9j5D3PN3dZFoKKczBy9ieav5cx2dAWASBHmhS9Yn7Go5U4dh"},
+        )
+
+    def test_from_user_input_requires_testnet_with_b64_key(self):
+        self.assertRaises(
+            exceptions.BadRequest,
+            btc.new_from_user_input,
+            {"version": "1", "name": "banana", "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="},
+        )
+
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping")
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.register_address")
+    def test_from_user_input_works_with_no_provided_key(self, mock_register, mock_ping):
+        client = btc.new_from_user_input({"version": "1", "name": "nokey", "testnet": True})
+        mock_ping.assert_called_once()
+        mock_register.assert_called_once_with(False)
+        self.assertEqual(client.name, "nokey")
+        self.assertEqual(client.rpc_address, "http://internal-Btc-Testnet-Internal-1334656512.us-west-2.elb.amazonaws.com:18332")
+        self.assertEqual(client.authorization, "Yml0Y29pbnJwYzpkcmFnb24=")
+        self.assertTrue(bool(client.priv_key.to_bytes()))
+        self.assertTrue(client.testnet)
+
+    def test_from_user_input_throws_bad_version(self):
+        self.assertRaises(exceptions.BadRequest, btc.new_from_user_input, {"version": "99999"})
+
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping", side_effect=RuntimeError)
+    def test_from_user_input_throws_if_node_not_accessible(self, mock_ping):
+        self.assertRaises(exceptions.BadRequest, btc.new_from_user_input, {"version": "1", "name": "nokey", "testnet": True})
+
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping")
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.register_address")
+    def test_from_user_input_uses_provided_node_and_auth(self, mock_register, mock_ping):
+        client = btc.new_from_user_input({"version": "1", "name": "nokey", "testnet": True, "rpc_address": "thing", "rpc_authorization": "yup"})
+        self.assertEqual(client.rpc_address, "thing")
+        self.assertEqual(client.authorization, "yup")
+
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping")
+    @patch("dragonchain.lib.dto.btc.BitcoinNetwork.register_address")
+    def test_from_user_input_scans_if_requested(self, mock_register, mock_ping):
+        btc.new_from_user_input(
+            {"version": "1", "name": "nokey", "testnet": True, "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY=", "utxo_scan": True}
+        )
+        mock_register.assert_called_once_with(True)
+
+    def test_from_user_input_throws_with_bad_private_key(self):
+        self.assertRaises(exceptions.BadRequest, btc.new_from_user_input, {"version": "1", "name": "nokey", "testnet": True, "private_key": "badKey"})

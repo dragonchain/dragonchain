@@ -34,7 +34,7 @@ def get_interchain_client(blockchain: str, name: str) -> "model.InterchainModel"
     """Get a specific interchain client
     Args:
         blockchain: the blockchain of the desired client (i.e. bitcoin, ethereum, etc)
-        name: the name (id) of the network to set as default (user defined on the creation of the interchain)
+        name: the name (id) of the network to get (user defined on the creation of the interchain)
     Raises:
         exceptions.NotFound: When the requested client can't be found
     """
@@ -72,3 +72,12 @@ def get_default_interchain_client() -> "model.InterchainModel":
         return get_interchain_client(default_dto.get("blockchain"), default_dto.get("name"))
     else:
         raise NotImplementedError(f"Default dto error. Version {default_dto.get('version')} not supported")
+
+
+def delete_interchain_client(blockchain: str, name: str) -> None:
+    """Delete an interchain client from this chain
+    Args:
+        blockchain: the blockchain of the desired client (i.e. bitcoin, ethereum, etc)
+        name: the name (id) of the network to delete (user defined on the creation of the interchain)
+    """
+    storage.delete(f"{FOLDER}/{blockchain}/{name}")

@@ -704,3 +704,40 @@ update_transaction_type_request_schema_v1 = {
     "additionalProperties": False,
     "required": ["version", "custom_indexes"],
 }
+
+create_bitcoin_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "testnet": {"type": "boolean"},
+        "private_key": {"type": "string"},
+        "utxo_scan": {"type": "boolean"},
+        "rpc_address": {"type": "string"},
+        "rpc_authorization": {"type": "string"}
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"]
+}
+
+create_ethereum_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "private_key": {"type": "string"},
+        "rpc_address": {"type": "string"},
+        "chain_id": {"type": "integer"}
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"]
+}
+
+blank_todo_schema_v1 = {
+    "type": "object",
+    "properties": {
+
+    },
+    "additionalProperties": False,
+    "required": []
+}

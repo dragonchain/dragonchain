@@ -54,3 +54,8 @@ class TestTransactionTypeDAO(unittest.TestCase):
     @patch("dragonchain.lib.interfaces.storage.get_json_from_object", return_value={"version": "banana"})
     def test_get_default_client_raises_with_unkown_version(self, mock_get_storage):
         self.assertRaises(NotImplementedError, interchain_dao.get_default_interchain_client)
+
+    @patch("dragonchain.lib.interfaces.storage.delete")
+    def test_delete_interchain(self, mock_delete):
+        interchain_dao.delete_interchain_client("greater", "good")
+        mock_delete.assert_called_once_with("INTERCHAINS/greater/good")
