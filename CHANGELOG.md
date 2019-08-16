@@ -4,6 +4,24 @@
 
 - **Feature:**
   - Switch to using files for reading secrets for dynamic secret update support
+  - Add support for creating/saving various interchain networks, including custom interchain nodes, keys, etc
+    - Note this also means that a chain can have multiple addresses for the same type of network now (i.e. many ETH addresses)
+  - Add routes for refactored interchain support:
+    - `POST /interchains/bitcoin` Create a bitcoin network for the dragonchain to use
+    - `POST /interchains/ethereum` Create an ethereum network for the dragonchain to use
+    - `PATCH /interchains/bitcoin/<id>` Update an already existing bitcoin network of dragonchain
+    - `PATCH /interchains/ethereum/<id>` Update an already existing ethereum network of dragonchain
+    - `POST /interchains/bitcoin/<id>/transaction` Create a bitcoin transaction using one of the chain's networks
+    - `POST /interchains/ethereum/<id>/transaction` Create a ethereum transaction using one of the chain's networks
+    - `GET /interchains/<blockchain>` Get a list of all registered Dragonchain interchains
+    - `GET /interchains/<blockchain>/<id>` Get a particular interchain network from the chain
+    - `DELETE /interchains/<blockchain>/<id>` Delete a particular interchain network from the chain
+    - `POST /interchains/default` (L5 only) Set a default network for level 5 chains to use
+- **Development:**
+  - Refactored interchain support for easier future integration with further interchains
+- **Packaging:**
+  - Updated boto3, kubernetes, redis, and web3 dependencies
+  - Removed unnecessary dependencies, and added speedup extras for aiohttp
 
 ## 3.4.46
 
