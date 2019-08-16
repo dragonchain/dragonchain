@@ -58,13 +58,7 @@ class TestEthereumMethods(unittest.TestCase):
         self.assertEqual(response, "0xec3e733bb68abb3ffa87a12b039a749fccaf58446eeeeda93ad0d59f51038ff2")
 
         self.client.sign_transaction.assert_called_once_with(
-            {
-                "nonce": "0x0",
-                "to": "0x0000000000000000000000000000000000000000",
-                "from": "0xe49E4BDA371C97ac89332bCd1281d1Bc17D55955",
-                "value": "0x0",
-                "data": "0x44432d4c353a307868617368",
-            }
+            {"to": "0x0000000000000000000000000000000000000000", "value": "0x0", "data": "0x44432d4c353a307868617368"}
         )
         self.client.w3.eth.sendRawTransaction.assert_called_once_with("signed_transaction")
 

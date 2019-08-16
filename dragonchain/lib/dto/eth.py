@@ -34,6 +34,14 @@ _log = logger.get_logger()
 
 
 def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwork":
+    """Instantiate a new EthereumNetwork model from storage
+    Args:
+        ethereum_network_at_rest: The dto of the at-rest network from storage
+    Returns:
+        Instantiated EthereumNetwork client
+    Raises:
+        NotImplementedError: When the version of the dto passed in is unknown
+    """
     dto_version = ethereum_network_at_rest.get("version")
     if dto_version == "1":
         return EthereumNetwork(
@@ -58,16 +66,38 @@ class EthereumNetwork(model.InterchainModel):
         self.w3.eth.setGasPriceStrategy(web3.gas_strategies.time_based.medium_gas_price_strategy)
 
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
+        """Sign a transaction for this network
+        Args:
+            raw_transaction: The dictionary of the raw transaction containing:
+                to: hex string of the to address
+                value: The amount of eth (in wei) to send (in hex string)
+                data: Optional hex string for arbitrary data
+                nonce: Optional field for nonce (will automatically determine if not provided)
+                gasPrice: Optional field to set gasPrice of the transaction (as a hex string in wei)
+                gas: Optional gas limit for this transaction (as a hex string). Defaults to 60000
+        Returns:
+            String of the signed transaction as hex
+        """
         _log.info(f"[ETHEREUM] Signing raw transaction: {raw_transaction}")
+        raw_transaction["from"] = self.address
         raw_transaction["chainId"] = self.chain_id
         if not raw_transaction.get("nonce"):
             raw_transaction["nonce"] = self.w3.toHex(self.w3.eth.getTransactionCount(self.address))
-        if not raw_transaction.get("gasPrice") or not raw_transaction.get("gas"):
+        if not raw_transaction.get("gasPrice"):
             raw_transaction["gasPrice"] = self.w3.toHex(self._calculate_transaction_fee())
+        if not raw_transaction.get("gas"):
             raw_transaction["gas"] = self.w3.toHex(STANDARD_GAS_LIMIT)
         return self.w3.eth.account.sign_transaction(raw_transaction, self.priv_key).rawTransaction.hex()
 
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
+        """Check if a transaction is considered confirmed
+        Args:
+            transaction_hash: The hash of the transaction to check
+        Returns:
+            Boolean if the transaction has receieved enough confirmations to be considered confirmed
+        Raises:
+            exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
+        """
         _log.info(f"[ETHEREUM] Getting confirmations for {transaction_hash}")
         try:
             transaction_block_number = self.w3.eth.getTransaction(transaction_hash)["blockNumber"]
@@ -78,25 +108,49 @@ class EthereumNetwork(model.InterchainModel):
         return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
 
     def check_balance(self) -> int:
+        """Check the balance of the address for this network
+        Returns:
+            The amount of wei in the account
+        """
         return self.w3.eth.getBalance(self.address)
 
     def get_transaction_fee_estimate(self, gas_limit: int = STANDARD_GAS_LIMIT) -> int:
+        """Calculate the transaction fee estimate for a transaction given current fee rates
+        Args:
+            gas_limit: The gas limit to use for this calculation. Defaults to 60000
+        Returns:
+            The amount of estimated transaction fee cost in wei
+        """
         return int(self._calculate_transaction_fee() * gas_limit)
 
     def get_current_block(self) -> int:
+        """Get the current latest block number of the network
+        Returns:
+            The latest known mined block number on the network
+        """
         return self.w3.eth.getBlock("latest")["number"]
 
     def should_retry_broadcast(self, last_sent_block: int) -> bool:
+        """Check whether a new broadcast should be attempted, given a number of blocks past (for L5)
+        Args:
+            last_sent_block: The block when the transaction was last attempted to be sent
+        Returns:
+            Boolean whether a broadcast should be re-attempted
+        """
         return self.get_current_block() - last_sent_block > BLOCK_THRESHOLD
 
     def _publish_transaction(self, transaction_payload: str) -> str:
+        """Publish a transaction to this network with a certain data payload
+        Args:
+            transaction_payload: The arbitrary data to send with this transaction
+        Returns:
+            The hex string of the published transaction hash
+        """
         _log.info(f"[ETHEREUM] Publishing transaction. payload = {transaction_payload}")
         # Sign transaction data
         signed_transaction = self.sign_transaction(
             {
-                "nonce": self.w3.toHex(self.w3.eth.getTransactionCount(self.address)),
                 "to": "0x0000000000000000000000000000000000000000",
-                "from": self.address,
                 "value": self.w3.toHex(0),
                 "data": self.w3.toHex(transaction_payload.encode("utf-8")),
             }
@@ -105,11 +159,19 @@ class EthereumNetwork(model.InterchainModel):
         return self.w3.toHex(self.w3.eth.sendRawTransaction(signed_transaction))
 
     def _calculate_transaction_fee(self) -> int:
+        """Get the current gas price estimate
+        Returns:
+            Gas price estimate in wei
+        """
         gas_price = int(self.w3.eth.generateGasPrice())
         _log.info(f"[ETHEREUM] Current estimated gas price: {gas_price}")
         return gas_price
 
     def export_as_at_rest(self) -> Dict[str, Any]:
+        """Export this network to be saved in storage
+        Returns:
+            DTO as a dictionary to be saved
+        """
         return {
             "version": "1",
             "name": self.name,
