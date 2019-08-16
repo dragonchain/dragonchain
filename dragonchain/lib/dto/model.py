@@ -15,7 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import Set, Dict, Any, Union
+from typing import Set, Dict, Any
 
 # TODO With python 3.8, implement protocols (static duck typing) for models
 
@@ -51,17 +51,16 @@ class InterchainModel(Model):
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         raise NotImplementedError("This is an abstract method")
 
-    def publish_l5_hash_to_public_network(self, l5_block_hash: str) -> Any:
-        return self.publish_transaction(f"DC-L5:{l5_block_hash}")
+    def publish_l5_hash_to_public_network(self, l5_block_hash: str) -> str:
+        return self._publish_transaction(f"DC-L5:{l5_block_hash}")
 
-    def publish_transaction(self, payload: str) -> Any:
-        raise NotImplementedError("This is an abstract method")
-
-    def is_transaction_confirmed(self, transaction_hash: str) -> Union[bool, str]:
+    def is_transaction_confirmed(self, transaction_hash: str) -> bool:
         """
-        1. Check if approx time has elapsed to warrant a check.
-        2. If so, get the confirmation_info for the specified block(s)
-        3. If confirmation meets criteria, return transaction_id || block_id. else return false.
+        1. Get the confirmation info for the specified transaction
+        2. If the transaction is not found, return None
+        3. Return true || false depending on if the transaction has met the criteria to be considered confirmed
+
+        Throws RPCTransactionNotFound if transaction_hash is not found
         """
         raise NotImplementedError("This is an abstract method")
 
@@ -71,8 +70,11 @@ class InterchainModel(Model):
     def get_transaction_fee_estimate(self) -> int:
         raise NotImplementedError("This is an abstract method")
 
-    def get_current_block(self) -> Any:
+    def get_current_block(self) -> int:
         raise NotImplementedError("This is an abstract method")
 
-    def get_retry_threshold(self) -> int:
+    def should_retry_broadcast(self, last_sent_block: int) -> bool:
+        raise NotImplementedError("This is an abstract method")
+
+    def _publish_transaction(self, payload: str) -> str:
         raise NotImplementedError("This is an abstract method")

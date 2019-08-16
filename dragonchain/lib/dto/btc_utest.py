@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain import exceptions
@@ -24,127 +24,151 @@ from dragonchain.lib.dto import btc
 
 
 class TestBitcoinMethods(unittest.TestCase):
-    @patch("dragonchain.lib.interfaces.networks.btc.secrets.get_dc_secret", return_value="KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=")
-    def setUp(self, mock_get_secret):
-        self.client = btc.BTCClient("BTC_TESTNET3")
-        mock_get_secret.assert_called_once_with("btc-testnet3-private-key")
+    def setUp(self):
+        self.client = btc.BitcoinNetwork("banana", "http://whatever", True, "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=", "auth")
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value="MyFakeTransactionHash")
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient._create_raw_transaction", return_value={"nonce": "0x0"})
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.sign_transaction", return_value="signed_transaction")
-    def test_publish_creates_signs_and_sends(self, mock_sign, mock_create, mock_call):
-        response = self.client.publish_transaction("DC-L5:0xhash")
+    def test_new_from_at_rest_good_input_v1(self):
+        client = btc.new_from_at_rest(
+            {
+                "version": "1",
+                "name": "banana",
+                "network_address": "http://yeah",
+                "testnet": True,
+                "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
+                "authorization": None,
+            }
+        )
+        self.assertEqual(client.name, "banana")
+        self.assertEqual(client.network_address, "http://yeah")
+        self.assertTrue(client.testnet)
+        self.assertEqual(client.priv_key.address, "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK")
+        self.assertIsNone(client.authorization)
+
+    def test_new_from_at_rest_bad_version(self):
+        self.assertRaises(NotImplementedError, btc.new_from_at_rest, {"version": "9999999"})
+
+    def test_should_retry_broadcast_true(self):
+        self.client.get_current_block = MagicMock(return_value=100)
+        self.assertTrue(self.client.should_retry_broadcast(1))
+        self.client.get_current_block.assert_called_once()
+
+    def test_should_retry_broadcast_false(self):
+        self.client.get_current_block = MagicMock(return_value=100)
+        self.assertFalse(self.client.should_retry_broadcast(99))
+        self.client.get_current_block.assert_called_once()
+
+    def test_publish_creates_signs_and_sends(self):
+        self.client._call = MagicMock(return_value="MyFakeTransactionHash")
+        self.client.sign_transaction = MagicMock(return_value="signed_transaction")
+        response = self.client._publish_transaction("DC-L5:0xhash")
         self.assertEqual(response, "MyFakeTransactionHash")
 
-        mock_call.assert_called_once_with("sendrawtransaction", "signed_transaction")
-        mock_sign.assert_called_once_with({"nonce": "0x0"})
-        mock_create.assert_called_once_with("DC-L5:0xhash")
+        self.client._call.assert_called_once_with("sendrawtransaction", "signed_transaction")
+        self.client.sign_transaction.assert_called_once_with({"data": "DC-L5:0xhash"})
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient._get_utxos", return_value=[])
-    def test_sign_transaction(self, mock_get_utxos):
-        self.client.private_key.create_transaction = MagicMock()
-        self.client.private_key.sign_transaction = MagicMock(return_value="signature")
+    def test_sign_transaction(self):
+        self.client._get_utxos = MagicMock(return_value=[])
+        self.client.priv_key.create_transaction = MagicMock()
+        self.client.priv_key.sign_transaction = MagicMock(return_value="signature")
         fake_transaction = {"fee": 15, "data": "hello world"}
         self.assertEqual("signature", self.client.sign_transaction(fake_transaction))
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value=1538271)
-    def test_get_current_block_calls_rpc(self, mock_call):
+    def test_get_current_block_calls_rpc(self):
+        self.client._call = MagicMock(return_value=1538271)
         response = self.client.get_current_block()
         self.assertEqual(response, 1538271)
 
-        mock_call.assert_called_once_with("getblockcount")
+        self.client._call.assert_called_once_with("getblockcount")
 
-    def test_get_retry_threshold(self):
-        response = self.client.get_retry_threshold()
-        self.assertEqual(response, 10)
-
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value=1.543543)
-    def test_check_balance(self, mock_call):
+    def test_check_balance(self):
+        self.client._call = MagicMock(return_value=1.543543)
         response = self.client.check_balance()
-        self.assertEqual(response, int(1.543543 * 100000000))
+        self.assertEqual(response, 154354300)
+        self.client._call.assert_called_once_with("getreceivedbyaddress", "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK", 6)
 
-        mock_call.assert_called_once_with("getreceivedbyaddress", "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK", 6)
-
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient._calculate_transaction_fee", return_value=20)
-    def test_get_transaction_fee_estimate(self, mock_calculate_fee):
+    def test_get_transaction_fee_estimate(self):
+        self.client._calculate_transaction_fee = MagicMock(return_value=20)
         response = self.client.get_transaction_fee_estimate()
-        self.assertEqual(response, 262 * 20)
-        mock_calculate_fee.assert_called_once()
+        self.assertEqual(response, 5240)
+        self.client._calculate_transaction_fee.assert_called_once()
 
     def test_btc_to_satoshi(self):
-        self.assertEqual(self.client.btc_to_satoshi(1), 100000000)
-        self.assertEqual(self.client.btc_to_satoshi(1.15325), 115325000)
-        self.assertEqual(self.client.btc_to_satoshi(0.4564), 45640000)
+        self.assertEqual(btc.btc_to_satoshi(1), 100000000)
+        self.assertEqual(btc.btc_to_satoshi(1.15325), 115325000)
+        self.assertEqual(btc.btc_to_satoshi(0.4564), 45640000)
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value={"feerate": 1e-05})
-    def test_calculate_transaction_fee_rounds_up(self, mock_call):
+    def test_calculate_transaction_fee_rounds_up(self):
+        self.client._call = MagicMock(return_value={"feerate": 1e-05})
         # Client was initialized with eth, no need to change network variable
         response = self.client._calculate_transaction_fee()
         self.assertEqual(response, 10)
-        mock_call.assert_called_once_with("estimatesmartfee", 2)
+        self.client._call.assert_called_once_with("estimatesmartfee", 2)
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value={"feerate": 1.05e-04})
-    def test_calculate_transaction_fee(self, mock_call):
+    def test_calculate_transaction_fee(self):
+        self.client._call = MagicMock(return_value={"feerate": 1.05e-04})
         response = self.client._calculate_transaction_fee()
         self.assertEqual(response, 11)
-        mock_call.assert_called_once_with("estimatesmartfee", 2)
+        self.client._call.assert_called_once_with("estimatesmartfee", 2)
 
-    def test_create_raw_transaction(self):
-        response = self.client._create_raw_transaction("DC-L5:0xFakeHash")
-        self.assertEqual(response, {"data": "44432d4c353a307846616b6548617368"})
-
-    def test_get_network_returns_correct_network_prod(self):
-        self.client.network = "BTC_MAINNET"
-        self.assertEqual(self.client._get_network(), btc.Networks.Mainnet.value)
-
-    def test_get_network_returns_correct_network_dev(self):
-        self.client.network = "BTC_TESTNET3"
-        self.assertEqual(self.client._get_network(), btc.Networks.Testnet.value)
-
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value={"confirmations": 7})
-    def test_is_transaction_confirmed_final(self, mock_call):
+    def test_is_transaction_confirmed_final(self):
+        self.client._call = MagicMock(return_value={"confirmations": 7})
         response = self.client.is_transaction_confirmed("0xFakeHash")
         self.assertTrue(response)
+        self.client._call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
 
-        mock_call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
+    def test_is_transaction_confirmed_error(self):
+        self.client._call = MagicMock(side_effect=exceptions.RPCError)
+        self.assertRaises(exceptions.RPCTransactionNotFound, self.client.is_transaction_confirmed, "0xFakeHash")
+        self.client._call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
 
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", side_effect=RuntimeError)
-    def test_is_transaction_confirmed_error(self, mock_call):
-        response = self.client.is_transaction_confirmed("0xFakeHash")
-        self.assertEqual(response, "0xFakeHash")
-
-        mock_call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
-
-    @patch("dragonchain.lib.interfaces.networks.btc.BTCClient.call", return_value={"Pending": "Block"})
-    def test_is_transaction_confirmed_pending(self, mock_call):
+    def test_is_transaction_confirmed_pending(self):
+        self.client._call = MagicMock(return_value={"Pending": "Block"})
         response = self.client.is_transaction_confirmed("0xFakeHash")
         self.assertFalse(response)
+        self.client._call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
 
-        mock_call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
+    def test_register_address_raises(self):
+        self.client._call = MagicMock(return_value=["nothere"])
+        self.assertRaises(exceptions.AddressRegistrationFailure, self.client.register_address)
+        self.client._call.assert_has_calls(
+            [call("listlabels"), call("importaddress", "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK", "mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK", False)]
+        )
 
-    @patch("dragonchain.lib.interfaces.networks.btc.requests.post", return_value=MagicMock(json=MagicMock(return_value={"result": "MyResult"})))
+    def test_register_address_skips_already_registered(self):
+        self.client._call = MagicMock(return_value=["mzhqDGPpFVxDUhYiDgrdUpzGw4NFBkXPaK"])
+        self.client.register_address()
+        self.client._call.assert_called_once_with("listlabels")
+
+    def test_export_as_at_rest(self):
+        self.assertEqual(
+            self.client.export_as_at_rest(),
+            {
+                "version": "1",
+                "name": "banana",
+                "network_address": "http://whatever",
+                "authorization": "auth",
+                "testnet": True,
+                "private_key": "KhDH0BKv7n9iFwMc2ClTwJ5zb3R2fTLuQEupXSgoYxo=",
+            },
+        )
+
+    @patch("requests.post", return_value=MagicMock(json=MagicMock(return_value={"result": "MyResult"})))
     def test_rpc_request_success(self, mock_post):
-        self.client.endpoint = "http://dragonchain.com:4738"
-        self.client.auth = "dGVzdDp0ZXN0"
-        response = self.client.call("myMethod", "arg1", 2, True)
-
+        response = self.client._call("myMethod", "arg1", 2, True)
         self.assertEqual(response, "MyResult")
         mock_post.assert_called_once_with(
-            "http://dragonchain.com:4738",
-            json={"method": "myMethod", "params": ["arg1", 2, True], "id": 1},
-            headers={"Authorization": "Basic dGVzdDp0ZXN0"},
+            "http://whatever",
+            json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
+            headers={"Authorization": "Basic auth"},
             timeout=30,
         )
 
-    @patch("dragonchain.lib.interfaces.networks.btc.requests.post", return_value=MagicMock(json=MagicMock(return_value={"error": "MyResult"})))
+    @patch("requests.post", return_value=MagicMock(json=MagicMock(return_value={"error": "MyResult"})))
     def test_rpc_request_error(self, mock_post):
-        self.client.endpoint = "http://dragonchain.com:4738"
-        self.client.auth = "dGVzdDp0ZXN0"
-        self.assertRaises(exceptions.RPCError, self.client.call, "myMethod", "arg1", 2, True)
-
+        self.assertRaises(exceptions.RPCError, self.client._call, "myMethod", "arg1", 2, True)
         mock_post.assert_called_once_with(
-            "http://dragonchain.com:4738",
-            json={"method": "myMethod", "params": ["arg1", 2, True], "id": 1},
-            headers={"Authorization": "Basic dGVzdDp0ZXN0"},
+            "http://whatever",
+            json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
+            headers={"Authorization": "Basic auth"},
             timeout=30,
         )

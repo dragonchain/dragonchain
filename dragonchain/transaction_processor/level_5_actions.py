@@ -1,10 +1,3 @@
-import os
-import time
-import json
-import math
-import uuid
-from typing import cast, Iterable, List, Dict, Union, Any
-
 # Copyright 2019 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
@@ -21,6 +14,13 @@ from typing import cast, Iterable, List, Dict, Union, Any
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
+
+import os
+import time
+import json
+import math
+import uuid
+from typing import cast, Iterable, List, Dict, Union, Any
 
 import fastjsonschema
 
@@ -154,7 +154,7 @@ def broadcast_to_public_chain(l5_block: l5_block_model.L5BlockModel) -> None:
     _log.info("[L5] Preparing to broadcast")
     # Hash the block and publish the block to a public network
     public_hash = keys.get_my_keys().hash_l5_for_public_broadcast(l5_block)
-    transaction_hash = INTERCHAIN.publish_to_public_network(public_hash)
+    transaction_hash = INTERCHAIN.publish_l5_hash_to_public_network(public_hash)
     _log.info("[L5] After Publish to public network, setting new broadcast time")
     _log.info(f"[L5] transaction_hash {transaction_hash}")
 
@@ -182,28 +182,18 @@ def check_confirmations() -> None:
         block = l5_block_model.new_from_at_rest(storage.get_json_from_object(block_key))
 
         for txn_hash in block.transaction_hash:
-            confirmed = INTERCHAIN.is_transaction_confirmed(txn_hash)
-
-            #  If this function returned the transaction hash, that means it was dropped so we
-            #  remove it from the block, otherwise if it returned true that means it was confirmed.
-            #  When broadcast retry occurs, the removed hashes will be removed in storage.
-            if isinstance(confirmed, str):
+            try:
+                if INTERCHAIN.is_transaction_confirmed(txn_hash):
+                    finalize_block(block, last_confirmed_block, txn_hash)
+                    # Stop execution here!
+                    return
+            except exceptions.RPCTransactionNotFound:
+                #  If transaction not found, it may have been dropped, so we remove it from the block
                 block.transaction_hash.remove(txn_hash)
-            elif confirmed:
-                finalize_block(block, last_confirmed_block, txn_hash)
 
-                # Stop execution here!
-                return
-
-        # If execution did not stop in the above for loop, we know that the block is not confirmed.
-        retry_broadcast_if_necessary(block)
-
-
-def retry_broadcast_if_necessary(block: l5_block_model.L5BlockModel) -> None:
-    current_block = INTERCHAIN.get_current_block()
-    threshold = INTERCHAIN.get_retry_threshold()
-    if (current_block - block.block_last_sent_at) > threshold:
-        broadcast_to_public_chain(block)
+        # If execution did not stop, the block is not confirmed.
+        if INTERCHAIN.should_retry_broadcast(block.block_last_sent_at):
+            broadcast_to_public_chain(block)
 
 
 def finalize_block(block: l5_block_model.L5BlockModel, last_confirmed_block: Dict[str, Any], confirmed_txn_hash: str) -> None:
