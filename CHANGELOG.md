@@ -4,19 +4,27 @@
 
 - **Feature:**
   - Switch to using files for reading secrets for dynamic secret update support
+  - Use new schema for NETWORK (for L5 registration and blocks). Will now look like "{blockchain} {extra_data}"
+    i.e. "bitcoin testnet3" or "ethereum network_id 2" rather than a pre-set list of enums as before.
+    (This allows for things such as custom/private ethereum networks, etc)
   - Add support for creating/saving various interchain networks, including custom interchain nodes, keys, etc
     - Note this also means that a chain can have multiple addresses for the same type of network now (i.e. many ETH addresses)
   - Add routes for refactored interchain support:
-    - `POST /interchains/bitcoin` Create a bitcoin network for the dragonchain to use
-    - `POST /interchains/ethereum` Create an ethereum network for the dragonchain to use
-    - `PATCH /interchains/bitcoin/<id>` Update an already existing bitcoin network of dragonchain
-    - `PATCH /interchains/ethereum/<id>` Update an already existing ethereum network of dragonchain
-    - `POST /interchains/bitcoin/<id>/transaction` Create a bitcoin transaction using one of the chain's networks
-    - `POST /interchains/ethereum/<id>/transaction` Create a ethereum transaction using one of the chain's networks
-    - `GET /interchains/<blockchain>` Get a list of all registered Dragonchain interchains
-    - `GET /interchains/<blockchain>/<id>` Get a particular interchain network from the chain
-    - `DELETE /interchains/<blockchain>/<id>` Delete a particular interchain network from the chain
-    - `POST /interchains/default` (L5 only) Set a default network for level 5 chains to use
+    - `POST /v1/interchains/bitcoin` Create a bitcoin network for the dragonchain to use
+    - `POST /v1/interchains/ethereum` Create an ethereum network for the dragonchain to use
+    - `PATCH /v1/interchains/bitcoin/<id>` Update an already existing bitcoin network of dragonchain
+    - `PATCH /v1/interchains/ethereum/<id>` Update an already existing ethereum network of dragonchain
+    - `POST /v1/interchains/bitcoin/<id>/transaction` Create a bitcoin transaction using one of the chain's networks
+    - `POST /v1/interchains/ethereum/<id>/transaction` Create a ethereum transaction using one of the chain's networks
+    - `GET /v1/interchains/<blockchain>` Get a list of all registered Dragonchain interchains
+    - `GET /v1/interchains/<blockchain>/<id>` Get a particular interchain network from the chain
+    - `DELETE /v1/interchains/<blockchain>/<id>` Delete a particular interchain network from the chain
+    - `POST /v1/interchains/default` (L5 only) Set a default network for level 5 chains to use
+  - Move the following routes legacy support only (they will work for chains upgraded from an old version for backwards compatibility, but will 404 on new chains):
+    - `GET /public-blockchain-address`
+    - `GET /v1/public-blockchain-address`
+    - `POST /public-blockchain-transaction`
+    - `POST /v1/public-blockchain-transaction`
 - **Development:**
   - Refactored interchain support for easier future integration with further interchains
 - **Packaging:**

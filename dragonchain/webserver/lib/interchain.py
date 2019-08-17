@@ -17,23 +17,39 @@
 
 from typing import Dict, Any
 
-from dragonchain.lib.interfaces import interchain
-from dragonchain.lib.interfaces.networks import eth
-from dragonchain.lib.interfaces.networks import btc
+from dragonchain.lib.dto import eth
+from dragonchain.lib.dto import btc
+from dragonchain.lib.dao import interchain_dao
+
+
+def create_bitcoin_interchain_v1(user_data: Dict[str, Any]) -> None:
+    client = btc.new_from_user_input(user_data)
+    interchain_dao.save_interchain_client(client)
+
+
+def create_ethereum_intercchain_v1(user_data: Dict[str, Any]) -> None:
+    client = eth.new_from_user_input(user_data)
+    interchain_dao.save_interchain_client(client)
+
+
+# Below methods are deprecated and exist for legacy support only. Both methods will return a 404 if not a legacy chain
 
 
 def get_blockchain_addresses_v1() -> Dict[str, str]:
     return {
-        "eth_mainnet": eth.load_address("ETH_MAINNET")[0],
-        "eth_ropsten": eth.load_address("ETH_ROPSTEN")[0],
-        "etc_mainnet": eth.load_address("ETC_MAINNET")[0],
-        "etc_morden": eth.load_address("ETC_MORDEN")[0],
-        "btc_mainnet": btc.load_address("BTC_MAINNET")[0],
-        "btc_testnet3": btc.load_address("BTC_TESTNET3")[0],
+        "eth_mainnet": interchain_dao.get_interchain_client("ethereum", "ETH_MAINNET").address,
+        "eth_ropsten": interchain_dao.get_interchain_client("ethereum", "ETH_ROPSTEN").address,
+        "etc_mainnet": interchain_dao.get_interchain_client("ethereum", "ETC_MAINNET").address,
+        "etc_morden": interchain_dao.get_interchain_client("ethereum", "ETC_MORDEN").address,
+        "btc_mainnet": interchain_dao.get_interchain_client("bitcoin", "BTC_MAINNET").address,
+        "btc_testnet3": interchain_dao.get_interchain_client("bitcoin", "BTC_TESTNET3").address,
     }
 
 
 def sign_blockchain_transaction_v1(network: str, transaction: Dict[str, Any]) -> Dict[str, str]:
-    network_interface = interchain.InterchainInterface(network)
-    signed = network_interface.sign_transaction(transaction)
-    return {"signed": signed}
+    if network in ["BTC_MAINNET", "BTC_TESTNET3"]:  # Check if legacy bitcoin network
+        client = interchain_dao.get_interchain_client("bitcoin", network)
+    else:  # Must be a legacy ethereum network
+        client = interchain_dao.get_interchain_client("ethereum", network)
+
+    return {"signed": client.sign_transaction(transaction)}

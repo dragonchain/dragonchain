@@ -44,7 +44,7 @@ STANDARD_GAS_LIMIT = 60000
 _log = logger.get_logger()
 
 
-def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":
+def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noqa: C901
     """Create a new EthereumNetwork model from user input
     Args:
         user_input: User dictionary input (assumed already passing create_ethereum_interchain_schema)
@@ -128,6 +128,7 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
 
 class EthereumNetwork(model.InterchainModel):
     def __init__(self, name: str, rpc_address: str, chain_id: int, b64_private_key: str):
+        self.blockchain = "ethereum"
         self.name = name
         self.rpc_address = rpc_address
         self.chain_id = chain_id
@@ -250,7 +251,7 @@ class EthereumNetwork(model.InterchainModel):
         """
         return {
             "version": "1",
-            "blockchain": "ethereum",
+            "blockchain": self.blockchain,
             "name": self.name,
             "rpc_address": self.rpc_address,
             "chain_id": self.chain_id,

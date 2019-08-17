@@ -26,8 +26,11 @@ if TYPE_CHECKING:
     from dragonchain.lib.dto import model
 
 FOLDER = "INTERCHAINS"
-BITCOIN = "bitcoin"
-ETHEREUM = "ethereum"
+
+
+def save_interchain_client(interchain_client: "model.InterchainModel") -> None:
+    """Save an interchain model to storage"""
+    storage.put_object_as_json(f"{FOLDER}/{interchain_client.blockchain}/{interchain_client.name}", interchain_client.export_as_at_rest())
 
 
 def get_interchain_client(blockchain: str, name: str) -> "model.InterchainModel":
@@ -38,10 +41,10 @@ def get_interchain_client(blockchain: str, name: str) -> "model.InterchainModel"
     Raises:
         exceptions.NotFound: When the requested client can't be found
     """
-    if blockchain == BITCOIN:
-        return btc.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/{BITCOIN}/{name}"))
-    elif blockchain == ETHEREUM:
-        return eth.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/{ETHEREUM}/{name}"))
+    if blockchain == "bitcoin":
+        return btc.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/bitcoin/{name}"))
+    elif blockchain == "ethereum":
+        return eth.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/ethereum/{name}"))
     else:
         raise exceptions.NotFound(f"Blockchain network {blockchain} is not supported")
 

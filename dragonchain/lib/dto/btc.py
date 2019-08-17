@@ -122,6 +122,7 @@ def new_from_at_rest(bitcoin_network_at_rest: Dict[str, Any]) -> "BitcoinNetwork
 
 class BitcoinNetwork(model.InterchainModel):
     def __init__(self, name: str, rpc_address: str, testnet: bool, b64_private_key: str, authorization: Optional[str] = None):
+        self.blockchain = "bitcoin"
         self.name = name
         self.rpc_address = rpc_address
         self.authorization = authorization
@@ -130,6 +131,7 @@ class BitcoinNetwork(model.InterchainModel):
             self.priv_key = bit.PrivateKeyTestnet.from_bytes(base64.b64decode(b64_private_key))
         else:
             self.priv_key = bit.Key.from_bytes(base64.b64decode(b64_private_key))
+        self.address = self.priv_key.address
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
@@ -158,7 +160,7 @@ class BitcoinNetwork(model.InterchainModel):
             outputs,
             unspents=self._get_utxos(),
             fee=raw_transaction.get("fee") or self._calculate_transaction_fee(),
-            leftover=raw_transaction.get("change") or self.priv_key.address,
+            leftover=raw_transaction.get("change") or self.address,
             message=raw_transaction.get("data"),
         )
         return self.priv_key.sign_transaction(btc_transaction)
@@ -186,8 +188,8 @@ class BitcoinNetwork(model.InterchainModel):
         Returns:
             The amount of satoshi in the account
         """
-        _log.info(f"[BTC] Checking balance for {self.priv_key.address}")
-        btc_balance = self._call("getreceivedbyaddress", self.priv_key.address, CONFIRMATIONS_CONSIDERED_FINAL)
+        _log.info(f"[BTC] Checking balance for {self.address}")
+        btc_balance = self._call("getreceivedbyaddress", self.address, CONFIRMATIONS_CONSIDERED_FINAL)
         return btc_to_satoshi(btc_balance)
 
     def get_transaction_fee_estimate(self, byte_count: int = 262) -> int:
@@ -225,8 +227,8 @@ class BitcoinNetwork(model.InterchainModel):
             exceptions.AddressRegistrationFailure: When the bitcoin node failed to register the address
         """
         registered = self._call("listlabels")
-        if self.priv_key.address not in registered:
-            response = self._call("importaddress", self.priv_key.address, self.priv_key.address, scan)
+        if self.address not in registered:
+            response = self._call("importaddress", self.address, self.address, scan)
             # Note: False on import address prevents scanning for existing utxos. If the wallet already exists with funds,
             # this needs to be True instead of False, which can take a long time (10+ minutes) to run
             if response:  # Returns null on success
@@ -263,7 +265,7 @@ class BitcoinNetwork(model.InterchainModel):
         Returns:
             List of bit UTXO objects
         """
-        utxos = self._call("listunspent", 1, 9999999, [self.priv_key.address])
+        utxos = self._call("listunspent", 1, 9999999, [self.address])
         if not utxos:
             raise exceptions.NotEnoughCrypto
         return [
@@ -303,7 +305,7 @@ class BitcoinNetwork(model.InterchainModel):
         """
         return {
             "version": "1",
-            "blockchain": "bitcoin",
+            "blockchain": self.blockchain,
             "name": self.name,
             "rpc_address": self.rpc_address,
             "authorization": self.authorization,

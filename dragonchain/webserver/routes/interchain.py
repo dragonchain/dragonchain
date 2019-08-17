@@ -32,6 +32,9 @@ LEVEL = os.environ["LEVEL"]
 _validate_bitcoin_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("BTC"))
 _validate_ethereum_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("ETH"))
 
+_validate_bitcoin_network_create_v1 = fastjsonschema.compile(schema.create_bitcoin_interchain_schema_v1)
+_validate_ethereum_network_create_v1 = fastjsonschema.compile(schema.create_ethereum_interchain_schema_v1)
+
 
 def apply_routes(app: flask.Flask):
     # Create Interchain Network
@@ -55,7 +58,7 @@ def apply_routes(app: flask.Flask):
     if LEVEL == "5":
         app.add_url_rule("/v1/interchains/default", "set_default_network_v1", set_default_network_v1, methods=["POST"])
 
-    # Kept for backwards compatibility
+    # Kept for backwards compatibility. Will not work with new chains
     app.add_url_rule("/public-blockchain-address", "public_blockchain_address_v1", public_blockchain_address_v1, methods=["GET"])
     app.add_url_rule("/v1/public-blockchain-address", "public_blockchain_address_v1", public_blockchain_address_v1, methods=["GET"])
     app.add_url_rule("/public-blockchain-transaction", "public_blockchain_transaction_v1", public_blockchain_transaction_v1, methods=["POST"])
@@ -64,12 +67,32 @@ def apply_routes(app: flask.Flask):
 
 @request_authorizer.Authenticated()
 def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_bitcoin_network_create_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    interchain.create_bitcoin_interchain_v1(data)
+
+    return helpers.flask_http_response(200, helpers.format_success(True))
 
 
 @request_authorizer.Authenticated()
 def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_ethereum_network_create_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    interchain.create_ethereum_intercchain_v1(data)
+
+    return helpers.flask_http_response(200, helpers.format_success(True))
 
 
 @request_authorizer.Authenticated()
@@ -112,7 +135,7 @@ def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, True)
 
 
-# Backwards compatibility routes
+# Backwards compatibility routes. Will only work on old chains, not newly created ones
 
 
 @request_authorizer.Authenticated()

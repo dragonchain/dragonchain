@@ -17,18 +17,22 @@
 
 import os
 import json
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 import requests
 
 from dragonchain.lib import authorization
 from dragonchain.lib.dao import block_dao
+from dragonchain.lib.dao import interchain_dao
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
-from dragonchain.lib.interfaces import interchain
 from dragonchain.lib import keys
 from dragonchain import exceptions
 from dragonchain import logger
+
+if TYPE_CHECKING:
+    from dragonchain.lib.dto import eth  # noqa: F401
+    from dragonchain.lib.dto import btc  # noqa: F401
 
 LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
@@ -71,11 +75,18 @@ def get_matchmaking_config() -> dict:
     }
 
     if os.environ["LEVEL"] == "5":
-        config["network"] = os.environ["NETWORK"]
-        interchain_interface = interchain.InterchainInterface(cast(str, config["network"]))
+        client = interchain_dao.get_default_interchain_client()
+        network_extra = ""
+        if client.blockchain == "ethereum":
+            client = cast("eth.EthereumNetwork", client)
+            network_extra += f" network_id {client.chain_id}"
+        elif client.blockchain == "bitcoin":
+            client = cast("btc.BitcoinNetwork", client)
+            network_extra += f" {'testnet3' if client.testnet else 'mainnet'}"
+        config["network"] = f"{client.blockchain}{network_extra}"
         config["funded"] = bool(redis.get_sync("dc:isFunded", decode=False))
         config["broadcastInterval"] = float(os.environ.get("BROADCAST_INTERVAL") or "2")
-        config["interchainWallet"] = interchain_interface.client.interchain_address
+        config["interchainWallet"] = client.address
     return config
 
 
