@@ -11,7 +11,6 @@ global:
     STORAGE_LOCATION: "/dragonchain" # Must match dragonchain.storage.mount from below
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
-    NETWORK: "BTC_MAINNET" # L5 ONLY! The public blockchain to broadcast to
 
 # -- isMinikube --
 # When running on minikube this should be boolean true. otherwise boolean false.
