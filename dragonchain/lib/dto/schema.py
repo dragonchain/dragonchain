@@ -663,11 +663,7 @@ update_transaction_type_request_schema_v1 = {
 
 set_default_interchain_schema_v1 = {
     "type": "object",
-    "properties": {
-        "version": {"type": "string", "enum": ["1"]},
-        "blockchain": {"type": "string"},
-        "name": {"type": "string"}
-    }
+    "properties": {"version": {"type": "string", "enum": ["1"]}, "blockchain": {"type": "string"}, "name": {"type": "string"}},
 }
 
 # BITCOIN INTERCHAIN #
@@ -711,7 +707,7 @@ btc_transaction_schema_v1 = {
         "data": {"type": "string"},
         "change": {"type": "string"},
     },
-    "additionalProperties": False
+    "additionalProperties": False,
 }
 
 # ETHEREUM INTERCHAIN #
@@ -754,5 +750,5 @@ eth_transaction_schema_v1 = {
         "nonce": {"type": "string"},
     },
     "required": ["to", "value"],
-    "additionalProperties": False
+    "additionalProperties": False,
 }
