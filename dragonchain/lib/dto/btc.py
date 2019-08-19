@@ -234,6 +234,13 @@ class BitcoinNetwork(model.InterchainModel):
             if response:  # Returns null on success
                 raise exceptions.AddressRegistrationFailure("Address failed registering")
 
+    def get_private_key(self) -> str:
+        """Get the base64 encoded private key for this network
+        Returns:
+            Base64 encoded string of the private key
+        """
+        return base64.b64encode(self.priv_key.to_bytes()).decode("ascii")
+
     def _publish_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:
@@ -310,7 +317,7 @@ class BitcoinNetwork(model.InterchainModel):
             "rpc_address": self.rpc_address,
             "authorization": self.authorization,
             "testnet": self.testnet,
-            "private_key": base64.b64encode(self.priv_key.to_bytes()).decode("ascii"),
+            "private_key": self.get_private_key(),
         }
 
 

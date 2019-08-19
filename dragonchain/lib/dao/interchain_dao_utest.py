@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch, call
+from unittest.mock import patch, call, MagicMock
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain import exceptions
@@ -24,6 +24,14 @@ from dragonchain.lib.dao import interchain_dao
 
 
 class TestTransactionTypeDAO(unittest.TestCase):
+    @patch("dragonchain.lib.interfaces.storage.put_object_as_json")
+    def test_save_interchain_client_calls_correct_functions(self, patch_save):
+        fake_interchain = MagicMock()
+        fake_interchain.export_as_at_rest.return_value = "banana"
+        interchain_dao.save_interchain_client(fake_interchain)
+        fake_interchain.export_as_at_rest.assert_called_once()
+        patch_save.assert_called_once_with(f"INTERCHAINS/{fake_interchain.blockchain}/{fake_interchain.name}", "banana")
+
     @patch("dragonchain.lib.interfaces.storage.get_json_from_object", return_value="thing")
     @patch("dragonchain.lib.dto.eth.new_from_at_rest")
     @patch("dragonchain.lib.dto.btc.new_from_at_rest")
@@ -36,6 +44,27 @@ class TestTransactionTypeDAO(unittest.TestCase):
 
     def test_get_interchain_client_throws_with_unknown_network(self):
         self.assertRaises(exceptions.NotFound, interchain_dao.get_interchain_client, "banana", "soup")
+
+    @patch("dragonchain.lib.interfaces.storage.list_objects", return_value=["a"])
+    @patch("dragonchain.lib.interfaces.storage.get_json_from_object", return_value="thing")
+    @patch("dragonchain.lib.dto.btc.new_from_at_rest", return_value="whatever1")
+    def test_list_interchain_client_bitcoin_calls_correct_functions(self, mock_btc, mock_get, mock_list):
+        self.assertEqual(["whatever1"], interchain_dao.list_interchain_clients("bitcoin"))
+        mock_btc.assert_called_once_with("thing")
+        mock_list.assert_called_once_with("INTERCHAINS/bitcoin/")
+        mock_get.assert_called_once_with("a")
+
+    @patch("dragonchain.lib.interfaces.storage.list_objects", return_value=["a"])
+    @patch("dragonchain.lib.interfaces.storage.get_json_from_object", return_value="thing")
+    @patch("dragonchain.lib.dto.eth.new_from_at_rest", return_value="whatever1")
+    def test_list_interchain_client_ethereum_calls_correct_functions(self, mock_eth, mock_get, mock_list):
+        self.assertEqual(["whatever1"], interchain_dao.list_interchain_clients("ethereum"))
+        mock_eth.assert_called_once_with("thing")
+        mock_list.assert_called_once_with("INTERCHAINS/ethereum/")
+        mock_get.assert_called_once_with("a")
+
+    def test_list_interchain_throws_with_unknown_network(self):
+        self.assertRaises(exceptions.NotFound, interchain_dao.list_interchain_clients, "soup")
 
     @patch("dragonchain.lib.interfaces.storage.put_object_as_json")
     @patch("dragonchain.lib.dao.interchain_dao.get_interchain_client")

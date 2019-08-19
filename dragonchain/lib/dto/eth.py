@@ -216,6 +216,13 @@ class EthereumNetwork(model.InterchainModel):
         """
         return self.get_current_block() - last_sent_block > BLOCK_THRESHOLD
 
+    def get_private_key(self) -> str:
+        """Get the base64 encoded private key for this network
+        Returns:
+            Base64 encoded string of the private key
+        """
+        return base64.b64encode(self.priv_key.to_bytes()).decode("ascii")
+
     def _publish_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:
@@ -255,5 +262,5 @@ class EthereumNetwork(model.InterchainModel):
             "name": self.name,
             "rpc_address": self.rpc_address,
             "chain_id": self.chain_id,
-            "private_key": base64.b64encode(self.priv_key.to_bytes()).decode("ascii"),
+            "private_key": self.get_private_key(),
         }

@@ -29,11 +29,15 @@ from dragonchain import exceptions
 
 LEVEL = os.environ["LEVEL"]
 
-_validate_bitcoin_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("BTC"))
-_validate_ethereum_transaction_v1 = fastjsonschema.compile(schema.get_public_blockchain_transaction_schema_v1("ETH"))
-
 _validate_bitcoin_network_create_v1 = fastjsonschema.compile(schema.create_bitcoin_interchain_schema_v1)
+_validate_bitcoin_network_update_v1 = fastjsonschema.compile(schema.update_bitcoin_interchain_schema_v1)
+_validate_bitcoin_transaction_v1 = fastjsonschema.compile(schema.btc_transaction_schema_v1)
+
 _validate_ethereum_network_create_v1 = fastjsonschema.compile(schema.create_ethereum_interchain_schema_v1)
+_validate_ethereum_network_update_v1 = fastjsonschema.compile(schema.update_ethereum_interchain_schema_v1)
+_validate_ethereum_transaction_v1 = fastjsonschema.compile(schema.eth_transaction_schema_v1)
+
+_validate_set_default_interchain_v1 = fastjsonschema.compile(schema.set_default_interchain_schema_v1)
 
 
 def apply_routes(app: flask.Flask):
@@ -54,9 +58,10 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/interchains/<blockchain>/<name>", "get_interchain_v1", get_interchain_v1, methods=["GET"])
     # Delete
     app.add_url_rule("/v1/interchains/<blockchain>/<name>", "delete_interchain_v1", delete_interchain_v1, methods=["DELETE"])
-    # Set Default
+    # Defaults for L5
     if LEVEL == "5":
         app.add_url_rule("/v1/interchains/default", "set_default_network_v1", set_default_network_v1, methods=["POST"])
+        app.add_url_rule("/v1/interchains/default", "get_default_network_v1", get_default_network_v1, methods=["GET"])
 
     # Kept for backwards compatibility. Will not work with new chains
     app.add_url_rule("/public-blockchain-address", "public_blockchain_address_v1", public_blockchain_address_v1, methods=["GET"])
@@ -75,9 +80,7 @@ def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
-    interchain.create_bitcoin_interchain_v1(data)
-
-    return helpers.flask_http_response(200, helpers.format_success(True))
+    return helpers.flask_http_response(200, interchain.create_bitcoin_interchain_v1(data))
 
 
 @request_authorizer.Authenticated()
@@ -90,49 +93,93 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
-    interchain.create_ethereum_intercchain_v1(data)
-
-    return helpers.flask_http_response(200, helpers.format_success(True))
+    return helpers.flask_http_response(200, interchain.create_ethereum_interchain_v1(data))
 
 
 @request_authorizer.Authenticated()
 def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_bitcoin_network_update_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.update_bitcoin_interchain_v1(name, data))
 
 
 @request_authorizer.Authenticated()
 def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_ethereum_network_update_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.update_ethereum_interchain_v1(name, data))
 
 
 @request_authorizer.Authenticated()
 def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_bitcoin_transaction_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("bitcoin", name, data))
 
 
 @request_authorizer.Authenticated()
 def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_ethereum_transaction_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("ethereum", name, data))
 
 
 @request_authorizer.Authenticated()
 def list_interchains_v1(blockchain: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    return helpers.flask_http_response(200, interchain.list_interchain_v1(blockchain))
 
 
 @request_authorizer.Authenticated()
 def get_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    return helpers.flask_http_response(200, interchain.get_interchain_v1(blockchain, name))
 
 
 @request_authorizer.Authenticated()
 def delete_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    interchain.delete_interchain_v1(blockchain, name)
+    return helpers.flask_http_response(200, helpers.format_success(True))
 
 
 @request_authorizer.Authenticated()
 def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, True)
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_set_default_interchain_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.set_default_interchain_v1(data["blockchain"], data["name"]))
+
+
+@request_authorizer.Authenticated()
+def get_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, interchain.get_default_interchain_v1())
 
 
 # Backwards compatibility routes. Will only work on old chains, not newly created ones
@@ -140,7 +187,7 @@ def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
 
 @request_authorizer.Authenticated()
 def public_blockchain_address_v1() -> Tuple[str, int, Dict[str, str]]:
-    return helpers.flask_http_response(200, interchain.get_blockchain_addresses_v1())
+    return helpers.flask_http_response(200, interchain.legacy_get_blockchain_addresses_v1())
 
 
 @request_authorizer.Authenticated()
@@ -154,12 +201,12 @@ def public_blockchain_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
         raise exceptions.ValidationException("Invalid parameter: network")
     try:
         if data["network"] in ["BTC_MAINNET", "BTC_TESTNET3"]:
-            _validate_bitcoin_transaction_v1(data)
+            _validate_bitcoin_transaction_v1(data.get("transaction"))
         elif data["network"] in ["ETH_MAINNET", "ETH_ROPSTEN", "ETC_MAINNET", "ETC_MORDEN"]:
-            _validate_ethereum_transaction_v1(data)
+            _validate_ethereum_transaction_v1(data.get("transaction"))
         else:
             raise exceptions.ValidationException("User input did not match JSON schema")
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
-    return helpers.flask_http_response(200, interchain.sign_blockchain_transaction_v1(data["network"], data["transaction"]))
+    return helpers.flask_http_response(200, interchain.legacy_sign_blockchain_transaction_v1(data["network"], data["transaction"]))
