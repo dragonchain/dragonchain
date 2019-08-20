@@ -94,7 +94,7 @@ def update_ethereum_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[
         "name": name,
         "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
         "rpc_address": user_data["rpc_address"] if isinstance(user_data.get("rpc_address"), str) else current_client.rpc_address,
-        "chain_id": user_data["chain_id"] if isinstance(user_data.get("chain_id"), str) else current_client.chain_id,
+        "chain_id": user_data["chain_id"] if isinstance(user_data.get("chain_id"), int) else current_client.chain_id,
     }
     # Create and save updated client
     return create_ethereum_interchain_v1(client_data)
@@ -122,6 +122,11 @@ def get_default_interchain_v1() -> Dict[str, Any]:
 
 def sign_interchain_transaction_v1(blockchain: str, name: str, transaction: Dict[str, Any]) -> Dict[str, str]:
     client = interchain_dao.get_interchain_client(blockchain, name)
+    # Delete the user provided version field before passing it to sign transaction
+    try:
+        del transaction["version"]
+    except KeyError:  # If the key doesn't exist, that is fine
+        pass
     return {"signed": client.sign_transaction(transaction)}
 
 

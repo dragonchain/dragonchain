@@ -165,7 +165,10 @@ class EthereumNetwork(model.InterchainModel):
         if not raw_transaction.get("gas"):
             # TODO proper gas limit estimation
             raw_transaction["gas"] = self.w3.toHex(STANDARD_GAS_LIMIT)
-        return self.w3.eth.account.sign_transaction(raw_transaction, self.priv_key).rawTransaction.hex()
+        try:
+            return self.w3.eth.account.sign_transaction(raw_transaction, self.priv_key).rawTransaction.hex()
+        except Exception as e:
+            raise exceptions.BadRequest(f"Error signing transaction: {e}")
 
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
         """Check if a transaction is considered confirmed

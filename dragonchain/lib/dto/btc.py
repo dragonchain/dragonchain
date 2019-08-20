@@ -87,12 +87,17 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BitcoinNetwork":
             )
         except Exception:
             raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
+        # First check that the bitcoin node is reachable
         try:
             client.ping()
         except Exception as e:
             raise exceptions.BadRequest(f"Provided bitcoin node doesn't seem reachable. Error: {e}")
         # Now finally register the given address
-        client.register_address(user_input.get("utxo_scan") or False)
+        try:
+            client.register_address(user_input.get("utxo_scan") or False)
+        except exceptions.RPCError as e:
+            raise exceptions.BadRequest(f"Error registering address with bitcoin node. Error: {e}")
+
         return client
     else:
         raise exceptions.BadRequest(f"User input version {dto_version} not supported")
@@ -299,7 +304,7 @@ class BitcoinNetwork(model.InterchainModel):
             timeout=30,
         )
         if r.status_code != 200:
-            raise exceptions.RPCError(f"Error from bitcoin node with http status code {r.status_code}")
+            raise exceptions.RPCError(f"Error from bitcoin node with http status code {r.status_code} | {r.text}")
         response = r.json()
         if response.get("error") or response.get("errors"):
             raise exceptions.RPCError(f"The RPC call got an error response: {response}")
