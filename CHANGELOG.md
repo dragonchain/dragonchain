@@ -25,6 +25,8 @@
     - `GET /v1/public-blockchain-address`
     - `POST /public-blockchain-transaction`
     - `POST /v1/public-blockchain-transaction`
+- **Bug:**
+  - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Development:**
   - Refactored interchain support for easier future integration with further interchains
 - **Packaging:**

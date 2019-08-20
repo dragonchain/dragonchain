@@ -702,7 +702,16 @@ update_bitcoin_interchain_schema_v1 = {
 btc_transaction_schema_v1 = {
     "type": "object",
     "properties": {
-        "outputs": {"type": "array", "items": {"type": "object", "properties": {"to": {"type": "string"}, "value": {"type": "number"}}}},
+        "version": {"type": "string", "enum": ["1"]},
+        "outputs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"to": {"type": "string"}, "value": {"type": "number"}},
+                "additionalProperties": False,
+                "required": ["to", "value"],
+            },
+        },
         "fee": {"type": "integer"},
         "data": {"type": "string"},
         "change": {"type": "string"},
@@ -742,6 +751,7 @@ update_ethereum_interchain_schema_v1 = {
 eth_transaction_schema_v1 = {
     "type": "object",
     "properties": {
+        "version": {"type": "string", "enum": ["1"]},
         "to": {"type": "string"},
         "value": {"type": "string"},
         "data": {"type": "string"},

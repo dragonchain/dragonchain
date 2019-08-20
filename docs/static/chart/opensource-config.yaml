@@ -67,7 +67,7 @@ dragonchain:
   image:
     # -- dragonchain.image.pullPolicy --
     # In production we recommend "IfNotPresent". For development it is fine to use "Always"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
 
     # -- dragonchain.image.registry --
     # This value should be registry at which your dragonchain image is stored.
@@ -77,7 +77,7 @@ dragonchain:
     # -- dragonchain.image.repository --
     # This value should be the name of the repository inside the registry which house your dragonchain image
     # e.g.: {registry}/{repository}:{stage}-{version}
-    repository: dragonchain_core
+    repository: dragonchain/dragonchain_core
 
     # -- dragonchain.image.version --
     # Version of your dragonchain. This value is used to interpolate the tag name.

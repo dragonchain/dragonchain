@@ -163,6 +163,7 @@ class EthereumNetwork(model.InterchainModel):
         if not raw_transaction.get("gasPrice"):
             raw_transaction["gasPrice"] = self.w3.toHex(self._calculate_transaction_fee())
         if not raw_transaction.get("gas"):
+            # TODO proper gas limit estimation
             raw_transaction["gas"] = self.w3.toHex(STANDARD_GAS_LIMIT)
         return self.w3.eth.account.sign_transaction(raw_transaction, self.priv_key).rawTransaction.hex()
 
