@@ -23,7 +23,6 @@ from dragonchain.lib.interfaces import secrets
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
 from dragonchain.lib.database import elasticsearch
-from dragonchain.lib.interfaces.networks import btc
 from dragonchain.lib import error_reporter
 from dragonchain import logger
 from dragonchain import exceptions
@@ -50,12 +49,6 @@ def start() -> None:
         storage.put(f"KEYS/{key_id}", json_key.encode("utf-8"))
     except exceptions.NotFound:
         _log.info("No HMAC keys were given to this chain on-boot. Skipping cretential storage write.")
-
-    try:
-        btc.BTCClient("BTC_MAINNET").register_address()
-        btc.BTCClient("BTC_TESTNET3").register_address()
-    except Exception:
-        _log.exception("!WARNING! Failed to register bitcoin address(es) with remote bitcoin RPC nodes")
 
     _log.info("Rehydrating the redis transaction list cache")
     try:
