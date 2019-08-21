@@ -20,11 +20,13 @@
     - `GET /v1/interchains/<blockchain>/<id>` Get a particular interchain network from the chain
     - `DELETE /v1/interchains/<blockchain>/<id>` Delete a particular interchain network from the chain
     - `POST /v1/interchains/default` (L5 only) Set a default network for level 5 chains to use
+    - `GET /v1/interchains/default` (L5 only) Get the default network set on a level 5 chain
   - Move the following routes legacy support only (they will work for chains upgraded from an old version for backwards compatibility, but will 404 on new chains):
     - `GET /public-blockchain-address`
     - `GET /v1/public-blockchain-address`
     - `POST /public-blockchain-transaction`
     - `POST /v1/public-blockchain-transaction`
+  - Reduced initial delay checks for the webserver so kubernetes will mark the webserver as ready quicker
 - **Bug:**
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Documentation:**
