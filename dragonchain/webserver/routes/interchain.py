@@ -80,7 +80,7 @@ def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
-    return helpers.flask_http_response(200, interchain.create_bitcoin_interchain_v1(data))
+    return helpers.flask_http_response(201, interchain.create_bitcoin_interchain_v1(data))
 
 
 @request_authorizer.Authenticated()
@@ -93,7 +93,7 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
-    return helpers.flask_http_response(200, interchain.create_ethereum_interchain_v1(data))
+    return helpers.flask_http_response(201, interchain.create_ethereum_interchain_v1(data))
 
 
 @request_authorizer.Authenticated()
