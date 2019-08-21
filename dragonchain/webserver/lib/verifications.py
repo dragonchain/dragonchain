@@ -34,7 +34,7 @@ def get_pending_verifications_v1(block_id: str) -> Dict[str, List[str]]:
     scheduled_l3 = set(claim_check["validations"]["l3"].keys())
     scheduled_l4 = set(claim_check["validations"]["l4"].keys())
     scheduled_l5 = set(claim_check["validations"]["l5"].keys())
-    # Get only the differences (scheduled, but not recieved) chains
+    # Get only the differences (scheduled, but not received) chains
     return {
         "2": list(scheduled_l2.difference(verifications[0])),
         "3": list(scheduled_l3.difference(verifications[1])),

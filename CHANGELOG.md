@@ -27,6 +27,9 @@
     - `POST /v1/public-blockchain-transaction`
 - **Bug:**
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
+- **Documentation:**
+  - Fixed/elaborated on some of the process for connecting to dragon net, including exposing a chain to the internet
+  - Various spelling fixes
 - **Development:**
   - Refactored interchain support for easier future integration with further interchains
 - **Packaging:**

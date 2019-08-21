@@ -330,15 +330,15 @@ def make_matchmaking_request(
 
     if response.status_code < 200 or response.status_code >= 300:
         if retry and response.status_code == 401 and authenticated:
-            _log.warning("[MATCHMAKING] Recieved 401 from matchmaking. Registering new key with matchmaking and trying again")
+            _log.warning("[MATCHMAKING] received 401 from matchmaking. Registering new key with matchmaking and trying again")
             authorization.register_new_key_with_matchmaking()
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif retry and response.status_code == 403 and authenticated:
-            _log.warning("[MATCHMAKING] Recieved 403 from matchmaking. Registration is probably expired. Re-registering and trying again")
+            _log.warning("[MATCHMAKING] received 403 from matchmaking. Registration is probably expired. Re-registering and trying again")
             register()
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif response.status_code == 402:
-            raise exceptions.InsufficientFunds("Recieved insufficient funds (402) from matchmaking")
+            raise exceptions.InsufficientFunds("received insufficient funds (402) from matchmaking")
         elif response.status_code == 404:
             raise exceptions.NotFound("Not found (404) from matchmaking")
         raise exceptions.MatchmakingError(
