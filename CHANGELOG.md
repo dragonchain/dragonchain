@@ -1,6 +1,6 @@
 # Changelog
 
-## Latest
+## 3.5.0
 
 - **Feature:**
   - Switch to using files for reading secrets for dynamic secret update support
