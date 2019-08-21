@@ -116,14 +116,14 @@ def get_next_task() -> Optional[dict]:
     if pop_result is None:
         return None
     _, event = pop_result
-    _log.debug(f"Recieved task: {event}")
+    _log.debug(f"received task: {event}")
     try:
         event = json.loads(event)
         _validate_sc_build_task(event)
     except Exception:
         _log.exception("Error processing task, skipping")
         return None
-    _log.info(f"New task request recieved: {event}")
+    _log.info(f"New task request received: {event}")
     return event
 
 

@@ -24,7 +24,7 @@ parallel contracts are invoked from an event loop on the main thread.
 
 ## Flow
 
-Upon recieving a new transaction, the webserver will check the txn_type to
+Upon receiving a new transaction, the webserver will check the txn_type to
 determine if it is a smart contract invocation request. If it is, the
 webserver pushes the invocation request to the `mq:contract-invoke` queue.
 

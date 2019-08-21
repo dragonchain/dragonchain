@@ -121,7 +121,7 @@ def list_objects(location: str, prefix: str) -> List[str]:
     keys: List[str] = []
     for page in page_iterator:
         if page.get("Contents"):
-            keys += list(map(lambda content: content["Key"], page["Contents"]))
+            keys += [x["Key"] for x in page["Contents"]]
     for x in reversed(range(len(keys))):  # Must used reversed traditional range because we are removing elements
         if keys[x].endswith("/"):  # Don't include folders in list
             del keys[x]

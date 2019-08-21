@@ -147,6 +147,10 @@ class RPCError(DragonchainException):
     """Exception raise when RPC has an error"""
 
 
+class RPCTransactionNotFound(DragonchainException):
+    """Exception raised when a transaction is not found on an interchain network"""
+
+
 class ElasticSearchFailure(DragonchainException):
     """Exception raised when the elastic search client fails to initialize"""
 

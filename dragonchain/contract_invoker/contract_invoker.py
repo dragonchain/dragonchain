@@ -118,7 +118,7 @@ async def serial_contract_worker(contract_id: str) -> None:
     _log.info(f"Worker started for contract {contract_id}")
     while True:
         try:
-            event = _serial_queues[contract_id].get(block=True)  # Blocks until recieves from queue
+            event = _serial_queues[contract_id].get(block=True)  # Blocks until receives from queue
             _log.info(f"Executing {contract_id}")
             await contract_invoker_service.invoke(session, event)
         except Exception:

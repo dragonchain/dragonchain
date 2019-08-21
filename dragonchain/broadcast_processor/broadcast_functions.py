@@ -210,7 +210,7 @@ def set_receieved_verification_for_block_from_chain_sync(block_id: str, level: i
 
 
 def get_all_verifications_for_block_sync(block_id: str) -> List[Set[str]]:
-    """Get an array of the sets of chain_ids for properly recieved receipts from a higher level for a certain block (sync)
+    """Get an array of the sets of chain_ids for properly received receipts from a higher level for a certain block (sync)
     Args:
         block_id: block_id to check for received receipts
     Returns:

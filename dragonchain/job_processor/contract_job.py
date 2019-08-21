@@ -204,7 +204,7 @@ class ContractJob(object):
         Returns:
             A dictionary containing all relevant OpenFaaS information. Does not reveal secrets.
         """
-        secret_names = list(map(lambda x: f"sc-{self.model.id}-{x}", self.model.existing_secrets))
+        secret_names = [f"sc-{self.model.id}-{x}" for x in self.model.existing_secrets]
         env = {"read_timeout": "60s", "write_timeout": "60s", "write_debug": "true", "combine_output": "false"}
         env.update(self.model.env)
         image = f"{FAAS_REGISTRY}/customer-contracts@{self.model.image_digest}"
@@ -219,7 +219,7 @@ class ContractJob(object):
                 "com.openfaas.scale.max": "20",
                 "com.openfaas.scale.factor": "20",
                 "com.dragonchain.id": INTERNAL_ID,
-                "com.openfaas.fwatchdog.version": "0.15.4",  # Update this as the fwatchdog executable in bin is updates
+                "com.openfaas.fwatchdog.version": "0.16.0",  # Update this as the fwatchdog executable in bin is updates
             },
             "limits": {"cpu": "0.50", "memory": "600M"},
             "requests": {"cpu": "0.25", "memory": "600M"},

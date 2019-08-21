@@ -17,18 +17,22 @@
 
 import os
 import json
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 import requests
 
 from dragonchain.lib import authorization
 from dragonchain.lib.dao import block_dao
+from dragonchain.lib.dao import interchain_dao
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
-from dragonchain.lib.interfaces import interchain
 from dragonchain.lib import keys
 from dragonchain import exceptions
 from dragonchain import logger
+
+if TYPE_CHECKING:
+    from dragonchain.lib.dto import eth  # noqa: F401
+    from dragonchain.lib.dto import btc  # noqa: F401
 
 LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
@@ -71,11 +75,18 @@ def get_matchmaking_config() -> dict:
     }
 
     if os.environ["LEVEL"] == "5":
-        config["network"] = os.environ["NETWORK"]
-        interchain_interface = interchain.InterchainInterface(cast(str, config["network"]))
+        client = interchain_dao.get_default_interchain_client()
+        network_extra = ""
+        if client.blockchain == "ethereum":
+            client = cast("eth.EthereumNetwork", client)
+            network_extra += f" network_id {client.chain_id}"
+        elif client.blockchain == "bitcoin":
+            client = cast("btc.BitcoinNetwork", client)
+            network_extra += f" {'testnet3' if client.testnet else 'mainnet'}"
+        config["network"] = f"{client.blockchain}{network_extra}"
         config["funded"] = bool(redis.get_sync("dc:isFunded", decode=False))
         config["broadcastInterval"] = float(os.environ.get("BROADCAST_INTERVAL") or "2")
-        config["interchainWallet"] = interchain_interface.client.interchain_address
+        config["interchainWallet"] = client.address
     return config
 
 
@@ -319,15 +330,15 @@ def make_matchmaking_request(
 
     if response.status_code < 200 or response.status_code >= 300:
         if retry and response.status_code == 401 and authenticated:
-            _log.warning("[MATCHMAKING] Recieved 401 from matchmaking. Registering new key with matchmaking and trying again")
+            _log.warning("[MATCHMAKING] received 401 from matchmaking. Registering new key with matchmaking and trying again")
             authorization.register_new_key_with_matchmaking()
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif retry and response.status_code == 403 and authenticated:
-            _log.warning("[MATCHMAKING] Recieved 403 from matchmaking. Registration is probably expired. Re-registering and trying again")
+            _log.warning("[MATCHMAKING] received 403 from matchmaking. Registration is probably expired. Re-registering and trying again")
             register()
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif response.status_code == 402:
-            raise exceptions.InsufficientFunds("Recieved insufficient funds (402) from matchmaking")
+            raise exceptions.InsufficientFunds("received insufficient funds (402) from matchmaking")
         elif response.status_code == 404:
             raise exceptions.NotFound("Not found (404) from matchmaking")
         raise exceptions.MatchmakingError(
