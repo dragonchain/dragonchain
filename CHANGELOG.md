@@ -35,6 +35,7 @@
 - **Packaging:**
   - Updated boto3, kubernetes, redis, and web3 dependencies
   - Removed unnecessary dependencies, and added speedup extras for aiohttp
+  - Update fwatchdog to 0.16.0 for OpenFaaS smart contracts
 
 ## 3.4.46
 
