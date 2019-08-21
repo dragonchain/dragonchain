@@ -1,5 +1,5 @@
-boto3==1.9.209
-redis==3.3.7
+boto3==1.9.212
+redis==3.3.8
 elasticsearch==6.4.0
 apscheduler==3.6.1
 jsonpath==0.82
