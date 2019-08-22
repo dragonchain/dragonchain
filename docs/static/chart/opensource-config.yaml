@@ -76,19 +76,13 @@ dragonchain:
 
     # -- dragonchain.image.repository --
     # This value should be the name of the repository inside the registry which house your dragonchain image
-    # e.g.: {registry}/{repository}:{stage}-{version}
+    # e.g.: {registry}/{repository}:{version}
     repository: dragonchain/dragonchain_core
 
     # -- dragonchain.image.version --
     # Version of your dragonchain. This value is used to interpolate the tag name.
-    # e.g.: {registry}/{repository}:{stage}-{version}
+    # e.g.: {registry}/{repository}:{version}
     version: latest
-
-    # -- dragonchain.image.stage --
-    # This value is interpolated into the tag of the dragonchain image path.
-    # Dragonchain inc uses this value to differentiate between dev and prod builds.
-    # e.g.: {registry}/{repository}:{stage}-{version}
-    stage: prod
 
   # -- dragonchain.database_type --
   # This configuration option should be null for any on-prem dragonchains.
