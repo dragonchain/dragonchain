@@ -15,46 +15,65 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import Optional, Dict, Any, TYPE_CHECKING
+import json
+from typing import Dict, Any, TYPE_CHECKING
+
+import redis
 
 from dragonchain import logger
 from dragonchain import exceptions
-from dragonchain.lib.dao import block_dao
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.dto import schema
+from dragonchain.lib.database import redisearch
+from dragonchain.lib.interfaces import storage
 
 if TYPE_CHECKING:
-    from dragonchain.lib.types import ESSearch
+    from dragonchain.lib.types import RSearch  # noqa: F401
 
 _log = logger.get_logger()
 
 
-def query_blocks_v1(params: Optional[dict], parse: bool) -> "ESSearch":
+def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "RSearch":
     """Returns block matching block id, with query parameters accepted.
     Args:
         block_id: string Block id to search for.
         params: string Lucene syntax acceptable query string for Elastic searching.
         parse: whether or not we should parse contents
     """
-    if params:
-        query_params = params.get("q") or "*"  # default to returning all results (limit 10 by default)
-        sort_param = params.get("sort") or "block_id:desc"
-        limit_param = params.get("limit") or None
-        offset_param = params.get("offset") or None
-        _log.info(f"[BLOCK] QUERY STRING PARAMS FOUND: {query_params}")
-        return elasticsearch.search("BLOCK", q=query_params, sort=sort_param, limit=limit_param, offset=offset_param, should_parse=parse)
+    try:
+        query_result = redisearch.search(
+            index=redisearch.Indexes.block.value,
+            query_str=params["q"],
+            only_id=params.get("id_only"),
+            offset=params.get("offset"),
+            limit=params.get("limit"),
+            sort_by=params.get("sort_by"),
+            sort_asc=params.get("sort_asc"),
+        )
+    except redis.exceptions.ResponseError as e:
+        # Detect if this is a syntax error; if so, throw it back as a 400 with the message
+        if str(e).startswith("Syntax error"):
+            raise exceptions.BadRequest(str(e))
+        else:
+            raise
+    result: "RSearch" = {"total": query_result.total, "results": []}
+    if params.get("id_only"):
+        result["results"] = [x.id for x in query_result.docs]
     else:
-        return elasticsearch.search("BLOCK", q="*", sort="block_id:desc", should_parse=parse)
+        blocks = []
+        for block in query_result.docs:
+            blocks.append(get_block_by_id_v1(block.id, parse))
+        result["results"] = blocks
+    return result
 
 
-def get_block_by_id_v1(block_id: str, parse: bool) -> Dict[str, Any]:
+def get_block_by_id_v1(block_id: str, parse: bool = False) -> Dict[str, Any]:
     """Searches for a block by a specific block ID
     Args:
         block_id: The block id to get
         parse: whether or not to parse the result automatically
     """
-    results = elasticsearch.search(folder=block_dao.FOLDER, query={"query": {"match_phrase": {"block_id": block_id}}}, should_parse=parse)["results"]
-
-    if len(results) > 0:
-        return results[0]
-
-    raise exceptions.NotFound(f"Block {block_id} could not be found.")
+    raw_block = storage.get_json_from_object(f"BLOCK/{block_id}")
+    if parse and raw_block["dcrn"] == schema.DCRN.Block_L1_At_Rest.value:
+        for index, transaction in enumerate(raw_block["transactions"]):
+            raw_block["transactions"][index] = json.loads(transaction)
+    return raw_block

@@ -47,9 +47,7 @@ def query_verifications_v1(block_id: str, params: Optional[Dict[str, Any]] = Non
     """Query verifications for a block ID on a level, or all levels"""
     _log.info(f"Getting verifications for {block_id}, params {params}")
     level = int(params.get("level") or "0") if params else 0
-    blocks = _get_verification_records(block_id, level)
-    _log.info(f"Response from verification DAO: {blocks}")
-    return blocks
+    return _get_verification_records(block_id, level)
 
 
 def _get_verification_records(block_id: str, level: int = 0) -> Union[List[Any], Dict[str, List[Any]]]:

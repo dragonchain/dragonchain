@@ -26,19 +26,21 @@ from dragonchain.webserver import request_authorizer
 from dragonchain.lib.dto import schema
 from dragonchain import exceptions
 
+
 _validate_create_txn_type_v1 = fastjsonschema.compile(schema.new_transaction_type_register_request_schema_v1)
-_validate_update_txn_type_v1 = fastjsonschema.compile(schema.update_transaction_type_request_schema_v1)
 
 
 def apply_routes(app: flask.Flask):
+    # Register
     app.add_url_rule("/transaction-type", "register_transaction_type_v1", register_transaction_type_v1, methods=["POST"])
     app.add_url_rule("/v1/transaction-type", "register_transaction_type_v1", register_transaction_type_v1, methods=["POST"])
+    # Delete
     app.add_url_rule("/transaction-type/<txn_type>", "delete_transaction_type_v1", delete_transaction_type_v1, methods=["DELETE"])
     app.add_url_rule("/v1/transaction-type/<txn_type>", "delete_transaction_type_v1", delete_transaction_type_v1, methods=["DELETE"])
-    app.add_url_rule("/transaction-type/<txn_type>", "update_transaction_type_v1", update_transaction_type_v1, methods=["PUT"])
-    app.add_url_rule("/v1/transaction-type/<txn_type>", "update_transaction_type_v1", update_transaction_type_v1, methods=["PUT"])
+    # Get
     app.add_url_rule("/transaction-type/<txn_type>", "get_transaction_type_v1", get_transaction_type_v1, methods=["GET"])
     app.add_url_rule("/v1/transaction-type/<txn_type>", "get_transaction_type_v1", get_transaction_type_v1, methods=["GET"])
+    # List
     app.add_url_rule("/transaction-types", "list_transaction_types_v1", list_transaction_types_v1, methods=["GET"])
     app.add_url_rule("/v1/transaction-types", "list_transaction_types_v1", list_transaction_types_v1, methods=["GET"])
 
@@ -53,6 +55,8 @@ def register_transaction_type_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_create_txn_type_v1(content)
+        if content.get("custom_indexes"):
+            helpers.verify_custom_indexes_options(content["custom_indexes"])
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 
@@ -67,26 +71,6 @@ def delete_transaction_type_v1(txn_type: str) -> Tuple[str, int, Dict[str, str]]
         raise exceptions.ValidationException("Invalid parameter: txn_type")
 
     transaction_types.delete_transaction_type_v1(txn_type)
-    return helpers.flask_http_response(200, helpers.format_success(True))
-
-
-@request_authorizer.Authenticated()
-@helpers.DisabledForLab
-def update_transaction_type_v1(txn_type: str) -> Tuple[str, int, Dict[str, str]]:
-    if not txn_type:
-        raise exceptions.ValidationException("Invalid parameter: txn_type")
-
-    if not flask.request.is_json:
-        raise exceptions.BadRequest("Could not parse JSON")
-
-    content = flask.request.json
-
-    try:
-        _validate_update_txn_type_v1(content)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
-
-    transaction_types.update_transaction_type_v1(txn_type, content["custom_indexes"])
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 

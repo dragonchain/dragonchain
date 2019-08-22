@@ -394,17 +394,17 @@ class ContractJobTest(unittest.TestCase):
         mock_open.assert_called()
 
     @patch("dragonchain.job_processor.contract_job.transaction_type_dao.remove_existing_transaction_type")
-    @patch("dragonchain.job_processor.contract_job.elasticsearch.remove_index")
+    @patch("dragonchain.job_processor.contract_job.smart_contract_dao.remove_smart_contract_index")
     @patch("dragonchain.job_processor.contract_job.storage.delete_directory")
     @patch("dragonchain.job_processor.contract_job.storage.delete")
-    def test_delete_contract_data(self, mock_delete, mock_delete_directory, mock_remove_index, mock_delete_txn_type):
+    def test_delete_contract_data(self, mock_delete, mock_delete_directory, mock_delete_txn_type, mock_remove_tx_type):
         self.test_job.contract_service = MagicMock()
         self.test_job.delete_contract_data()
 
         mock_delete_directory.assert_called_once_with(f"SMARTCONTRACT/{self.test_job.model.id}")
         mock_delete.assert_called_once_with(f"KEYS/{self.test_job.model.auth_key_id}")
-        mock_remove_index.assert_called_once()
         mock_delete_txn_type.assert_called_once()
+        mock_remove_tx_type.assert_called_once()
 
     @patch("dragonchain.job_processor.contract_job.scheduler.schedule_contract_invocation")
     def test_schedule_contract(self, mock_schedule):

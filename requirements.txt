@@ -1,6 +1,5 @@
 boto3==1.9.215
 redis==3.3.8
-elasticsearch==6.4.0
 apscheduler==3.6.1
 jsonpath==0.82
 Flask==1.1.1
@@ -15,3 +14,4 @@ aiohttp[speedups]==3.5.4
 aioredis==1.2.0
 base58==1.0.3
 bit==0.5.2
+redisearch==0.7.1

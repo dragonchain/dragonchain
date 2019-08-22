@@ -127,7 +127,7 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
     """
     try:
         obj: Any = None
-        key = str(block_id) + "/" + str(txn_id)
+        key = f"{block_id}/{txn_id}"
         obj = redis.cache_get(key)
         if obj:
             return json.loads(obj)

@@ -90,7 +90,7 @@ def enqueue_l1(transaction: dict) -> None:
     # Attempt contract invocation if necessary
     if transaction_type.contract_id and invocation_attempt:
         _log.info("Checking if smart contract is associated with this txn_type")
-        contract = smart_contract_dao.get_contract_by_id(cast(str, transaction_type.contract_id))  # Explicitly checked for existence above
+        contract = smart_contract_dao.get_contract_by_id(transaction_type.contract_id)  # Explicitly checked for existence above
         contract_active = contract.status["state"] in ["active", "updating"]
         _log.info(f"Contract found: {contract}")
 

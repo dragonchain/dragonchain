@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.0.0
+
+- **Feature:**
+  - Remove elasticsearch and replace with redisearch
+  - Refactor query endpoints (THIS IS A BREAKING CHANGE FOR EXISTING QUERY ENDPOINT USAGE)
+- **Documentation:**
+  - Update documentation for redisearch
+- **Packaging:**
+  - Add redisearch and remove elasticsearch requirements
+- **Bugs:**
+  - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
+
 ## 3.5.0
 
 - **Feature:**
@@ -47,7 +59,7 @@
 
 ## 3.4.46
 
-- **Bug:**
+- **Bugs:**
   - Don't require registration to bitcoin node on webserver boot
   - Properly handle 401-403 responses from matchmaking
 - **Documentation:**
@@ -61,7 +73,7 @@
 
 ## 3.4.45
 
-- **Bug:**
+- **Bugs:**
   - Fix bug with job processor consuming too much memory due to threads
 
 ## 3.4.43
@@ -92,6 +104,6 @@
   - Update fwatchdog to 0.15.2 for OpenFaaS smart contracts
 - **CICD:**
   - Updated cicd for new AWS buildspec runtimes
-- **Bug Fixes**
+- **Bugs:**
   - No longer send HTML on certain 500 responses, only JSON
   - Remove any possible existing entrypoints from built smart contract containers

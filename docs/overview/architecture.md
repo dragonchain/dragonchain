@@ -30,8 +30,8 @@ Every chain requires a running instance of the following 3rd party components:
   [configured as an LRU cache](https://redis.io/topics/lru-cache) and is
   intended to be used as a write-thru cache for storage and other ephemeral
   data.
-- [Elasticsearch](https://www.elastic.co/products/elasticsearch) deployment,
-  accessible via the `ELASTICSEARCH_HOST` env var. This should be set up to
+- [Redisearch](https://oss.redislabs.com/redisearch/index.html), accessible via
+  the `REDISEARCH_ENDPOINT` and `REDIS_PORT` env vars. This should be set up to
   persist, as it is used for indexing.
 
 Additionally, L1 (business logic) chains also require a running instance of
