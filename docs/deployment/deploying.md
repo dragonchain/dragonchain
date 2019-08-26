@@ -17,9 +17,11 @@ docker container such as `ubuntu:latest` and simply ensure that you run
 to generate the private keys)
 
 ```sh
+export LC_CTYPE=C  # Needed on MacOS when using tr with /dev/urandom
 BASE_64_PRIVATE_KEY=$(openssl ecparam -genkey -name secp256k1 | openssl ec -outform DER | tail -c +8 | head -c 32 | xxd -p -c 32 | xxd -r -p | base64)
 HMAC_ID=$(tr -dc 'A-Z' < /dev/urandom | fold -w 12 | head -n 1)
 HMAC_KEY=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 43 | head -n 1)
+echo "Root HMAC key details: ID: $HMAC_ID | KEY: $HMAC_KEY"
 SECRETS_AS_JSON="{\"private-key\":\"$BASE_64_PRIVATE_KEY\",\"hmac-id\":\"$HMAC_ID\",\"hmac-key\":\"$HMAC_KEY\",\"registry-password\":\"\"}"
 kubectl create secret generic -n dragonchain "d-INTERNAL_ID-secrets" --from-literal=SecretString="$SECRETS_AS_JSON"
 # Note INTERNAL_ID from the secret name should be replaced with the value of .global.environment.INTERNAL_ID from the helm chart values (opensource-config.yaml)
@@ -85,39 +87,42 @@ able to interact with the Dragonchain as intended.
 
 ### Checking Dragon Net Configuration
 
-In order for your chain to be working with dragon net, a few things need to be
-confirmed. Firstly, your chain must have been correctly registered with dragon
-net. In order to check this, you can check the public matchmaking service for
-your chain's registration. In order to do this, use your public chain id from
-earlier, and run the following:
+In order for your chain to be working with Dragon Net, a few things need to be
+confirmed. You chain must be correctly registered with the matchmaking service,
+as well as be publicly exposed to the internet over the correct port. You can
+check all of this at once by running the following with your public chain id
+from earlier:
 
 ```sh
-curl https://matchmaking.api.dragonchain.com/registration/PUBLIC_CHAIN_ID_HERE
+curl https://matchmaking.api.dragonchain.com/registration/verify/PUBLIC_CHAIN_ID_HERE
 ```
 
-If you see a registration returned, then your chain has successfully
-registered. If there is no registration, then for some reason your chain has
-failed to register with matchmaking, and you should consult transaction
-processor logs for more details.
+If this returns with a successful response, then the chain is registered and
+connectable. As long as the chain's pods aren't crashing, the chain should be
+working with Dragon Net.
 
-If your chain is registered with the matchmaking service, the only other
-requirement is that your chain is accessible from the greater internet via the
-URL that the chain registered with dragon net.
+If this returns anything except successful, then the chain is not properly
+registered or exposed, and an error message with more details should be
+presented in the response.
 
-In order to check this quickly, simply run the following on a computer that is
-connected to the internet, but not running the chain and run the following
-command (requires `curl` and `jq`):
+If the call reported that the chain registration could not be found, then the
+chain has failed to register with matchmaking, and you should consult
+transaction processor logs for more details.
+
+Most other errors relate to being able to access the chain from the greater
+internet via the URL that the chain registered with Dragon Net. First try to
+follow the advice from the error provided by the call above. If it's still not
+working, the following steps can also be taken for further debugging:
+
+Run the following from a computer that is connected to the internet, but not
+running the chain (requires `curl` and `jq`):
 
 ```sh
 curl "$(curl https://matchmaking.api.dragonchain.com/registration/PUBLIC_CHAIN_ID_HERE -s | jq -r .url)"/health
 ```
 
-If that command returns OK, then your chain is registered and connectable! As
-long as your pods are not crashing, your chain should be able to work with
-Dragon Net.
-
-Here is a list of things that could be wrong depending on the various failure
-outputs of the command above:
+Here is a list with some of the things that could be wrong depending on the
+various failure outputs of the command above:
 
 | Error                                          | Problem                                                                                                                                                                                                            |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -129,7 +134,8 @@ outputs of the command above:
 
 In order to use Dragon Net, your chain must be properly exposed to the
 internet. By default, the opensource config values will configure the chain
-to be exposed as a nodeport service on port 30000.
+to be exposed as a nodeport service on port 30000 (although this can be
+changed as desired).
 
 This means that the kubernetes cluster must be exposed to the internet on port
 30000, and the `DRAGONCHAIN_ENDPOINT` value in the `opensource-config.yaml`
@@ -146,7 +152,7 @@ nodeport service from the greater internet:
    documentation, however various guides can be found online depending on your
    particular router.
 
-2. If using minikube in a VM (which is the default unless you're running
+1. If using minikube in a VM (which is the default unless you're running
    minikube on linux with `--vm-driver=none`), then your host computer must
    forward traffic it receives on port 30000 to the minikube VM. The process
    for setting this up is different depending on the vm driver that you are
