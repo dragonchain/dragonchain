@@ -1,6 +1,6 @@
 global:
   environment:
-    DRAGONCHAIN_NAME: "Arbitrary Name" # This can be anything
+    DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
     REGISTRATION_TOKEN: "" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
     INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary GUID if no Dragon Net)
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet

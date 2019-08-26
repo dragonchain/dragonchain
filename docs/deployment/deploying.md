@@ -42,13 +42,23 @@ Both the helm chart and a template for the necessary values can be downloaded
 
 Before deploying the helm chart, a few variables need to be set in the
 `opensource-config.yaml` file. This file is mostly self-documenting, so see the
-comments for which values must be overridden.
+comments for which values must be overridden (most of the important settings
+are in the first section).
 
 Once the values are set, install the helm chart with:
 
 ```sh
-helm install dragonchain-k8s-0.9.0.tgz -f opensource-config.yaml --name my-dragonchain --namespace dragonchain
+helm upgrade --install my-dragonchain dragonchain-k8s-0.9.0.tgz --values opensource-config.yaml --namespace dragonchain
 ```
+
+If you need to change any values AFTER the helm chart has already been
+installed, simply change the relevant values in `opensource-config.yaml` and
+run the above command again.
+
+You may also need to manually delete pods (which causes them to restart) after
+upgrading if you changed any environment values. This is because these values
+aren't changed while in an existing pod that is running, and helm will not
+restart them for you.
 
 ## Checking Deployment
 
