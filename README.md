@@ -3,8 +3,8 @@
 
 # Dragonchain
 
-[![Build Status](https://travis-ci.org/dragonchain/dragonchain.svg?branch=master)](https://travis-ci.org/dragonchain/dragonchain)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/04f29e22a1cc1b66bf15/test_coverage)](https://codeclimate.com/github/dragonchain/dragonchain/test_coverage)
+[![Build Status](https://img.shields.io/travis/dragonchain/dragonchain)](https://travis-ci.org/dragonchain/dragonchain)
+[![Test Coverage](https://img.shields.io/codeclimate/coverage/dragonchain/dragonchain)](https://codeclimate.com/github/dragonchain/dragonchain/test_coverage)
 [![Code Style Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 [![License](https://img.shields.io/badge/license-Apache%202.0-informational.svg)](https://github.com/dragonchain/dragonchain/blob/master/LICENSE)
 ![Banana Index](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fdragonchain-core-docs.dragonchain.com%2Fbanana-shield.json)
@@ -41,7 +41,7 @@ For interaction and using the Dragonchain, check out the SDKs (or CLI) and their
 
 - Python: [SDK](https://pypi.org/project/dragonchain-sdk/) - [Documentation](https://python-sdk-docs.dragonchain.com/latest/)
 - Javascript: [SDK](https://www.npmjs.com/package/dragonchain-sdk) - [Documentation](https://node-sdk-docs.dragonchain.com/latest/)
-- Golang: [SDK](https://github.com/dragonchain-inc/dragonchain-sdk-go) - [Documentation](https://godoc.org/github.com/dragonchain-inc/dragonchain-sdk-go)
+- Golang: [SDK](https://github.com/dragonchain/dragonchain-sdk-go) - [Documentation](https://godoc.org/github.com/dragonchain/dragonchain-sdk-go)
 - CLI: [Link](https://www.npmjs.com/package/dctl)
 
 ## 🖥️ Development

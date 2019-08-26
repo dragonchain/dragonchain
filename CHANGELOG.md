@@ -32,6 +32,9 @@
 - **Documentation:**
   - Fixed/elaborated on some of the process for connecting to Dragon Net, including exposing a chain to the internet
   - Add an export which allows hmac key generation to work correctly on MacOS
+  - Update Helm chart/values to remove unnecessarily exposed settings
+  - Add creation of the dragonchain namespace before creating a secret on deployment
+  - Update Golang SDK URL
   - Various spelling fixes
 - **Development:**
   - Refactored interchain support for easier future integration with further interchains

@@ -17,6 +17,8 @@ docker container such as `ubuntu:latest` and simply ensure that you run
 to generate the private keys)
 
 ```sh
+# First create the dragonchain namespace
+echo '{"kind":"Namespace","apiVersion":"v1","metadata":{"name":"dragonchain","labels":{"name":"dragonchain"}}}' | kubectl create -f -
 export LC_CTYPE=C  # Needed on MacOS when using tr with /dev/urandom
 BASE_64_PRIVATE_KEY=$(openssl ecparam -genkey -name secp256k1 | openssl ec -outform DER | tail -c +8 | head -c 32 | xxd -p -c 32 | xxd -r -p | base64)
 HMAC_ID=$(tr -dc 'A-Z' < /dev/urandom | fold -w 12 | head -n 1)

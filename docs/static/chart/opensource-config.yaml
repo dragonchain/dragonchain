@@ -30,13 +30,6 @@ service:
   # Port is only needed if type is "NodePort", and exposing a chain without ingress. Must be 30000-32767 and unique per cluster
   port: 30000
 
-# -- ingressEndpoint --
-# Dragonchains will be communicating with eachother on the network using this cluster ingress.
-# Every dragonchain will add an ingress record to your cluster, pointing to your chain's
-# webserver with the following format: {dragonchainId}.{ingressEndpoint}
-# Example: http://some-valid-dragonchain-id.api.my-company.org
-ingressEndpoint: api.my-company.org
-
 # -- faas --
 # Every dragonchain will need to communicate with an OpenFaaS system to generate and run smart contracts.
 # We recommend all values addressed within be located on a seperate Kubernetes cluster, but could
@@ -53,12 +46,6 @@ faas:
   registry_username: MyUsername
   registry_password: MyPassword
 
-# -- aws --
-# This object should be set to null for on-prem deployments.
-# At Dragonchain, Inc, our managed service platform requires that all dragonchains
-# use AWS resources for storage to facilitate monitoring/maintanence/storage.
-aws: null
-
 # -- dragonchain --
 # Dragonchain specific congifuration options live here.
 dragonchain:
@@ -67,6 +54,7 @@ dragonchain:
   image:
     # -- dragonchain.image.pullPolicy --
     # In production we recommend "IfNotPresent". For development it is fine to use "Always"
+    # Just keep in mind that Always with a 'latest' tag means your node may receive unexpected updates
     pullPolicy: Always
 
     # -- dragonchain.image.registry --
@@ -83,14 +71,6 @@ dragonchain:
     # Version of your dragonchain. This value is used to interpolate the tag name.
     # e.g.: {registry}/{repository}:{version}
     version: latest
-
-  # -- dragonchain.database_type --
-  # This configuration option should be null for any on-prem dragonchains.
-  database_type: null
-
-  # -- dragonchain.reporting_type --
-  # This configuration option should be null for any on-prem dragonchains.
-  reporting_type: null
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.
