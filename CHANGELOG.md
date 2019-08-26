@@ -31,7 +31,7 @@
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Documentation:**
   - Fixed/elaborated on some of the process for connecting to Dragon Net, including exposing a chain to the internet
-  - Add a note when generating HMAC ID/KEY to check that it was generated correctly, particularly for MacOS
+  - Add an export which allows hmac key generation to work correctly on MacOS
   - Various spelling fixes
 - **Development:**
   - Refactored interchain support for easier future integration with further interchains
