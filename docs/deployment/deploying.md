@@ -17,6 +17,8 @@ docker container such as `ubuntu:latest` and simply ensure that you run
 to generate the private keys)
 
 ```sh
+# First create the dragonchain namespace
+echo '{"kind":"Namespace","apiVersion":"v1","metadata":{"name":"dragonchain","labels":{"name":"dragonchain"}}}' | kubectl create -f -
 export LC_CTYPE=C  # Needed on MacOS when using tr with /dev/urandom
 BASE_64_PRIVATE_KEY=$(openssl ecparam -genkey -name secp256k1 | openssl ec -outform DER | tail -c +8 | head -c 32 | xxd -p -c 32 | xxd -r -p | base64)
 HMAC_ID=$(tr -dc 'A-Z' < /dev/urandom | fold -w 12 | head -n 1)
@@ -40,13 +42,23 @@ Both the helm chart and a template for the necessary values can be downloaded
 
 Before deploying the helm chart, a few variables need to be set in the
 `opensource-config.yaml` file. This file is mostly self-documenting, so see the
-comments for which values must be overridden.
+comments for which values must be overridden (most of the important settings
+are in the first section).
 
 Once the values are set, install the helm chart with:
 
 ```sh
-helm install dragonchain-k8s-0.9.0.tgz -f opensource-config.yaml --name my-dragonchain --namespace dragonchain
+helm upgrade --install my-dragonchain dragonchain-k8s-0.9.0.tgz --values opensource-config.yaml --namespace dragonchain
 ```
+
+If you need to change any values AFTER the helm chart has already been
+installed, simply change the relevant values in `opensource-config.yaml` and
+run the above command again.
+
+You may also need to manually delete pods (which causes them to restart) after
+upgrading if you changed any environment values. This is because these values
+aren't changed while in an existing pod that is running, and helm will not
+restart them for you.
 
 ## Checking Deployment
 
