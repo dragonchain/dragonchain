@@ -28,6 +28,9 @@ keepalive = 90  # Make sure this is higher than the load balancer/ingress contro
 sendfile = False
 accesslog = "-"
 loglevel = "info"
+if os.environ.get("TLS_SUPPORT") == "true":
+    certfile = "/etc/cert/tls.crt"
+    keyfile = "/etc/cert/tls.key"
 
 # The following are tweaks to prevent DOS attacks
 # If these restrictions become a problem, they can be changed

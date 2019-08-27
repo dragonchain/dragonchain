@@ -2,13 +2,13 @@ global:
   environment:
     DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
     REGISTRATION_TOKEN: "" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
-    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary GUID if no Dragon Net)
+    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary string if no Dragon Net)
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
     # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
+    # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
     LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
-    STAGE: "prod"
+    TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
-    STORAGE_LOCATION: "/dragonchain" # Must match dragonchain.storage.mount from below
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
 
@@ -76,7 +76,7 @@ dragonchain:
   # The mount path of a persistent volume to be used by all dragonchain microservices.
   # This is where your actual blockchain data will be stored at-rest
   storage:
-    mount: "/dragonchain"
+    mount: "/dragonchain" # Don't change this value
     spec:
       # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
       storageClassName: standard

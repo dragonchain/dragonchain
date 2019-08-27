@@ -36,6 +36,12 @@ cluster with the intent to run dragonchain(s).
 
 ### Recommended
 
+- It is strongly encouraged to have a TLS certificate so that your chain can
+  have TLS (HTTPS) support. Without this, your chain may be vulnerable to
+  attacks. Running without a valid TLS certificate should be for non-production
+  use only, and TLS _may_ be enforced in the future. You can obtain a free TLS
+  certificate for a domain you own [from letsencrypt](https://letsencrypt.org/)
+
 - It is _HIGHLY_ recommended to have RBAC enabled on the kubernetes cluster.
   See the relevant [kubernetes docs](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
   for more info.

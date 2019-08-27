@@ -27,9 +27,11 @@
     - `POST /public-blockchain-transaction`
     - `POST /v1/public-blockchain-transaction`
   - Reduced initial delay checks for the webserver so kubernetes will mark the webserver as ready quicker
+  - Add direct TLS support for the Dragonchain webserver (for NodePort deployed services)
 - **Bug:**
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Documentation:**
+  - Add docs/update helm chart and values for added TLS support
   - Fixed/elaborated on some of the process for connecting to Dragon Net, including exposing a chain to the internet
   - Add an export which allows hmac key generation to work correctly on MacOS
   - Update Helm chart/values to remove unnecessarily exposed settings
