@@ -15,25 +15,139 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import Dict, Any
+from typing import Dict, Any, List, cast, TYPE_CHECKING
 
-from dragonchain.lib.interfaces import interchain
-from dragonchain.lib.interfaces.networks import eth
-from dragonchain.lib.interfaces.networks import btc
+from dragonchain.lib.dto import eth
+from dragonchain.lib.dto import btc
+from dragonchain.lib.dao import interchain_dao
+
+if TYPE_CHECKING:
+    from dragonchain.lib.dto import model
 
 
-def get_blockchain_addresses_v1() -> Dict[str, str]:
+def _ethereum_client_to_user_dto_v1(eth_client: eth.EthereumNetwork) -> Dict[str, Any]:
     return {
-        "eth_mainnet": eth.load_address("ETH_MAINNET")[0],
-        "eth_ropsten": eth.load_address("ETH_ROPSTEN")[0],
-        "etc_mainnet": eth.load_address("ETC_MAINNET")[0],
-        "etc_morden": eth.load_address("ETC_MORDEN")[0],
-        "btc_mainnet": btc.load_address("BTC_MAINNET")[0],
-        "btc_testnet3": btc.load_address("BTC_TESTNET3")[0],
+        "version": "1",
+        "blockchain": eth_client.blockchain,
+        "name": eth_client.name,
+        "rpc_address": eth_client.rpc_address,
+        "chain_id": eth_client.chain_id,
+        "address": eth_client.address,
     }
 
 
-def sign_blockchain_transaction_v1(network: str, transaction: Dict[str, Any]) -> Dict[str, str]:
-    network_interface = interchain.InterchainInterface(network)
-    signed = network_interface.sign_transaction(transaction)
-    return {"signed": signed}
+def _bitcoin_client_to_user_dto_v1(btc_client: btc.BitcoinNetwork) -> Dict[str, Any]:
+    return {
+        "version": "1",
+        "blockchain": btc_client.blockchain,
+        "name": btc_client.name,
+        "rpc_address": btc_client.rpc_address,
+        "testnet": btc_client.testnet,
+        "address": btc_client.address,
+    }
+
+
+def _get_output_dto_v1(client: "model.InterchainModel") -> Dict[str, Any]:
+    if client.blockchain == "ethereum":
+        return _ethereum_client_to_user_dto_v1(cast(eth.EthereumNetwork, client))
+    elif client.blockchain == "bitcoin":
+        return _bitcoin_client_to_user_dto_v1(cast(btc.BitcoinNetwork, client))
+    else:
+        raise RuntimeError(f"Unkown fetched blockchain type {client.blockchain}")
+
+
+def create_bitcoin_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+    client = btc.new_from_user_input(user_data)
+    interchain_dao.save_interchain_client(client)
+    return _get_output_dto_v1(client)
+
+
+def create_ethereum_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+    client = eth.new_from_user_input(user_data)
+    interchain_dao.save_interchain_client(client)
+    return _get_output_dto_v1(client)
+
+
+def update_bitcoin_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Get current client
+    current_client = cast(btc.BitcoinNetwork, interchain_dao.get_interchain_client("bitcoin", name))
+    # Merge user data with existing data
+    client_data = {
+        "version": "1",
+        "name": name,
+        "testnet": user_data["testnet"] if isinstance(user_data.get("testnet"), bool) else current_client.testnet,
+        "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
+        "rpc_address": user_data["rpc_address"] if isinstance(user_data.get("rpc_address"), str) else current_client.rpc_address,
+        "rpc_authorization": user_data["rpc_authorization"] if isinstance(user_data.get("rpc_authorization"), str) else current_client.authorization,
+        "utxo_scan": user_data["utxo_scan"] if isinstance(user_data.get("utxo_scan"), bool) else False,
+    }
+    # Create and save updated client
+    return create_bitcoin_interchain_v1(client_data)
+
+
+def update_ethereum_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Get current client
+    current_client = cast(eth.EthereumNetwork, interchain_dao.get_interchain_client("ethereum", name))
+    # Merge user data with existing data
+    client_data = {
+        "version": "1",
+        "name": name,
+        "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
+        "rpc_address": user_data["rpc_address"] if isinstance(user_data.get("rpc_address"), str) else current_client.rpc_address,
+        "chain_id": user_data["chain_id"] if isinstance(user_data.get("chain_id"), int) else current_client.chain_id,
+    }
+    # Create and save updated client
+    return create_ethereum_interchain_v1(client_data)
+
+
+def get_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:
+    return _get_output_dto_v1(interchain_dao.get_interchain_client(blockchain, name))
+
+
+def list_interchain_v1(blockchain: str) -> Dict[str, List[Dict[str, Any]]]:
+    return {"interchains": [_get_output_dto_v1(x) for x in interchain_dao.list_interchain_clients(blockchain)]}
+
+
+def delete_interchain_v1(blockchain: str, name: str) -> None:
+    interchain_dao.delete_interchain_client(blockchain, name)
+
+
+def set_default_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:
+    return _get_output_dto_v1(interchain_dao.set_default_interchain_client(blockchain, name))
+
+
+def get_default_interchain_v1() -> Dict[str, Any]:
+    return _get_output_dto_v1(interchain_dao.get_default_interchain_client())
+
+
+def sign_interchain_transaction_v1(blockchain: str, name: str, transaction: Dict[str, Any]) -> Dict[str, str]:
+    client = interchain_dao.get_interchain_client(blockchain, name)
+    # Delete the user provided version field before passing it to sign transaction
+    try:
+        del transaction["version"]
+    except KeyError:  # If the key doesn't exist, that is fine
+        pass
+    return {"signed": client.sign_transaction(transaction)}
+
+
+# Below methods are deprecated and exist for legacy support only. Both methods will return a 404 if not a legacy chain
+
+
+def legacy_get_blockchain_addresses_v1() -> Dict[str, str]:
+    return {
+        "eth_mainnet": interchain_dao.get_interchain_client("ethereum", "ETH_MAINNET").address,
+        "eth_ropsten": interchain_dao.get_interchain_client("ethereum", "ETH_ROPSTEN").address,
+        "etc_mainnet": interchain_dao.get_interchain_client("ethereum", "ETC_MAINNET").address,
+        "etc_morden": interchain_dao.get_interchain_client("ethereum", "ETC_MORDEN").address,
+        "btc_mainnet": interchain_dao.get_interchain_client("bitcoin", "BTC_MAINNET").address,
+        "btc_testnet3": interchain_dao.get_interchain_client("bitcoin", "BTC_TESTNET3").address,
+    }
+
+
+def legacy_sign_blockchain_transaction_v1(network: str, transaction: Dict[str, Any]) -> Dict[str, str]:
+    if network in ["BTC_MAINNET", "BTC_TESTNET3"]:  # Check if legacy bitcoin network
+        client = interchain_dao.get_interchain_client("bitcoin", network)
+    else:  # Must be a legacy ethereum network
+        client = interchain_dao.get_interchain_client("ethereum", network)
+
+    return {"signed": client.sign_transaction(transaction)}

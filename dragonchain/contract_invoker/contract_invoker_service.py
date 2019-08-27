@@ -127,6 +127,6 @@ async def call_contract(session: "aiohttp.ClientSession", contract_id: str, payl
         raise exceptions.ContractInvocationError("Contract invocation was attempted, but function was not found.")
     elif r.status != 200:
         _log.warning(f"Non 200 response from contract: {r.status}")
-        return json.dumps({"error": f"Contract recieved non-200 response: {r.status}"}, separators=(",", ":"))
+        return json.dumps({"error": f"Contract received non-200 response: {r.status}"}, separators=(",", ":"))
     else:
         return response

@@ -47,19 +47,19 @@ class TestLevelFiveActions(unittest.TestCase):
         level_5_actions.BROADCAST_INTERVAL = 7200
         level_5_actions.INTERCHAIN_NETWORK = "eth"
         level_5_actions.FUNDED = True
-        level_5_actions.INTERCHAIN = MagicMock()
+        level_5_actions._interchain_client = MagicMock()
 
     def tearDown(self):
         os.environ["LEVEL"] = "1"
 
     @patch("dragonchain.transaction_processor.level_5_actions.matchmaking.get_matchmaking_config", return_value=matchmaking_mock)
-    @patch("dragonchain.transaction_processor.level_5_actions.interchain.InterchainInterface", return_value="thing")
+    @patch("dragonchain.transaction_processor.level_5_actions.interchain_dao.get_default_interchain_client", return_value="thing")
     def test_set_up_sets_module_state_properly(self, mock_interchain, mock_get_config):
         level_5_actions.setup()
         self.assertEqual(level_5_actions.BROADCAST_INTERVAL, 7200)
         self.assertEqual(level_5_actions.INTERCHAIN_NETWORK, "eth")
         self.assertTrue(level_5_actions.FUNDED)
-        self.assertEqual(level_5_actions.INTERCHAIN, "thing")
+        self.assertEqual(level_5_actions._interchain_client, "thing")
         mock_get_config.assert_called_once()
 
     @patch("dragonchain.transaction_processor.level_5_actions.matchmaking")
@@ -195,13 +195,13 @@ class TestLevelFiveActions(unittest.TestCase):
     def test_broadcast_to_public_chain(self, mock_put_index_in_storage, mock_keys):
         mock_keys.return_value = MagicMock(hash_l5_for_public_broadcast=MagicMock(return_value="PoE"))
         mock_block = MagicMock(transaction_hash=[], block_id="123")
-        level_5_actions.INTERCHAIN.publish_to_public_network = MagicMock(return_value="0xTransactionHash")
-        level_5_actions.INTERCHAIN.get_current_block = MagicMock(return_value=8754)
+        level_5_actions._interchain_client.publish_l5_hash_to_public_network = MagicMock(return_value="0xTransactionHash")
+        level_5_actions._interchain_client.get_current_block = MagicMock(return_value=8754)
 
         level_5_actions.broadcast_to_public_chain(mock_block)
 
         mock_keys.return_value.hash_l5_for_public_broadcast.assert_called_once_with(mock_block)
-        level_5_actions.INTERCHAIN.publish_to_public_network.assert_called_once_with("PoE")
+        level_5_actions._interchain_client.publish_l5_hash_to_public_network.assert_called_once_with("PoE")
         mock_put_index_in_storage.assert_called_once_with("BLOCK", "123", ANY)
         self.assertEqual(mock_block.transaction_hash, ["0xTransactionHash"])
         self.assertEqual(mock_block.block_last_sent_at, 8754)
@@ -211,11 +211,8 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_block_number", return_value="124")
     @patch("dragonchain.transaction_processor.level_5_actions.finalize_block")
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get_json_from_object", return_value=fake_l5_block)
-    @patch("dragonchain.transaction_processor.level_5_actions.retry_broadcast_if_necessary")
-    def test_check_confirmations_finalizes_when_confirmed(
-        self, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
-    ):
-        level_5_actions.INTERCHAIN.is_transaction_confirmed = MagicMock(return_value=True)
+    def test_check_confirmations_finalizes_when_confirmed(self, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed):
+        level_5_actions._interchain_client.is_transaction_confirmed.return_value = True
 
         level_5_actions.check_confirmations()
 
@@ -223,17 +220,19 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_get_last_confirmed.assert_called_once()
         mock_finalize.assert_called_once()
         mock_storage_get.assert_called_once_with("BLOCK/124")
-        mock_retry.assert_not_called()
+        level_5_actions._interchain_client.should_retry_broadcast.assert_not_called()
 
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_confirmed_block", return_value={"block_id": "123"})
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_block_number", return_value="124")
     @patch("dragonchain.transaction_processor.level_5_actions.finalize_block")
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get_json_from_object", return_value=fake_l5_block)
-    @patch("dragonchain.transaction_processor.level_5_actions.retry_broadcast_if_necessary")
+    @patch("dragonchain.transaction_processor.level_5_actions.broadcast_to_public_chain")
+    @patch("dragonchain.transaction_processor.level_5_actions.l5_block_model.new_from_at_rest")
     def test_check_confirmations_removes_unneeded_hashes(
-        self, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
+        self, mock_block_model, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
     ):
-        level_5_actions.INTERCHAIN.is_transaction_confirmed = MagicMock(return_value="")
+        level_5_actions._interchain_client.is_transaction_confirmed.side_effect = exceptions.RPCTransactionNotFound
+        mock_block_model.return_value.transaction_hash = ["1"]
 
         level_5_actions.check_confirmations()
 
@@ -241,17 +240,17 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_get_last_confirmed.assert_called_once()
         mock_finalize.assert_not_called()
         mock_storage_get.assert_called_once_with("BLOCK/124")
-        mock_retry.assert_called_once()
+        self.assertEqual(mock_block_model.return_value.transaction_hash, [])
 
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_confirmed_block", return_value={"block_id": "123"})
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_block_number", return_value="124")
     @patch("dragonchain.transaction_processor.level_5_actions.finalize_block")
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get_json_from_object", return_value=fake_l5_block)
-    @patch("dragonchain.transaction_processor.level_5_actions.retry_broadcast_if_necessary")
+    @patch("dragonchain.transaction_processor.level_5_actions.broadcast_to_public_chain")
     def test_check_confirmations_attempts_to_retry_when_not_confirmed(
         self, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
     ):
-        level_5_actions.INTERCHAIN.is_transaction_confirmed = MagicMock(return_value=False)
+        level_5_actions._interchain_client.is_transaction_confirmed.return_value = False
 
         level_5_actions.check_confirmations()
 
@@ -265,10 +264,11 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_block_number", return_value="124")
     @patch("dragonchain.transaction_processor.level_5_actions.finalize_block")
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get_json_from_object")
+    @patch("dragonchain.transaction_processor.level_5_actions.broadcast_to_public_chain")
     def test_check_confirmations_noops_when_no_blocks_to_confirm(
-        self, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
+        self, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
     ):
-        level_5_actions.INTERCHAIN.is_transaction_confirmed = MagicMock(return_value=True)
+        level_5_actions._interchain_client.is_transaction_confirmed.return_value = True
 
         level_5_actions.check_confirmations()
 
@@ -276,30 +276,7 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_get_last_confirmed.assert_called_once()
         mock_storage_get.assert_not_called()
         mock_finalize.assert_not_called()
-
-    @patch("dragonchain.transaction_processor.level_5_actions.broadcast_to_public_chain")
-    def test_retry_if_necessary_retries_when_past_threshold(self, mock_broadcast):
-        mock_block = MagicMock(block_last_sent_at=400)
-        level_5_actions.INTERCHAIN.get_current_block = MagicMock(return_value=413)
-        level_5_actions.INTERCHAIN.get_retry_threshold = MagicMock(return_value=12)
-
-        level_5_actions.retry_broadcast_if_necessary(mock_block)
-
-        level_5_actions.INTERCHAIN.get_current_block.assert_called_once()
-        level_5_actions.INTERCHAIN.get_retry_threshold.assert_called_once()
-        mock_broadcast.assert_called_once_with(mock_block)
-
-    @patch("dragonchain.transaction_processor.level_5_actions.broadcast_to_public_chain")
-    def test_retry_if_necessary_noops_when_within_threshold(self, mock_broadcast):
-        mock_block = MagicMock(block_last_sent_at=400)
-        level_5_actions.INTERCHAIN.get_current_block = MagicMock(return_value=411)
-        level_5_actions.INTERCHAIN.get_retry_threshold = MagicMock(return_value=12)
-
-        level_5_actions.retry_broadcast_if_necessary(mock_block)
-
-        level_5_actions.INTERCHAIN.get_current_block.assert_called_once()
-        level_5_actions.INTERCHAIN.get_retry_threshold.assert_called_once()
-        mock_broadcast.assert_not_called()
+        mock_retry.assert_not_called()
 
     @patch("dragonchain.transaction_processor.level_5_actions.broadcast.dispatch")
     @patch("dragonchain.transaction_processor.level_5_actions.keys.get_my_keys")
@@ -445,11 +422,11 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.set_last_watch_time")
     def test_watch_for_funds_calls_correct_functions(self, mock_set_watch_time, mock_set_funds, mock_funded):
         level_5_actions.FUNDED = False
-        level_5_actions.INTERCHAIN.check_balance = MagicMock(return_value=500000000)
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate = MagicMock(return_value=5000)
+        level_5_actions._interchain_client.check_balance = MagicMock(return_value=500000000)
+        level_5_actions._interchain_client.get_transaction_fee_estimate = MagicMock(return_value=5000)
         level_5_actions.watch_for_funds()
 
-        level_5_actions.INTERCHAIN.check_balance.assert_called_once()
+        level_5_actions._interchain_client.check_balance.assert_called_once()
         mock_funded.assert_called_once_with(True)
         mock_set_watch_time.assert_called_once()
         mock_set_funds.assert_called_once_with(500000000)
@@ -460,11 +437,11 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.set_last_watch_time")
     def test_watch_for_funds_does_not_update_matchmaking_if_not_necessary(self, mock_set_watch_time, mock_set_funds, mock_funded):
         level_5_actions.FUNDED = True
-        level_5_actions.INTERCHAIN.check_balance = MagicMock(return_value=500000000)
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate = MagicMock(return_value=5000)
+        level_5_actions._interchain_client.check_balance = MagicMock(return_value=500000000)
+        level_5_actions._interchain_client.get_transaction_fee_estimate = MagicMock(return_value=5000)
         level_5_actions.watch_for_funds()
 
-        level_5_actions.INTERCHAIN.check_balance.assert_called_once()
+        level_5_actions._interchain_client.check_balance.assert_called_once()
         mock_funded.assert_not_called()
         mock_set_watch_time.assert_called_once()
         mock_set_funds.assert_called_once_with(500000000)
@@ -472,10 +449,10 @@ class TestLevelFiveActions(unittest.TestCase):
 
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get", return_value=b"500000000")
     def test_has_funds_for_transaction_returns_true_if_funds_exist(self, mock_get):
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate = MagicMock(return_value=5000)
+        level_5_actions._interchain_client.get_transaction_fee_estimate = MagicMock(return_value=5000)
         self.assertTrue(level_5_actions.has_funds_for_transactions())
         mock_get.assert_called_once()
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate.assert_called_once()
+        level_5_actions._interchain_client.get_transaction_fee_estimate.assert_called_once()
 
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get", side_effect=exceptions.NotFound)
     def test_has_funds_for_transaction_returns_false_for_new_chain(self, mock_get):
@@ -486,10 +463,10 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get", return_value=b"50")
     def test_has_funds_for_transaction_returns_false_if_funds_dont_exist(self, mock_get, mock_fund):
         level_5_actions.FUNDED = True
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate = MagicMock(return_value=5000)
+        level_5_actions._interchain_client.get_transaction_fee_estimate = MagicMock(return_value=5000)
 
         self.assertFalse(level_5_actions.has_funds_for_transactions())
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate.assert_called_once()
+        level_5_actions._interchain_client.get_transaction_fee_estimate.assert_called_once()
         mock_fund.assert_called_once_with(False)
         self.assertFalse(level_5_actions.FUNDED)
         mock_get.assert_called_once()
@@ -498,10 +475,10 @@ class TestLevelFiveActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_5_actions.storage.get", return_value=b"50")
     def test_has_funds_for_transaction_does_not_call_matchmaking_when_not_needed(self, mock_get, mock_fund):
         level_5_actions.FUNDED = False
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate = MagicMock(return_value=5000)
+        level_5_actions._interchain_client.get_transaction_fee_estimate = MagicMock(return_value=5000)
 
         self.assertFalse(level_5_actions.has_funds_for_transactions())
-        level_5_actions.INTERCHAIN.get_transaction_fee_estimate.assert_called_once()
+        level_5_actions._interchain_client.get_transaction_fee_estimate.assert_called_once()
         mock_fund.assert_not_called()
         self.assertFalse(level_5_actions.FUNDED)
         mock_get.assert_called_once()

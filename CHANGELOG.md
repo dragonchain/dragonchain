@@ -1,5 +1,50 @@
 # Changelog
 
+## 3.5.0
+
+- **Feature:**
+  - Switch to using files for reading secrets for dynamic secret update support
+  - Use new schema for NETWORK (for L5 registration and blocks). Will now look like "{blockchain} {extra_data}"
+    i.e. "bitcoin testnet3" or "ethereum network_id 2" rather than a pre-set list of enums as before.
+    (This allows for things such as custom/private ethereum networks, etc)
+  - Add support for creating/saving various interchain networks, including custom interchain nodes, keys, etc
+    - Note this also means that a chain can have multiple addresses for the same type of network now (i.e. many ETH addresses)
+  - Add routes for refactored interchain support:
+    - `POST /v1/interchains/bitcoin` Create a bitcoin network for the dragonchain to use
+    - `POST /v1/interchains/ethereum` Create an ethereum network for the dragonchain to use
+    - `PATCH /v1/interchains/bitcoin/<id>` Update an already existing bitcoin network of dragonchain
+    - `PATCH /v1/interchains/ethereum/<id>` Update an already existing ethereum network of dragonchain
+    - `POST /v1/interchains/bitcoin/<id>/transaction` Create a bitcoin transaction using one of the chain's networks
+    - `POST /v1/interchains/ethereum/<id>/transaction` Create a ethereum transaction using one of the chain's networks
+    - `GET /v1/interchains/<blockchain>` Get a list of all registered Dragonchain interchains
+    - `GET /v1/interchains/<blockchain>/<id>` Get a particular interchain network from the chain
+    - `DELETE /v1/interchains/<blockchain>/<id>` Delete a particular interchain network from the chain
+    - `POST /v1/interchains/default` (L5 only) Set a default network for level 5 chains to use
+    - `GET /v1/interchains/default` (L5 only) Get the default network set on a level 5 chain
+  - Move the following routes legacy support only (they will work for chains upgraded from an old version for backwards compatibility, but will 404 on new chains):
+    - `GET /public-blockchain-address`
+    - `GET /v1/public-blockchain-address`
+    - `POST /public-blockchain-transaction`
+    - `POST /v1/public-blockchain-transaction`
+  - Reduced initial delay checks for the webserver so kubernetes will mark the webserver as ready quicker
+  - Add direct TLS support for the Dragonchain webserver (for NodePort deployed services)
+- **Bug:**
+  - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
+- **Documentation:**
+  - Add docs/update helm chart and values for added TLS support
+  - Fixed/elaborated on some of the process for connecting to Dragon Net, including exposing a chain to the internet
+  - Add an export which allows hmac key generation to work correctly on MacOS
+  - Update Helm chart/values to remove unnecessarily exposed settings
+  - Add creation of the dragonchain namespace before creating a secret on deployment
+  - Update Golang SDK URL
+  - Various spelling fixes
+- **Development:**
+  - Refactored interchain support for easier future integration with further interchains
+- **Packaging:**
+  - Updated boto3, kubernetes, redis, and web3 dependencies
+  - Removed unnecessary dependencies, and added speedup extras for aiohttp
+  - Update fwatchdog to 0.16.0 for OpenFaaS smart contracts
+
 ## 3.4.46
 
 - **Bug:**

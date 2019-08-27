@@ -23,24 +23,20 @@ from dragonchain import exceptions
 
 SECRET_LOCATION = os.environ["SECRET_LOCATION"]
 
-_secrets_json: Any = None
-
 
 def get_dc_secret(secret_name: str) -> Any:
     """Get the secret value for this Dragonchain's owned secrets
     Args:
-        secret_name: The name of the environment variable holding the secret
+        secret_name: The name of the secret to fetch
     Returns:
         Dragonchain secret by its key (usually a string, but not necessarily)
     """
-    # Memo-ized for now until we need to support dynamic secrets
-    global _secrets_json
-    if _secrets_json is None:
-        try:
-            _secrets_json = json.loads(os.environ[SECRET_LOCATION])
-        except Exception:
-            raise RuntimeError("Error occurred loading DC secrets from environment")
     try:
-        return _secrets_json[secret_name]
+        with open(SECRET_LOCATION) as f:
+            secrets_json = json.loads(f.read())
+    except Exception:
+        raise RuntimeError("Error occurred loading DC secrets from file system")
+    try:
+        return secrets_json[secret_name]
     except Exception:
         raise exceptions.NotFound(f"Secret {secret_name} was not found")

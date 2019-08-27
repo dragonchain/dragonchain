@@ -9,7 +9,7 @@ completed L1 blocks. The microservice uses Dragon Net to find validating nodes
 that match criteria and request verifications from them.
 
 The service's responsibilities include managing discovered Dragon Net chains
-and re-broadcasting blocks if verifiations aren't returned in time.
+and re-broadcasting blocks if verifications aren't returned in time.
 
 Turning off or removing the broadcast processor removes the chain from Dragon
 Net (although the `BROADCAST` environment variable should also be set to False
@@ -38,7 +38,7 @@ has not been broadcast at its current level yet.
 The broadcast processor works linearly and will only try to get verifications
 for a single level (2-5) at a time. Because the broadcast processor has retry
 logic, it will ask for verifications from new chains if existing validating
-nodes are unresponsive. This makes it possible to recieve more verifications
+nodes are unresponsive. This makes it possible to receive more verifications
 than desired. If this occurs, receipts for verifications after the required
 amount will be refused.
 
@@ -49,13 +49,13 @@ deadline to discard validation requests that have already expired.
 The broadcast processor keeps track of the state of verifications for a chain
 with redis keys prefixed with `broadcast:block:`. Namely, it tracks the block's
 current 'state' (the level it is broadcasting verifications to) and a set
-containing the chain ids from which it has already recieved verifications.
+containing the chain ids from which it has already received verifications.
 This allows the broadcast processor to retry broadcasting blocks when
 necessary.
 
-When a receipt for a verification is recieved from a higher level, the block's
+When a receipt for a verification is received from a higher level, the block's
 state is updated to either promote or finalize the block. Once a chain has
-recieved all required verifications for a block, its state is removed from the
+received all required verifications for a block, its state is removed from the
 broadcasting system.
 
 ## Flow
@@ -63,7 +63,7 @@ broadcasting system.
 When the broadcast processor boots, it starts an event loop, and starts
 checking for blocks to broadcast every second. First it gets blocks that
 currently need to be checked by scheduled timestamp. After pulling this list
-of blocks, it checks each block's level and finds which chains it has recieved
+of blocks, it checks each block's level and finds which chains it has received
 verifications from (if any).
 
 If the block had been sent to chains which did not respond before the deadline,

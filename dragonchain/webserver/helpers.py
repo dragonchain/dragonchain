@@ -20,6 +20,8 @@ import os
 import functools
 from typing import Tuple, Dict, Any, Callable
 
+from werkzeug import exceptions as werkzeug_exceptions
+
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib import error_reporter
@@ -65,6 +67,7 @@ def format_error(category: str, msg: str) -> Dict[str, dict]:
 """ Static error messages """
 
 
+METHOD_NOT_ALLOWED = format_error("METHOD_NOT_ALLOWED", "The method is not allowed for the requested URL.")
 CONTRACT_CONFLICT = format_error("CONTRACT_CONFLICT", "Contract or transaction type already exists.")
 BAD_STATE = format_error("BAD_STATE", "The action attempted could not be completed because the contract is in an invalid starting state.")
 INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "The server experienced an internal error. Please try again later.")
@@ -169,6 +172,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, exceptions.LabChainForbiddenException):
         status_code = 403
         surface_error = ACTION_FORBIDDEN_LAB_CHAIN
+    elif isinstance(exception, werkzeug_exceptions.MethodNotAllowed):
+        status_code = 405
+        surface_error = METHOD_NOT_ALLOWED
     else:
         status_code = 500
         surface_error = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")

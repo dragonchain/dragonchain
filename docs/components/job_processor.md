@@ -15,7 +15,7 @@ used as the command of the built docker container.
 ## Architecture
 
 The contract job processor blocks on the `mq:contract-task` redis queue. On
-recieving an item, it triggers a kubernetes job in the `dragonchain` namespace
+receiving an item, it triggers a kubernetes job in the `dragonchain` namespace
 to build a smart contract.
 
 This logic is separated into its own container because it requires permissions

@@ -209,18 +209,13 @@ class TestJobPoller(unittest.TestCase):
                                     volume_mounts=[
                                         kubernetes.client.V1VolumeMount(name="dockersock", mount_path="/var/run/docker.sock"),
                                         kubernetes.client.V1VolumeMount(name="faas", mount_path="/etc/openfaas-secret", read_only=True),
+                                        kubernetes.client.V1VolumeMount(name="secrets", mount_path="", read_only=True),
                                     ],
                                     command=["sh"],
                                     args=["entrypoints/contract_job.sh"],
                                     env=[
                                         kubernetes.client.V1EnvVar(name="EVENT", value=valid_task_definition_string),
                                         kubernetes.client.V1EnvVar(name="SERVICE", value="contract-job"),
-                                        kubernetes.client.V1EnvVar(
-                                            name="SECRETSTRING",
-                                            value_from=kubernetes.client.V1EnvVarSource(
-                                                secret_key_ref=kubernetes.client.V1SecretKeySelector(key="SecretString", name="d--secrets")
-                                            ),
-                                        ),
                                     ],
                                     env_from=[
                                         kubernetes.client.V1EnvFromSource(config_map_ref=kubernetes.client.V1ConfigMapEnvSource(name="-configmap"))
@@ -232,6 +227,7 @@ class TestJobPoller(unittest.TestCase):
                                     name="dockersock", host_path=kubernetes.client.V1HostPathVolumeSource(path="/var/run/docker.sock")
                                 ),
                                 kubernetes.client.V1Volume(name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")),
+                                kubernetes.client.V1Volume(name="secrets", secret=kubernetes.client.V1SecretVolumeSource(secret_name="d--secrets")),
                             ],
                             restart_policy="Never",
                         ),

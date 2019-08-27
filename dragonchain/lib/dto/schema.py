@@ -49,50 +49,6 @@ class DCRN(enum.Enum):
     Error_InTransit_Template = "Error::L{}::InTransit"
 
 
-btc_transaction_schema = {
-    "type": "object",
-    "properties": {
-        "outputs": {"type": "array", "items": {"type": "object", "properties": {"to": {"type": "string"}, "value": {"type": "number"}}}},
-        "fee": {"type": "integer"},
-        "data": {"type": "string"},
-        "change": {"type": "string"},
-    },
-}
-
-
-ethereum_transaction_schema = {
-    "type": "object",
-    "properties": {
-        "to": {"type": "string"},
-        "value": {"type": "string"},
-        "data": {"type": "string"},
-        "gasPrice": {"type": "string"},
-        "gas": {"type": "string"},
-    },
-    "required": ["to", "value"],
-}
-
-
-def get_network_schema(network: str) -> Dict[str, Any]:
-    if network == "BTC":
-        return btc_transaction_schema
-    elif network == "ETH":
-        return ethereum_transaction_schema
-    else:
-        raise RuntimeError(f"Invalid network {network} provided")
-
-
-def get_public_blockchain_transaction_schema_v1(network: str) -> Dict[str, Any]:
-    """
-    Used in /v1/public-blockchain-transaction
-    """
-    return {
-        "type": "object",
-        "properties": {"network": {"type": "string"}, "transaction": get_network_schema(network)},
-        "required": ["network", "transaction"],
-    }
-
-
 api_key_create_schema_v1 = {"type": "object", "properties": {"nickname": {"type": "string"}}, "additionalProperties": False}
 
 
@@ -703,4 +659,106 @@ update_transaction_type_request_schema_v1 = {
     },
     "additionalProperties": False,
     "required": ["version", "custom_indexes"],
+}
+
+set_default_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {"version": {"type": "string", "enum": ["1"]}, "blockchain": {"type": "string"}, "name": {"type": "string"}},
+}
+
+# BITCOIN INTERCHAIN #
+
+create_bitcoin_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "testnet": {"type": "boolean"},
+        "private_key": {"type": "string"},
+        "utxo_scan": {"type": "boolean"},
+        "rpc_address": {"type": "string"},
+        "rpc_authorization": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"],
+}
+
+# Same as create without required name field
+update_bitcoin_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "testnet": {"type": "boolean"},
+        "private_key": {"type": "string"},
+        "utxo_scan": {"type": "boolean"},
+        "rpc_address": {"type": "string"},
+        "rpc_authorization": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["version"],
+}
+
+
+btc_transaction_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "outputs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"to": {"type": "string"}, "value": {"type": "number"}},
+                "additionalProperties": False,
+                "required": ["to", "value"],
+            },
+        },
+        "fee": {"type": "integer"},
+        "data": {"type": "string"},
+        "change": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+# ETHEREUM INTERCHAIN #
+
+create_ethereum_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "private_key": {"type": "string"},
+        "rpc_address": {"type": "string"},
+        "chain_id": {"type": "integer"},
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"],
+}
+
+# Same as create without required name field
+update_ethereum_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "private_key": {"type": "string"},
+        "rpc_address": {"type": "string"},
+        "chain_id": {"type": "integer"},
+    },
+    "additionalProperties": False,
+    "required": ["version"],
+}
+
+
+eth_transaction_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "to": {"type": "string"},
+        "value": {"type": "string"},
+        "data": {"type": "string"},
+        "gasPrice": {"type": "string"},
+        "gas": {"type": "string"},
+        "nonce": {"type": "string"},
+    },
+    "required": ["to", "value"],
+    "additionalProperties": False,
 }

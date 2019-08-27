@@ -1,10 +1,3 @@
-import os
-import time
-import json
-import math
-import uuid
-from typing import cast, Iterable, List, Dict, Union, Any
-
 # Copyright 2019 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
@@ -22,6 +15,13 @@ from typing import cast, Iterable, List, Dict, Union, Any
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
+import os
+import time
+import json
+import math
+import uuid
+from typing import cast, Iterable, List, Dict, Union, Any, TYPE_CHECKING
+
 import fastjsonschema
 
 from dragonchain.lib.interfaces import storage
@@ -33,10 +33,13 @@ from dragonchain.lib import party
 from dragonchain.lib import matchmaking
 from dragonchain import logger
 from dragonchain import exceptions
-from dragonchain.lib.interfaces import interchain
+from dragonchain.lib.dao import interchain_dao
 from dragonchain.lib import queue
 from dragonchain.transaction_processor import shared_functions
 from dragonchain.lib.database import elasticsearch
+
+if TYPE_CHECKING:
+    from dragonchain.lib.dto import model  # noqa: F401
 
 PROOF_SCHEME = os.environ["PROOF_SCHEME"].lower()
 ADDRESS = os.environ["INTERNAL_ID"]
@@ -46,7 +49,7 @@ TRANSACTION_BUFFER = 5  # The minimum number of transactions you are estimated t
 BROADCAST_INTERVAL = cast(int, None)
 INTERCHAIN_NETWORK = cast(str, None)
 FUNDED = cast(bool, None)
-INTERCHAIN = cast(interchain.InterchainInterface, None)
+_interchain_client = cast("model.InterchainModel", None)
 
 _log = logger.get_logger()
 _validate_l4_block_at_rest = fastjsonschema.compile(schema.l4_block_at_rest_schema)
@@ -60,12 +63,12 @@ def setup() -> None:
     global BROADCAST_INTERVAL
     global INTERCHAIN_NETWORK
     global FUNDED
-    global INTERCHAIN
+    global _interchain_client
     my_config = matchmaking.get_matchmaking_config()
     BROADCAST_INTERVAL = int(my_config["broadcastInterval"] * 3600)
     INTERCHAIN_NETWORK = my_config["network"]
     FUNDED = my_config["funded"]
-    INTERCHAIN = interchain.InterchainInterface(INTERCHAIN_NETWORK)
+    _interchain_client = interchain_dao.get_default_interchain_client()
     _log.info(f"[L5] MY CONFIG -------> {my_config}")
 
 
@@ -154,13 +157,13 @@ def broadcast_to_public_chain(l5_block: l5_block_model.L5BlockModel) -> None:
     _log.info("[L5] Preparing to broadcast")
     # Hash the block and publish the block to a public network
     public_hash = keys.get_my_keys().hash_l5_for_public_broadcast(l5_block)
-    transaction_hash = INTERCHAIN.publish_to_public_network(public_hash)
+    transaction_hash = _interchain_client.publish_l5_hash_to_public_network(public_hash)
     _log.info("[L5] After Publish to public network, setting new broadcast time")
     _log.info(f"[L5] transaction_hash {transaction_hash}")
 
     # Append transaction hash to list, add network and last block sent at
     l5_block.transaction_hash += [transaction_hash]
-    l5_block.block_last_sent_at = INTERCHAIN.get_current_block()
+    l5_block.block_last_sent_at = _interchain_client.get_current_block()
     l5_block.network = INTERCHAIN_NETWORK
 
     _log.info(f"[L5] ADDING TO BLOCK key BLOCK/{l5_block.block_id}")
@@ -182,28 +185,18 @@ def check_confirmations() -> None:
         block = l5_block_model.new_from_at_rest(storage.get_json_from_object(block_key))
 
         for txn_hash in block.transaction_hash:
-            confirmed = INTERCHAIN.is_transaction_confirmed(txn_hash)
-
-            #  If this function returned the transaction hash, that means it was dropped so we
-            #  remove it from the block, otherwise if it returned true that means it was confirmed.
-            #  When broadcast retry occurs, the removed hashes will be removed in storage.
-            if isinstance(confirmed, str):
+            try:
+                if _interchain_client.is_transaction_confirmed(txn_hash):
+                    finalize_block(block, last_confirmed_block, txn_hash)
+                    # Stop execution here!
+                    return
+            except exceptions.RPCTransactionNotFound:
+                #  If transaction not found, it may have been dropped, so we remove it from the block
                 block.transaction_hash.remove(txn_hash)
-            elif confirmed:
-                finalize_block(block, last_confirmed_block, txn_hash)
 
-                # Stop execution here!
-                return
-
-        # If execution did not stop in the above for loop, we know that the block is not confirmed.
-        retry_broadcast_if_necessary(block)
-
-
-def retry_broadcast_if_necessary(block: l5_block_model.L5BlockModel) -> None:
-    current_block = INTERCHAIN.get_current_block()
-    threshold = INTERCHAIN.get_retry_threshold()
-    if (current_block - block.block_last_sent_at) > threshold:
-        broadcast_to_public_chain(block)
+        # If execution did not stop, the block is not confirmed.
+        if _interchain_client.should_retry_broadcast(block.block_last_sent_at):
+            broadcast_to_public_chain(block)
 
 
 def finalize_block(block: l5_block_model.L5BlockModel, last_confirmed_block: Dict[str, Any], confirmed_txn_hash: str) -> None:
@@ -313,13 +306,13 @@ def is_time_to_watch() -> bool:
 
 def watch_for_funds() -> None:
     _log.info("[L5] Watching for funds")
-    current_funds = INTERCHAIN.check_balance()
+    current_funds = _interchain_client.check_balance()
     _log.info(f"[L5] raw balance: {current_funds}")
 
     set_funds(current_funds)
     set_last_watch_time()
 
-    estimated_transaction_fee = INTERCHAIN.get_transaction_fee_estimate()
+    estimated_transaction_fee = _interchain_client.get_transaction_fee_estimate()
 
     global FUNDED
     _log.info("[L5] Checking if should update funded flag...")
@@ -335,7 +328,7 @@ def watch_for_funds() -> None:
 def has_funds_for_transactions() -> bool:
     try:
         current_funds = float(storage.get("BROADCAST/CURRENT_FUNDS").decode("utf-8"))
-        estimated_transaction_fee = INTERCHAIN.get_transaction_fee_estimate()
+        estimated_transaction_fee = _interchain_client.get_transaction_fee_estimate()
 
         if (estimated_transaction_fee * TRANSACTION_BUFFER) < current_funds:
             _log.info("[L5] You have enough funds!")

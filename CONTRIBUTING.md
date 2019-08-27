@@ -154,7 +154,7 @@ When in doubt, adhere to the
 and follow the conventions of the surrounding code.
 
 Additionally, because we use [mypy](http://mypy-lang.org/) for static python
-typechecking, ensure that your code has appropriate
+type checking, ensure that your code has appropriate
 [PEP 484](https://www.python.org/dev/peps/pep-0484/)
 in-line type hints. This helps catch typing bugs and while using Python's
 dynamic typing.

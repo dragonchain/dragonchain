@@ -1,17 +1,16 @@
 global:
   environment:
-    DRAGONCHAIN_NAME: "Arbitrary Name" # This can be anything
+    DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
     REGISTRATION_TOKEN: "" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
-    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary GUID if no Dragon Net)
+    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary string if no Dragon Net)
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
     # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
+    # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
     LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
-    STAGE: "prod"
+    TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
-    STORAGE_LOCATION: "/dragonchain" # Must match dragonchain.storage.mount from below
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
-    NETWORK: "BTC_MAINNET" # L5 ONLY! The public blockchain to broadcast to
 
 # -- isMinikube --
 # When running on minikube this should be boolean true. otherwise boolean false.
@@ -31,13 +30,6 @@ service:
   # Port is only needed if type is "NodePort", and exposing a chain without ingress. Must be 30000-32767 and unique per cluster
   port: 30000
 
-# -- ingressEndpoint --
-# Dragonchains will be communicating with eachother on the network using this cluster ingress.
-# Every dragonchain will add an ingress record to your cluster, pointing to your chain's
-# webserver with the following format: {dragonchainId}.{ingressEndpoint}
-# Example: http://some-valid-dragonchain-id.api.my-company.org
-ingressEndpoint: api.my-company.org
-
 # -- faas --
 # Every dragonchain will need to communicate with an OpenFaaS system to generate and run smart contracts.
 # We recommend all values addressed within be located on a seperate Kubernetes cluster, but could
@@ -54,12 +46,6 @@ faas:
   registry_username: MyUsername
   registry_password: MyPassword
 
-# -- aws --
-# This object should be set to null for on-prem deployments.
-# At Dragonchain, Inc, our managed service platform requires that all dragonchains
-# use AWS resources for storage to facilitate monitoring/maintanence/storage.
-aws: null
-
 # -- dragonchain --
 # Dragonchain specific congifuration options live here.
 dragonchain:
@@ -68,7 +54,8 @@ dragonchain:
   image:
     # -- dragonchain.image.pullPolicy --
     # In production we recommend "IfNotPresent". For development it is fine to use "Always"
-    pullPolicy: IfNotPresent
+    # Just keep in mind that Always with a 'latest' tag means your node may receive unexpected updates
+    pullPolicy: Always
 
     # -- dragonchain.image.registry --
     # This value should be registry at which your dragonchain image is stored.
@@ -77,33 +64,19 @@ dragonchain:
 
     # -- dragonchain.image.repository --
     # This value should be the name of the repository inside the registry which house your dragonchain image
-    # e.g.: {registry}/{repository}:{stage}-{version}
-    repository: dragonchain_core
+    # e.g.: {registry}/{repository}:{version}
+    repository: dragonchain/dragonchain_core
 
     # -- dragonchain.image.version --
     # Version of your dragonchain. This value is used to interpolate the tag name.
-    # e.g.: {registry}/{repository}:{stage}-{version}
+    # e.g.: {registry}/{repository}:{version}
     version: latest
-
-    # -- dragonchain.image.stage --
-    # This value is interpolated into the tag of the dragonchain image path.
-    # Dragonchain inc uses this value to differentiate between dev and prod builds.
-    # e.g.: {registry}/{repository}:{stage}-{version}
-    stage: prod
-
-  # -- dragonchain.database_type --
-  # This configuration option should be null for any on-prem dragonchains.
-  database_type: null
-
-  # -- dragonchain.reporting_type --
-  # This configuration option should be null for any on-prem dragonchains.
-  reporting_type: null
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.
   # This is where your actual blockchain data will be stored at-rest
   storage:
-    mount: "/dragonchain"
+    mount: "/dragonchain" # Don't change this value
     spec:
       # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
       storageClassName: standard

@@ -18,11 +18,11 @@ cluster with the intent to run dragonchain(s).
 
 ### Requirements
 
-- In order to have persistent storage support, a kubernetes persistant volume
+- In order to have persistent storage support, a kubernetes persistent volume
   type must be available with access mode `ReadWriteOnce`. This storage must be
   able to move between nodes if the cluster consists of multiple nodes.
   See the relevant [kubernetes docs](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)
-  for more information on persistant volumes and access modes.
+  for more information on persistent volumes and access modes.
 
 - [Helm](https://helm.sh/) should be installed on the kubernetes cluster, as
   it is used to manage dragonchain deployments.
@@ -35,6 +35,12 @@ cluster with the intent to run dragonchain(s).
   appropriately.
 
 ### Recommended
+
+- It is strongly encouraged to have a TLS certificate so that your chain can
+  have TLS (HTTPS) support. Without this, your chain may be vulnerable to
+  attacks. Running without a valid TLS certificate should be for non-production
+  use only, and TLS _may_ be enforced in the future. You can obtain a free TLS
+  certificate for a domain you own [from letsencrypt](https://letsencrypt.org/)
 
 - It is _HIGHLY_ recommended to have RBAC enabled on the kubernetes cluster.
   See the relevant [kubernetes docs](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
@@ -79,6 +85,6 @@ docker registry will work if it is accessible to OpenFaaS and the chain(s).
 ## Dragon Net
 
 It is recommended to run with Dragon Net support for networking features
-(specifically being able to send/recieve verifications) to work properly.
+(specifically being able to send/receive verifications) to work properly.
 
 See the [next section](/deployment/dragonnet) for more details.

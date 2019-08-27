@@ -132,7 +132,8 @@ class ContractJobTest(unittest.TestCase):
         self.assertEqual(self.test_job.model.secrets["auth-key-id"], "ana")
         self.assertEqual(self.test_job.model.auth_key_id, "ana")
 
-    def test_populate_env(self):
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    def test_populate_env(self, mock_get_id):
         self.test_job.model.env = {}
         self.test_job.model.id = "banana"
         self.test_job.model.txn_type = "bananaphone"
@@ -195,7 +196,8 @@ class ContractJobTest(unittest.TestCase):
         self.assertEqual(result.split(" ")[0], "Basic")
         self.assertIsNotNone(result.split(" ")[1])
 
-    def test_get_openfaas_spec(self):
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    def test_get_openfaas_spec(self, mock_get_id):
         self.maxDiff = None
         self.test_job.update_model = {"execution_order": "parallel"}
         self.test_job.model.image_digest = "sha256:imasha"
@@ -224,7 +226,7 @@ class ContractJobTest(unittest.TestCase):
                     "com.openfaas.scale.factor": "20",
                     "com.openfaas.scale.max": "20",
                     "com.openfaas.scale.min": "1",
-                    "com.openfaas.fwatchdog.version": "0.15.4",
+                    "com.openfaas.fwatchdog.version": "0.16.0",
                 },
                 "limits": {"cpu": "0.50", "memory": "600M"},
                 "requests": {"cpu": "0.25", "memory": "600M"},
@@ -431,7 +433,8 @@ class ContractJobTest(unittest.TestCase):
         self.test_job.model.set_state.assert_called()
         mock_ledger.assert_called()
 
-    def test_migrate_env(self):
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    def test_migrate_env(self, mock_get_id):
         self.test_job.model.env = MagicMock()
         self.test_job.update_model = MagicMock()
         self.test_job.update_model.env = {"orange": "banana"}
@@ -455,7 +458,8 @@ class ContractJobTest(unittest.TestCase):
         contract_job.main()
         delete_mock.assert_called()
 
-    def test_create(self):
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    def test_create(self, mock_get_id):
         self.test_job.docker = MagicMock()
         self.test_job.schedule_contract = MagicMock()
         self.test_job.build_contract_image = MagicMock()
@@ -466,8 +470,9 @@ class ContractJobTest(unittest.TestCase):
         self.test_job.populate_api_keys = MagicMock()
         self.test_job.create()
 
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.job_processor.contract_job.smart_contract_dao")
-    def test_update(self, mock_model):
+    def test_update(self, mock_model, mock_get_id):
         self.test_job.deploy_to_openfaas = MagicMock()
         self.test_job.schedule_contract = MagicMock()
         self.test_job.update_model = self.BuildTaskResult("banana", "update", "active", "ban", "ana")
@@ -475,10 +480,11 @@ class ContractJobTest(unittest.TestCase):
         self.test_job.create_openfaas_secrets = MagicMock()
         self.test_job.update()
 
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.job_processor.contract_job.registry_interface.get_login")
     @patch("dragonchain.job_processor.contract_job.ContractJob.docker_login_if_necessary")
     @patch("dragonchain.job_processor.contract_job.docker")
-    def test_main_pass_does_update_model(self, mock_docker, mock_login, mock_ecr):
+    def test_main_pass_does_update_model(self, mock_docker, mock_login, mock_ecr, mock_secrets):
         contract_job.EVENT = '{"txn_type": "test", "task_type": "update", "id": "123", "start_state": "inactive", "auth": "auth", "image": "image", "cmd": "cmd", "args": "[one]", "secrets": "{}", "existing_secrets": "[]", "env": "{}", "cron": "None", "seconds": "30",  "execution_order": "serial", "desired_state": "active"}'  # noqa: B950
         self.test_job.model = self.BuildTaskResultWithHelpers("banana", "create", "inactive", "ban", "ana", {}, image="image", auth="YmFuYTpuYQ==")
         self.test_job.update_model = self.BuildTaskResultWithHelpers(

@@ -30,12 +30,12 @@ The webserver is built using Flask as the web framework, fronted with gunicorn
 as the [WSGI](https://www.python.org/dev/peps/pep-3333/).
 
 Routes are conditionally applied to the webserver on boot as defined by the
-files in the routes folder, which are seperated by logical resource groups.
+files in the routes folder, which are separated by logical resource groups.
 
 Before boot, `webserver/start.py` will run. This acts as a pre-bootup script
 for tasks that must occur before the chain is ready to use.
 
-Decorators are used as a middleware defined on a per-route basis. They porvide
+Decorators are used as a middleware defined on a per-route basis. They provide
 authorization and permissioning to webserver routes.
 
 Authorization is implemented as an HMAC-signed request consisting of the HTTP
