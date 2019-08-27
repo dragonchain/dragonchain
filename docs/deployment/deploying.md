@@ -29,6 +29,30 @@ kubectl create secret generic -n dragonchain "d-INTERNAL_ID-secrets" --from-lite
 # Note INTERNAL_ID from the secret name should be replaced with the value of .global.environment.INTERNAL_ID from the helm chart values (opensource-config.yaml)
 ```
 
+## Add Your TLS Certificate
+
+This step is technically optional, but _HIGHLY_ recommended. Without this step,
+your chain will not support HTTPS, which may be enforced in the future.
+
+With the certificate that you wish to use with your chain, run the following
+command:
+
+```sh
+kubectl create secret tls -n dragonchain "d-INTERNAL_ID-cert" --cert=PathToLocalCertFile --key=PathToLocalKeyFile
+# Note INTERNAL_ID from the secret name should be replaced with the value of .global.environment.INTERNAL_ID from the helm chart values (opensource-config.yaml)
+```
+
+Note that the cert file should be a PEM encoded public key certificate, and the
+key file should be a PEM encoded private key for the certificate. The
+certificate should be the full certificate chain, or the configuration will not
+work. If using [letsencrypt](https://letsencrypt.org/), the certificate file is
+`fullchain.pem`, and the key file is `privkey.pem`.
+
+This will upload your certificate to your kubernetes cluster, which can be used
+by the chain. Once doing this, simply remember to set
+`.global.environment.TLS_SUPPORT` to "true" when configuring
+`opensource-config.yaml` in the next steps.
+
 ## Helm Chart
 
 **Please Note**: The helm chart is subject to significant changes.
