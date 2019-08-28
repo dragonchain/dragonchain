@@ -86,7 +86,7 @@ def new_from_stripped_block_input(l1_block_txn: str) -> "TransactionModel":
 
 
 def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
-    if full_txn.get("version") == "2":
+    if full_txn.get("version") == "2" or full_txn.get("version") == "1":  # Effectively identical
         return TransactionModel(
             dc_id=full_txn["header"]["dc_id"],
             block_id=full_txn["header"]["block_id"],
