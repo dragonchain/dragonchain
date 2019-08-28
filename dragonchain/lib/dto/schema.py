@@ -492,7 +492,7 @@ custom_indexes_v1 = {
 
 custom_index_tag_options_v1 = {
     "type": "object",
-    "properties": {"seperator": {"type": "string"}, "no_index": {"type": "boolean"}},
+    "properties": {"separator": {"type": "string"}, "no_index": {"type": "boolean"}},
     "additionalProperties": False,
 }
 
