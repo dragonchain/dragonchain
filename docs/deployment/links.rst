@@ -7,7 +7,7 @@ local kubernetes cluster.
 Helm Chart
 """"""""""
 
-:download:`Download Link For Helm Chart </static/chart/dragonchain-k8s-0.9.0.tgz>`
+:download:`Download Link For Helm Chart </static/chart/dragonchain-k8s-1.0.0.tgz>`
 
 Helm Values
 """""""""""

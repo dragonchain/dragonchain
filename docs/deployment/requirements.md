@@ -27,20 +27,23 @@ cluster with the intent to run dragonchain(s).
 - [Helm](https://helm.sh/) should be installed on the kubernetes cluster, as
   it is used to manage dragonchain deployments.
 
-- Access into the cluster from the greater internet is required
-  for participation in Dragon Net. We highly recommend using some sort of
-  [kubernetes ingress controller](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)
-  with TLS termination for this. Ensure that if your cluster is behind a NAT
-  layer, the relevant ports to your running controller or chain(s) are
+- Access into the cluster from the greater internet is required for
+  participation in Dragon Net. Ensure that if your cluster is behind a NAT
+  layer, the relevant ports to your running chain(s) are forwarded
   appropriately.
+
+- ~1GB of RAM is required for L2+ chains to run, and ~1.5GB of RAM is
+  required for L1 chains. This means that the kubernetes node running the chain
+  (or the VM in the case of minikube) should have at least ~2GB of RAM total.
 
 ### Recommended
 
 - It is strongly encouraged to have a TLS certificate so that your chain can
   have TLS (HTTPS) support. Without this, your chain may be vulnerable to
   attacks. Running without a valid TLS certificate should be for non-production
-  use only, and TLS _may_ be enforced in the future. You can obtain a free TLS
-  certificate for a domain you own [from letsencrypt](https://letsencrypt.org/)
+  use only, and TLS _may_ be enforced by Dragon Net in the future. You can
+  obtain a free TLS certificate for a domain you own
+  [from letsencrypt](https://letsencrypt.org/).
 
 - It is _HIGHLY_ recommended to have RBAC enabled on the kubernetes cluster.
   See the relevant [kubernetes docs](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
