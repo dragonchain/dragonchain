@@ -36,7 +36,7 @@ def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "RSearch":
     """Returns block matching block id, with query parameters accepted.
     Args:
         block_id: string Block id to search for.
-        params: string Lucene syntax acceptable query string for Elastic searching.
+        params: Dictionary of redisearch query options
         parse: whether or not we should parse contents
     """
     try:

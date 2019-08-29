@@ -43,10 +43,10 @@ def _get_transaction_stub(txn_id: str) -> Dict[str, Any]:
 
 
 def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearch":
-    """invoke queries on elastic search indexes built with #set. Return the full storage stored object.
+    """invoke queries on redisearch indexes
     Args:
-        query: {dict=None} Elastic search query. The search definition using the ES Query DSL.
-        q: {string=None} Query in the Lucene query string syntax
+        params: Dictionary of redisearch query options
+        parse: If true, parse the transaction payload before returning
     Returns:
         {"results": [], "total": total} storage objects matching search query
     """
