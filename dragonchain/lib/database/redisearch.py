@@ -390,7 +390,7 @@ def _generate_transaction_indexes_from_scratch() -> None:
             if txn:
                 txn_model = transaction_model.new_from_at_rest_full(json.loads(txn)["txn"])
                 # Add general transaction index
-                put_document(Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": txn_model.block_id})
+                put_document(Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": txn_model.block_id}, upsert=True)
                 watch_block = txn_types_to_watch.get(txn_model.txn_type)
                 # Extract custom indexes if necessary
                 if watch_block and int(txn_model.block_id) >= watch_block:
