@@ -77,7 +77,7 @@ redisearch fields which can be used when querying:
 
 Note `prev_id` is the number of the previous block id in the blockchain.
 This is useful if you want to step through the blockchain one block at a time
-on an L1 chain, as their block id's are not necessarily incremented by the same
+on an L1 chain, as their block ids are not necessarily incremented by the same
 amount.
 
 Transaction querying now requires you to specify the particular transaction
@@ -96,6 +96,6 @@ querying.
 ## Dragon Net Communication
 
 Note that communication with Dragon Net remains unchanged, so v3 Dragonchains
-can still communicate with v4 Dragonchains, therefor updating to v4 is not
+can still communicate with v4 Dragonchains, therefore updating to v4 is not
 required. Please keep in mind that v3 will no longer receive any updates, so
 it is highly recommended to upgrade.
