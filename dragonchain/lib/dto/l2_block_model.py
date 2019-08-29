@@ -40,7 +40,7 @@ def new_from_at_rest(block: Dict[str, Any]) -> "L2BlockModel":
             dc_id=block["header"]["dc_id"],
             current_ddss=block["header"].get("current_ddss"),
             block_id=block["header"]["block_id"],
-            timestamp=block["header"]["timestamp"],
+            timestamp=block["header"].get("timestamp") or "-1",
             prev_proof=block["header"]["prev_proof"],
             scheme=block["proof"]["scheme"],
             proof=block["proof"]["proof"],
