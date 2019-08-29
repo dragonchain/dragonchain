@@ -86,7 +86,7 @@ def new_from_stripped_block_input(l1_block_txn: str) -> "TransactionModel":
 
 
 def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
-    if full_txn.get("version") == "2" or full_txn.get("version") == "1":  # Effectively identical
+    if full_txn.get("version") == "2":
         return TransactionModel(
             dc_id=full_txn["header"]["dc_id"],
             block_id=full_txn["header"]["block_id"],
@@ -100,7 +100,23 @@ def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
             payload=full_txn["payload"],
         )
     else:
-        raise NotImplementedError(f"Version {full_txn.get('version')} is not supported")
+        # There are legacy transactions where the user provided version,
+        # was saved, so instead of immediately throwing, we try to parse
+        try:
+            return TransactionModel(
+                dc_id=full_txn["header"]["dc_id"],
+                block_id=full_txn["header"]["block_id"],
+                txn_id=full_txn["header"]["txn_id"],
+                timestamp=full_txn["header"]["timestamp"],
+                txn_type=full_txn["header"]["txn_type"],
+                tag=full_txn["header"]["tag"],
+                invoker=full_txn["header"]["invoker"],
+                full_hash=full_txn["proof"]["full"],
+                signature=full_txn["proof"]["stripped"],
+                payload=full_txn["payload"],
+            )
+        except Exception:
+            raise NotImplementedError(f"Version {full_txn.get('version')} is not supported")
 
 
 class TransactionModel(model.Model):
