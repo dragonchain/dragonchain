@@ -19,6 +19,8 @@ for more details on upgrading to v4.
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
   - Add redisearch and remove elasticsearch requirements
+- **CICD:**
+  - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
 - **Bugs:**
   - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
 
