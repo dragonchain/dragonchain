@@ -21,49 +21,94 @@ import math
 import json
 from typing import Sequence, Any, Dict, List, Optional, TYPE_CHECKING
 
+import redis
+
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib import keys
 from dragonchain.lib import queue
 from dragonchain.lib import callback
 from dragonchain.lib.dto import transaction_model
-from dragonchain.lib.dao import transaction_dao
 from dragonchain.lib.interfaces import storage
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.database import redisearch
 
 if TYPE_CHECKING:
-    from dragonchain.lib.types import ESSearch
+    from dragonchain.lib.types import RSearch
 
 _log = logger.get_logger()
 
 
-def query_transactions_v1(params: Optional[dict], parse: bool) -> "ESSearch":
-    """Returns all transactions matching transaction id, with query parameters accepted.
+def _get_transaction_stub(txn_id: str) -> Dict[str, Any]:
+    return {"header": {"txn_id": txn_id}, "status": "pending", "message": "This transaction is waiting to be included in a block"}
+
+
+def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearch":
+    """invoke queries on redisearch indexes
     Args:
-        params: dict of query params
-        parse: whether or not to parse the response
+        params: Dictionary of redisearch query options
+        parse: If true, parse the transaction payload before returning
+    Returns:
+        {"results": [], "total": total} storage objects matching search query
     """
-    if params:
-        query_params = params.get("q") or "*"  # default to returning all results (limit 10 by default)
-        sort_param = params.get("sort") or "block_id:desc"
-        limit_param = params.get("limit") or None
-        offset_param = params.get("offset") or None
-
-        _log.info(f"[TRANSACTION] Query string params found: {query_params}")
-        return _search_transaction(q=query_params, sort=sort_param, limit=limit_param, offset=offset_param, should_parse=parse)
+    if not params.get("transaction_type"):
+        raise exceptions.ValidationException("transaction_type must be supplied for transaction queries")
+    try:
+        query_result = redisearch.search(
+            index=params["transaction_type"],
+            query_str=params["q"],
+            only_id=params.get("id_only"),
+            verbatim=params.get("verbatim"),
+            offset=params.get("offset"),
+            limit=params.get("limit"),
+            sort_by=params.get("sort_by"),
+            sort_asc=params.get("sort_asc"),
+        )
+    except redis.exceptions.ResponseError as e:
+        error_str = str(e)
+        # Detect if this is a syntax error; if so, throw it back as a 400 with the message
+        if error_str.startswith("Syntax error"):
+            raise exceptions.BadRequest(error_str)
+        # If unknown index, user provided a bad transaction type
+        elif error_str == "Unknown Index name":
+            raise exceptions.BadRequest("Invalid transaction type")
+        else:
+            raise
+    result: "RSearch" = {"total": query_result.total, "results": []}
+    if params.get("id_only"):
+        result["results"] = [x.id for x in query_result.docs]
     else:
-        return _search_transaction(q="*", sort="block_id:desc", should_parse=parse)
+        transactions = []
+        for doc in query_result.docs:
+            block_id = doc.block_id
+            transaction_id = doc.id
+            if block_id == "0":  # Check for stubbed result
+                transactions.append(_get_transaction_stub(transaction_id))
+            else:
+                retrieved_txn = storage.select_transaction(block_id, transaction_id)
+                if parse:
+                    retrieved_txn["payload"] = json.loads(retrieved_txn["payload"])
+                transactions.append(retrieved_txn)
+        result["results"] = transactions
+    return result
 
 
-def get_transaction_v1(transaction_id: str, parse: bool) -> dict:
+def get_transaction_v1(transaction_id: str, parse: bool = True) -> Dict[str, Any]:
     """
     get_transaction_by_id
     Searches for a transaction by a specific transaction ID
     """
-    results = _search_transaction(query={"query": {"match_phrase": {"txn_id": transaction_id}}}, should_parse=parse)["results"]
-    if results:
-        return results[0]
-    raise exceptions.NotFound(f"Transaction {transaction_id} could not be found.")
+    doc = redisearch.get_document(redisearch.Indexes.transaction.value, f"txn-{transaction_id}")
+    try:
+        block_id = doc.block_id
+    except AttributeError:
+        raise exceptions.NotFound(f"Transaction {transaction_id} could not be found.")
+    if block_id == "0":  # Check for stubbed result
+        return _get_transaction_stub(transaction_id)
+    else:
+        txn = storage.select_transaction(block_id, transaction_id)
+        if parse:
+            txn["payload"] = json.loads(txn["payload"])
+        return txn
 
 
 def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[str] = None) -> Dict[str, str]:
@@ -124,51 +169,10 @@ def _generate_transaction_model(transaction: Dict[str, Any]) -> transaction_mode
     return txn_model
 
 
-def _search_transaction(
-    query: Optional[dict] = None,
-    q: Optional[str] = None,
-    get_all: bool = False,
-    sort: Optional[str] = None,
-    offset: Optional[int] = None,
-    limit: Optional[int] = None,
-    should_parse: bool = True,
-) -> "ESSearch":
-    """invoke queries on elastic search indexes built with #set. Return the full storage stored object.
+def _add_transaction_stub(txn_model: transaction_model.TransactionModel) -> None:
+    """store a stub for a transaction in the index to prevent 404s from getting immediately after posting
     Args:
-        query: {dict=None} Elastic search query. The search definition using the ES Query DSL.
-        q: {string=None} Query in the Lucene query string syntax
-    Returns:
-        {"results": [], "total": total} storage objects matching search query
+        txn_model: txn model to stub in the index
     """
-    hits_pages = elasticsearch.get_index_only(folder=transaction_dao.FOLDER, query=query, q=q, get_all=get_all, sort=sort, offset=offset, limit=limit)
-    _log.info(f"pages: {hits_pages}")
-    storage_objects = []
-
-    for hit in hits_pages["hits"]:
-        status = hit["_source"].get("status")
-        if status == "pending":
-            _log.info("[SEARCH TRANSACTION] FOUND PENDING TRANSACTION")
-            stubbed_response = {
-                "txn_id": hit["_source"]["txn_id"],
-                "status": "pending",
-                "message": "the transaction is waiting to be included into a block",
-            }
-            storage_objects.append(stubbed_response if should_parse else json.dumps(stubbed_response, separators=(",", ":")))
-        else:
-            storage_id = hit["_source"][transaction_dao.S3_OBJECT_ID]  # get the id
-            storage_inner_id = hit["_source"]["txn_id"]  # get the transaction id to look for within the block
-            storage_object = storage.select_transaction(storage_id, storage_inner_id)  # pull the object from storage, contained in a group file
-            storage_objects.append(storage_object)  # add to the result set
-
-            if should_parse:
-                storage_object["payload"] = json.loads(storage_object["payload"])
-
-    return {"results": storage_objects, "total": hits_pages["total"]}
-
-
-def _add_transaction_stub(transaction_model: "transaction_model.TransactionModel") -> None:
-    """store a stub for a transaction in elastic search to prevent 404s from querying
-    Args:
-        transaction_model: txn model to export search indexes from to store in ES
-    """
-    elasticsearch.put_index_only(transaction_dao.FOLDER, transaction_model.txn_id, transaction_model.export_as_search_index(stub=True))
+    redisearch.put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(stub=True))
+    redisearch.put_document(redisearch.Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": "0"})

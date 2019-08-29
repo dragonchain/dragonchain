@@ -18,11 +18,10 @@
 import os
 import json
 
-from dragonchain.lib.dao import transaction_type_dao
 from dragonchain.lib.interfaces import secrets
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.database import redisearch
 from dragonchain.lib import error_reporter
 from dragonchain import logger
 from dragonchain import exceptions
@@ -50,9 +49,9 @@ def start() -> None:
     except exceptions.NotFound:
         _log.info("No HMAC keys were given to this chain on-boot. Skipping cretential storage write.")
 
-    _log.info("Rehydrating the redis transaction list cache")
+    _log.info("Checking if redisearch indexes need to be regenerated")
     try:
-        transaction_type_dao.rehydrate_transaction_types()
+        redisearch.generate_indexes_if_necessary()
     except Exception:
         if not error_allowed:
             raise
@@ -61,9 +60,10 @@ def start() -> None:
 
 
 if __name__ == "__main__":
-    # Wait for ES and Redis to connect before starting initialization
-    elasticsearch._set_elastic_search_client_if_necessary()
+    # Wait for Redis and Redisearch to connect before starting initialization
+    redisearch._get_redisearch_index_client("test")
     redis._set_redis_client_if_necessary()
+    redis._set_redis_client_lru_if_necessary()
     try:
         start()
     except Exception as e:

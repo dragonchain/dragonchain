@@ -19,7 +19,7 @@ import os
 from typing import cast, Dict, Any, TYPE_CHECKING
 
 from dragonchain.broadcast_processor import broadcast_functions
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import l2_block_model
 from dragonchain.lib.dto import l3_block_model
 from dragonchain.lib.dto import l4_block_model
@@ -69,10 +69,8 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
         validations = matchmaking.get_claim_check(l1_block_id)["validations"][f"l{level_received_from}"]
         if (block_model.dc_id in validations) and broadcast_functions.is_block_accepting_verifications_from_level(l1_block_id, level_received_from):
             _log.info(f"Verified that block {l1_block_id} was sent. Inserting receipt")
-            # Save this receipt to permanent storage as well as necessary ES indexing
-            name_of_index = f"{FOLDER}/{l1_block_id}-l{level_received_from}-{block_model.dc_id}"
-            elasticsearch.set_receipt_data(name_of_index, block_model, l1_block_id, level_received_from)
-            # Notify matchmaking of new receipt
+            storage.put_object_as_json(f"{FOLDER}/{l1_block_id}-l{level_received_from}-{block_model.dc_id}", block_model.export_as_at_rest())
+            # Set new receipt for matchmaking claim check
             try:
                 block_id = block_model.block_id
                 proof = block_model.proof

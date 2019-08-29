@@ -27,6 +27,6 @@ JSONEncodableNatives = Union[str, int, float, bool, None]
 # Doesn't cover 100%, but is better than nothing...
 JSONType = Union[Dict[Any, Any], List[Any], Tuple[Any], JSONEncodableNatives]
 DockerLogin = TypedDict("DockerLogin", {"username": str, "password": str})
-ESSearch = TypedDict("ESSearch", {"results": List[Any], "total": int})
+RSearch = TypedDict("RSearch", {"results": List[Any], "total": int})
 L1Headers = TypedDict("L1Headers", {"dc_id": str, "block_id": str, "proof": str})
-custom_index = TypedDict("custom_index", {"key": str, "path": str})
+custom_index = TypedDict("custom_index", {"path": str, "field_name": str, "type": str, "options": Dict[str, Any]})

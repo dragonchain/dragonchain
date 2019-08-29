@@ -15,13 +15,13 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import cast, List, Dict, Any, TYPE_CHECKING
+from typing import Dict, Any, TYPE_CHECKING
 
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import transaction_type_model
 from dragonchain.lib.dao import transaction_type_dao
-from dragonchain.lib.database import redis
+from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.interfaces import storage
 
 if TYPE_CHECKING:
@@ -35,10 +35,7 @@ def list_registered_transaction_types_v1() -> Dict[str, Any]:
     Lists out the current registered transaction types
     """
     _log.info("Listing out existing transaction types")
-    transaction_types = redis.smembers_sync(transaction_type_dao.TYPE_LIST_KEY)
-    transaction_type_list = [storage.get_json_from_object(f"{transaction_type_dao.FOLDER}/TYPES/{txn_type}") for txn_type in transaction_types]
-
-    return {"transaction_types": transaction_type_list}
+    return {"transaction_types": transaction_type_dao.list_registered_transaction_types()}
 
 
 def register_transaction_type_v1(transaction_type_structure: Dict[str, Any]) -> None:
@@ -47,14 +44,14 @@ def register_transaction_type_v1(transaction_type_structure: Dict[str, Any]) -> 
     """
     model = transaction_type_model.new_from_user_input(transaction_type_structure)
     try:
-        transaction_type_dao.get_registered_transaction_type(cast(str, model.txn_type))  # This will be a string after creation
+        transaction_type_dao.get_registered_transaction_type(model.txn_type)
     except exceptions.NotFound:
         pass
     else:
         _log.error("Transaction type is already registered")
         raise exceptions.TransactionTypeConflict(f"A transaction type of {model.txn_type} is already registered")
-    _log.debug("Uploading new type to datastore")
-    transaction_type_dao.store_registered_transaction_type(model)
+    _log.debug("Queuing transaction type for creation")
+    transaction_type_dao.create_new_transaction_type(model)
 
 
 def delete_transaction_type_v1(transaction_type: str) -> None:
@@ -64,24 +61,14 @@ def delete_transaction_type_v1(transaction_type: str) -> None:
     Deletes type
     """
     try:
-        existing_type_structure = transaction_type_dao.get_registered_transaction_type(transaction_type)
-        if existing_type_structure is None:
-            raise exceptions.NotFound(transaction_type)
-        if existing_type_structure.contract_id:
+        existing_txn_type = transaction_type_dao.get_registered_transaction_type(transaction_type)
+        # If txn type is a smart contract that exists, don't allow it to be deleted
+        if existing_txn_type.contract_id and smart_contract_dao.contract_does_exist(existing_txn_type.contract_id):
             raise exceptions.ActionForbidden("Cannot delete smart contract transaction type")
         transaction_type_dao.remove_existing_transaction_type(transaction_type)
     except exceptions.NotFound:
-        pass
-
-
-def update_transaction_type_v1(transaction_type: str, custom_indexes: List["custom_index"]) -> None:
-    """
-    Updates existing transaction types custom indexing
-    """
-    model = transaction_type_dao.get_registered_transaction_type(transaction_type)
-    model.custom_indexes = custom_indexes
-    transaction_type_dao.store_registered_transaction_type(model)
+        return
 
 
 def get_transaction_type_v1(transaction_type: str) -> Dict[str, Any]:
-    return storage.get_json_from_object(f"{transaction_type_dao.FOLDER}/TYPES/{transaction_type}")
+    return storage.get_json_from_object(f"{transaction_type_dao.FOLDER}/{transaction_type}")

@@ -19,7 +19,9 @@ import uuid
 import time
 from typing import TYPE_CHECKING
 
-from dragonchain.lib.database import elasticsearch
+import redis
+
+from dragonchain.lib.database import redisearch
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib import namespace
@@ -61,4 +63,14 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     """
     _log.info("[TRANSACTION DAO] Putting transaction to storage")
     storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
-    elasticsearch.put_many_index_only(FOLDER, block_model.export_full_transactions_search_indexes())
+    # Could optimize by grouping indexing of transactions in the block with matchking txn_types using redisearch.put_many_documents
+    for txn in block_model.transactions:
+        redisearch.put_document(redisearch.Indexes.transaction.value, f"txn-{txn.txn_id}", {"block_id": txn.block_id}, upsert=True)
+        try:
+            redisearch.put_document(txn.txn_type, txn.txn_id, txn.export_as_search_index(), upsert=True)
+        except redis.exceptions.ResponseError as e:
+            # If the index doesn't exist, we don't care that we couldn't place the index (transaction type is probably deleted)
+            if str(e) != "Unknown index name":
+                raise
+            else:
+                _log.warning(f"Txn type {txn.txn_type} for txn {txn.txn_id} failed to index. (Transaction type may simply be deleted?) Ignoring")

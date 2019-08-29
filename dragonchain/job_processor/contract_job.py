@@ -34,7 +34,6 @@ from dragonchain.lib import error_reporter
 from dragonchain.lib import keys
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.interfaces import registry as registry_interface  # Alternate naming to alleviate confusion
-from dragonchain.lib.database import elasticsearch
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -390,7 +389,7 @@ class ContractJob(object):
         try:
             storage.delete_directory(f"SMARTCONTRACT/{self.model.id}")
             _log.info("Removing index")
-            elasticsearch.remove_index(doc_id=self.model.id, folder="SMARTCONTRACT")
+            smart_contract_dao.remove_smart_contract_index(self.model.id)
             _log.info("Deleting txn type")
             transaction_type_dao.remove_existing_transaction_type(self.model.txn_type)
             key = f"KEYS/{self.model.auth_key_id}"

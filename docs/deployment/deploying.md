@@ -72,7 +72,7 @@ are in the first section).
 Once the values are set, install the helm chart with:
 
 ```sh
-helm upgrade --install my-dragonchain dragonchain-k8s-0.9.0.tgz --values opensource-config.yaml --namespace dragonchain
+helm upgrade --install my-dragonchain dragonchain-k8s-1.0.0.tgz --values opensource-config.yaml --namespace dragonchain
 ```
 
 If you need to change any values AFTER the helm chart has already been

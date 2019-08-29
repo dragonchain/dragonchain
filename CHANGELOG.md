@@ -1,5 +1,29 @@
 # Changelog
 
+## 4.0.0
+
+This update introduces a breaking change required by the switch from
+ElasticSearch to redisearch. These changes primarily exist with custom
+indexing, and how querying is preformed. Please read the
+[relevant docs page](https://dragonchain-core-docs.dragonchain.com/latest/deployment/migrating_v4.html)
+for more details on upgrading to v4.
+
+- **Feature:**
+  - Remove elasticsearch integrations and replace with redisearch
+  - Refactor all query endpoints, including changing query inputs (Breaking Change)
+  - Changed route for `GET /v1/contract` from a query to a list (Breaking Change)
+- **Documentation:**
+  - Update documentation for redisearch
+  - Add new page for migration considerations when upgrading from v3 to v4
+  - Add RAM usage requirements
+- **Packaging:**
+  - Update helm chart version, adding redisearch while removing elasticsearch
+  - Add redisearch and remove elasticsearch requirements
+- **CICD:**
+  - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
+- **Bugs:**
+  - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
+
 ## 3.5.0
 
 - **Feature:**
@@ -28,7 +52,7 @@
     - `POST /v1/public-blockchain-transaction`
   - Reduced initial delay checks for the webserver so kubernetes will mark the webserver as ready quicker
   - Add direct TLS support for the Dragonchain webserver (for NodePort deployed services)
-- **Bug:**
+- **Bugs:**
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Documentation:**
   - Add docs/update helm chart and values for added TLS support
@@ -47,7 +71,7 @@
 
 ## 3.4.46
 
-- **Bug:**
+- **Bugs:**
   - Don't require registration to bitcoin node on webserver boot
   - Properly handle 401-403 responses from matchmaking
 - **Documentation:**
@@ -61,7 +85,7 @@
 
 ## 3.4.45
 
-- **Bug:**
+- **Bugs:**
   - Fix bug with job processor consuming too much memory due to threads
 
 ## 3.4.43
@@ -92,6 +116,6 @@
   - Update fwatchdog to 0.15.2 for OpenFaaS smart contracts
 - **CICD:**
   - Updated cicd for new AWS buildspec runtimes
-- **Bug Fixes**
+- **Bugs:**
   - No longer send HTML on certain 500 responses, only JSON
   - Remove any possible existing entrypoints from built smart contract containers

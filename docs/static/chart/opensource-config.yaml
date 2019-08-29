@@ -1,3 +1,6 @@
+webserverLiveliness: true # Set this value to false if migrating from v3 to v4, and a lot of data needs to be re-indexed.
+# Failure to set this to false for an upgrading chain means that the migrations may never complete, and the chain gets stuck in a loop
+
 global:
   environment:
     DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
@@ -86,24 +89,23 @@ dragonchain:
         requests:
           storage: 2Gi
 
-es:
-  image:
-    repository: docker.elastic.co/elasticsearch/elasticsearch-oss
-    tag: 6.6.0
-    pullPolicy: "IfNotPresent"
-  master:
-    # -- es.master.persistence --
-    # This is the storage spec that the elasticsearch uses to maintain state for
-    # the indexes of a running dragonchain. Configure this as needed
-    persistence:
-      # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
-      storageClass: standard
-      accessMode: ReadWriteOnce
-      size: 1Gi
-
 redis:
   # -- redis.storage --
   # This is the storage spec that the persistent redis uses to maintain state for
+  # a running dragonchain. Configure this as needed
+  storage:
+    spec:
+      # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+
+redisearch:
+  # -- redis.storage --
+  # This is the storage spec that the redisearch uses to maintain state for
   # a running dragonchain. Configure this as needed
   storage:
     spec:

@@ -23,23 +23,35 @@ from dragonchain.transaction_processor import level_1_actions
 
 
 class TestLevelOneActions(unittest.TestCase):
+    @patch("dragonchain.lib.dto.l1_block_model.get_current_block_id", return_value="12345")
+    @patch("dragonchain.transaction_processor.level_1_actions.activate_pending_indexes_if_necessary")
     @patch("dragonchain.transaction_processor.level_1_actions.matchmaking")
     @patch("dragonchain.transaction_processor.level_1_actions.process_transactions", return_value="Signed Transactions")
-    @patch("dragonchain.transaction_processor.level_1_actions.create_block", return_value="My Block!")
+    @patch("dragonchain.transaction_processor.level_1_actions.create_block", return_value=MagicMock(block_id="12345"))
     @patch("dragonchain.transaction_processor.level_1_actions.store_data")
     @patch("dragonchain.transaction_processor.level_1_actions.get_new_transactions", return_value=[{"new": "txn"}])
     @patch("dragonchain.transaction_processor.level_1_actions.clear_processing_transactions")
     def test_execute_calls_correct_functions(
-        self, mock_clear_processing, mock_get_transactions, mock_store_data, mock_create_block, mock_process_transactions, mock_matchmaking
+        self,
+        mock_clear_processing,
+        mock_get_transactions,
+        mock_store_data,
+        mock_create_block,
+        mock_process_transactions,
+        mock_matchmaking,
+        mock_activate_indexes,
+        mock_get_block_id,
     ):
         level_1_actions.execute()
 
+        mock_activate_indexes.assert_called_once()
         mock_get_transactions.assert_called_once()
         mock_process_transactions.assert_called_once_with([{"new": "txn"}])
-        mock_create_block.assert_called_once_with("Signed Transactions")
-        mock_store_data.assert_called_once_with("My Block!")
+        mock_create_block.assert_called_once_with("Signed Transactions", "12345")
+        mock_store_data.assert_called_once()
         mock_clear_processing.assert_called_once()
 
+    @patch("dragonchain.transaction_processor.level_1_actions.activate_pending_indexes_if_necessary")
     @patch("dragonchain.transaction_processor.level_1_actions.matchmaking")
     @patch("dragonchain.transaction_processor.level_1_actions.process_transactions")
     @patch("dragonchain.transaction_processor.level_1_actions.create_block")
@@ -47,10 +59,18 @@ class TestLevelOneActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_1_actions.get_new_transactions", return_value=[])
     @patch("dragonchain.transaction_processor.level_1_actions.clear_processing_transactions")
     def test_execute_no_ops_on_empty_queue(
-        self, mock_clear_processing, mock_get_transactions, mock_store_data, mock_create_block, mock_process_transactions, mock_matchmaking
+        self,
+        mock_clear_processing,
+        mock_get_transactions,
+        mock_store_data,
+        mock_create_block,
+        mock_process_transactions,
+        mock_matchmaking,
+        mock_activate_indexes,
     ):
         level_1_actions.execute()
 
+        mock_activate_indexes.assert_called_once()
         mock_get_transactions.assert_called_once()
         mock_process_transactions.assert_not_called()
         mock_create_block.assert_not_called()
@@ -109,10 +129,10 @@ class TestLevelOneActions(unittest.TestCase):
     @patch("dragonchain.transaction_processor.level_1_actions.l1_block_model.new_from_full_transactions", return_value="Mock Block")
     @patch("dragonchain.transaction_processor.level_1_actions.sign_block")
     def test_create_block_creates_and_signs(self, mock_sign, mock_new_block, mock_get_proof):
-        level_1_actions.create_block([{"Signed": "Txn"}, {"Signed": "Txn2"}])
+        level_1_actions.create_block([{"Signed": "Txn"}, {"Signed": "Txn2"}], "123")
 
         mock_get_proof.assert_called_once()
-        mock_new_block.assert_called_once_with([{"Signed": "Txn"}, {"Signed": "Txn2"}], "1234", "MyProof")
+        mock_new_block.assert_called_once_with([{"Signed": "Txn"}, {"Signed": "Txn2"}], "123", "1234", "MyProof")
         mock_sign.assert_called_once_with("Mock Block")
 
     @patch("dragonchain.transaction_processor.level_1_actions.keys.get_my_keys")
@@ -156,3 +176,8 @@ class TestLevelOneActions(unittest.TestCase):
         mock_broadcast_set_block_level.assert_called_once_with(mock_block.block_id, 2)
         mock_broadcast_schedule_block.assert_called_once_with(mock_block.block_id)
         mock_store.assert_called_once_with(mock_block)
+
+    @patch("dragonchain.transaction_processor.level_1_actions.activate_pending_indexes_if_necessary")
+    def test_activate_pending_indexes_if_necessary(self, mock_activate):
+        level_1_actions.activate_pending_indexes_if_necessary("banana4")
+        mock_activate.assert_called_once_with("banana4")

@@ -26,16 +26,16 @@ from dragonchain.webserver.lib import transaction_types
 class TestRegisterTransactionModel(unittest.TestCase):
     @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.get_registered_transaction_type", return_value={})
     def test_register_txn_type_name_conflict(self, dao_register_txn_type_mock):
-        txn_type_struct = {"version": "1", "txn_type": "random"}
+        txn_type_struct = {"version": "2", "txn_type": "random"}
         self.assertRaises(exceptions.TransactionTypeConflict, transaction_types.register_transaction_type_v1, txn_type_struct)
 
-    @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.store_registered_transaction_type")
+    @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.create_new_transaction_type")
     @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
-    def test_register_txn_type_succeeds(self, mock_get_registered_type, mock_store_txn_type):
-        txn_type_struct = {"version": "1", "txn_type": "random"}
+    def test_register_txn_type_succeeds(self, mock_get_registered_type, mock_queue):
+        txn_type_struct = {"version": "2", "txn_type": "random"}
         transaction_types.register_transaction_type_v1(txn_type_struct)
         mock_get_registered_type.assert_called_once()
-        mock_store_txn_type.assert_called_once()
+        mock_queue.assert_called_once()
 
 
 class TestDeleteTransactionType(unittest.TestCase):
@@ -43,29 +43,24 @@ class TestDeleteTransactionType(unittest.TestCase):
         "dragonchain.webserver.lib.transaction_types.transaction_type_dao.get_registered_transaction_type",
         return_value=transaction_type_model.TransactionTypeModel(contract_id="my-id"),
     )
-    def test_delete_if_txn_type_has_contract_id(self, dao_get_registered_txn_type_mock):
+    @patch("dragonchain.lib.dao.smart_contract_dao.contract_does_exist")
+    def test_delete_if_txn_type_has_contract_id(self, dao_get_registered_txn_type_mock, mock_contract_does_exist):
         self.assertRaises(exceptions.ActionForbidden, transaction_types.delete_transaction_type_v1, "exists_but_contract")
+        mock_contract_does_exist.assert_called_once()
 
     @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.remove_existing_transaction_type")
     @patch(
         "dragonchain.webserver.lib.transaction_types.transaction_type_dao.get_registered_transaction_type",
-        return_value=transaction_type_model.TransactionTypeModel(txn_type="random", contract_id=False),
+        return_value=transaction_type_model.TransactionTypeModel(txn_type="random", contract_id=""),
     )
     def test_delete_txn_type_succeeds(self, mock_get_registered_type, dao_remove_txn_type_mock):
         transaction_types.delete_transaction_type_v1("random")
         mock_get_registered_type.assert_called_once_with("random")
 
 
-class TestUpdateTransactionType(unittest.TestCase):
-    @patch("dragonchain.webserver.lib.transaction_types.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
-    def test_update_throws_not_found(self, mock_get_registered_type):
-        self.assertRaises(exceptions.NotFound, transaction_types.update_transaction_type_v1, "does_not_exist", [])
-        mock_get_registered_type.assert_called_once()
-
-
 class TestTransactionTypeList(unittest.TestCase):
-    @patch("dragonchain.webserver.lib.transaction_types.redis.smembers_sync", return_value={"item"})
-    @patch("dragonchain.webserver.lib.transaction_types.storage.get_json_from_object")
+    @patch("dragonchain.lib.interfaces.storage.list_objects", return_value=["items"])
+    @patch("dragonchain.lib.interfaces.storage.get_json_from_object")
     def test_list_registered_txn_types_succeeds(self, storage_get_as_json_mock, get_list_mock):
         transaction_types.list_registered_transaction_types_v1()
         get_list_mock.assert_called()

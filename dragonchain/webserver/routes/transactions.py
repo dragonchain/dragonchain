@@ -79,15 +79,16 @@ def post_transaction_bulk_v1() -> Tuple[str, int, Dict[str, str]]:
 
 @request_authorizer.Authenticated()
 def query_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
-    params = flask.request.args.to_dict() or None
-    should_parse = flask.request.headers.get("Parse-Payload") != "false"
-    return helpers.flask_http_response(200, transactions.query_transactions_v1(params, should_parse))
+    params = helpers.parse_query_parameters(flask.request.args.to_dict())
+    if params.get("transaction_type"):
+        should_parse = flask.request.headers.get("Parse-Payload") != "false"
+        return helpers.flask_http_response(200, transactions.query_transactions_v1(params, should_parse))
+    raise exceptions.ValidationException("User input must specify transaction type to query")
 
 
 @request_authorizer.Authenticated()
 def get_transaction_v1(transaction_id: str) -> Tuple[str, int, Dict[str, str]]:
     if not transaction_id:
-        raise exceptions.BadRequest("Paramterer 'transaction_id' is required'")
-
+        raise exceptions.BadRequest("Parameter 'transaction_id' is required")
     should_parse = flask.request.headers.get("Parse-Payload") != "false"
     return helpers.flask_http_response(200, transactions.get_transaction_v1(transaction_id, should_parse))

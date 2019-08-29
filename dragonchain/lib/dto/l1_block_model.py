@@ -36,7 +36,9 @@ BLOCK_INTERVAL = 5
 _validate_l1_block_at_rest = fastjsonschema.compile(schema.l1_block_at_rest_schema)
 
 
-def new_from_full_transactions(full_transactions_array: List[transaction_model.TransactionModel], prev_id: str, prev_proof: str) -> "L1BlockModel":
+def new_from_full_transactions(
+    full_transactions_array: List[transaction_model.TransactionModel], block_id: str, prev_id: str, prev_proof: str
+) -> "L1BlockModel":
     """
     Used in creating new blocks
     Input: List of TransactionModels, previous ID and proof
@@ -46,8 +48,7 @@ def new_from_full_transactions(full_transactions_array: List[transaction_model.T
     if not isinstance(full_transactions_array, list):
         raise TypeError("Invalid input types to create new block model.")
 
-    # Get the current block ID and assign to every transaction
-    block_id = get_current_block_id()
+    # Assign the current block ID to every transaction
     for transaction in full_transactions_array:
         if not isinstance(transaction, transaction_model.TransactionModel):
             raise TypeError("Invalid input types to create new block model.")
@@ -184,30 +185,3 @@ class L1BlockModel(model.BlockModel):
             txn_string += '{"txn_id": "' + transaction.txn_id + '", '
             txn_string += '"txn": ' + json.dumps(transaction.export_as_full(), separators=(",", ":")) + "}\n"
         return txn_string
-
-    def export_as_search_index(self) -> Dict[str, Any]:
-        """Export as block search index DTO"""
-        return {
-            "version": "1",
-            "dcrn": schema.DCRN.Block_L1_Search_Index.value,
-            "dc_id": self.dc_id,
-            "block_id": int(self.block_id),
-            "timestamp": int(self.timestamp),
-            "prev_id": int(self.prev_id) if self.prev_id else 0,
-            "prev_proof": self.prev_proof,
-            "s3_object_folder": "BLOCK",
-            "s3_object_id": self.block_id,
-            "l2_verifications": 0,
-            "l3_verifications": 0,
-            "l4_verifications": 0,
-            "l5_verifications": 0,
-        }
-
-    def export_full_transactions_search_indexes(self) -> dict:
-        """Export a key value object for elasticsearch bulk indexing of transactions in this block"""
-        obj: dict = {}
-        for transaction in self.transactions:
-            search_index = transaction.export_as_search_index()
-            obj.update(search_index)
-
-        return obj

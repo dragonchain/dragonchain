@@ -8,6 +8,8 @@ phases:
       - if [ -z "$STAGE" ]; then echo "STAGE env var is missing"; exit 1; fi
       - if [ -z "$AWS_DEFAULT_REGION" ]; then echo "AWS_DEFAULT_VERSION env var is missing"; exit 1; fi
       - chmod +x ./dragonchain/job_processor/bin/fwatchdog
+      # For some reason codebuild doesn't handle these symlinks correctly when cloning, so we just move the relevant source files instead
+      - mv CHANGELOG.md docs/overview/changelog.md && mv CONTRIBUTING.md docs/meta/contributing.md
   pre_build:
     commands:
       - echo Building and running tests

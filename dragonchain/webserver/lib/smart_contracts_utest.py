@@ -28,6 +28,12 @@ def get_sc_create_body():
     return {"version": "3", "txn_type": "test", "image": "myreg/myrepo:mytag", "cmd": "echo", "args": ["hello", "world"], "execution_order": "serial"}
 
 
+def get_sc_create_body_with_custom_indexes():
+    sc_body = get_sc_create_body()
+    sc_body["custom_indexes"] = [{"path": "ba/na/na", "field_name": "banana", "type": "tag", "options": {}}]
+    return sc_body
+
+
 def get_sc_create_body_with_bad_cron():
     return {
         "version": "3",
@@ -45,40 +51,52 @@ def get_sc_update_body():
 
 
 class TestCreateContract(unittest.TestCase):
+    @patch("dragonchain.lib.dao.smart_contract_dao.add_smart_contract_index")
+    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
     @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.register_smart_contract_transaction_type")
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.get_count", return_value=0)
+    @patch("dragonchain.lib.database.redisearch.get_document_count", return_value=0)
     @patch("dragonchain.job_processor.begin_task")
-    def test_create_contract(self, patch_job_proc, mock_get_count, mock_register_sc_type):
+    def test_create_contract(self, patch_job_proc, mock_get_count, mock_register_sc_type, mock_get_registered, mock_add_index):
         smart_contracts.create_contract_v1(get_sc_create_body())
 
+        mock_get_count.assert_called_once()
         mock_register_sc_type.assert_called_once()
         patch_job_proc.assert_called_once()
+        mock_get_registered.assert_called_once()
+        mock_add_index.assert_called_once()
 
-    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.register_smart_contract_transaction_type")
-    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.remove_existing_transaction_type")
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.get_count", return_value=0)
-    @patch("dragonchain.job_processor.begin_task", side_effect=RuntimeError)
-    def test_create_contract_deletes_txn_type_and_raises_on_job_start_failure(
-        self, patch_job_proc, mock_get_count, mock_delete_type, mock_register_type
-    ):
-        self.assertRaises(RuntimeError, smart_contracts.create_contract_v1, get_sc_create_body())
-
-        mock_delete_type.assert_called_once()
-        mock_register_type.assert_called_once()
-        patch_job_proc.assert_called_once()
-
+    @patch("dragonchain.lib.dao.smart_contract_dao.add_smart_contract_index")
+    @patch("dragonchain.webserver.lib.smart_contracts.job_processor.begin_task")
+    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
     @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.register_smart_contract_transaction_type", side_effect=Exception)
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.get_count", return_value=0)
-    def test_create_contract_raises_on_uncaught_error(self, mock_get_count, mock_register_type):
+    @patch("dragonchain.lib.database.redisearch.get_document_count", return_value=0)
+    def test_create_contract_raises_on_uncaught_error(self, mock_get_count, mock_register_type, mock_get_type, mock_task, mock_add_index):
         self.assertRaises(Exception, smart_contracts.create_contract_v1, get_sc_create_body())
 
+        mock_task.assert_called()
+        mock_add_index.assert_called_once()
+        mock_get_type.assert_called_once()
         mock_register_type.assert_called_once()
 
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.get_count", return_value=0)
-    def test_create_contract_validates_cron_string(self, mock_get_count):
+    @patch("dragonchain.lib.database.redisearch.get_document_count", return_value=0)
+    def test_create_contract_validates_cron_string(self, mock_get_docs):
         self.assertRaises(exceptions.DragonchainException, smart_contracts.create_contract_v1, get_sc_create_body_with_bad_cron())
 
+        mock_get_docs.assert_called_once()
+
+    @patch("dragonchain.lib.dao.smart_contract_dao.add_smart_contract_index")
+    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
+    @patch("dragonchain.webserver.lib.smart_contracts.transaction_type_dao.register_smart_contract_transaction_type")
+    @patch("dragonchain.lib.database.redisearch.get_document_count", return_value=0)
+    @patch("dragonchain.job_processor.begin_task")
+    def test_create_contract_with_custom_indexes(self, patch_job_proc, mock_get_count, mock_register_sc_type, mock_get_registered, mock_add_index):
+        smart_contracts.create_contract_v1(get_sc_create_body_with_custom_indexes())
+
         mock_get_count.assert_called_once()
+        mock_register_sc_type.assert_called_once()
+        patch_job_proc.assert_called_once()
+        mock_get_registered.assert_called_once()
+        mock_add_index.assert_called_once()
 
 
 class TestUpdateContract(unittest.TestCase):
@@ -133,25 +151,3 @@ class TestDeleteContract(unittest.TestCase):
     def test_delete_contract_raises_ise_on_uncaught_error(self, patch_get_by_id):
         self.assertRaises(Exception, smart_contracts.delete_contract_v1, "test")
         patch_get_by_id.assert_called_once()
-
-
-class TestQueryContracts(unittest.TestCase):
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.search", return_value={"whatever": "searchResponse"})
-    def test_calls_search_when_query_string_params_pased(self, mock_search):
-        smart_contracts.query_contracts_v1({"whatever": None})
-        mock_search.assert_called_once()
-
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.search", return_value={"whatever": "searchResponse"})
-    def test_calls_search_with_q_is_passed(self, mock_search):
-        smart_contracts.query_contracts_v1({"q": "banana=true"})
-        mock_search.assert_called_with(folder="SMARTCONTRACT", limit=None, offset=None, q="banana=true", sort=None)
-
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.search", return_value={"whatever": "searchResponse"})
-    def test_calls_search_with_default_q_when_missing(self, mock_search):
-        smart_contracts.query_contracts_v1({})
-        mock_search.assert_called_with(folder="SMARTCONTRACT", q="*")
-
-    @patch("dragonchain.webserver.lib.smart_contracts.elasticsearch.search", return_value={"whatever": "searchResponse"})
-    def test_calls_search_with_sort_is_passed(self, mock_search):
-        smart_contracts.query_contracts_v1({"sort": "desc"})
-        mock_search.assert_called_with(folder="SMARTCONTRACT", limit=None, offset=None, q="*", sort="desc")

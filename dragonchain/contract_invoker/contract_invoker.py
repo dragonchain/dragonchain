@@ -29,7 +29,6 @@ from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.database import redis
 from dragonchain.contract_invoker import contract_invoker_service
 from dragonchain import logger
-from dragonchain import exceptions
 from dragonchain.lib import error_reporter
 
 _log = logger.get_logger()
@@ -106,11 +105,8 @@ def restart_serial_worker(contract_id: str) -> None:
 
 
 def restart_dead_workers() -> None:
-    try:
-        for contract in smart_contract_dao.get_serial_contracts():
-            restart_serial_worker(contract["id"])
-    except exceptions.NotFound:
-        _log.warning("No serial contracts found")
+    for contract in smart_contract_dao.get_serial_contracts():
+        restart_serial_worker(contract.id)
 
 
 async def serial_contract_worker(contract_id: str) -> None:

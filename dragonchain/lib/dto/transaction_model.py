@@ -16,9 +16,9 @@
 # language governing permissions and limitations under the Apache License.
 
 import json
-from typing import TYPE_CHECKING, Mapping, Any
+from typing import TYPE_CHECKING, Mapping, Dict, Any
 
-from jsonpath import jsonpath
+import jsonpath
 
 from dragonchain.lib.dto import schema
 from dragonchain.lib.dto import model
@@ -85,6 +85,24 @@ def new_from_stripped_block_input(l1_block_txn: str) -> "TransactionModel":
         raise NotImplementedError(f"Version {txn.get('version')} is not supported")
 
 
+def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
+    if full_txn.get("version") == "2" or full_txn.get("version") == "1":  # Effectively identical
+        return TransactionModel(
+            dc_id=full_txn["header"]["dc_id"],
+            block_id=full_txn["header"]["block_id"],
+            txn_id=full_txn["header"]["txn_id"],
+            timestamp=full_txn["header"]["timestamp"],
+            txn_type=full_txn["header"]["txn_type"],
+            tag=full_txn["header"]["tag"],
+            invoker=full_txn["header"]["invoker"],
+            full_hash=full_txn["proof"]["full"],
+            signature=full_txn["proof"]["stripped"],
+            payload=full_txn["payload"],
+        )
+    else:
+        raise NotImplementedError(f"Version {full_txn.get('version')} is not supported")
+
+
 class TransactionModel(model.Model):
     """
     TransactionModel class is an abstracted representation of a transaction object
@@ -127,7 +145,7 @@ class TransactionModel(model.Model):
                 "txn_id": self.txn_id,
                 "block_id": self.block_id,
                 "timestamp": self.timestamp,
-                "tag": self.tag or "",
+                "tag": self.tag,
                 "invoker": self.invoker or "",
             },
             "payload": self.payload,
@@ -145,7 +163,7 @@ class TransactionModel(model.Model):
                 "txn_id": self.txn_id,
                 "block_id": self.block_id,
                 "timestamp": self.timestamp,
-                "tag": self.tag or "",
+                "tag": self.tag,
                 "invoker": self.invoker or "",
             },
             "proof": {"full": self.full_hash, "stripped": self.signature},
@@ -160,52 +178,59 @@ class TransactionModel(model.Model):
                 "dc_id": self.dc_id,
                 "txn_id": self.txn_id,
                 "timestamp": self.timestamp,
-                "tag": self.tag or "",
+                "tag": self.tag,
                 "invoker": self.invoker or "",
             },
             "payload": json.dumps(self.payload, separators=(",", ":")) if not dict_payload else self.payload,
         }
 
-    def export_as_search_index(self, stub: bool = False) -> dict:
-        """Export Transaction::L1::SearchIndex DTO"""
-        search_indexes = {
-            "version": "2",
-            "status": "processed" if not stub else "pending",
-            "dcrn": schema.DCRN.Transaction_L1_Search_Index.value,
-            "txn_type": self.txn_type,
-            "dc_id": self.dc_id,
-            "txn_id": self.txn_id,
-            "tag": self.tag or "",
-            "block_id": int(self.block_id) if not stub else "",
-            "timestamp": int(self.timestamp) if not stub else "",
-            "invoker": self.invoker or "",
-            "s3_object_folder": "TRANSACTION",
-            "s3_object_id": str(self.block_id) if not stub else "",
-            "l2_rejections": 0,
-        }
-        reserved_keywords = search_indexes.keys()
-        for k, v in self.custom_indexed_data.items():
-            if k not in reserved_keywords:
-                search_indexes[k] = v if isinstance(v, str) else json.dumps(v, separators=(",", ":"))
-            else:
-                _log.info(f"[TXN MODEL] Requested index path: {k} is a reserved keyword")
-        return {self.txn_id: search_indexes} if not stub else search_indexes
+    def export_as_search_index(self, stub: bool = False) -> Dict[str, Any]:
+        """Get the search index DTO from this transaction"""
+        # Please note that extract_custom_indexes should be ran first, or else custom indexes for this transaction will not be exported
+        search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id) if not stub else 0}
+        if not stub:
+            reserved_keywords = search_indexes.keys()
+            for key, value in self.custom_indexed_data.items():
+                if key not in reserved_keywords:
+                    search_indexes[key] = value
+                else:
+                    _log.error(f"Requested field name: {key} is a reserved keyword. Will not index")
+        return search_indexes
 
     def extract_custom_indexes(self, transaction_type_model: "transaction_type_model.TransactionTypeModel") -> None:
         """Extracts and formats custom indexed data paths from payload"""
-        transaction_index_object = {}
-        if len(transaction_type_model.custom_indexes) > 0:
-            _log.debug(f"indexes: {transaction_type_model.custom_indexes}")
-            for index in transaction_type_model.custom_indexes:
-                key = index["key"]
-                path = index["path"]
-                _log.debug(f"index name: {key}, index path: {path}")
-                try:
-                    indexable_object = jsonpath(json.loads(self.payload), path)
+        transaction_index_object: Dict[str, Any] = {}
+        if transaction_type_model.custom_indexes:
+            # Make sure the payload is valid json before trying to extract indexes
+            try:
+                json_payload = json.loads(self.payload)
+            except Exception:
+                _log.exception("Couldn't parse payload of transaction with custom indexes")
+            else:
+                _log.debug(f"indexes: {transaction_type_model.custom_indexes}")
+                for index in transaction_type_model.custom_indexes:
+                    # Get index field name and custom json path to extract from payload json
+                    field_name = index["field_name"]
+                    path = index["path"]
+                    _log.debug(f"index field name: {field_name}, index path: {path}")
+                    # Extract the actual indexable item with from the payload with jsonpath
+                    indexable_object = jsonpath.jsonpath(json_payload, path)
                     _log.debug(f"indexable_object: {indexable_object}")
+                    # If we found a valid item at the specified indexable path
                     if indexable_object and isinstance(indexable_object, list) and len(indexable_object) == 1:
-                        transaction_index_object[key] = indexable_object[0]
-                except Exception:
-                    # silence errors as we still want to continue processing as normal
-                    _log.exception("Could not locate indexable object in payload")
+                        index_item = indexable_object[0]
+                        # Check that the item we extracted is a string for tag or text type custom indexes
+                        if index["type"] == "tag" or index["type"] == "text":
+                            if isinstance(index_item, str):
+                                transaction_index_object[field_name] = index_item
+                            else:
+                                _log.warning(f"Provided value {index_item} for field {field_name} was not a string. Can't index")
+                        # Check that the item we extracted is (or converts to) a valid number for number type custom indexes
+                        elif index["type"] == "number":
+                            try:
+                                transaction_index_object[field_name] = float(index_item)
+                            except ValueError:
+                                _log.warning(f"Provided value {index_item} for field {field_name} was not a number. Can't index")
+                        else:
+                            raise NotImplementedError(f"Index type {index['type']} is not supported")
         self.custom_indexed_data = transaction_index_object
