@@ -395,4 +395,4 @@ def _generate_transaction_indexes_from_scratch() -> None:
                 # Extract custom indexes if necessary
                 if watch_block and int(txn_model.block_id) >= watch_block:
                     txn_model.extract_custom_indexes(txn_type_models[txn_model.txn_type])
-                    put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index())
+                    put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(), upsert=True)
