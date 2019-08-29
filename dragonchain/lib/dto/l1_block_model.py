@@ -76,7 +76,7 @@ def new_from_stripped_block(stripped_block: Dict[str, Any]) -> "L1BlockModel":
         return L1BlockModel(
             dc_id=stripped_block["header"]["dc_id"],
             block_id=stripped_block["header"]["block_id"],
-            timestamp=stripped_block["header"]["timestamp"],
+            timestamp=stripped_block["header"].get("timestamp") or "-1",
             prev_proof=stripped_block["header"]["prev_proof"],
             prev_id=stripped_block["header"]["prev_id"],
             stripped_transactions=stripped_block["transactions"],
