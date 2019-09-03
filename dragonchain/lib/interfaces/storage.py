@@ -19,11 +19,14 @@ import os
 import json
 from typing import Optional, List, Any, TYPE_CHECKING
 
+from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.database import redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import JSONType
+
+_log = logger.get_logger()
 
 LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
@@ -63,6 +66,7 @@ def get(key: str, cache_expire: Optional[int] = None, should_cache: bool = True)
     except exceptions.NotFound:
         raise
     except Exception:
+        _log.exception("Uncaught exception while performing storage get")
         raise exceptions.StorageError("Uncaught exception while performing storage get")
 
 
