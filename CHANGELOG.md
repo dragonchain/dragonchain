@@ -23,6 +23,7 @@ for more details on upgrading to v4.
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
 - **Bugs:**
   - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
+  - Fixed a bug with ethereum classic and ethereum classic testnet interchains which caused transactions to be signed improperly
 
 ## 3.5.0
 

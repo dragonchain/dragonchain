@@ -159,16 +159,17 @@ class TestEthereumMethods(unittest.TestCase):
         self.assertEqual(client.chain_id, 1)
         self.assertTrue(bool(client.address))  # Ensure we got an address (private key was generated for us)
         self.assertEqual(client.rpc_address, "http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545")
-        mock_check_chain_id.return_value = 2
-        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 2})
-        self.assertEqual(client.rpc_address, "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545")
         mock_check_chain_id.return_value = 3
         client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 3})
         self.assertEqual(client.rpc_address, "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545")
         mock_check_chain_id.return_value = 1
         client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 61})
         self.assertEqual(client.rpc_address, "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545")
-        self.assertEqual(client.chain_id, 1)  # Ensure the chain id for ETC mainnet with our node got switche properly
+        self.assertEqual(client.chain_id, 61)  # Ensure the chain id for ETC mainnet is correct
+        mock_check_chain_id.return_value = 2
+        client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 62})
+        self.assertEqual(client.rpc_address, "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545")
+        self.assertEqual(client.chain_id, 62)  # Ensure the chain id for ETC testnet is correct
 
     @patch("dragonchain.lib.dto.eth.EthereumNetwork.check_rpc_chain_id", return_value=1)
     def test_new_from_user_input_sets_good_private_keys(self, mock_check_chain_id):

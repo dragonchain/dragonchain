@@ -218,7 +218,6 @@ async def hdel_async(key: str, field: str, *fields: str) -> int:
 
 # LRU REDIS
 def _cache_key(key: str, service_name: str) -> str:
-    _set_redis_client_lru_if_necessary()
     return f"{service_name}:{key}"
 
 
