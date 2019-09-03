@@ -76,12 +76,11 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noq
                 user_input["rpc_address"] = DRAGONCHAIN_ROPSTEN_NODE
             elif user_input.get("chain_id") == 61:
                 user_input["rpc_address"] = DRAGONCHAIN_CLASSIC_NODE
-                user_input["chain_id"] = 1  # Our parity ETC mainnet node reports chain id 1
-            elif user_input.get("chain_id") == 2:
+            elif user_input.get("chain_id") == 62:
                 user_input["rpc_address"] = DRAGONCHAIN_MORDEN_NODE
             else:
                 raise exceptions.BadRequest(
-                    "If an rpc address is not provided, a valid chain id must be provided. ETH_MAIN = 1, ETH_ROPSTEN = 3, ETC_MAIN = 61, ETC_MORDEN = 2"
+                    "If an rpc address is not provided, a valid chain id must be provided. ETH_MAIN = 1, ETH_ROPSTEN = 3, ETC_MAIN = 61, ETC_MORDEN = 62"
                 )
         # Create our client with a still undetermined chain id
         try:
@@ -95,11 +94,16 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noq
             reported_chain_id = client.check_rpc_chain_id()
         except Exception as e:
             raise exceptions.BadRequest(f"Error trying to contact ethereum rpc node. Error: {e}")
+        effective_chain_id = user_input.get("chain_id")
+        # For ethereum classic, the mainnet/testnet nodes are chain ID 1/2, however their transactions
+        # must be signed with chain id 61/62, so we have an exception here for the chain id sanity check
+        if effective_chain_id == 61 or effective_chain_id == 62:
+            effective_chain_id -= 60
         # Sanity check if user provided chain id that it matches the what the RPC node reports
-        if user_input.get("chain_id") and user_input["chain_id"] != reported_chain_id:
+        if isinstance(effective_chain_id, int) and effective_chain_id != reported_chain_id:
             raise exceptions.BadRequest(f"User provided chain id {user_input['chain_id']}, but RPC reported chain id {reported_chain_id}")
         # Now set the chain id after it's been checked
-        client.chain_id = reported_chain_id
+        client.chain_id = user_input["chain_id"] if isinstance(user_input.get("chain_id"), int) else reported_chain_id
         return client
     else:
         raise exceptions.BadRequest(f"User input version {dto_version} not supported")
@@ -155,7 +159,6 @@ class EthereumNetwork(model.InterchainModel):
         Returns:
             String of the signed transaction as hex
         """
-        _log.info(f"[ETHEREUM] Signing raw transaction: {raw_transaction}")
         raw_transaction["from"] = self.address
         raw_transaction["chainId"] = self.chain_id
         if not raw_transaction.get("nonce"):
@@ -166,6 +169,7 @@ class EthereumNetwork(model.InterchainModel):
             # TODO proper gas limit estimation
             raw_transaction["gas"] = self.w3.toHex(STANDARD_GAS_LIMIT)
         try:
+            _log.info(f"[ETHEREUM] Signing raw transaction: {raw_transaction}")
             return self.w3.eth.account.sign_transaction(raw_transaction, self.priv_key).rawTransaction.hex()
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
@@ -251,6 +255,7 @@ class EthereumNetwork(model.InterchainModel):
         Returns:
             Gas price estimate in wei
         """
+        _log.debug(f"[ETHEREUM] Getting estimated gas price")
         gas_price = int(self.w3.eth.generateGasPrice())
         _log.info(f"[ETHEREUM] Current estimated gas price: {gas_price}")
         return gas_price
