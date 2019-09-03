@@ -84,6 +84,7 @@ def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache
         if should_cache:
             redis.cache_put(key, value, cache_expire)
     except Exception:
+        _log.exception("Uncaught exception while performing storage put")
         raise exceptions.StorageError("Uncaught exception while performing storage put")
 
 
@@ -98,6 +99,7 @@ def delete(key: str) -> None:
         storage.delete(STORAGE_LOCATION, key)
         redis.cache_delete(key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage delete")
         raise exceptions.StorageError("Uncaught exception while performing storage delete")
 
 
@@ -115,6 +117,7 @@ def delete_directory(directory_key: str) -> None:
             delete(key)
         storage.delete_directory(STORAGE_LOCATION, directory_key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage delete_directory")
         raise exceptions.StorageError("Uncaught exception while performing storage delete_directory")
 
 
@@ -141,6 +144,7 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
     except exceptions.NotFound:
         raise
     except Exception:
+        _log.exception("Uncaught exception while performing storage select_transaction")
         raise exceptions.StorageError("Uncaught exception while performing storage select_transaction")
 
 
@@ -178,6 +182,7 @@ def list_objects(prefix: str) -> List[str]:
     try:
         return storage.list_objects(STORAGE_LOCATION, prefix)
     except Exception:
+        _log.exception("Uncaught exception while performing storage list_objects")
         raise exceptions.StorageError("Uncaught exception while performing storage list_objects")
 
 
@@ -193,6 +198,7 @@ def does_superkey_exist(key: str) -> bool:
     try:
         return storage.does_superkey_exist(STORAGE_LOCATION, key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage does_superkey_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_superkey_exist")
 
 
@@ -208,4 +214,5 @@ def does_object_exist(key: str) -> bool:
     try:
         return storage.does_object_exist(STORAGE_LOCATION, key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage does_object_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_object_exist")

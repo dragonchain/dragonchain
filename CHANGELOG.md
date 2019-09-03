@@ -16,6 +16,8 @@ for more details on upgrading to v4.
   - Update documentation for redisearch
   - Add new page for migration considerations when upgrading from v3 to v4
   - Add RAM usage requirements
+- **Development:**
+  - Add logs when getting storage errors
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
   - Add redisearch and remove elasticsearch requirements
