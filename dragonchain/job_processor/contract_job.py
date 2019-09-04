@@ -478,7 +478,9 @@ class ContractJob(object):
         inactive_to_active = self.update_model.desired_state == "active" and self.model.start_state == "inactive"
         inactive_to_active_with_existing_schedule = (inactive_to_active and old_schedule_exists) and not new_schedule_exists
         schedule_condition = new_schedule_exists or inactive_to_active_with_existing_schedule
-        unschedule_condition = self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
+        unschedule_condition = (
+            self.update_model.disable_schedule or self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
+        )
 
         _log.info("Beginning update")
         # Update execution order

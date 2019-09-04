@@ -151,6 +151,7 @@ def new_update_contract(data: Mapping[str, Any], existing_contract: "SmartContra
             seconds=data.get("seconds"),
             cron=data.get("cron"),
             execution_order=data.get("execution_order"),
+            disable_schedule=data.get("disable_schedule"),
         )
         sc_model.validate_secret_names()
         sc_model.check_env_names()
@@ -185,6 +186,7 @@ class SmartContractModel(model.Model):
         seconds=None,
         auth=None,
         image_digest=None,
+        disable_schedule: Optional[bool] = None,
     ):
         """Model Constructor"""
         self.txn_type = txn_type
@@ -205,6 +207,7 @@ class SmartContractModel(model.Model):
         self.args = args or []
         self.cron = cron
         self.auth = auth
+        self.disable_schedule = disable_schedule
 
     def export_as_invoke_request(self, invoke_transaction: dict) -> Dict[str, Any]:
         """Export as a invoke request DTO"""

@@ -566,6 +566,7 @@ smart_contract_update_schema_v1 = {
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
         "cron": {"type": "string"},
         "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
+        "disable_schedule": {"type": "boolean"},
     },
 }
 

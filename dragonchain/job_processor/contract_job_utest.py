@@ -51,6 +51,7 @@ class ContractJobTest(unittest.TestCase):
             self.save = MagicMock()
             self.update = MagicMock()
             self.status = "active"
+            self.disable_schedule = None
 
     class BuildTaskResultWithHelpers(object):
         def __init__(self, txn_type, task_type, state, cmd, args, secrets=None, image=None, auth=None):
@@ -77,6 +78,7 @@ class ContractJobTest(unittest.TestCase):
             self.save = MagicMock()
             self.update = MagicMock()
             self.status = "active"
+            self.disable_schedule = None
 
         def update_faas_helper(self, update_model):
             contract_job.smart_contract_model.SmartContractModel.update_faas_fields(self, update_model=update_model)
