@@ -473,12 +473,18 @@ class ContractJob(object):
         execution_order_condition = self.update_model.execution_order
 
         # Schedule conditions
-        old_schedule_exists = self.model.seconds or self.model.cron
-        new_schedule_exists = self.update_model.seconds or self.update_model.cron
-        inactive_to_active = self.update_model.desired_state == "active" and self.model.start_state == "inactive"
-        inactive_to_active_with_existing_schedule = (inactive_to_active and old_schedule_exists) and not new_schedule_exists
-        schedule_condition = new_schedule_exists or inactive_to_active_with_existing_schedule
-        unschedule_condition = self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
+        if self.update_model.disable_schedule:
+            schedule_condition = False
+            unschedule_condition = True
+            self.model.seconds = None
+            self.model.cron = None
+        else:
+            old_schedule_exists = self.model.seconds or self.model.cron
+            new_schedule_exists = self.update_model.seconds or self.update_model.cron
+            inactive_to_active = self.update_model.desired_state == "active" and self.model.start_state == "inactive"
+            inactive_to_active_with_existing_schedule = (inactive_to_active and old_schedule_exists) and not new_schedule_exists
+            schedule_condition = new_schedule_exists or inactive_to_active_with_existing_schedule
+            unschedule_condition = self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
 
         _log.info("Beginning update")
         # Update execution order
