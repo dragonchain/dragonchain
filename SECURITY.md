@@ -1,6 +1,6 @@
 # Security Policy
 
-The Dragonchain project is dedicated towards finding and eliminating any possible security vulnerabilities that may arise. This includes this repository as well as all auxilliary Dragonchain repositories.
+The Dragonchain project is dedicated towards finding and eliminating any possible security vulnerabilities that may arise. This includes this repository as well as all auxillary Dragonchain repositories.
 
 ## Supported Versions
 
