@@ -17,6 +17,7 @@ for more details on upgrading to v4.
   - Update documentation for redisearch
   - Add new page for migration considerations when upgrading from v3 to v4
   - Add RAM usage requirements
+  - Add info about bug/security/project bounty programs
 - **Development:**
   - Add logs when getting storage errors
 - **Packaging:**
