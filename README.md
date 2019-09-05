@@ -22,6 +22,8 @@ and public blockchain interoperability, Dragonchain shines a new and interesting
 - [Project Documentation](https://dragonchain-core-docs.dragonchain.com/latest/)
 - [Dragonchain Console](https://console.dragonchain.com/)
 - [Dragonchain Inc](https://dragonchain.com/)
+- [Bug and Security Bounty Program](https://dragonchain.com/bug-and-security-bounty)
+- [Project Bounty Program](https://dragonchain.com/strategic-projects-bounty)
 - [Dragonchain Academy](https://academy.dragonchain.org/)
 - [Dragonchain Blog](https://dragonchain.com/blog)
 - [Dragonchain Architecture Document](https://dragonchain.com/assets/Dragonchain-Architecture.pdf)
@@ -84,7 +86,14 @@ For more information, including a deeper dive on the architecture/code structure
 
 ## 🚀 Contributing
 
-For info on contributing, please read the [contributing](/CONTRIBUTING.md) document.
+Want to make some money for helping the project?
+We have project, bug, and security bounty programs which we invite anyone to participate in.
+Details for these programs can be found here:
+
+- [Bug and Security Bounty Program](https://dragonchain.com/bug-and-security-bounty)
+- [Project Bounty Program](https://dragonchain.com/strategic-projects-bounty)
+
+For more info on contributing, please read the [contributing](/CONTRIBUTING.md) document.
 
 ## ✔️ Support
 
