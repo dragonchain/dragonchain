@@ -42,7 +42,7 @@ class TestTransactionTypeDAO(unittest.TestCase):
         self.assertRaises(exceptions.NotFound, transaction_type_dao.get_registered_transaction_type, "test_type")
 
     @patch("dragonchain.lib.database.redis.lpush_sync")
-    @patch("dragonchain.lib.database.redisearch.force_create_transaction_index")
+    @patch("dragonchain.lib.database.redisearch.create_transaction_index")
     @patch("dragonchain.lib.dao.transaction_type_dao.storage.put_object_as_json")
     def test_create_registered_txn_type_succeeds(self, storage_put_mock, rsearch_create_mock, mock_lpush):
         instance = transaction_type_model.new_from_user_input({"version": "2", "txn_type": "test_type", "custom_indexes": []})

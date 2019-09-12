@@ -1,4 +1,4 @@
-boto3==1.9.215
+boto3==1.9.228
 redis==3.3.8
 apscheduler==3.6.1
 jsonpath==0.82
@@ -10,8 +10,8 @@ web3==5.0.2
 kubernetes==10.0.1
 docker==4.0.2
 gunicorn[gevent]==19.9.0
-aiohttp[speedups]==3.5.4
+aiohttp[speedups]==3.6.0
 aioredis==1.2.0
 base58==1.0.3
-bit==0.5.2
+bit==0.6.0
 redisearch==0.7.1

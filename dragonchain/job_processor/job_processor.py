@@ -171,7 +171,7 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
         ]
         volumes = [
             kubernetes.client.V1Volume(name="dockersock", host_path=kubernetes.client.V1HostPathVolumeSource(path="/var/run/docker.sock")),
-            kubernetes.client.V1Volume(name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")),
+            kubernetes.client.V1Volume(name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")),  # nosec
             kubernetes.client.V1Volume(name="secrets", secret=kubernetes.client.V1SecretVolumeSource(secret_name=f"d-{INTERNAL_ID}-secrets")),
         ]
         if STORAGE_TYPE == "disk":

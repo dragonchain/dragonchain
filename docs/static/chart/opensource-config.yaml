@@ -1,5 +1,5 @@
 webserverLiveliness: true # Set this value to false if migrating from v3 to v4, and a lot of data needs to be re-indexed.
-# Failure to set this to false for an upgrading chain means that the migrations may never complete, and the chain gets stuck in a loop
+# Failure to set this to false for an upgrading chain means that the migrations may complete much slower as kubernetes continues to kill the webserver while re-indexing.
 
 global:
   environment:
@@ -73,6 +73,8 @@ dragonchain:
     # -- dragonchain.image.version --
     # Version of your dragonchain. This value is used to interpolate the tag name.
     # e.g.: {registry}/{repository}:{version}
+    # Check here for available tags: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
+    # PLEASE USE A PINNED VERSION, AND NOT 'latest' FOR PRODUCTION DEPLOYMENTS
     version: latest
 
   # -- dragonchain.storage --
@@ -102,6 +104,11 @@ redis:
       resources:
         requests:
           storage: 1Gi
+  # -- redis.image --
+  # This is the image that dragonchain uses for a persistent and LRU redis
+  image:
+    repository: docker.io/redis
+    tag: 5.0.5-alpine
 
 redisearch:
   # -- redis.storage --
@@ -116,4 +123,11 @@ redisearch:
       resources:
         requests:
           storage: 1Gi
+  # -- redis.image --
+  # This is the image that dragonchain uses for the redisearch used for indexing
+  image:
+    repository: docker.io/redislabs/redisearch
+    tag: 1.4.16
+
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
+# PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core

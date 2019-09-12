@@ -226,8 +226,12 @@ class TestJobPoller(unittest.TestCase):
                                 kubernetes.client.V1Volume(
                                     name="dockersock", host_path=kubernetes.client.V1HostPathVolumeSource(path="/var/run/docker.sock")
                                 ),
-                                kubernetes.client.V1Volume(name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")),
-                                kubernetes.client.V1Volume(name="secrets", secret=kubernetes.client.V1SecretVolumeSource(secret_name="d--secrets")),
+                                kubernetes.client.V1Volume(
+                                    name="faas", secret=kubernetes.client.V1SecretVolumeSource(secret_name="openfaas-auth")  # nosec
+                                ),
+                                kubernetes.client.V1Volume(
+                                    name="secrets", secret=kubernetes.client.V1SecretVolumeSource(secret_name="d--secrets")  # nosec
+                                ),
                             ],
                             restart_policy="Never",
                         ),

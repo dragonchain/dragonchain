@@ -20,9 +20,13 @@ for more details on upgrading to v4.
   - Add info about bug/security/project bounty programs
 - **Development:**
   - Add logs when getting storage errors
+  - Resolve all bandit errors and turn up bandit verbosity
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
-  - Add redisearch and remove elasticsearch requirements
+  - Remove service links from mounting on pods in the helm chart
+  - Expose redis and redisearch image locations in opensource-config.yaml
+  - Add redisearch and remove elasticsearch from requirements.txt
+  - Update boto3, bit, and aiohttp packages
 - **CICD:**
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
 - **Bugs:**

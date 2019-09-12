@@ -381,7 +381,7 @@ def should_rate_limit(key_id: str) -> bool:
     redis.lpush_sync(redis_key, str(current_time))
     # Trim the list down to the last <rate_limit> calls (no other calls are relevant)
     # This frees memory from redis, but slows down authorization, so we only do it occasionally
-    if random.randint(0, 9) == 0:
+    if random.randint(0, 9) == 0:  # nosec (this isn't needed for cryptographic purposes)
         redis.ltrim_sync(redis_key, 0, RATE_LIMIT - 1)
     return False
 

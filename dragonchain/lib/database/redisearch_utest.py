@@ -65,10 +65,10 @@ class TestRedisearch(unittest.TestCase):
         self.assertEqual(output, "\\,\\.\\<\\>\\{\\}\\[\\]\\\"\\'\\:\\;\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)\\-\\+\\=\\~\\ ")
 
     @patch("dragonchain.lib.database.redisearch.delete_index")
-    def test_force_create_transaction_index(self, mock_delete_index):
+    def test_create_transaction_index(self, mock_delete_index):
         mock_create_index = MagicMock()
         redisearch._get_redisearch_index_client = MagicMock(return_value=MagicMock(create_index=mock_create_index))
-        redisearch.force_create_transaction_index("banana", [{"path": "ba/na/na", "field_name": "banana", "type": "number"}])
+        redisearch.create_transaction_index("banana", [{"path": "ba/na/na", "field_name": "banana", "type": "number"}])
         mock_delete_index.assert_called_once_with("banana")
         redisearch._get_redisearch_index_client.assert_called_once_with("banana")
         mock_create_index.assert_called_once()
@@ -81,7 +81,7 @@ class TestRedisearch(unittest.TestCase):
         mock_drop_index.assert_called_once()
 
     def test_delete_index_doesnt_exist(self):
-        mock_drop_index = MagicMock(side_effect=redis.exceptions.ResponseError)
+        mock_drop_index = MagicMock(side_effect=redis.exceptions.ResponseError("Unknown Index name"))
         redisearch._get_redisearch_index_client = MagicMock(return_value=MagicMock(drop_index=mock_drop_index))
         redisearch.delete_index("banana")
         redisearch._get_redisearch_index_client.assert_called_once_with("banana")
@@ -195,6 +195,5 @@ class TestRedisearch(unittest.TestCase):
         redisearch._get_redisearch_index_client.assert_any_call("sc")
         redisearch._get_redisearch_index_client.assert_any_call("tx")
         mock_redis.get.assert_called_once_with("dc:index_generation_complete")
-        mock_redis.flushall.assert_called_once()
         mock_redis.set.assert_called_once()
         mock_put_document.assert_called()

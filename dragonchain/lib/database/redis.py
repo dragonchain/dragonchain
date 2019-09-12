@@ -121,7 +121,7 @@ def _initialize_redis(host: str, port: int, wait_time: int = 30) -> redis.Redis:
             if client.ping():
                 _log.debug(f"Successfully connected with redis at {host}:{port}")
                 return client  # Connected to a working redis, return now
-        except Exception:
+        except Exception:  # nosec (We want to retry for truly any exception)
             pass
         time.sleep(sleep_time)
     raise RuntimeError(f"Unable to initialize and connect to the redis at {host}:{port}")
@@ -145,7 +145,7 @@ async def _initialize_async_redis(host: str, port: int, wait_time: int = 30) -> 
             if await client.ping():
                 _log.debug(f"Successfully connected with redis at {host}:{port}")
                 return client  # Connected to a working redis, return now
-        except Exception:
+        except Exception:  # nosec (We want to retry for truly any exception)
             pass
         await asyncio.sleep(sleep_time)
     raise RuntimeError(f"Unable to initialize and connect to the redis at {host}:{port}")

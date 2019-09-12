@@ -67,7 +67,7 @@ async def start() -> None:
 
 async def process_events(session: aiohttp.ClientSession) -> None:
     try:
-        unique_id = str(random.randint(0, 9999999999999))
+        unique_id = str(random.randint(0, 9999999999999))  # nosec (not needed for cryptographic purposes)
         _, event = await redis.brpop_async("mq:contract-invoke", timeout=0, decode=False)
         # Place into in process queue for safety (deleted after contract finishes invoking)
         await redis.hset_async("mq:contract-processing", unique_id, event)

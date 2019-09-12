@@ -779,7 +779,7 @@ class TestCrypto(unittest.TestCase):
         self.assertFalse(crypto.validate_public_id(key.pubkey.serialize(), "PHONYtbS59pt3weCTD8fw3WP5zA3DieeM2j6mC3fzaZa"))
 
     def test_hmac(self):
-        secret = "12345"
+        secret = "12345"  # nosec
         message = "POST\n/chains/transaction\nbanana-uuid\napplication/json\nfh8uIpSrKpzoYwrjaVtnduas5M34B4ZPrX+jTNjP6/o=\n1537305660"
         hmac = crypto.create_hmac(blake2b, secret, message)
         self.assertTrue(crypto.compare_hmac(blake2b, hmac, secret, message))

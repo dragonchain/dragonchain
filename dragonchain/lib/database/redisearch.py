@@ -49,6 +49,8 @@ REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
 REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
 INDEX_GENERATION_KEY = "dc:index_generation_complete"
+BLOCK_MIGRATION_KEY = "dc:migrations:block"
+TXN_MIGRATION_KEY = "dc:migrations:txn"
 
 _escape_transformation = str.maketrans(
     {
@@ -158,10 +160,11 @@ def get_escaped_redisearch_string(unescaped_string: str) -> str:
     return unescaped_string.translate(_escape_transformation)
 
 
-def force_create_transaction_index(index: str, custom_indexes: Optional[Iterable["custom_index"]] = None) -> None:
+def create_transaction_index(index: str, custom_indexes: Optional[Iterable["custom_index"]] = None, force: bool = True) -> None:
     """Create (and overwrite if necessary) index for a transaction type with optional custom_indexes"""
     # Delete the index with this name if necessary
-    delete_index(index)
+    if force:
+        delete_index(index)
     client = _get_redisearch_index_client(index)
     # Set standard transaction indexes
     index_fields = [
@@ -182,8 +185,9 @@ def delete_index(index: str) -> None:
     client = _get_redisearch_index_client(index)
     try:
         client.drop_index()
-    except redis.exceptions.ResponseError:
-        pass
+    except redis.exceptions.ResponseError as e:
+        if str(e) != "Unknown Index name":  # Don't care if the index doesn't exist when trying to delete
+            raise
 
 
 # Redisearch
@@ -307,53 +311,61 @@ def generate_indexes_if_necessary() -> None:
     # No-op if indexes are marked as already generated
     if not needs_generation:
         return
-    # First flush the entire index database to generate from scratch
-    redisearch_redis_client.flushall()
-    # Create block index from scratch
-    _log.info("Creating block indexes from scratch")
-    _generate_block_indexes_from_scratch()
-    # Create smart contract index from scratch
-    _log.info("Creating smart contract indexes from scratch")
-    _generate_smart_contract_indexes_from_scratch()
-    # Create indexes for transaction types from scratch
-    _log.info("Creating transaction indexes from scratch")
-    _generate_transaction_indexes_from_scratch()
-    # Mark index generation as complete (value doesn't matter)
+    # Create block index
+    _log.info("Creating block indexes")
+    _generate_block_indexes()
+    # Create indexes for transactions
+    _log.info("Creating transaction indexes")
+    _generate_transaction_indexes()
+    # Create smart contract index
+    _log.info("Creating smart contract indexes")
+    _generate_smart_contract_indexes()
+    # Mark index generation as complete
     _log.info("Marking redisearch index generation complete")
+    redisearch_redis_client.delete(BLOCK_MIGRATION_KEY)
+    redisearch_redis_client.delete(TXN_MIGRATION_KEY)
     redisearch_redis_client.set(INDEX_GENERATION_KEY, "a")
 
 
-def _generate_block_indexes_from_scratch() -> None:
+def _generate_block_indexes() -> None:
     client = _get_redisearch_index_client(Indexes.block.value)
-    client.create_index(
-        [
-            redisearch.NumericField("block_id", sortable=True),
-            redisearch.NumericField("prev_id", sortable=True),
-            redisearch.NumericField("timestamp", sortable=True),
-        ]
-    )
+    try:
+        client.create_index(
+            [
+                redisearch.NumericField("block_id", sortable=True),
+                redisearch.NumericField("prev_id", sortable=True),
+                redisearch.NumericField("timestamp", sortable=True),
+            ]
+        )
+    except redis.exceptions.ResponseError as e:
+        if str(e) != "Index already exists":  # We don't care if index already exists
+            raise
     _log.info("Listing all blocks in storage")
     block_paths = storage.list_objects("BLOCK/")
     pattern = re.compile(r"BLOCK\/[0-9]+$")
     for block_path in block_paths:
         if re.search(pattern, block_path):
-            _log.info(f"Adding index for {block_path}")
-            raw_block = storage.get_json_from_object(block_path)
-            block = cast("model.BlockModel", None)
-            if LEVEL == "1":
-                block = l1_block_model.new_from_stripped_block(raw_block)
-            elif LEVEL == "2":
-                block = l2_block_model.new_from_at_rest(raw_block)
-            elif LEVEL == "3":
-                block = l3_block_model.new_from_at_rest(raw_block)
-            elif LEVEL == "4":
-                block = l4_block_model.new_from_at_rest(raw_block)
-            elif LEVEL == "5":
-                block = l5_block_model.new_from_at_rest(raw_block)
-            put_document(Indexes.block.value, block.block_id, block.export_as_search_index())
+            # do a check to see if this block was already marked as indexed
+            if not client.redis.sismember(BLOCK_MIGRATION_KEY, block_path):
+                _log.info(f"Adding index for {block_path}")
+                raw_block = storage.get_json_from_object(block_path)
+                block = cast("model.BlockModel", None)
+                if LEVEL == "1":
+                    block = l1_block_model.new_from_stripped_block(raw_block)
+                elif LEVEL == "2":
+                    block = l2_block_model.new_from_at_rest(raw_block)
+                elif LEVEL == "3":
+                    block = l3_block_model.new_from_at_rest(raw_block)
+                elif LEVEL == "4":
+                    block = l4_block_model.new_from_at_rest(raw_block)
+                elif LEVEL == "5":
+                    block = l5_block_model.new_from_at_rest(raw_block)
+                put_document(Indexes.block.value, block.block_id, block.export_as_search_index())
+                client.redis.sadd(BLOCK_MIGRATION_KEY, block_path)
 
 
-def _generate_smart_contract_indexes_from_scratch() -> None:
+def _generate_smart_contract_indexes() -> None:
+    delete_index(Indexes.smartcontract.value)  # Always generate smart contract indexes from scratch by dropping existing ones
     client = _get_redisearch_index_client(Indexes.smartcontract.value)
     client.create_index([TagField("sc_name")])  # TODO: replace after redisearch is fixed
     # Find what smart contracts exist in storage
@@ -367,11 +379,20 @@ def _generate_smart_contract_indexes_from_scratch() -> None:
             put_document(Indexes.smartcontract.value, sc_model.id, sc_model.export_as_search_index())
 
 
-def _generate_transaction_indexes_from_scratch() -> None:
+def _generate_transaction_indexes() -> None:  # noqa: C901
+    # -- CREATE INDEXES FOR TRANSACTIONS --
     client = _get_redisearch_index_client(Indexes.transaction.value)
-    # TODO: replace after redisearch is fixed
-    client.create_index([TagField("block_id")])  # Used for reverse-lookup of transactions by id (with no txn_type)
-    force_create_transaction_index(namespace.Namespaces.Contract.value)  # Create the reserved txn type index
+    try:
+        # TODO: replace after redisearch is fixed
+        client.create_index([TagField("block_id")])  # Used for reverse-lookup of transactions by id (with no txn_type)
+    except redis.exceptions.ResponseError as e:
+        if str(e) != "Index already exists":  # We don't care if index already exists
+            raise
+    try:
+        create_transaction_index(namespace.Namespaces.Contract.value, force=False)  # Create the reserved txn type index
+    except redis.exceptions.ResponseError as e:
+        if str(e) != "Index already exists":  # We don't care if index already exists
+            raise
     txn_types_to_watch = {namespace.Namespaces.Contract.value: 1}  # Will be use when going through all stored transactions
     txn_type_models = {
         namespace.Namespaces.Contract.value: transaction_type_model.TransactionTypeModel(namespace.Namespaces.Contract.value, active_since_block="1")
@@ -380,19 +401,28 @@ def _generate_transaction_indexes_from_scratch() -> None:
         txn_type_model = transaction_type_model.new_from_at_rest(txn_type)
         txn_type_models[txn_type_model.txn_type] = txn_type_model
         _log.info(f"Adding index for {txn_type_model.txn_type}")
-        force_create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes)
+        try:
+            create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes, force=False)
+        except redis.exceptions.ResponseError as e:
+            if str(e) != "Index already exists":  # We don't care if index already exists
+                raise
         txn_types_to_watch[txn_type_model.txn_type] = int(txn_type_model.active_since_block)
+
+    # -- LIST AND INDEX ACTUAL TRANSACTIONS FROM STORAGE
     _log.info("Listing all full transactions")
     transaction_blocks = storage.list_objects("TRANSACTION/")
     for txn_path in transaction_blocks:
-        _log.info(f"Indexing transactions for {txn_path}")
-        for txn in storage.get(txn_path).split(b"\n"):
-            if txn:
-                txn_model = transaction_model.new_from_at_rest_full(json.loads(txn)["txn"])
-                # Add general transaction index
-                put_document(Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": txn_model.block_id}, upsert=True)
-                watch_block = txn_types_to_watch.get(txn_model.txn_type)
-                # Extract custom indexes if necessary
-                if watch_block and int(txn_model.block_id) >= watch_block:
-                    txn_model.extract_custom_indexes(txn_type_models[txn_model.txn_type])
-                    put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(), upsert=True)
+        # do a check to see if this block's transactions were already marked as indexed
+        if not client.redis.sismember(TXN_MIGRATION_KEY, txn_path):
+            _log.info(f"Indexing transactions for {txn_path}")
+            for txn in storage.get(txn_path).split(b"\n"):
+                if txn:
+                    txn_model = transaction_model.new_from_at_rest_full(json.loads(txn)["txn"])
+                    # Add general transaction index
+                    put_document(Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": txn_model.block_id}, upsert=True)
+                    watch_block = txn_types_to_watch.get(txn_model.txn_type)
+                    # Extract custom indexes if necessary
+                    if watch_block and int(txn_model.block_id) >= watch_block:
+                        txn_model.extract_custom_indexes(txn_type_models[txn_model.txn_type])
+                        put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(), upsert=True)
+            client.redis.sadd(TXN_MIGRATION_KEY, txn_path)

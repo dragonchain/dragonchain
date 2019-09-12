@@ -49,7 +49,7 @@ elif [ "$1" = "lint" ]; then
 elif [ "$1" = "format" ]; then
     $py_exec -m black -l 150 -t py37 dragonchain
 elif [ "$1" = "bandit" ]; then
-    $py_exec -m bandit -r dragonchain -ll
+    $py_exec -m bandit -r dragonchain
 elif [ "$1" = "docs" ]; then
     (
     cd docs || exit 1
