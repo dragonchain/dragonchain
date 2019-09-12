@@ -22,7 +22,9 @@ for more details on upgrading to v4.
   - Add logs when getting storage errors
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
-  - Add redisearch and remove elasticsearch requirements
+  - Remove service links from mounting on pods in the helm chart
+  - Expose redis and redisearch image locations in opensource-config.yaml
+  - Add redisearch and remove elasticsearch from requirements.txt
 - **CICD:**
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
 - **Bugs:**
