@@ -20,6 +20,9 @@ import json
 from typing import List
 
 from dragonchain import exceptions
+from dragonchain import logger
+
+_log = logger.get_logger()
 
 
 def process_key(key: str) -> str:
@@ -85,7 +88,7 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
             if loaded_txn["txn_id"] == txn_id:
                 return loaded_txn["txn"]
         except Exception:
-            pass
+            _log.exception("Error loading retrieved transaction from disk select_transaction")
     raise exceptions.NotFound
 
 

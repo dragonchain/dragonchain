@@ -45,7 +45,7 @@ def get_verifications_for_l1_block(block_id: str, level: int) -> List[Dict[str, 
                 keys[i] = f"{FOLDER}/{block_id}-l{level}-{keys[i].decode('utf8')}"
             return [storage.get_json_from_object(x) for x in keys]
     except Exception:
-        pass
+        _log.exception("Error getting verifications from cached list. Falling back to direct storage list")
     # Only fall back to listing from storage if we don't have verifications already saved in redis
     prefix = f"{FOLDER}/{block_id}-l{level}"
     keys = storage.list_objects(prefix)

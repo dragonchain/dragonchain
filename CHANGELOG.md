@@ -20,6 +20,7 @@ for more details on upgrading to v4.
   - Add info about bug/security/project bounty programs
 - **Development:**
   - Add logs when getting storage errors
+  - Resolve all bandit errors and turn up bandit verbosity
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
   - Remove service links from mounting on pods in the helm chart
