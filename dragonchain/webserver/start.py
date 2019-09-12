@@ -15,9 +15,6 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-import os
-import json
-
 from dragonchain.lib.interfaces import secrets
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
@@ -26,14 +23,7 @@ from dragonchain.lib import error_reporter
 from dragonchain import logger
 from dragonchain import exceptions
 
-
-STAGE = os.environ["STAGE"]
-
 _log = logger.get_logger()
-error_allowed = True  # Switch to false if you want to test the start up script functionality in an ephemeral environment
-# This if statement is for safety in staging/production environments
-if STAGE == "dev" or STAGE == "prod":
-    error_allowed = False
 
 
 def start() -> None:
@@ -41,22 +31,17 @@ def start() -> None:
     Ran by the webserver before it boots
     """
     try:
-        # New chains are often given HMAC keys when created. If found, we write them to storage.
+        # Chains are given HMAC keys when created. If found, we write them to storage.
         key_id = secrets.get_dc_secret("hmac-id")
-        json_key = json.dumps({"id": key_id, "key": secrets.get_dc_secret("hmac-key"), "root": True, "registration_time": 0}, separators=(",", ":"))
         _log.info("HMAC keys were given to this chain on-boot. Writing them to storage.")
-        storage.put(f"KEYS/{key_id}", json_key.encode("utf-8"))
+        storage.put_object_as_json(f"KEYS/{key_id}", {"id": key_id, "key": secrets.get_dc_secret("hmac-key"), "root": True, "registration_time": 0})
     except exceptions.NotFound:
         _log.info("No HMAC keys were given to this chain on-boot. Skipping cretential storage write.")
 
     _log.info("Checking if redisearch indexes need to be regenerated")
-    try:
-        redisearch.generate_indexes_if_necessary()
-    except Exception:
-        if not error_allowed:
-            raise
+    redisearch.generate_indexes_if_necessary()
 
-    _log.info("Finish build successful")
+    _log.info("Finish pre-boot successful")
 
 
 if __name__ == "__main__":
