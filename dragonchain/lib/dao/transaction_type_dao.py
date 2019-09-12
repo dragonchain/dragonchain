@@ -113,7 +113,7 @@ def create_new_transaction_type(txn_type_model: transaction_type_model.Transacti
     """Save a new transaction type model"""
     txn_type_dto = txn_type_model.export_as_at_rest()
     _log.info(f"Adding transaction index for {txn_type_model.txn_type}")
-    redisearch.force_create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes)
+    redisearch.create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes)
     _log.debug(f"Queuing for activation")
     redis.lpush_sync(QUEUED_TXN_TYPES, txn_type_model.txn_type)
     _log.debug(f"Adding the transaction type to storage")
