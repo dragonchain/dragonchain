@@ -228,7 +228,7 @@ class ContractJobTest(unittest.TestCase):
                     "com.openfaas.scale.factor": "20",
                     "com.openfaas.scale.max": "20",
                     "com.openfaas.scale.min": "1",
-                    "com.openfaas.fwatchdog.version": "0.16.0",
+                    "com.openfaas.fwatchdog.version": "0.17.0",
                 },
                 "limits": {"cpu": "0.50", "memory": "600M"},
                 "requests": {"cpu": "0.25", "memory": "600M"},

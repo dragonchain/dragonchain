@@ -36,7 +36,7 @@ def start() -> None:
         _log.info("HMAC keys were given to this chain on-boot. Writing them to storage.")
         storage.put_object_as_json(f"KEYS/{key_id}", {"id": key_id, "key": secrets.get_dc_secret("hmac-key"), "root": True, "registration_time": 0})
     except exceptions.NotFound:
-        _log.info("No HMAC keys were given to this chain on-boot. Skipping cretential storage write.")
+        _log.info("No HMAC keys were given to this chain on-boot. Skipping credential storage write.")
 
     _log.info("Checking if redisearch indexes need to be regenerated")
     redisearch.generate_indexes_if_necessary()
