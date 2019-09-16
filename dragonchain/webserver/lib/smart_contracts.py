@@ -144,6 +144,11 @@ def delete_contract_v1(contract_id: str) -> None:
         raise
 
 
+def get_logs(contract_id: str, since: str, tail: int) -> Dict[str, List[Dict[str, str]]]:
+    logs = smart_contract_dao.get_contract_logs(contract_id, since, tail)
+    return {"logs": logs}
+
+
 def heap_list_v1(contract_id: str, path: str) -> List[str]:
     sub_folder = f"{contract_id}/HEAP"
     storage_key = f"{smart_contract_dao.FOLDER}/{sub_folder}{path}"

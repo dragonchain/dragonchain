@@ -22,6 +22,7 @@ from dragonchain import exceptions
 from dragonchain.lib.dto import smart_contract_model
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redisearch
+from dragonchain.lib.logs import get_logs
 
 #  Constants
 FOLDER = "SMARTCONTRACT"
@@ -82,3 +83,8 @@ def get_contract_by_id(contract_id: str) -> smart_contract_model.SmartContractMo
 def contract_does_exist(contract_id: str) -> bool:
     """Checks if a contract exists or not"""
     return storage.does_object_exist(f"{FOLDER}/{contract_id}/metadata.json")
+
+
+def get_contract_logs(contract_id, since: str, tail: int) -> List[str]:
+    """Returns a list of smart contract logs from openfaas"""
+    return get_logs(contract_id, since, tail)

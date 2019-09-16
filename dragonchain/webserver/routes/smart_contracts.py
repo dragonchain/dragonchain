@@ -35,6 +35,8 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/contract", "list_contract_v1", list_contract_v1, methods=["GET"])
     app.add_url_rule("/contract/<contract_id>", "get_contract_by_id_v1", get_contract_by_id_v1, methods=["GET"])
     app.add_url_rule("/v1/contract/<contract_id>", "get_contract_by_id_v1", get_contract_by_id_v1, methods=["GET"])
+    app.add_url_rule("/contract/logs/<contract_id>", "get_smart_contract_logs_v1", get_smart_contract_logs_v1, methods=["GET"])
+    app.add_url_rule("/v1/contract/logs/<contract_id>", "get_smart_contract_logs_v1", get_smart_contract_logs_v1, methods=["GET"])
     app.add_url_rule("/contract/txn_type/<txn_type>", "get_contract_by_txn_type_v1", get_contract_by_txn_type_v1, methods=["GET"])
     app.add_url_rule("/v1/contract/txn_type/<txn_type>", "get_contract_by_txn_type_v1", get_contract_by_txn_type_v1, methods=["GET"])
     app.add_url_rule("/contract", "post_contract_v1", post_contract_v1, methods=["POST"])
@@ -62,6 +64,13 @@ def get_contract_by_txn_type_v1(txn_type: str) -> Tuple[str, int, Dict[str, str]
 @request_authorizer.Authenticated()
 def list_contract_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, smart_contracts.list_contracts_v1())
+
+
+@request_authorizer.Authenticated()
+def get_smart_contract_logs_v1(contract_id: str) -> Tuple[str, int, Dict[str, str]]:
+    since = flask.request.args.get("since")
+    tail = flask.request.args.get("tail")
+    return helpers.flask_http_response(200, smart_contracts.get_logs(contract_id, since, tail))
 
 
 @request_authorizer.Authenticated()
