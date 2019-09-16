@@ -34,7 +34,7 @@ from dragonchain.lib import error_reporter
 from dragonchain.lib import keys
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.interfaces import registry as registry_interface  # Alternate naming to alleviate confusion
-from dragonchain.lib.faas import get_faas_auth
+from dragonchain.lib import faas
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -302,7 +302,7 @@ class ContractJob(object):
 
             _log.info(f"Creating secret: {secret_name} at {FAAS_GATEWAY}")
             response = requests_method(
-                f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": get_faas_auth()}, json={"name": secret_name, "value": value}
+                f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": faas.get_faas_auth()}, json={"name": secret_name, "value": value}
             )
 
             _log.info(f"Response: {response.status_code}")
@@ -324,7 +324,7 @@ class ContractJob(object):
         _log.info(f"Deleting OpenFaaS secrets: {self.model.existing_secrets}")
         for secret in self.model.existing_secrets:
             secret_name = f"sc-{self.model.id}-{secret.lower()}"
-            response = requests.delete(f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": get_faas_auth()}, json={"name": secret_name})
+            response = requests.delete(f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": faas.get_faas_auth()}, json={"name": secret_name})
             if response.status_code != 202:
                 self.model.set_state(state=self.end_error_state, msg="Error deleting secrets")
             _log.info(f"Delete secret response: {response.status_code}")
@@ -339,7 +339,7 @@ class ContractJob(object):
         spec = self.get_openfaas_spec()
         requests_method = requests.post if self.model.task_type == "create" else requests.put
 
-        response = requests_method(f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": get_faas_auth()}, json=spec)
+        response = requests_method(f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": faas.get_faas_auth()}, json=spec)
         _log.info(f"Deployment status: {response.status_code}")
         if response.status_code not in [200, 202]:
             _log.info(f"OpenFaaS deploy failure: {response.status_code}")
@@ -359,7 +359,7 @@ class ContractJob(object):
         """
         _log.info("Deleting OpenFaaS function")
         response = requests.delete(
-            f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": get_faas_auth()}, json={"functionName": self.function_name}
+            f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": faas.get_faas_auth()}, json={"functionName": self.function_name}
         )
 
         _log.info(f"Response Status: {response.status_code}")

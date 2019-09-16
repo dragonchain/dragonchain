@@ -286,7 +286,7 @@ class ContractJobTest(unittest.TestCase):
         self.test_job.docker.images.push.assert_called()
 
     @patch("dragonchain.job_processor.contract_job.requests.post", return_value=MagicMock(status_code=202))
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_create_openfaas_secrets(self, mock_faas_auth, mock_requests):
         self.test_job.model.existing_secrets = []
         self.test_job.model.secrets = {"banana": "secret banana"}
@@ -297,7 +297,7 @@ class ContractJobTest(unittest.TestCase):
         self.assertEqual(self.test_job.model.existing_secrets, ["banana"])
 
     @patch("dragonchain.job_processor.contract_job.requests.post", return_value=MagicMock(status_code=400))
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_create_openfaas_secrets_throws(self, mock_faas_auth, mock_requests):
         self.test_job.model.existing_secrets = []
         self.test_job.model.secrets = {"banana": "secret banana"}
@@ -312,7 +312,7 @@ class ContractJobTest(unittest.TestCase):
         self.assertEqual(self.test_job.model.existing_secrets, [])
 
     @patch("dragonchain.job_processor.contract_job.requests.delete", return_value=MagicMock(status_code=202))
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_delete_openfaas_secrets(self, mock_faas_auth, mock_requests):
         self.test_job.model.existing_secrets = ["banana"]
 
@@ -321,7 +321,7 @@ class ContractJobTest(unittest.TestCase):
         # because the model will be deleted, there's no need to check that the secret specifically has been removed
 
     @patch("dragonchain.job_processor.contract_job.requests.delete", return_value=MagicMock(status_code=400))
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_delete_openfaas_secrets_throws(self, mock_faas_auth, mock_requests):
         self.test_job.model.existing_secrets = ["banana"]
         self.test_job.model.set_state = MagicMock()
@@ -334,7 +334,7 @@ class ContractJobTest(unittest.TestCase):
 
     @patch("dragonchain.job_processor.contract_job.storage")
     @patch("dragonchain.job_processor.contract_job.requests")
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_deploy_to_openfaas(self, mock_faas_auth, mock_requests, mock_storage):
         self.test_job.task_type = "update"
         mock_requests.put.return_value = MagicMock(status_code=200)
@@ -347,7 +347,7 @@ class ContractJobTest(unittest.TestCase):
         mock_storage.put_object_as_json.assert_called()
 
     @patch("dragonchain.job_processor.contract_job.requests")
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_deploy_to_openfaas_throws(self, mock_faas_auth, mock_requests):
         self.test_job.task_type = "update"
         self.test_job.model.set_state = MagicMock()
@@ -359,7 +359,7 @@ class ContractJobTest(unittest.TestCase):
         mock_requests.put.assert_called()
 
     @patch("dragonchain.job_processor.contract_job.requests.delete")
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_delete_openfaas_function(self, mock_faas_auth, mock_requests):
         mock_requests.return_value = MagicMock(status_code=202)
         self.test_job.delete_openfaas_function()
@@ -367,7 +367,7 @@ class ContractJobTest(unittest.TestCase):
         mock_faas_auth.assert_called()
 
     @patch("dragonchain.job_processor.contract_job.requests.delete")
-    @patch("dragonchain.job_processor.contract_job.get_faas_auth")
+    @patch("dragonchain.job_processor.contract_job.faas.get_faas_auth")
     def test_delete_openfaas_function_throws(self, mock_faas_auth, mock_requests):
         self.test_job.model.set_state = MagicMock()
         self.test_job.model.save = MagicMock()

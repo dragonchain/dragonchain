@@ -1,13 +1,5 @@
 # Changelog
 
-## 4.1.0
-
-This update adds a new endpoint for getting logs from OpenFaaS for smart contracts.
-This endpoint will only work if your version of OpenFaaS is > 0.15.0
-
-- **Feature:**
-  - Add new endpoint `GET /v1/contract/logs/<contract_id>` for getting logs of smart contracts
-
 ## 4.0.0
 
 This update introduces a breaking change required by the switch from
@@ -17,6 +9,7 @@ indexing, and how querying is preformed. Please read the
 for more details on upgrading to v4.
 
 - **Feature:**
+  - Add new endpoint `GET /v1/contract/logs/<contract_id>` for getting logs of smart contracts
   - Remove elasticsearch integrations and replace with redisearch
   - Refactor all query endpoints, including changing query inputs (Breaking Change)
   - Changed route for `GET /v1/contract` from a query to a list (Breaking Change)
