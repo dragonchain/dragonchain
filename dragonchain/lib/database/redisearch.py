@@ -186,7 +186,7 @@ def delete_index(index: str) -> None:
     try:
         client.drop_index()
     except redis.exceptions.ResponseError as e:
-        if str(e) != "Unknown Index name":  # Don't care if the index doesn't exist when trying to delete
+        if not str(e).startswith("Unknown Index name"):  # Don't care if the index doesn't exist when trying to delete
             raise
 
 
@@ -338,7 +338,7 @@ def _generate_block_indexes() -> None:
             ]
         )
     except redis.exceptions.ResponseError as e:
-        if str(e) != "Index already exists":  # We don't care if index already exists
+        if not str(e).startswith("Index already exists"):  # We don't care if index already exists
             raise
     _log.info("Listing all blocks in storage")
     block_paths = storage.list_objects("BLOCK/")
@@ -386,12 +386,12 @@ def _generate_transaction_indexes() -> None:  # noqa: C901
         # TODO: replace after redisearch is fixed
         client.create_index([TagField("block_id")])  # Used for reverse-lookup of transactions by id (with no txn_type)
     except redis.exceptions.ResponseError as e:
-        if str(e) != "Index already exists":  # We don't care if index already exists
+        if not str(e).startswith("Index already exists"):  # We don't care if index already exists
             raise
     try:
         create_transaction_index(namespace.Namespaces.Contract.value, force=False)  # Create the reserved txn type index
     except redis.exceptions.ResponseError as e:
-        if str(e) != "Index already exists":  # We don't care if index already exists
+        if not str(e).startswith("Index already exists"):  # We don't care if index already exists
             raise
     txn_types_to_watch = {namespace.Namespaces.Contract.value: 1}  # Will be use when going through all stored transactions
     txn_type_models = {
@@ -404,7 +404,7 @@ def _generate_transaction_indexes() -> None:  # noqa: C901
         try:
             create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes, force=False)
         except redis.exceptions.ResponseError as e:
-            if str(e) != "Index already exists":  # We don't care if index already exists
+            if not str(e).startswith("Index already exists"):  # We don't care if index already exists
                 raise
         txn_types_to_watch[txn_type_model.txn_type] = int(txn_type_model.active_since_block)
 
