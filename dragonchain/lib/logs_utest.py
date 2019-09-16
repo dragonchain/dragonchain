@@ -1,7 +1,7 @@
 import unittest
+from unittest.mock import patch, MagicMock
 import os
 
-from mock import patch, MagicMock
 
 from dragonchain.lib.logs import get_logs, get_raw_logs
 

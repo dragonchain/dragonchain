@@ -1,7 +1,7 @@
 import unittest
+from unittest.mock import patch
 import base64
 
-from mock import patch
 
 from dragonchain.lib.faas import get_faas_auth
 
