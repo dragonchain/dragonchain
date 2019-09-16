@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.0
+
+This update adds a new endpoint for getting logs from OpenFaaS for smart contracts.
+This endpoint will only work if your version of OpenFaaS is > 0.15.0
+
+- **Feature:**
+  - Add new endpoint `GET /v1/contract/logs/<contract_id>` for getting logs of smart contracts
+
 ## 4.0.0
 
 This update introduces a breaking change required by the switch from

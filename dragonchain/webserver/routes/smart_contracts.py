@@ -70,7 +70,7 @@ def list_contract_v1() -> Tuple[str, int, Dict[str, str]]:
 def get_smart_contract_logs_v1(contract_id: str) -> Tuple[str, int, Dict[str, str]]:
     since = flask.request.args.get("since")
     tail = flask.request.args.get("tail")
-    return helpers.flask_http_response(200, smart_contracts.get_logs(contract_id, since, tail))
+    return helpers.flask_http_response(200, smart_contracts.get_logs_v1(contract_id, since, tail))
 
 
 @request_authorizer.Authenticated()
