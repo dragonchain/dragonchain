@@ -24,7 +24,7 @@ class TestGetContractLogs(unittest.TestCase):
     def test_get_raw_logs_makes_request(self, mock_get_auth, mock_get):
         expected_query_params = {"name": "contract-contract-id", "since": "date", "tail": 100}
         expected_headers = {"Authorization": "auth"}
-        faas.get_raw_logs("contract-id", "date", 100)
+        faas._get_raw_logs("contract-id", "date", 100)
 
         mock_get_auth.assert_called_once()
         mock_get.assert_called_once_with(f"{FAAS_GATEWAY}/system/logs", params=expected_query_params, headers=expected_headers)
@@ -35,11 +35,11 @@ class TestGetContractLogs(unittest.TestCase):
         expected_query_params = {"name": "contract-contract-id", "since": "date", "tail": 100}
         expected_headers = {"Authorization": "auth"}
 
-        self.assertRaises(exceptions.OpenFaasException, faas.get_raw_logs, "contract-id", "date", 100)
+        self.assertRaises(exceptions.OpenFaasException, faas._get_raw_logs, "contract-id", "date", 100)
         mock_get_auth.assert_called_once()
         mock_get.assert_called_once_with(f"{FAAS_GATEWAY}/system/logs", params=expected_query_params, headers=expected_headers)
 
-    @patch("dragonchain.lib.faas.get_raw_logs")
+    @patch("dragonchain.lib.faas._get_raw_logs")
     def test_get_logs_calls_get_raw(self, mock_get_raw):
         faas.get_logs("contract-id", "date", 100)
 
