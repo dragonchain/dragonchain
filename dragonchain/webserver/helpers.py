@@ -76,6 +76,7 @@ METHOD_NOT_ALLOWED = format_error("METHOD_NOT_ALLOWED", "The method is not allow
 CONTRACT_CONFLICT = format_error("CONTRACT_CONFLICT", "Contract or transaction type already exists.")
 BAD_STATE = format_error("BAD_STATE", "The action attempted could not be completed because the contract is in an invalid starting state.")
 INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "The server experienced an internal error. Please try again later.")
+OPENFAAS_ERROR = format_error("OPENFAAS_ERROR", "Internal system error. Please try again later.")
 ACTION_FORBIDDEN = format_error("ACTION_FORBIDDEN", "This action is currently disabled.")
 NOT_FOUND = format_error("NOT_FOUND", "The requested resource(s) cannot be found.")
 BAD_DOCKER_AUTH_ERROR = format_error("BAD_DOCKER_AUTH_ERROR", "The provided docker registry auth cannot be used")
@@ -180,6 +181,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, werkzeug_exceptions.MethodNotAllowed):
         status_code = 405
         surface_error = METHOD_NOT_ALLOWED
+    elif isinstance(exception, exceptions.OpenFaasException):
+        status_code = 500
+        surface_error = OPENFAAS_ERROR
     else:
         status_code = 500
         surface_error = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")

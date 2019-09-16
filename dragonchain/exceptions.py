@@ -53,6 +53,10 @@ class ContractException(DragonchainException):
     """Exception raised when a contract modification fails"""
 
 
+class OpenFaasException(DragonchainException):
+    """Exception raised when OpenFaaS returns with error status"""
+
+
 class LabChainForbiddenException(DragonchainException):
     """Exception raised when lab chain action is not allowed"""
 

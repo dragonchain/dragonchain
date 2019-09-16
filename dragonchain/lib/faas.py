@@ -6,6 +6,7 @@ from typing import List, Dict, Optional, cast, Any
 import requests
 
 from dragonchain.lib import faas
+from dragonchain import exceptions
 
 FAAS_GATEWAY = os.environ["FAAS_GATEWAY"]
 
@@ -30,7 +31,7 @@ def get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[i
     query_params = cast(Dict[str, Any], {"name": f"contract-{contract_id}", "tail": tail, "since": since})
     response = requests.get(endpoint, params=query_params, headers={"Authorization": faas.get_faas_auth()})
     if response.status_code != 200:
-        raise RuntimeError("Error getting contract logs, non-2XX response from OpenFaaS gateway")
+        raise exceptions.OpenFaasException("Error getting contract logs, non-2XX response from OpenFaaS gateway")
 
     return response.text.split("\n")
 
