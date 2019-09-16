@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict, Iterator, Optional
+from typing import List, Dict, Optional
 
 import requests
 
@@ -24,6 +24,6 @@ def get_raw_logs(contract_id: str, since: Optional[str], tail: Optional[int]) ->
     return response.text.split("\n")
 
 
-def get_logs(contract_id: str, since: str = None, tail: int = 100) -> Iterator[Dict[str, str]]:
+def get_logs(contract_id: str, since: Optional[str] = None, tail: Optional[int] = 100) -> List[Dict[str, str]]:
     raw_logs = get_raw_logs(contract_id, since, tail)
-    return map(lambda x: json.parse(x), raw_logs)
+    return list(map(lambda x: json.parse(x), raw_logs))

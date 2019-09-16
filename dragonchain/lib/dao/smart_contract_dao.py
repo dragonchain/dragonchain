@@ -15,7 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import List
+from typing import List, Optional, Dict
 
 from dragonchain import logger
 from dragonchain import exceptions
@@ -85,6 +85,6 @@ def contract_does_exist(contract_id: str) -> bool:
     return storage.does_object_exist(f"{FOLDER}/{contract_id}/metadata.json")
 
 
-def get_contract_logs(contract_id, since: str, tail: int) -> List[str]:
+def get_contract_logs(contract_id, since: Optional[str], tail: Optional[int]) -> List[Dict[str, str]]:
     """Returns a list of smart contract logs from openfaas"""
     return get_logs(contract_id, since, tail)

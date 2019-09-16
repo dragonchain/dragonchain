@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from dragonchain import logger
 from dragonchain import exceptions
@@ -144,7 +144,7 @@ def delete_contract_v1(contract_id: str) -> None:
         raise
 
 
-def get_logs(contract_id: str, since: str, tail: int) -> Dict[str, List[Dict[str, str]]]:
+def get_logs(contract_id: str, since: Optional[str], tail: Optional[int]) -> Dict[str, List]:
     logs = smart_contract_dao.get_contract_logs(contract_id, since, tail)
     return {"logs": logs}
 
