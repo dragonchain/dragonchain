@@ -362,6 +362,8 @@ def _generate_block_indexes() -> None:
                     block = l5_block_model.new_from_at_rest(raw_block)
                 put_document(Indexes.block.value, block.block_id, block.export_as_search_index())
                 client.redis.sadd(BLOCK_MIGRATION_KEY, block_path)
+            else:
+                _log.info(f"Skipping already indexed block {block_path}")
 
 
 def _generate_smart_contract_indexes() -> None:
@@ -426,3 +428,5 @@ def _generate_transaction_indexes() -> None:  # noqa: C901
                         txn_model.extract_custom_indexes(txn_type_models[txn_model.txn_type])
                         put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(), upsert=True)
             client.redis.sadd(TXN_MIGRATION_KEY, txn_path)
+        else:
+            _log.info(f"Skipping already indexed transaction {txn_path}")
