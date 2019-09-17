@@ -8,7 +8,7 @@ import requests
 from dragonchain.lib import faas
 from dragonchain import exceptions
 
-FAAS_GATEWAY = os.environ["FAAS_LOGS_GATEWAY"] or os.environ["FAAS_GATEWAY"]
+FAAS_GATEWAY = os.environ.get("FAAS_LOGS_GATEWAY") or os.environ["FAAS_GATEWAY"]
 
 
 def get_faas_auth() -> str:
@@ -28,7 +28,8 @@ def get_faas_auth() -> str:
 def _get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[int] = 100) -> List[str]:
     """Calls openfaas /system/logs endpoint with query parameters for a specific contract"""
     query_params = cast(Dict[str, Any], {"name": f"contract-{contract_id}", "tail": tail, "since": since})
-    response = requests.get(f"{FAAS_GATEWAY}/system/logs", params=query_params, headers={"Authorization": faas.get_faas_auth()})
+    headers = {} if os.environ.get("FAAS_LOGS_GATEWAY") else {"Authorization": faas.get_faas_auth()}
+    response = requests.get(f"{FAAS_GATEWAY}/system/logs", params=query_params, headers=headers)
     if response.status_code != 200:
         if response.status_code == 404:
             raise exceptions.NotFound("Logs not found for contract")
@@ -41,4 +42,4 @@ def _get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[
 def get_logs(contract_id: str, since: Optional[str] = None, tail: Optional[int] = 100) -> List[Dict[str, str]]:
     """Gets the raw logs from openfaas and parses the ndjson into a list of dictionaries"""
     raw_logs = _get_raw_logs(contract_id, since, tail)
-    return [json.parse(log) for log in raw_logs]
+    return [json.loads(log) for log in raw_logs]
