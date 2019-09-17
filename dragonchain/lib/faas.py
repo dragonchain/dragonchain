@@ -8,7 +8,7 @@ import requests
 from dragonchain.lib import faas
 from dragonchain import exceptions
 
-FAAS_GATEWAY = os.environ["FAAS_GATEWAY"]
+FAAS_GATEWAY = os.environ["FAAS_LOGS_GATEWAY"] or os.environ["FAAS_GATEWAY"]
 
 
 def get_faas_auth() -> str:
