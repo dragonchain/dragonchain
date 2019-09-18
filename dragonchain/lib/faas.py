@@ -13,8 +13,9 @@ FAAS_GATEWAY = os.environ.get("FAAS_LOGS_GATEWAY") or os.environ["FAAS_GATEWAY"]
 def get_faas_auth() -> str:
     """Gets authorization to use OpenFaaS
 
-        Returns:
-            A string containing authorization for OpenFaaS.
+    Returns:
+        A string containing authorization for OpenFaaS.
+        Returns empty string if authorization is not found, in the case of managed services
     """
     try:
         with open("/etc/openfaas-secret/user", "r") as file:
@@ -28,7 +29,11 @@ def get_faas_auth() -> str:
 
 
 def _get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[int] = 100) -> List[str]:
-    """Calls openfaas /system/logs endpoint with query parameters for a specific contract"""
+    """Calls openfaas /system/logs endpoint with query parameters for a specific contract
+
+    Returns:
+        A list of log JSON strings
+    """
     query_params = cast(Dict[str, Any], {"name": f"contract-{contract_id}", "tail": tail, "since": since})
     response = requests.get(f"{FAAS_GATEWAY}/system/logs", params=query_params, headers={"Authorization": get_faas_auth()})
     if response.status_code != 200:
@@ -41,6 +46,9 @@ def _get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[
 
 
 def get_logs(contract_id: str, since: Optional[str] = None, tail: Optional[int] = 100) -> List[Dict[str, str]]:
-    """Gets the raw logs from openfaas and parses the ndjson into a list of dictionaries"""
-    raw_logs = list(filter(lambda x: x != "", _get_raw_logs(contract_id, since, tail)))
-    return [json.loads(log) for log in raw_logs]
+    """Gets the raw logs from openfaas and parses the ndjson into a list of dictionaries
+
+    Returns:
+        A list of log dictionaries
+    """
+    return [json.loads(log) for log in _get_raw_logs(contract_id, since, tail) if log != ""]
