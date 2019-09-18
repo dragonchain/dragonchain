@@ -86,6 +86,34 @@ dragonchain:
         requests:
           storage: 2Gi
 
+
+  # -- dragonchain.verificationNotifications --
+  # This Level 1 Dragonchain configuration will send received verifications via HTTP unique URL's configured here.
+  # Verifications will be sent with HTTP POST, and contain three relevant headers documented below.
+  # -- Headers --
+  # Authentication: Bearer ${signature}
+  # DragonchainId: PublicIdOfThisL1Dragonchain
+  # Content-Type: application/json
+  # -- Body --
+  # The post body will be JSON of the raw verification object received by this dragonchain. See Dragonchain documentation for details.
+  # -- Signature --
+  # The bearer token will be the signature of the utf8 encoded bytes of the post body signed with the private key, and verifiable with
+  # the public key found in the DragonchainId header. NOTE: Do not trust this header alone to verify signature. Make sure it's a public id
+  # that you trust and expect.
+  verificationNotification: null
+    # -- Example:
+    # all:
+    #   - https://yourUrlHere
+    #   - https://yourUrlHere
+    # l2:
+    #   - https://yourUrlHere
+    # l3:
+    #   - https://yourUrlHere
+    # l4:
+    #   - https://yourUrlHere
+    # l5:
+    #   - https://yourUrlHere
+
 redis:
   # -- redis.storage --
   # This is the storage spec that the persistent redis uses to maintain state for

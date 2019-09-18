@@ -48,6 +48,8 @@ for more details on upgrading to v4.
   - Refactor all query endpoints, including changing query inputs (Breaking Change)
   - Changed route for `GET /v1/contract` from a query to a list (Breaking Change)
   - Add support to disable schedule when updating a smart contract
+  - Adds verification-notification callback in the reciept endpoint
+
 - **Documentation:**
   - Update documentation for redisearch
   - Add new page for migration considerations when upgrading from v3 to v4
