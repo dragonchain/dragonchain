@@ -9,6 +9,7 @@ indexing, and how querying is preformed. Please read the
 for more details on upgrading to v4.
 
 - **Feature:**
+  - Add new endpoint `GET /v1/contract/logs/<contract_id>` for getting logs of smart contracts
   - Remove elasticsearch integrations and replace with redisearch
   - Refactor all query endpoints, including changing query inputs (Breaking Change)
   - Changed route for `GET /v1/contract` from a query to a list (Breaking Change)

@@ -15,13 +15,14 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import List
+from typing import List, Optional, Dict
 
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import smart_contract_model
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redisearch
+from dragonchain.lib import faas
 
 #  Constants
 FOLDER = "SMARTCONTRACT"
@@ -82,3 +83,8 @@ def get_contract_by_id(contract_id: str) -> smart_contract_model.SmartContractMo
 def contract_does_exist(contract_id: str) -> bool:
     """Checks if a contract exists or not"""
     return storage.does_object_exist(f"{FOLDER}/{contract_id}/metadata.json")
+
+
+def get_contract_logs(contract_id, since: Optional[str], tail: Optional[int]) -> List[Dict[str, str]]:
+    """Returns a list of smart contract logs from openfaas"""
+    return faas.get_logs(contract_id, since, tail)

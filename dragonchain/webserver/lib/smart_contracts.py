@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from dragonchain import logger
 from dragonchain import exceptions
@@ -142,6 +142,11 @@ def delete_contract_v1(contract_id: str) -> None:
         contract.set_state(state=smart_contract_model.ContractState.ACTIVE, msg="Contract delete failed: could not start deletion")
         contract.save()
         raise
+
+
+def get_logs_v1(contract_id: str, since: Optional[str] = None, tail: Optional[int] = None) -> Dict[str, List]:
+    logs = smart_contract_dao.get_contract_logs(contract_id, since, tail)
+    return {"logs": logs}
 
 
 def heap_list_v1(contract_id: str, path: str) -> List[str]:

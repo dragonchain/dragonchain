@@ -42,6 +42,11 @@ faas:
   #   This value should be the fully qualified url of the OpenFaas gateway you would like your chains to use.
   gateway: https://my-faas-gateway-url
 
+  # -- faas.mountFaasSecret --
+  #   This value controls whether the secret for openfaas authorization should
+  #   be mounted on the webserver for the get smart contract logs functionality
+  mountFaasSecret: false
+
   # -- faas.registry --
   #   This value should be the docker registry address at which your custom smart contract images will be stored.
   #   Library smart contracts will still use the dragonchain inc public smart contract registry regardless of this value.
@@ -128,6 +133,5 @@ redisearch:
   image:
     repository: docker.io/redislabs/redisearch
     tag: 1.4.16
-
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 # PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core

@@ -151,3 +151,15 @@ class TestDeleteContract(unittest.TestCase):
     def test_delete_contract_raises_ise_on_uncaught_error(self, patch_get_by_id):
         self.assertRaises(Exception, smart_contracts.delete_contract_v1, "test")
         patch_get_by_id.assert_called_once()
+
+
+class TestGetContractLogs(unittest.TestCase):
+    @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_logs")
+    def test_get_logs_calls_library_function(self, mock_get_logs):
+        smart_contracts.get_logs_v1("test")
+        mock_get_logs.assert_called_once_with("test", None, None)
+
+    @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_logs")
+    def test_get_logs_calls_library_function_with_params(self, mock_get_logs):
+        smart_contracts.get_logs_v1("test", "mytimestamp", 100)
+        mock_get_logs.assert_called_once_with("test", "mytimestamp", 100)
