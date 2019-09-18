@@ -154,12 +154,23 @@ class TestDeleteContract(unittest.TestCase):
 
 
 class TestGetContractLogs(unittest.TestCase):
+    @patch("dragonchain.webserver.lib.smart_contracts.get_by_id_v1")
     @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_logs")
-    def test_get_logs_calls_library_function(self, mock_get_logs):
+    def test_get_logs_calls_library_function(self, mock_get_logs, mock_get_contract):
         smart_contracts.get_logs_v1("test")
+        mock_get_contract.assert_called_once_with("test")
         mock_get_logs.assert_called_once_with("test", None, None)
 
+    @patch("dragonchain.webserver.lib.smart_contracts.get_by_id_v1")
     @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_logs")
-    def test_get_logs_calls_library_function_with_params(self, mock_get_logs):
+    def test_get_logs_calls_library_function_with_params(self, mock_get_logs, mock_get_contract):
         smart_contracts.get_logs_v1("test", "mytimestamp", 100)
+        mock_get_contract.assert_called_once_with("test")
         mock_get_logs.assert_called_once_with("test", "mytimestamp", 100)
+
+    @patch("dragonchain.webserver.lib.smart_contracts.get_by_id_v1", side_effect=exceptions.NotFound)
+    @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_logs")
+    def test_get_logs_throws_not_found(self, mock_get_logs, mock_get_contract):
+        self.assertRaises(exceptions.NotFound, smart_contracts.get_logs_v1, "test", "mytimestamp", 100)
+        mock_get_contract.assert_called_once_with("test")
+        mock_get_logs.assert_not_called()
