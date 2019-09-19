@@ -16,10 +16,8 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
-import json
-from typing import TYPE_CHECKING, cast, Dict, Any, List, Tuple, Optional
+from typing import TYPE_CHECKING, cast, Dict, Any
 
-import requests
 
 from dragonchain.broadcast_processor import broadcast_functions
 from dragonchain.lib.interfaces import storage
@@ -31,7 +29,6 @@ from dragonchain.lib import matchmaking
 from dragonchain.lib import keys
 from dragonchain.lib import queue
 from dragonchain.lib import authorization
-from dragonchain.lib import crypto
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -39,13 +36,9 @@ from dragonchain import logger
 if TYPE_CHECKING:
     from dragonchain.lib.dto import model  # noqa: F401
 
-VERIFICATION_NOTIFICATION: Dict[str, List[str]] = {}
-if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
-    VERIFICATION_NOTIFICATION = cast(Dict[str, List[str]], json.loads(os.environ["VERIFICATION_NOTIFICATION"]))
-
 REDIS_HOST = os.environ["REDIS_ENDPOINT"]
 REDIS_PORT = os.environ["REDIS_PORT"]
-FOLDER = "BLOCK"
+
 
 _log = logger.get_logger()
 
@@ -76,7 +69,8 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
         validations = matchmaking.get_claim_check(l1_block_id)["validations"][f"l{level_received_from}"]
         if (block_model.dc_id in validations) and broadcast_functions.is_block_accepting_verifications_from_level(l1_block_id, level_received_from):
             _log.info(f"Verified that block {l1_block_id} was sent. Inserting receipt")
-            storage.put_object_as_json(f"{FOLDER}/{l1_block_id}-l{level_received_from}-{block_model.dc_id}", block_model.export_as_at_rest())
+            storage_location = broadcast_functions.verification_storage_location(l1_block_id, level_received_from, block_model.dc_id)
+            storage.put_object_as_json(storage_location, block_model.export_as_at_rest())
             # Set new receipt for matchmaking claim check
             try:
                 block_id = block_model.block_id
@@ -87,45 +81,11 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
                 _log.exception("matchmaking add_receipt failed!")
             # Update the broadcast system about this receipt
             broadcast_functions.set_receieved_verification_for_block_from_chain_sync(l1_block_id, level_received_from, block_model.dc_id)
-            # Send verifications to any configured urls
-            send_verification_notifications(level_received_from, block_model)
         else:
             _log.warning(
                 f"Chain {block_model.dc_id} (level {level_received_from}) returned a receipt that wasn't expected (possibly expired?) for block {l1_block_id}. Rejecting receipt"  # noqa: B950
             )
             raise exceptions.NotAcceptingVerifications(f"Not accepting verifications for block {l1_block_id} from {block_model.dc_id}")
-
-
-def get_notification_urls(key: str) -> set:
-    try:
-        urls = set(VERIFICATION_NOTIFICATION[key])
-    except KeyError:
-        urls = set()
-    return urls
-
-
-def sign(message: str) -> str:
-    return keys.get_my_keys().make_signature(message.encode("utf8"), crypto.SupportedHashes.sha256)
-
-
-def send_verification_notifications(level: int, block_model: "model.BlockModel"):
-    try:
-        if VERIFICATION_NOTIFICATION:
-            string_json = json.dumps(block_model.export_as_at_rest(), separators=(",", ":"))
-            signature = sign(string_json)
-            all_endpoints = get_notification_urls("all").union(get_notification_urls(f"l{level}"))
-            for url in all_endpoints:
-                _log.debug(f"Notify -> POST {url} {string_json}")
-                response = requests.post(
-                    url,
-                    string_json,
-                    headers={"Content-Type": "application/json", "Signature": signature, "DragonchainId": keys.get_public_id()},
-                    timeout=10,
-                )
-                _log.debug(f"Notify <- {response.status_code} POST {url} {response.text}")
-    except Exception:
-        # This feature is fire & forget. All exceptions will just log.
-        _log.exception("Failed sending verification notification")
 
 
 def enqueue_item_for_verification_v1(content: Dict[str, str], deadline: int) -> None:

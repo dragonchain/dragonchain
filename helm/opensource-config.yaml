@@ -3,9 +3,9 @@ webserverLiveliness: true # Set this value to false if migrating from v3 to v4, 
 
 global:
   environment:
-    DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
-    REGISTRATION_TOKEN: "" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
-    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary string if no Dragon Net)
+    DRAGONCHAIN_NAME: "damnitgary" # This can be anything
+    REGISTRATION_TOKEN: "a3036a9e-b531-4063-9d9b-a3b437f06c10" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
+    INTERNAL_ID: "d96dae63-507d-445a-9ff7-988049d5faa0" # Use id from Dragon Net registration (or arbitrary string if no Dragon Net)
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
     # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
     # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
@@ -100,10 +100,9 @@ dragonchain:
   # The bearer token will be the signature of the utf8 encoded bytes of the post body signed with the private key, and verifiable with
   # the public key found in the DragonchainId header. NOTE: Do not trust this header alone to verify signature. Make sure it's a public id
   # that you trust and expect.
-  verificationNotification: null
-    # -- Example:
-    # all:
-    #   - https://yourUrlHere
+  verificationNotification:
+    all:
+      -  https://ghgg9mhbcl.execute-api.us-west-2.amazonaws.com/demo
     #   - https://yourUrlHere
     # l2:
     #   - https://yourUrlHere
