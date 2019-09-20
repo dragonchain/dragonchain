@@ -1,0 +1,50 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-redis-volume
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-redis-volume
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redis-volume
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+{{ toYaml .Values.redis.storage.spec | indent 2 }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-redisearch-volume
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-redisearch-volume
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redisearch-volume
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+{{ toYaml .Values.redisearch.storage.spec | indent 2 }}
+
+{{- if .Values.dragonchain.storage }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-main-storage
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-main-storage
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: main-storage
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+{{ toYaml .Values.dragonchain.storage.spec | indent 2 }}
+{{- end }}

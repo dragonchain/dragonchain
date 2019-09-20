@@ -1,6 +1,11 @@
 # This container is used as a base by Dockerfile.test in order to speed up dependency install for testing purposes only
 FROM python:3.7-alpine
 
+# Install helm for building docs
+RUN wget 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
+    tar xzf helm-v2.14.3-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
+    rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64
+
 # Install dev build dependencies
 RUN apk upgrade && apk add g++ make gmp-dev libffi-dev automake autoconf libtool && echo "UTC" > /etc/timezone
 # Install python dev dependencies

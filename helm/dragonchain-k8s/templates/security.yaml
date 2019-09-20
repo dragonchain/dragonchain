@@ -1,0 +1,118 @@
+{{- if not .Values.isMinikube }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-webserver-netpolicy
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-webserver-netpolicy
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: webserver-security
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-webserver
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector: {} # From any namespace
+    - podSelector: {} # Allow ALL pods access to the webserver (over exposed port)
+    ports:
+    - protocol: TCP
+      port: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-rs-netpolicy
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-rs-netpolicy
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-redisearch
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          # Only allow pods in this namespace, with the label for this dragonchain ID access
+          dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-pr-netpolicy
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-pr-netpolicy
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          # Only allow pods in this namespace, with the label for this dragonchain ID access
+          dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-cr-netpolicy
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-cr-netpolicy
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-cacheredis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          # Only allow pods in this namespace, with the label for this dragonchain ID access
+          dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    ports:
+    - protocol: TCP
+      port: 6379
+{{- end }}

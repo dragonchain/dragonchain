@@ -22,6 +22,7 @@ pip-delete-this-directory.txt
 
 # Docs
 .build
+docs/static/chart/
 
 # OS Files
 .DS_Store

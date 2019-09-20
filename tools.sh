@@ -51,6 +51,9 @@ elif [ "$1" = "format" ]; then
 elif [ "$1" = "bandit" ]; then
     $py_exec -m bandit -r dragonchain
 elif [ "$1" = "docs" ]; then
+    rm -rf docs/static/chart && mkdir -p docs/static/chart
+    helm package helm/dragonchain-k8s -d docs/static/chart/
+    cp helm/opensource-config.yaml docs/static/chart/
     (
     cd docs || exit 1
     make html
