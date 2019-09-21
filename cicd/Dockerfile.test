@@ -5,7 +5,8 @@ FROM dragonchain/dragonchain_core_dependencies:latest as base
 RUN if ! command -v helm; then \
     wget 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
     tar xzf helm-v2.14.3-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
-    rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64; fi
+    rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64; fi && \
+    helm init --client-only
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
