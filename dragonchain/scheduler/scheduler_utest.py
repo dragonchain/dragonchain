@@ -123,9 +123,15 @@ class SchedulerTest(unittest.TestCase):
 
     # DELETE NON EXISTENT JOB
     @patch("dragonchain.scheduler.scheduler.timing_event.exists", return_value=False)
-    def test_delete_non_existent_job(self, exists):
+    @patch("dragonchain.scheduler.timing_event.redis.hget_sync", return_value='{"contract_id":"goo","action":"delete","seconds":60}')
+    @patch("dragonchain.scheduler.timing_event.redis.hdel_sync")
+    @patch("apscheduler.schedulers.background.BackgroundScheduler.remove_job")
+    def test_delete_non_existent_job(self, remove_job, hdel, hget, exists):
         change_request = {"action": "delete", "contract_id": "banana", "txn_type": "banana", "execution_order": "serial"}
-        self.assertRaises(exceptions.TimingEventSchedulerError, scheduler.worker, change_request)
+        scheduler.worker(change_request)
+        remove_job.assert_not_called()
+        hdel.assert_not_called()
+        hget.assert_not_called()
 
     # UPDATE
     @patch("dragonchain.scheduler.scheduler.timing_event.exists", return_value=True)

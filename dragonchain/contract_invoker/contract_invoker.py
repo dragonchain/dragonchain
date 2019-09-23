@@ -29,7 +29,6 @@ from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.database import redis
 from dragonchain.contract_invoker import contract_invoker_service
 from dragonchain import logger
-from dragonchain import exceptions
 from dragonchain.lib import error_reporter
 
 _log = logger.get_logger()
@@ -68,7 +67,7 @@ async def start() -> None:
 
 async def process_events(session: aiohttp.ClientSession) -> None:
     try:
-        unique_id = str(random.randint(0, 9999999999999))
+        unique_id = str(random.randint(0, 9999999999999))  # nosec (not needed for cryptographic purposes)
         _, event = await redis.brpop_async("mq:contract-invoke", timeout=0, decode=False)
         # Place into in process queue for safety (deleted after contract finishes invoking)
         await redis.hset_async("mq:contract-processing", unique_id, event)
@@ -106,11 +105,8 @@ def restart_serial_worker(contract_id: str) -> None:
 
 
 def restart_dead_workers() -> None:
-    try:
-        for contract in smart_contract_dao.get_serial_contracts():
-            restart_serial_worker(contract["id"])
-    except exceptions.NotFound:
-        _log.warning("No serial contracts found")
+    for contract in smart_contract_dao.get_serial_contracts():
+        restart_serial_worker(contract.id)
 
 
 async def serial_contract_worker(contract_id: str) -> None:

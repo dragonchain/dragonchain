@@ -39,6 +39,6 @@ def get_block_v1(block_id: str) -> Tuple[str, int, Dict[str, str]]:
 
 @request_authorizer.Authenticated()
 def query_blocks_v1(block_id: Optional[str] = None) -> Tuple[str, int, Dict[str, str]]:
-    params = flask.request.args.to_dict() or None
+    params = helpers.parse_query_parameters(flask.request.args.to_dict())
     should_parse = bool(flask.request.headers.get("Parse-Payload"))
     return helpers.flask_http_response(200, blocks.query_blocks_v1(params, should_parse))

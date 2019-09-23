@@ -77,7 +77,7 @@ def execute() -> None:
     if l1_headers is not None and l3_blocks is None:
         try:
             _log.warning(f"Bad Block received from lower level. L1 Headers: {l1_headers}")
-        except Exception:
+        except Exception:  # nosec (We don't care if l1_headers is an error/not defined and this log fails)
             pass
 
         # Clear our processing queue

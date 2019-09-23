@@ -50,28 +50,43 @@ def execute() -> None:
     new_signable_txns = get_new_transactions()
     t1 = time.time()
 
+    # Get current block id
+    current_block_id = l1_block_model.get_current_block_id()
+    # Activate any new custom indexes if necessary
+    activate_pending_indexes_if_necessary(current_block_id)
+    t2 = time.time()
+
     if len(new_signable_txns) > 0:
         # Sign / validate transactions
         signed_transactions = process_transactions(new_signable_txns)
-        t2 = time.time()
+        t3 = time.time()
 
         # Create the block
-        block = create_block(signed_transactions)
-        t3 = time.time()
+        block = create_block(signed_transactions, current_block_id)
+        t4 = time.time()
 
         # Store the block
         store_data(block)
-        t4 = time.time()
+        t5 = time.time()
 
         # Clear our processing queue (finished successfully)
         clear_processing_transactions()
 
-        total = t4 - t0
+        total = t5 - t0
         _log.info(f"[L1] Processed {len(signed_transactions)} transactions in {total:.4f} seconds")
         _log.info(f"[L1] Retrieving Txns From queue: {t1 - t0:.4f} sec ({((t1 - t0) / total) * 100:.1f}% of processing)")
-        _log.info(f"[L1] Signing/Fixating Txns: {t2 - t1:.4f} sec ({((t2 - t1) / total) * 100:.1f}% of processing)")
-        _log.info(f"[L1] Creating block model: {t3 - t2:.4f} sec ({((t3 - t2) / total) * 100:.1f}% of processing)")
-        _log.info(f"[L1] Uploading data: {t4 - t3:.4f} sec ({((t4 - t3) / total) * 100:.1f}% of processing)")
+        _log.info(f"[L1] Activating pending transaction types: {t2 - t1:.4f} sec ({((t2 - t1) / total) * 100:.1f}% of processing)")
+        _log.info(f"[L1] Signing/Fixating Txns: {t3 - t2:.4f} sec ({((t3 - t2) / total) * 100:.1f}% of processing)")
+        _log.info(f"[L1] Creating block model: {t4 - t3:.4f} sec ({((t4 - t3) / total) * 100:.1f}% of processing)")
+        _log.info(f"[L1] Uploading data: {t5 - t4:.4f} sec ({((t5 - t4) / total) * 100:.1f}% of processing)")
+
+
+def activate_pending_indexes_if_necessary(block_id: str) -> None:
+    """This function is used to activate a new custom index at a precise time so that indexes can be regenerated in the future if necessary
+    Args:
+        block_id: The block id to activate the transaction types (should be the next block)
+    """
+    transaction_type_dao.activate_transaction_types_if_necessary(block_id)
 
 
 def clear_processing_transactions() -> None:
@@ -116,10 +131,12 @@ def sign_transaction(transaction: "transaction_model.TransactionModel", block_id
     transaction.signature = signature
 
 
-def create_block(signed_transactions: List["transaction_model.TransactionModel"]) -> l1_block_model.L1BlockModel:
+def create_block(signed_transactions: List["transaction_model.TransactionModel"], block_id: str) -> l1_block_model.L1BlockModel:
     # Get prior block hash and ID, and create new block with the fixated transactions
     previous_proof = block_dao.get_last_block_proof()
-    block = l1_block_model.new_from_full_transactions(signed_transactions, previous_proof.get("block_id") or "", previous_proof.get("proof") or "")
+    block = l1_block_model.new_from_full_transactions(
+        signed_transactions, block_id, previous_proof.get("block_id") or "", previous_proof.get("proof") or ""
+    )
     _log.info(f"[L1] Next block created. Previous block hash: {previous_proof.get('proof')}, previous block ID: {previous_proof.get('block_id')}")
 
     _log.info("[L1] Signing block")

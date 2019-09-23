@@ -16,8 +16,9 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
+from dragonchain import test_env  # noqa: F401
 from dragonchain.lib.dao import transaction_type_dao
 from dragonchain.lib.dto import transaction_type_model
 from dragonchain import exceptions
@@ -25,7 +26,7 @@ from dragonchain import exceptions
 
 class TestTransactionTypeDAO(unittest.TestCase):
     def test_module_has_correct_folder_correctly(self):
-        self.assertEqual(transaction_type_dao.FOLDER, "TRANSACTION_TYPES")
+        self.assertEqual(transaction_type_dao.FOLDER, "TRANSACTION_TYPES/TYPES")
 
     @patch(
         "dragonchain.lib.dao.transaction_type_dao.storage.get_json_from_object",
@@ -40,17 +41,31 @@ class TestTransactionTypeDAO(unittest.TestCase):
     def test_get_registered_transactions_raises_not_found(self, storage_get_mock):
         self.assertRaises(exceptions.NotFound, transaction_type_dao.get_registered_transaction_type, "test_type")
 
-    @patch("dragonchain.lib.dao.transaction_type_dao.redis.sadd_sync")
+    @patch("dragonchain.lib.database.redis.lpush_sync")
+    @patch("dragonchain.lib.database.redisearch.create_transaction_index")
     @patch("dragonchain.lib.dao.transaction_type_dao.storage.put_object_as_json")
-    def test_store_registered_txn_type_succeeds(self, storage_put_mock, redis_sadd_mock):
-        instance = transaction_type_model.new_from_user_input({"version": "1", "txn_type": "test_type", "custom_indexes": []})
-        transaction_type_dao.store_registered_transaction_type(instance)
+    def test_create_registered_txn_type_succeeds(self, storage_put_mock, rsearch_create_mock, mock_lpush):
+        instance = transaction_type_model.new_from_user_input({"version": "2", "txn_type": "test_type", "custom_indexes": []})
+        transaction_type_dao.create_new_transaction_type(instance)
         storage_put_mock.assert_called_once_with("TRANSACTION_TYPES/TYPES/test_type", instance.export_as_at_rest())
-        redis_sadd_mock.assert_called_once_with("type_list_key", "test_type")
+        rsearch_create_mock.assert_called_once_with("test_type", [])
+        mock_lpush.assert_called_once_with("mq:txn_type_creation_queue", "test_type")
 
-    @patch("dragonchain.lib.dao.transaction_type_dao.redis.srem_sync")
+    @patch("dragonchain.lib.database.redisearch.delete_index")
     @patch("dragonchain.lib.dao.transaction_type_dao.storage.delete", return_value=True)
-    def test_delete_registered_txn_type_succeeds(self, storage_delete_mock, srem_mock):
+    def test_delete_registered_txn_type_succeeds(self, storage_delete_mock, rsearch_delete_mock):
         transaction_type_dao.remove_existing_transaction_type("randomTxn")
-        srem_mock.assert_called_once_with("type_list_key", "randomTxn")
         storage_delete_mock.assert_called_with("TRANSACTION_TYPES/TYPES/randomTxn")
+        rsearch_delete_mock.assert_called_once_with("randomTxn")
+
+    @patch(
+        "dragonchain.lib.dao.transaction_type_dao.get_registered_transaction_type",
+        return_value=MagicMock(txn_type="blah", export_as_at_rest=MagicMock(return_value={})),
+    )
+    @patch("dragonchain.lib.database.redis.pipeline_sync", return_value=MagicMock(execute=MagicMock(return_value=[[b"txn_id"], 4])))
+    @patch("dragonchain.lib.dao.transaction_type_dao.storage.put_object_as_json")
+    def test_activate_transaction_types_if_necessary(self, store_mock, redis_mock, mock_get_txn_type):
+        transaction_type_dao.activate_transaction_types_if_necessary("1000")
+        redis_mock.assert_called_once()
+        store_mock.assert_called_once_with("TRANSACTION_TYPES/TYPES/blah", {})
+        mock_get_txn_type.assert_called_once_with("txn_id")

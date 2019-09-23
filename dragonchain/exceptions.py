@@ -53,6 +53,10 @@ class ContractException(DragonchainException):
     """Exception raised when a contract modification fails"""
 
 
+class OpenFaasException(DragonchainException):
+    """Exception raised when OpenFaaS returns with error status"""
+
+
 class LabChainForbiddenException(DragonchainException):
     """Exception raised when lab chain action is not allowed"""
 
@@ -151,8 +155,8 @@ class RPCTransactionNotFound(DragonchainException):
     """Exception raised when a transaction is not found on an interchain network"""
 
 
-class ElasticSearchFailure(DragonchainException):
-    """Exception raised when the elastic search client fails to initialize"""
+class RedisearchFailure(DragonchainException):
+    """Exception raised when redisearch fails"""
 
 
 class MatchmakingError(DragonchainException):

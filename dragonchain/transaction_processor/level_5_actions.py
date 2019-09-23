@@ -36,7 +36,7 @@ from dragonchain import exceptions
 from dragonchain.lib.dao import interchain_dao
 from dragonchain.lib import queue
 from dragonchain.transaction_processor import shared_functions
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.database import redisearch
 
 if TYPE_CHECKING:
     from dragonchain.lib.dto import model  # noqa: F401
@@ -166,9 +166,10 @@ def broadcast_to_public_chain(l5_block: l5_block_model.L5BlockModel) -> None:
     l5_block.block_last_sent_at = _interchain_client.get_current_block()
     l5_block.network = INTERCHAIN_NETWORK
 
-    _log.info(f"[L5] ADDING TO BLOCK key BLOCK/{l5_block.block_id}")
-    _log.info(f"[L5] ADDING TO BLOCK val {l5_block.export_as_at_rest()}")
-    elasticsearch.put_index_in_storage("BLOCK", l5_block.block_id, l5_block)
+    storage_key = f"BLOCK/{l5_block.block_id}"
+    _log.info(f"[L5] Adding to storage at {storage_key} and creating index")
+    storage.put_object_as_json(storage_key, l5_block.export_as_at_rest())
+    redisearch.put_document(redisearch.Indexes.block.value, l5_block.block_id, l5_block.export_as_search_index())
 
 
 def check_confirmations() -> None:
@@ -209,7 +210,9 @@ def finalize_block(block: l5_block_model.L5BlockModel, last_confirmed_block: Dic
     block.proof = keys.get_my_keys().sign_block(block)
 
     _log.info("[L5] Storing new block and moving pointers")
-    elasticsearch.put_index_in_storage("BLOCK", block.block_id, block)
+    storage.put_object_as_json(f"BLOCK/{block.block_id}", block.export_as_at_rest())
+    # In the future if we change/add indexes to an L5 block, it may need to be re-indexed here.
+    # For now, no re-indexing is necessary, only a storage update
     set_last_confirmed_block(block)
 
     # Notify L1s that contributed to L5 block
@@ -317,7 +320,7 @@ def watch_for_funds() -> None:
     global FUNDED
     _log.info("[L5] Checking if should update funded flag...")
     _log.info(
-        f"[L5] Deregistered: {FUNDED}\tEstimated Fee: {estimated_transaction_fee}\tTransaction Buffer: {TRANSACTION_BUFFER}\tCurrent Funds: {current_funds}"
+        f"[L5] Funded: {FUNDED}\tEstimated Fee: {estimated_transaction_fee}\tTransaction Buffer: {TRANSACTION_BUFFER}\tCurrent Funds: {current_funds}"
     )
     if not FUNDED and (estimated_transaction_fee * TRANSACTION_BUFFER) < current_funds:
         _log.info("[L5] Updating metadata!")
@@ -361,8 +364,6 @@ def create_l5_block(block_id: str) -> l5_block_model.L5BlockModel:
         scheme=PROOF_SCHEME,
         l4_blocks=get_pending_l4_blocks(block_id),
     )
-
-    _log.info(f"[L5] L5_BLOCK = {l5_block}")
 
     return l5_block
 

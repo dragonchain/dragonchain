@@ -19,11 +19,14 @@ import os
 import json
 from typing import Optional, List, Any, TYPE_CHECKING
 
+from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.database import redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import JSONType
+
+_log = logger.get_logger()
 
 LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
@@ -63,6 +66,7 @@ def get(key: str, cache_expire: Optional[int] = None, should_cache: bool = True)
     except exceptions.NotFound:
         raise
     except Exception:
+        _log.exception("Uncaught exception while performing storage get")
         raise exceptions.StorageError("Uncaught exception while performing storage get")
 
 
@@ -80,6 +84,7 @@ def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache
         if should_cache:
             redis.cache_put(key, value, cache_expire)
     except Exception:
+        _log.exception("Uncaught exception while performing storage put")
         raise exceptions.StorageError("Uncaught exception while performing storage put")
 
 
@@ -94,6 +99,7 @@ def delete(key: str) -> None:
         storage.delete(STORAGE_LOCATION, key)
         redis.cache_delete(key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage delete")
         raise exceptions.StorageError("Uncaught exception while performing storage delete")
 
 
@@ -111,6 +117,7 @@ def delete_directory(directory_key: str) -> None:
             delete(key)
         storage.delete_directory(STORAGE_LOCATION, directory_key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage delete_directory")
         raise exceptions.StorageError("Uncaught exception while performing storage delete_directory")
 
 
@@ -127,7 +134,7 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
     """
     try:
         obj: Any = None
-        key = str(block_id) + "/" + str(txn_id)
+        key = f"{block_id}/{txn_id}"
         obj = redis.cache_get(key)
         if obj:
             return json.loads(obj)
@@ -137,6 +144,7 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
     except exceptions.NotFound:
         raise
     except Exception:
+        _log.exception("Uncaught exception while performing storage select_transaction")
         raise exceptions.StorageError("Uncaught exception while performing storage select_transaction")
 
 
@@ -174,6 +182,7 @@ def list_objects(prefix: str) -> List[str]:
     try:
         return storage.list_objects(STORAGE_LOCATION, prefix)
     except Exception:
+        _log.exception("Uncaught exception while performing storage list_objects")
         raise exceptions.StorageError("Uncaught exception while performing storage list_objects")
 
 
@@ -189,6 +198,7 @@ def does_superkey_exist(key: str) -> bool:
     try:
         return storage.does_superkey_exist(STORAGE_LOCATION, key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage does_superkey_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_superkey_exist")
 
 
@@ -204,4 +214,5 @@ def does_object_exist(key: str) -> bool:
     try:
         return storage.does_object_exist(STORAGE_LOCATION, key)
     except Exception:
+        _log.exception("Uncaught exception while performing storage does_object_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_object_exist")

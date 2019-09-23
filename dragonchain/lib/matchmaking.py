@@ -219,7 +219,7 @@ def get_or_create_claim_check(block_id: str, requirements: dict) -> dict:
     """
     try:
         return get_claim_check(block_id)
-    except Exception:
+    except Exception:  # nosec (We don't care why getting a claim check failed, we will simply request a new one from matchmaking)
         pass
     return create_claim_check(block_id, requirements)
 

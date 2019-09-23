@@ -41,7 +41,7 @@ def new_from_at_rest(block: Dict[str, Any]) -> "L4BlockModel":
             dc_id=block["header"]["dc_id"],
             current_ddss=block["header"].get("current_ddss"),
             block_id=block["header"]["block_id"],
-            timestamp=block["header"]["timestamp"],
+            timestamp=block["header"].get("timestamp") or "-1",
             prev_proof=block["header"]["prev_proof"],
             scheme=block["proof"]["scheme"],
             proof=block["proof"]["proof"],
@@ -85,6 +85,8 @@ class L4BlockModel(model.BlockModel):
         self.dc_id = dc_id
         self.current_ddss = current_ddss
         self.block_id = block_id
+        if block_id:
+            self.prev_id = str(int(block_id) - 1)
         self.timestamp = timestamp
         self.prev_proof = prev_proof
         self.scheme = scheme
@@ -102,19 +104,6 @@ class L4BlockModel(model.BlockModel):
     def get_associated_l1_block_id(self) -> Set[str]:
         """Interface function for compatibility"""
         return {self.l1_block_id}
-
-    def export_as_search_index(self) -> Dict[str, Any]:
-        """Export as block search index DTO"""
-        return {
-            "version": "1",
-            "dcrn": schema.DCRN.Block_L4_Search_Index.value,
-            "dc_id": self.dc_id,
-            "block_id": int(self.block_id),
-            "timestamp": int(self.timestamp),
-            "prev_proof": self.prev_proof,
-            "s3_object_folder": "BLOCK",
-            "s3_object_id": self.block_id,
-        }
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export the L4 block that is stored/brodcast/sent for receipt"""

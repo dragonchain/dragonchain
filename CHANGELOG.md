@@ -1,5 +1,43 @@
 # Changelog
 
+## 4.0.0
+
+This update introduces a breaking change required by the switch from
+ElasticSearch to redisearch. These changes primarily exist with custom
+indexing, and how querying is preformed. Please read the
+[relevant docs page](https://dragonchain-core-docs.dragonchain.com/latest/deployment/migrating_v4.html)
+for more details on upgrading to v4.
+
+- **Feature:**
+  - Add new endpoint `GET /v1/contract/logs/<contract_id>` for getting logs of smart contracts
+  - Remove elasticsearch integrations and replace with redisearch
+  - Refactor all query endpoints, including changing query inputs (Breaking Change)
+  - Changed route for `GET /v1/contract` from a query to a list (Breaking Change)
+  - Add support to disable schedule when updating a smart contract
+- **Documentation:**
+  - Update documentation for redisearch
+  - Add new page for migration considerations when upgrading from v3 to v4
+  - Add RAM usage requirements
+  - Add info about bug/security/project bounty programs
+- **Development:**
+  - Add logs when getting storage errors
+  - Resolve all bandit errors and turn up bandit verbosity
+  - Move/extract entire helm chart for better control
+- **Packaging:**
+  - Update helm chart version, adding redisearch while removing elasticsearch
+  - Remove service links from mounting on pods in the helm chart
+  - Expose redis and redisearch image locations in opensource-config.yaml
+  - Add redisearch and remove elasticsearch from requirements.txt
+  - Update boto3, bit, and aiohttp packages
+  - Update fwatchdog to 0.18.0 for OpenFaaS smart contracts
+- **CICD:**
+  - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
+  - Make helm chart be packaged on demand when creating docs
+- **Bugs:**
+  - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
+  - Fixed a bug with ethereum classic and ethereum classic testnet interchains which caused transactions to be signed improperly
+  - Fixed a bug which caused built smart contract images to not be deleted from the image repository when deleting a smart contract
+
 ## 3.5.0
 
 - **Feature:**
@@ -28,7 +66,7 @@
     - `POST /v1/public-blockchain-transaction`
   - Reduced initial delay checks for the webserver so kubernetes will mark the webserver as ready quicker
   - Add direct TLS support for the Dragonchain webserver (for NodePort deployed services)
-- **Bug:**
+- **Bugs:**
   - Fixed some bugs with the helm chart which caused the incorrect dockerhub image to be pulled
 - **Documentation:**
   - Add docs/update helm chart and values for added TLS support
@@ -47,7 +85,7 @@
 
 ## 3.4.46
 
-- **Bug:**
+- **Bugs:**
   - Don't require registration to bitcoin node on webserver boot
   - Properly handle 401-403 responses from matchmaking
 - **Documentation:**
@@ -61,7 +99,7 @@
 
 ## 3.4.45
 
-- **Bug:**
+- **Bugs:**
   - Fix bug with job processor consuming too much memory due to threads
 
 ## 3.4.43
@@ -92,6 +130,6 @@
   - Update fwatchdog to 0.15.2 for OpenFaaS smart contracts
 - **CICD:**
   - Updated cicd for new AWS buildspec runtimes
-- **Bug Fixes**
+- **Bugs:**
   - No longer send HTML on certain 500 responses, only JSON
   - Remove any possible existing entrypoints from built smart contract containers

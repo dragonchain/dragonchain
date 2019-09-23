@@ -32,6 +32,8 @@ class Model(object):
 
 class BlockModel(Model):
     block_id: str
+    timestamp: str
+    prev_id: str
     dc_id: str
     proof: str
 
@@ -42,6 +44,10 @@ class BlockModel(Model):
     def get_associated_l1_block_id(self) -> Set[str]:
         """Abstract Method"""
         raise NotImplementedError("This is an abstract method")
+
+    def export_as_search_index(self) -> Dict[str, Any]:
+        """Export as block search index DTO"""
+        return {"block_id": int(self.block_id), "timestamp": int(self.timestamp), "prev_id": int(self.prev_id) if self.prev_id else 0}
 
 
 class InterchainModel(Model):

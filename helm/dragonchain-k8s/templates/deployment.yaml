@@ -1,0 +1,738 @@
+# Webserver Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-webserver
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-webserver
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.webserver.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-webserver
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-webserver
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-webserver
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: webserver
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+{{- if not .Values.isMinikube }}
+        sysctls:
+        - name: net.core.somaxconn
+          value: "4096"
+{{- end }}
+      containers:
+        - name: {{ .Release.Name }}-webserver
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/webserver.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+{{ if .Values.webserverLiveliness }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+{{- if .Values.global.environment.TLS_SUPPORT }}
+              scheme: HTTPS
+{{- end }}
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 15
+{{ end }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+{{- if .Values.global.environment.TLS_SUPPORT }}
+              scheme: HTTPS
+{{- end }}
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.webserver.resources | indent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: webserver
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.global.environment.TLS_SUPPORT }}
+            - name: certificate
+              mountPath: /etc/cert
+              readOnly: true
+{{- end }}
+{{- if .Values.faas.mountFaasSecret }}
+            - name: openfaas
+              mountPath: /etc/openfaas-secret
+              readOnly: true
+{{- end }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.faas.mountFaasSecret }}
+        - name: openfaas
+          secret:
+            secretName: openfaas-auth
+{{- end }}
+{{- if .Values.global.environment.TLS_SUPPORT }}
+        - name: certificate
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-cert"
+{{- end }}
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+
+---
+# Transaction Processor Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tx-processor
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-tx-processor
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: tx-processor
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.transactionProcessor.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-tx-processor
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-tx-processor
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-tx-processor
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: tx-processor
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+      containers:
+        - name: {{ .Release.Name }}-tx-processor
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/transaction_processor.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.transactionProcessor.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: txprocessor
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+
+---
+{{- if eq .Values.global.environment.LEVEL "1" }}
+# Contract Invoker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-contract-invoker
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-contract-invoker
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: contract-invoker
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.contractInvoker.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-contract-invoker
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-contract-invoker
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-contract-invoker
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: contract-invoker
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+      containers:
+        - name: {{ .Release.Name }}-contract-invoker
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/contract_invoker.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.contractInvoker.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: contractInvoker
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+{{- end }}
+---
+{{- if and (eq .Values.global.environment.LEVEL "1") (not .Values.global.environment.LAB) }}
+# Job Processor Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-job-processor
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-job-processor
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: job-processor
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.jobProcessor.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-job-processor
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-job-processor
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-job-processor
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: job-processor
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      serviceAccountName: openfaas-builder
+      automountServiceAccountToken: true
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+      containers:
+        - name: {{ .Release.Name }}-job-processor
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/job_processor.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.jobProcessor.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: jobprocessor
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+{{- end }}
+---
+{{- if and (eq .Values.global.environment.LEVEL "1") (eq .Values.global.environment.BROADCAST "true") }}
+# Broadcast Processor Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-bc-processor
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-bc-processor
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: bc-processor
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.broadcastProcessor.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-bc-processor
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-bc-processor
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-bc-processor
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: bc-processor
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+      containers:
+        - name: {{ .Release.Name }}-bc-processor
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/broadcast_processor.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.broadcastProcessor.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: bcprocessor
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+{{- end }}
+---
+{{- if eq .Values.global.environment.LEVEL "1" }}
+# Scheduler Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-scheduler
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-scheduler
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: scheduler
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    stage: {{ .Values.global.environment.STAGE }}
+    coreImage: 'true'
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-scheduler
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-scheduler
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-scheduler
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: scheduler
+        app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+        stage: {{ .Values.global.environment.STAGE }}
+        coreImage: 'true'
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+      containers:
+        - name: {{ .Release.Name }}-scheduler
+          image: "{{ .Values.dragonchain.image.registry }}/{{ .Values.dragonchain.image.repository }}:{{ .Values.dragonchain.image.version }}"
+          command: ["sh"]
+          args: ["entrypoints/scheduler.sh"]
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          resources:
+{{ toYaml .Values.scheduler.resources | indent 12 }}
+          envFrom:
+            - configMapRef:
+                name: "{{ .Release.Name }}-configmap"
+          env:
+            - name: SERVICE
+              value: scheduler
+            - name: SECRET_LOCATION
+              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+          volumeMounts:
+            - name: secrets
+              mountPath: {{ .Values.secret.mountPath }}
+{{- if .Values.dragonchain.storage }}
+            - name: storage
+              mountPath: {{ .Values.dragonchain.storage.mount }}
+{{- end }}
+      volumes:
+        - name: secrets
+          secret:
+            secretName: "d-{{ .Values.global.environment.INTERNAL_ID }}-secrets"
+{{- if .Values.dragonchain.storage }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-main-storage"
+{{- end }}
+{{- end }}
+---
+# Cache Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-cacheredis
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-cacheredis
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: cacheredis
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.cacheredis.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-cacheredis
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-cacheredis
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-cacheredis
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: cacheredis
+        dragonchainId: {{ .Values.global.environment.DRAGONCHAIN_ID }}
+        stage: {{ .Values.global.environment.STAGE }}
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+        dragonchainRedis: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+{{- if not .Values.isMinikube }}
+        sysctls:
+        - name: net.core.somaxconn
+          value: "1024"
+{{- end }}
+      containers:
+        - name: {{ .Release.Name }}-cacheredis
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          command: ["redis-server"]
+          args: ["/usr/local/etc/redis/redis.conf"]
+          ports:
+            - name: http
+              containerPort: 6379
+          resources:
+{{ toYaml .Values.cacheredis.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /usr/local/etc/redis
+              name: config
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-cr-configmap
+            items:
+              - key: redis-config
+                path: redis.conf
+
+---
+# Persistent Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-persistent-redis
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: persistent-redis
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.persistentredis.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-persistent-redis
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: persistent-redis
+        stage: {{ .Values.global.environment.STAGE }}
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+        dragonchainRedis: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+{{- if not .Values.isMinikube }}
+        sysctls:
+        - name: net.core.somaxconn
+          value: "1024"
+{{- end }}
+      containers:
+        - name: {{ .Release.Name }}-persistent-redis
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          command: ["redis-server"]
+          args: ["/usr/local/etc/redis/redis.conf"]
+          ports:
+            - name: http
+              containerPort: 6379
+          resources:
+{{ toYaml .Values.persistentredis.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /usr/local/etc/redis
+              name: config
+            - mountPath: /data
+              name: storage
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-pr-configmap
+            items:
+              - key: redis-config
+                path: redis.conf
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-redis-volume
+
+---
+# Redisearch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-redisearch
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-redisearch
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redisearch
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  replicas: {{ .Values.redisearch.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-redisearch
+      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+  strategy:
+      type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-redisearch
+      labels:
+        app.kubernetes.io/name: {{ .Release.Name }}-redisearch
+        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/part-of: dragonchain
+        app.kubernetes.io/component: redisearch
+        stage: {{ .Values.global.environment.STAGE }}
+        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+        dragonchainRedis: {{ .Values.global.environment.INTERNAL_ID }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.runContainerUser }}
+        fsGroup: {{ .Values.runContainerGroup }}
+{{- if not .Values.isMinikube }}
+        sysctls:
+        - name: net.core.somaxconn
+          value: "1024"
+{{- end }}
+      containers:
+        - name: {{ .Release.Name }}-redisearch
+          image: "{{ .Values.redisearch.image.repository }}:{{ .Values.redisearch.image.tag }}"
+          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
+          command: ["redis-server"]
+          args: ["/usr/local/etc/redis/redis.conf"]
+          ports:
+            - name: http
+              containerPort: 6379
+          resources:
+{{ toYaml .Values.redisearch.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /usr/local/etc/redis
+              name: config
+            - mountPath: /data
+              name: storage
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Release.Name }}-rs-configmap
+            items:
+              - key: redis-config
+                path: redis.conf
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-redisearch-volume

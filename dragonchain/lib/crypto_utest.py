@@ -48,7 +48,7 @@ def make_tx():
 def make_l1_block():
     return l1_block_model.L1BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_id="previous block",
         prev_proof="the previous block proof",
@@ -60,7 +60,7 @@ def make_l1_block():
 def make_l2_block():
     return l2_block_model.L2BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_proof="the previous block proof",
         l1_block_id="l1 block id",
@@ -74,7 +74,7 @@ def make_l2_block():
 def make_l3_block():
     return l3_block_model.L3BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_proof="the previous block proof",
         l1_dc_id="l1 dc id",
@@ -91,7 +91,7 @@ def make_l3_block():
 def make_l3_block_v2():
     return l3_block_model.L3BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_proof="the previous block proof",
         l1_dc_id="l1 dc id",
@@ -108,7 +108,7 @@ def make_l3_block_v2():
 def make_l4_block():
     return l4_block_model.L4BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_proof="the previous block proof",
         l1_dc_id="l1 dc id",
@@ -121,7 +121,7 @@ def make_l4_block():
 def make_l5_block():
     return l5_block_model.L5BlockModel(
         dc_id="an id",
-        block_id="this block num",
+        block_id="8474745",
         timestamp="129874",
         prev_proof="the previous block proof",
         scheme="trust",
@@ -169,101 +169,101 @@ class TestCrypto(unittest.TestCase):
     def test_l1block_signing_hashing(self):
         block = make_l1_block()
         sig = crypto.sign_l1_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIANPrIKBbEmSzM1A/wawqxpKbudPDqiNSg4YXNON/U+lAiBLnAE96DZGvn7YuWAgPQ6V7lLQ1mELtM0/roPq9Ewe0Q==")
+        self.assertEqual(sig, "MEUCIQD9CaNsrMVCF75kuZFLZxbLhfv+CPJm1VO/aMecBAL01AIgUotuERB38vNzM4A2emuWTwTAVPxoALngsrld1A2qEvk=")
         sig = crypto.sign_l1_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCICrAJdSIHUuW9LpJvhPiU8GhcMiYpVbUZP6H1VxdsyYhAiBvsGmcHDAaHV+X3NqnZc9efy5BjG2mUDLtEk72SU3NJw==")
+        self.assertEqual(sig, "MEUCIQDjh8wpWg7NzkfqfSfVaCITXBQWp9ZsYDz+JFqEumLgXwIgLeohzgIQF6rUDN3cT7ft4wB8LKyZMrzpV66907o7gdw=")
         sig = crypto.sign_l1_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIHOJwsIyvPQFXn3Dh10bbFSMwRvP9Tyz/wGd/4IW1FD2AiBOmIsOSES4imXd3HGEgU8fG1LdwC3VFoe+HNSqWYbntg==")
+        self.assertEqual(sig, "MEQCIHt4Pk7bv+b3B2byjFwHDg9QezFfEMfB97RheamjQZqeAiBjmCOseeIzvHYfObJB4NhLVxvt+oRV4vYwQV+a4ye+5w==")
         block_hash, nonce = crypto.pow_l1_block(blake2b, block)
-        self.assertEqual(block_hash, "AMeMhL0xZOO/FMAPi/Wewa3XxUFPkUAa3gSXz9/6jkk=")
-        self.assertEqual(nonce, 206)
+        self.assertEqual(block_hash, "AByAk2FJJSyay0mb5jG6Zmtw08ZKN2M9TahZ95+6Ec0=")
+        self.assertEqual(nonce, 328)
         block_hash, nonce = crypto.pow_l1_block(sha256, block)
-        self.assertEqual(block_hash, "AAMMEMgqNgT3MJQPpFfzByjCr1qSXzc3NV12DMKzIj0=")
-        self.assertEqual(nonce, 252)
+        self.assertEqual(block_hash, "AL+iuhHcC51x065CbYCR+0LchibuF8x98SgEi+WW52g=")
+        self.assertEqual(nonce, 246)
         block_hash, nonce = crypto.pow_l1_block(sha3_256, block)
-        self.assertEqual(block_hash, "ACvwUNe8DCCiGrulYaN0Tzl3G3eDxB8mTE/XHzf8PCI=")
-        self.assertEqual(nonce, 101)
+        self.assertEqual(block_hash, "AG2Rlpw0bNSz3q5DJx/wOk4i3fiNfVi3P6D52sn7bhY=")
+        self.assertEqual(nonce, 509)
 
     def test_l2block_signing_hashing(self):
         block = make_l2_block()
         sig = crypto.sign_l2_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQDMNOdnmoCmafIAd7XSV3YRpHcNIFZdPKbRrbfco60iNAIgJy9LhlHKPpIf09AaLqsOTyFXGwCWK6CKMKBgoHP+l+M=")
+        self.assertEqual(sig, "MEQCIAOSqqOeS8Wdor6AN5gvvqhdh+acAumfq7ImQglllCDbAiBEKs1ZShUUGWipcGB3hpCQVLpqYV3nY0ZufyrNT6j8JQ==")
         sig = crypto.sign_l2_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIAnkjRMpeY6dlVTbEb42vipclk9iBSoQl0iOipZ3drTbAiBDd79HBwvU9gumZJ+klY+oPWHzmzBpR1eHEaxdltuF7Q==")
+        self.assertEqual(sig, "MEQCIBsQGOpY1JHOhWbBpXmmhOjIwG3h9e6qUu7O6XkznbkFAiBbhfNiW7AwVf4Nx+I0SVnvGP83IJ61UeW5OQIlEnPbXw==")
         sig = crypto.sign_l2_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCICLNLToek+dsToJLT4KYncnLbNe5W5jqkOMfasZbCtU/AiAazSE8BrH1JXEAlChKR7Y13Wab0esLZqTglNCxX+2x2g==")
+        self.assertEqual(sig, "MEQCIAnruzXCTx9AYT6+I+GrMLIWXkIIlg2sN3YVThgDrTgnAiACwUgzj3e6Ata6spob0WZNNfAP0uVumLHDZLEqq0sgqw==")
         block_hash, nonce = crypto.pow_l2_block(blake2b, block)
-        self.assertEqual(block_hash, "AOThppUjA/6oKpVCOTWGbbKRn7BPBCEObCuSRSZBAUI=")
-        self.assertEqual(nonce, 31)
+        self.assertEqual(block_hash, "AIqD5gtCg5/dgZBV105dz+dX2R7gxdw3QzsTeBV/6O8=")
+        self.assertEqual(nonce, 661)
         block_hash, nonce = crypto.pow_l2_block(sha256, block)
-        self.assertEqual(block_hash, "AK8AcqXDgmhp3GznRI22qdwKNbaREr4vfkyqmEriHtI=")
-        self.assertEqual(nonce, 402)
+        self.assertEqual(block_hash, "ANCH7glM8nNFL96qsIuIXPvEv91T9GX66gS7wwpNEjw=")
+        self.assertEqual(nonce, 16)
         block_hash, nonce = crypto.pow_l2_block(sha3_256, block)
-        self.assertEqual(block_hash, "AD2EcFe81+knfu5cuMeDpmVQqndiyxJkJu71xbpP774=")
-        self.assertEqual(nonce, 481)
+        self.assertEqual(block_hash, "AFt3k9xMCZbxb+itQxxd71Dk9vyde5Svvgbm5uA4gyk=")
+        self.assertEqual(nonce, 254)
 
     def test_l3block_signing_hashing(self):
         block = make_l3_block()
         sig = crypto.sign_l3_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQCyHIPMVW2P95UVg2qwB3cUJ/PLCij6Xt/A+kChxHkvLgIgbaEeKoh+Xk6cw7i57zewA7Cds/pqQ9pI0x0wxdLeT0g=")
+        self.assertEqual(sig, "MEQCIBx+i31vFfaXjlyvAYlTyVw+AuGcKnqL55AjuKO5UwwfAiA2+Rf6dde2mpXpK/OrSycQNuiksL8Y1DTc6zz4B+dCqA==")
         sig = crypto.sign_l3_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQDkT3tJDOdRRnBVU1OBDzyWTCufpgWxycASU7R1j17/GAIgKUv2WwR7UBCuM+UVCjKD0hJejifimsfVU8t64ANo/sE=")
+        self.assertEqual(sig, "MEQCIEnH0caGprg13H0q4x803dgVo7xcGyf/i2M+6tCe0aKRAiBvNlcXeJD9yRVT6g8cZ0MM6tJBc/OWx9Kbq1qsCOo/7w==")
         sig = crypto.sign_l3_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIDJ1iT2oxbmtoCkfWiHfOKGMwbNBCnx9/ZU/kCL9dZaIAiAhLDMFQWD5ZHBL6tLfdI2vpXj3ABNh50Y+VsGtfYm+RA==")
+        self.assertEqual(sig, "MEUCIQDPuuxO4PcPKNYMogl58ZF9an/FU7cO3jf2VdjRKLXjKwIgVz64rFKrs1GQ/AVFOSYNP8nM8mcZs5hRoveo4SGeby0=")
         block_hash, nonce = crypto.pow_l3_block(blake2b, block)
-        self.assertEqual(block_hash, "AHad/NVsJQG7ylDx0PvSrjZCJF6q23VorbQs6wfd2H8=")
-        self.assertEqual(nonce, 209)
+        self.assertEqual(block_hash, "AKNA21rqNqaWeKglP6QGDe09k+SWZfEmVvHjJxI9w/c=")
+        self.assertEqual(nonce, 231)
         block_hash, nonce = crypto.pow_l3_block(sha256, block)
-        self.assertEqual(block_hash, "AKMbyq2lS+wgpltP8M8iNe5H2HDE3dpFIdNi0utKp4c=")
-        self.assertEqual(nonce, 304)
+        self.assertEqual(block_hash, "AFFPeRLW3Y/zdfd9QRI6IQD32Hdt2BmzmotwFq0+3WU=")
+        self.assertEqual(nonce, 205)
         block_hash, nonce = crypto.pow_l3_block(sha3_256, block)
-        self.assertEqual(block_hash, "ALRr6kQ9RHuL03wcKixF5I/CmG01e9NboWFBNmCpIkE=")
-        self.assertEqual(nonce, 289)
+        self.assertEqual(block_hash, "ABQlIssL2qpK8iPI7lKu5rtEmnv8i7tMLy8sz4LcFH0=")
+        self.assertEqual(nonce, 339)
 
     def test_l3block_signing_hashing_v2(self):
         block = make_l3_block_v2()
         sig = crypto.sign_l3_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQCqGFxFbx6GgJyKD5AnoP3jVvltyf0bLKfvahLZAfAP2gIgA+b4MbCidhYqeOCoFXw/6lpmC0HNVBc/92xFkZ34J30=")
+        self.assertEqual(sig, "MEQCIGz8Tx1KZs386w9aTr/jtB8fVkprMzv8TW2A4Wc45FSjAiBBzgx9z0n/IcvSYTF/ZHpSlTyL6Xgacf+VsSWUO2JnQQ==")
         sig = crypto.sign_l3_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIDlNXYpyn/1e4ipyesknsWzOSpSalux4PKNFEghabUB9AiAHiQtAycgL1zPtEnxeBZvNeyQ8t9+zOT0hZ5nwxBx5Zg==")
+        self.assertEqual(sig, "MEUCIQCqPf3Y0lpNpCDA0m3AvPXbsMDtx3+xiWSOdWOGUHkwsQIgbeDyddkKuUsEC8zCcIFsdgPUy58X5GmCpVrGwkWg+I8=")
         sig = crypto.sign_l3_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIDXuHEv4nshrdv2VgfZmERAqxtL05C8GjtKHHyV4f7UaAiAtCRPQpbjZM3ytcHZbJ4mDtWKu6JokHbFUtBj7aitCeA==")
+        self.assertEqual(sig, "MEQCIFfPjZK5tSVVps4YqdHxD0n/ypkFVaHWyw+lDYPX+HUrAiBB7zoPt8Xd5SpTPcu4YpKl5Z4ff7Ibh2PGhbbWbtcbfw==")
         block_hash, nonce = crypto.pow_l3_block(blake2b, block)
-        self.assertEqual(block_hash, "AGyJopz+O3UboJc5ihiyMkMl8xpSVzvJZ6CQ/RMR0Ec=")
-        self.assertEqual(nonce, 533)
+        self.assertEqual(block_hash, "AILgeOkQNYDjaT47dnyYOV8CcCtHJPkxBZLdgOCiUMA=")
+        self.assertEqual(nonce, 351)
         block_hash, nonce = crypto.pow_l3_block(sha256, block)
-        self.assertEqual(block_hash, "ADgZ5B9HGoLqwk8FVjNGgHNYHSWOVMFFyjuA6ucYNuM=")
-        self.assertEqual(nonce, 27)
+        self.assertEqual(block_hash, "ABWOslEpGB4jRibC0cxHGUrHRTBjOxHhUsANM1f03R0=")
+        self.assertEqual(nonce, 7)
         block_hash, nonce = crypto.pow_l3_block(sha3_256, block)
-        self.assertEqual(block_hash, "AOicqIqzQZyzrHH1jHW68aFvH+/GUmK3ZcgtD1lt7D0=")
-        self.assertEqual(nonce, 312)
+        self.assertEqual(block_hash, "ALOKQPxF0tx99mZP+UZVPotGcT9Oss3mx9sHs2eMA54=")
+        self.assertEqual(nonce, 498)
 
     def test_l4block_signing_hashing(self):
         block = make_l4_block()
         sig = crypto.sign_l4_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQDpQywi4716Z2ne3lugHeUQK1bncwKq4FGz0JG12B0VNQIgZfNmC2wEkv49jQS+V2w9EtkW7gKpZ2UemjZcvpS5e7E=")
+        self.assertEqual(sig, "MEUCIQDwOwwYlWivucunKJXm0KB+7BsEiHDmEKLg2wL6MKJIsQIgdtjZRBimLmsZjOcCkCmalLHf0sF2exAMsluuVxMaLvk=")
         sig = crypto.sign_l4_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIF6QDgAdvMXzYKUBHKYGUCi3xMFSkKUvJ+97eAF+oSVYAiA6uDJCNl5unULNCsnjonwdNsIdINAS1jISU0IVXzX7qQ==")
+        self.assertEqual(sig, "MEQCIHcVPm+NEIEJXCeoWgX94fo7Y+kMhZGKtroh94iNZTTbAiB7qWPI3B4vpj0Ir5+X0gHv/m9Xq6abQnWRagH64Xu4OA==")
         sig = crypto.sign_l4_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIFKiiz9V2pGLmPt4XvesVVOATT7cDsPPX6R/h+KmvjSwAiBHBXHkzwhuZKi495n9NnKZg5aEISxXD9luCZukK3V/WA==")
+        self.assertEqual(sig, "MEQCIDGi9WC8097OtOUXahHm0/uJP5PUv6isk1NVvulbQ2c2AiBULyExoupsgJ/2KFKDQYHF1qQa5++cZxFxyqlXPpY0lA==")
         block_hash, nonce = crypto.pow_l4_block(blake2b, block)
-        self.assertEqual(block_hash, "AKF0SMg7YvqBTDJ8cfdk1rNYX0Qt1xKRwRy747yY3VI=")
-        self.assertEqual(nonce, 236)
+        self.assertEqual(block_hash, "ACZ1yEGzRKKDxm9jqk5j8U6QRyeVHzqRjcS/G2gnEy8=")
+        self.assertEqual(nonce, 82)
         block_hash, nonce = crypto.pow_l4_block(sha256, block)
-        self.assertEqual(block_hash, "AArZIT71V/7OoZuS+yW796R74HMp8Lt/TQvT+3qfD9s=")
-        self.assertEqual(nonce, 403)
+        self.assertEqual(block_hash, "AEULvMdpuf6Sj7M3HxSCZLjQODViHxRRKMy4Ze0VrLY=")
+        self.assertEqual(nonce, 3)
         block_hash, nonce = crypto.pow_l4_block(sha3_256, block)
-        self.assertEqual(block_hash, "AAxZuvIcWV4CeY7pFvCDAUfwNufRNAvUjRk6QIOcYDY=")
-        self.assertEqual(nonce, 293)
+        self.assertEqual(block_hash, "AOEPG+CTLsfaa92DpnOrkro+8WLGUKSKD28I+kqS9Lo=")
+        self.assertEqual(nonce, 182)
 
     def test_l5block_signing_hashing(self):
         block = make_l5_block()
         sig = crypto.sign_l5_block(blake2b, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQDFki7oqykMTkmm9atTnODzRgDc9hN0zcUB/+Lw44ZHZgIgcC8On8cI59x04y4QE1zwD/duYOZHwWg2b4NCuTXZ9so=")
+        self.assertEqual(sig, "MEQCIAiTBQg2HnJ9ho8M2J0ld9f8S+mKHC3/warPhAIGAXDtAiAwmcjbNkbANFxx46pBr3VyzAf59aQwAFV7bQEHZCv7rQ==")
         sig = crypto.sign_l5_block(sha256, secp256k1, key, block)
-        self.assertEqual(sig, "MEQCIF2e1n2ycFUXld5PHxuQreEGnWmg0d56i1stJoH+rdQPAiAFg14QLERoj6apHIqn0ujt+EfxlzeLn5wjjJwGjY8MbQ==")
+        self.assertEqual(sig, "MEQCID3V1WcHCuxLHthMve+Dv5Ad81GeDOYZO3W3UQrjOT/rAiBxo6qSa2su1QC3Mk6ZA+/dut0DoUgzaa7NParo/FGUxA==")
         sig = crypto.sign_l5_block(sha3_256, secp256k1, key, block)
-        self.assertEqual(sig, "MEUCIQDLawvlEFJaYhy/b7xro3L5Y4BBDoHSXgcZdn2GJSj3YgIgPWdEWZiAoE8/MvolN4kpogkxMDTP581tG1A8V1spneg=")
+        self.assertEqual(sig, "MEQCIC/WuXKBBFTKUyEKJTLu9q/tacsAuAX2MYl+6wsVAuiFAiB9wj9HP34BDeeWpUs3GLHGHNp7nD/EuJGoO6bQrnUvYg==")
 
     def test_pow_complexity(self):
         # With base64, each character is 6 bits, and A represents '000000' in binary
@@ -779,7 +779,7 @@ class TestCrypto(unittest.TestCase):
         self.assertFalse(crypto.validate_public_id(key.pubkey.serialize(), "PHONYtbS59pt3weCTD8fw3WP5zA3DieeM2j6mC3fzaZa"))
 
     def test_hmac(self):
-        secret = "12345"
+        secret = "12345"  # nosec
         message = "POST\n/chains/transaction\nbanana-uuid\napplication/json\nfh8uIpSrKpzoYwrjaVtnduas5M34B4ZPrX+jTNjP6/o=\n1537305660"
         hmac = crypto.create_hmac(blake2b, secret, message)
         self.assertTrue(crypto.compare_hmac(blake2b, hmac, secret, message))

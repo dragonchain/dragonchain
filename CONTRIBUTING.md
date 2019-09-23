@@ -163,3 +163,13 @@ dynamic typing.
 
 By contributing, you agree that your contributions will be licensed under the
 Apache License, Version 2.0.
+
+## Bounty Programs
+
+Want to make some money for helping the project?
+
+We have project, bug, and security bounty programs which we invite anyone to
+participate in. Details for these programs can be found here:
+
+- [Bug and Security Bounty Program](https://dragonchain.com/bug-and-security-bounty)
+- [Project Bounty Program](https://dragonchain.com/strategic-projects-bounty)

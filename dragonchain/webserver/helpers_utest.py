@@ -172,3 +172,97 @@ class TestWebserverHelpers(unittest.TestCase):
         helpers.webserver_error_handler(exception)
         mock_report_exception.assert_called_once_with(exception, "")
         mock_http_response.assert_called_once_with(500, ANY)
+
+    def test_verify_custom_indexes_options_valid_number(self):
+        helpers.verify_custom_indexes_options([{"type": "number", "field_name": "banana", "path": "ba/na/na"}])
+
+    def test_verify_custom_indexes_options_valid_tag(self):
+        helpers.verify_custom_indexes_options([{"type": "tag", "field_name": "banana", "path": "ba/na/na"}])
+
+    def test_verify_custom_indexes_options_valid_text(self):
+        helpers.verify_custom_indexes_options([{"type": "text", "field_name": "banana", "path": "ba/na/na"}])
+
+    def test_verify_custom_indexes_options_bad_type(self):
+        self.assertRaises(exceptions.ValidationException, helpers.verify_custom_indexes_options, [{"type": "banana"}])
+
+    def test_parse_query_parameters_all_values(self):
+        input_dict = {
+            "q": "banana",
+            "transaction_type": "bananatype",
+            "id_only": "true",
+            "sort_by": "txn_id",
+            "sort_asc": "false",
+            "limit": "111",
+            "offset": "15",
+            "verbatim": "true",
+        }
+        output = helpers.parse_query_parameters(input_dict)
+        self.assertEqual(
+            output,
+            {
+                "q": "banana",
+                "transaction_type": "bananatype",
+                "id_only": True,
+                "sort_by": "txn_id",
+                "sort_asc": False,
+                "limit": 111,
+                "offset": 15,
+                "verbatim": True,
+            },
+        )
+
+    def test_parse_query_parameters_all_values_weird_syntax(self):
+        input_dict = {
+            "q": "banana",
+            "transaction_type": "bananatype",
+            "id_only": "faLSe",
+            "sort_by": "timestamp",
+            "sort_asc": "tRuE",
+            "limit": "111",
+            "offset": "15",
+            "verbatim": "fALsE",
+        }
+        output = helpers.parse_query_parameters(input_dict)
+        self.assertEqual(
+            output,
+            {
+                "q": "banana",
+                "transaction_type": "bananatype",
+                "id_only": False,
+                "sort_by": "timestamp",
+                "sort_asc": True,
+                "limit": 111,
+                "offset": 15,
+                "verbatim": False,
+            },
+        )
+
+    def test_parse_query_parameters_min_values(self):
+        input_dict = {"q": "banana"}
+        output = helpers.parse_query_parameters(input_dict)
+        self.assertEqual(output, {"q": "banana", "id_only": False, "limit": 10, "offset": 0, "verbatim": False})
+
+    def test_parse_query_parameters_bad_limit_type(self):
+        input_dict = {"q": "banana", "limit": "fruit"}
+        self.assertRaises(exceptions.ValidationException, helpers.parse_query_parameters, input_dict)
+
+    def test_parse_query_parameters_bad_offset_type(self):
+        input_dict = {"q": "banana", "offset": "oneteen"}
+        self.assertRaises(exceptions.ValidationException, helpers.parse_query_parameters, input_dict)
+
+    def test_parse_query_parameters_float_limit_type(self):
+        input_dict = {"q": "banana", "limit": "111.111"}
+        self.assertRaises(exceptions.ValidationException, helpers.parse_query_parameters, input_dict)
+
+    def test_parse_query_parameters_float_offset_type(self):
+        input_dict = {"q": "banana", "offset": "15.15"}
+        self.assertRaises(exceptions.ValidationException, helpers.parse_query_parameters, input_dict)
+
+    def test_parse_query_parameters_extrapolates_sort_asc(self):
+        input_dict = {"q": "banana", "sort_by": "fruit"}
+        output = helpers.parse_query_parameters(input_dict)
+        self.assertEqual(output, {"q": "banana", "id_only": False, "limit": 10, "offset": 0, "sort_by": "fruit", "sort_asc": True, "verbatim": False})
+
+    def test_parse_query_parameters_fails_if_no_q(self):
+        input_dict = {}
+        self.assertRaises(exceptions.ValidationException, helpers.parse_query_parameters, input_dict)

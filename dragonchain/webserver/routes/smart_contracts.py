@@ -15,7 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import Tuple, Dict
+from typing import Tuple, Dict, cast, Any
 
 import flask
 import fastjsonschema
@@ -31,10 +31,11 @@ _validate_sc_update_v1 = fastjsonschema.compile(schema.smart_contract_update_sch
 
 
 def apply_routes(app: flask.Flask):
-    app.add_url_rule("/contract", "query_contract_v1", query_contract_v1, methods=["GET"])
-    app.add_url_rule("/v1/contract", "query_contract_v1", query_contract_v1, methods=["GET"])
+    app.add_url_rule("/contract", "list_contract_v1", list_contract_v1, methods=["GET"])
+    app.add_url_rule("/v1/contract", "list_contract_v1", list_contract_v1, methods=["GET"])
     app.add_url_rule("/contract/<contract_id>", "get_contract_by_id_v1", get_contract_by_id_v1, methods=["GET"])
     app.add_url_rule("/v1/contract/<contract_id>", "get_contract_by_id_v1", get_contract_by_id_v1, methods=["GET"])
+    app.add_url_rule("/v1/contract/<contract_id>/logs", "get_smart_contract_logs_v1", get_smart_contract_logs_v1, methods=["GET"])
     app.add_url_rule("/contract/txn_type/<txn_type>", "get_contract_by_txn_type_v1", get_contract_by_txn_type_v1, methods=["GET"])
     app.add_url_rule("/v1/contract/txn_type/<txn_type>", "get_contract_by_txn_type_v1", get_contract_by_txn_type_v1, methods=["GET"])
     app.add_url_rule("/contract", "post_contract_v1", post_contract_v1, methods=["POST"])
@@ -60,9 +61,20 @@ def get_contract_by_txn_type_v1(txn_type: str) -> Tuple[str, int, Dict[str, str]
 
 
 @request_authorizer.Authenticated()
-def query_contract_v1() -> Tuple[str, int, Dict[str, str]]:
-    params = flask.request.args.to_dict() or None
-    return helpers.flask_http_response(200, smart_contracts.query_contracts_v1(params))
+def list_contract_v1() -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, smart_contracts.list_contracts_v1())
+
+
+@request_authorizer.Authenticated()
+def get_smart_contract_logs_v1(contract_id: str) -> Tuple[str, int, Dict[str, str]]:
+    since = flask.request.args.get("since")
+    tail = cast(Any, flask.request.args.get("tail"))
+    try:
+        tail = int(tail)
+    except Exception:
+        raise exceptions.BadRequest("Invalid parameter for tail")
+
+    return helpers.flask_http_response(200, smart_contracts.get_logs_v1(contract_id, since, tail))
 
 
 @request_authorizer.Authenticated()
@@ -75,6 +87,8 @@ def post_contract_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_sc_create_v1(contract)
+        if contract.get("custom_indexes"):
+            helpers.verify_custom_indexes_options(contract.get("custom_indexes"))
     except fastjsonschema.JsonSchemaException:
         raise exceptions.ValidationException("User input did not match JSON schema")
 

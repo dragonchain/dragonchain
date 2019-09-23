@@ -1,3 +1,6 @@
+webserverLiveliness: true # Set this value to false if migrating from v3 to v4, and a lot of data needs to be re-indexed.
+# Failure to set this to false for an upgrading chain means that the migrations may complete much slower as kubernetes continues to kill the webserver while re-indexing.
+
 global:
   environment:
     DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
@@ -39,6 +42,11 @@ faas:
   #   This value should be the fully qualified url of the OpenFaas gateway you would like your chains to use.
   gateway: https://my-faas-gateway-url
 
+  # -- faas.mountFaasSecret --
+  #   This value controls whether the secret for openfaas authorization should
+  #   be mounted on the webserver for the get smart contract logs functionality
+  mountFaasSecret: false
+
   # -- faas.registry --
   #   This value should be the docker registry address at which your custom smart contract images will be stored.
   #   Library smart contracts will still use the dragonchain inc public smart contract registry regardless of this value.
@@ -70,6 +78,8 @@ dragonchain:
     # -- dragonchain.image.version --
     # Version of your dragonchain. This value is used to interpolate the tag name.
     # e.g.: {registry}/{repository}:{version}
+    # Check here for available tags: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
+    # PLEASE USE A PINNED VERSION, AND NOT 'latest' FOR PRODUCTION DEPLOYMENTS
     version: latest
 
   # -- dragonchain.storage --
@@ -86,21 +96,6 @@ dragonchain:
         requests:
           storage: 2Gi
 
-es:
-  image:
-    repository: docker.elastic.co/elasticsearch/elasticsearch-oss
-    tag: 6.6.0
-    pullPolicy: "IfNotPresent"
-  master:
-    # -- es.master.persistence --
-    # This is the storage spec that the elasticsearch uses to maintain state for
-    # the indexes of a running dragonchain. Configure this as needed
-    persistence:
-      # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
-      storageClass: standard
-      accessMode: ReadWriteOnce
-      size: 1Gi
-
 redis:
   # -- redis.storage --
   # This is the storage spec that the persistent redis uses to maintain state for
@@ -114,4 +109,29 @@ redis:
       resources:
         requests:
           storage: 1Gi
+  # -- redis.image --
+  # This is the image that dragonchain uses for a persistent and LRU redis
+  image:
+    repository: docker.io/redis
+    tag: 5.0.5-alpine
+
+redisearch:
+  # -- redis.storage --
+  # This is the storage spec that the redisearch uses to maintain state for
+  # a running dragonchain. Configure this as needed
+  storage:
+    spec:
+      # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+  # -- redis.image --
+  # This is the image that dragonchain uses for the redisearch used for indexing
+  image:
+    repository: docker.io/redislabs/redisearch
+    tag: 1.4.16
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
+# PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core

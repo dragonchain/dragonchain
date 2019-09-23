@@ -1,6 +1,13 @@
 # Change FROM to python:3.7-alpine to test without the dependencies container
 FROM dragonchain/dragonchain_core_dependencies:latest as base
 
+# Install Helm for doc builds if it doesn't exist
+RUN if ! command -v helm; then \
+    wget 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
+    tar xzf helm-v2.14.3-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
+    rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64; fi && \
+    helm init --client-only
+
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
 RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone

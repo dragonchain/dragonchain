@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import fastjsonschema
 
+from dragonchain import test_env  # noqa: F401
 from dragonchain.lib.dto import schema
 from dragonchain.lib.dto import model
 from dragonchain.lib.dto import smart_contract_model
@@ -136,6 +137,10 @@ class TestBlockModel(unittest.TestCase):
         self.assertRaises(NotImplementedError, test_model.get_associated_l1_block_id)
         self.assertRaises(NotImplementedError, test_model.get_associated_l1_dcid)
 
+    def test_search_index_schema(self):
+        l1block = create_l1_block()
+        fastjsonschema.validate(schema.block_search_index_schema, l1block.export_as_search_index())
+
 
 class TestSmartContract(unittest.TestCase):
     def test_from_input(self):
@@ -155,7 +160,7 @@ class TestSmartContract(unittest.TestCase):
             if key != "id" and key != "status" and key != "version":
                 self.assertEqual(test.__dict__[key], meta[key])
         meta["version"] = "1"
-        test = smart_contract_model.new_contract_at_rest(meta)
+        test = smart_contract_model.new_from_at_rest(meta)
         del meta["version"]
         for key in meta.keys():
             self.assertEqual(test.__dict__[key], meta[key])
@@ -254,7 +259,34 @@ class TestTransaction(unittest.TestCase):
         fastjsonschema.validate(schema.transaction_full_schema, txn.export_as_full())
         fastjsonschema.validate(schema.transaction_stripped_schema, txn.export_as_stripped())
         fastjsonschema.validate(schema.get_transaction_queue_task_schema(), txn.export_as_queue_task())
-        fastjsonschema.validate(schema.transaction_search_index_schema, txn.export_as_search_index()[txn_id])
+        fastjsonschema.validate(schema.transaction_search_index_schema, txn.export_as_search_index())
+
+    def test_new_from_at_rest_full(self):
+        txn = {
+            "version": "2",
+            "header": {
+                "dc_id": "bananachain",
+                "block_id": "1234",
+                "txn_id": "4321",
+                "timestamp": "no",
+                "txn_type": "bananatype",
+                "tag": "banana = 4",
+                "invoker": "1-2-3-4",
+            },
+            "proof": {"full": "asdfqwerty", "stripped": "asdf"},
+            "payload": "asdfqwertyproofbanana4",
+        }
+        model = transaction_model.new_from_at_rest_full(txn)
+        self.assertEqual(model.dc_id, "bananachain")
+        self.assertEqual(model.block_id, "1234")
+        self.assertEqual(model.txn_id, "4321")
+        self.assertEqual(model.timestamp, "no")
+        self.assertEqual(model.txn_type, "bananatype")
+        self.assertEqual(model.tag, "banana = 4")
+        self.assertEqual(model.invoker, "1-2-3-4")
+        self.assertEqual(model.full_hash, "asdfqwerty")
+        self.assertEqual(model.signature, "asdf")
+        self.assertEqual(model.payload, "asdfqwertyproofbanana4")
 
 
 class TestL1Block(unittest.TestCase):
@@ -275,22 +307,15 @@ class TestL1Block(unittest.TestCase):
         self.assertDictEqual(first_block.__dict__, second_block.__dict__)
 
     @patch("dragonchain.lib.dto.l1_block_model.keys.get_public_id")
-    @patch("time.time", return_value=12345)
-    def test_create_from_transactions(self, mock_time, mock_get_id):
-        self.assertRaises(TypeError, l1_block_model.new_from_full_transactions, "a string", "1", "proof")
-        self.assertRaises(TypeError, l1_block_model.new_from_full_transactions, ["not a txn"], "1", "proof")
+    @patch("dragonchain.lib.dto.l1_block_model.get_current_block_id", return_value="123")
+    def test_create_from_transactions(self, mock_current_block_id, mock_get_id):
+        self.assertRaises(TypeError, l1_block_model.new_from_full_transactions, "a string", "123", "1", "proof")
+        self.assertRaises(TypeError, l1_block_model.new_from_full_transactions, ["not a txn"], "123", "1", "proof")
         txn = create_tx()
-        test = l1_block_model.new_from_full_transactions([txn], "prev_id", "prev_proof")
+        test = l1_block_model.new_from_full_transactions([txn], "123", "prev_id", "prev_proof")
         self.assertEqual(test.prev_proof, "prev_proof")
         self.assertEqual(test.prev_id, "prev_id")
         self.assertDictEqual(txn.__dict__, test.transactions[0].__dict__)
-
-    def test_search_index_schema(self):
-        l1block = create_l1_block()
-        fastjsonschema.validate(schema.l1_search_index_schema, l1block.export_as_search_index())
-        tx_search_indexes = l1block.export_full_transactions_search_indexes()
-        for index in tx_search_indexes.keys():
-            fastjsonschema.validate(schema.transaction_search_index_schema, tx_search_indexes[index])
 
     def test_nd_json_export(self):
         tx_id_1 = "a cool id"
@@ -330,10 +355,6 @@ class TestL2Block(unittest.TestCase):
         l2block.scheme = "work"
         fastjsonschema.validate(schema.l2_block_at_rest_schema, l2block.export_as_at_rest())
 
-    def test_search_index_schema(self):
-        l2block = create_l2_block()
-        fastjsonschema.validate(schema.l2_search_index_schema, l2block.export_as_search_index())
-
     def test_create_from_at_rest(self):
         first_block = create_l2_block()
         second_block = l2_block_model.new_from_at_rest(first_block.export_as_at_rest())
@@ -353,10 +374,6 @@ class TestL3Block(unittest.TestCase):
         l3block.scheme = "work"
         fastjsonschema.validate(schema.l3_block_at_rest_schema, l3block.export_as_at_rest())
 
-    def test_search_index_schema(self):
-        l3block = create_l3_block()
-        fastjsonschema.validate(schema.l3_search_index_schema, l3block.export_as_search_index())
-
     def test_create_from_at_rest(self):
         first_block = create_l3_block()
         second_block = l3_block_model.new_from_at_rest(first_block.export_as_at_rest())
@@ -375,10 +392,6 @@ class TestL4Block(unittest.TestCase):
         l4block.nonce = 1
         l4block.scheme = "work"
         fastjsonschema.validate(schema.l4_block_at_rest_schema, l4block.export_as_at_rest())
-
-    def test_search_index_schema(self):
-        l4block = create_l4_block()
-        fastjsonschema.validate(schema.l4_search_index_schema, l4block.export_as_search_index())
 
     def test_create_from_at_rest(self):
         first_block = create_l4_block()

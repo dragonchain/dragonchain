@@ -122,11 +122,8 @@ def worker(change_request: dict) -> None:
     execution_order = change_request["execution_order"]
 
     # Delete jobs
-    if action == "delete":
-        if not timing_event.exists(contract_id):
-            raise exceptions.TimingEventSchedulerError("NOT_FOUND")
-        event = timing_event.get_by_id(contract_id)
-        event.delete()
+    if action == "delete" and timing_event.exists(contract_id):
+        timing_event.get_by_id(contract_id).delete()
 
     #  Update job
     if action == "update":

@@ -34,7 +34,7 @@ from dragonchain.lib import error_reporter
 from dragonchain.lib import keys
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.interfaces import registry as registry_interface  # Alternate naming to alleviate confusion
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib import faas
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -186,19 +186,6 @@ class ContractJob(object):
                 self.model.set_state(self.end_error_state, "Unable to log into docker registry")
                 raise exceptions.BadDockerAuth("Unable to log into docker registry")
 
-    def get_faas_auth(self) -> str:
-        """Gets authorization to use OpenFaaS
-
-            Returns:
-                A string containing authorization for OpenFaaS.
-        """
-        with open("/etc/openfaas-secret/user", "r") as file:
-            username = file.read()
-        with open("/etc/openfaas-secret/password", "r") as file:
-            password = file.read()
-
-        return f"Basic {base64.b64encode(f'{username}:{password}'.encode('utf-8')).decode('ascii')}"
-
     def get_openfaas_spec(self) -> dict:
         """Get the specification of the OpenFaaS deployment this job represents.
         Returns:
@@ -219,7 +206,7 @@ class ContractJob(object):
                 "com.openfaas.scale.max": "20",
                 "com.openfaas.scale.factor": "20",
                 "com.dragonchain.id": INTERNAL_ID,
-                "com.openfaas.fwatchdog.version": "0.16.0",  # Update this as the fwatchdog executable in bin is updates
+                "com.openfaas.fwatchdog.version": "0.18.0",  # Update this as the fwatchdog executable in bin is updates
             },
             "limits": {"cpu": "0.50", "memory": "600M"},
             "requests": {"cpu": "0.25", "memory": "600M"},
@@ -315,7 +302,7 @@ class ContractJob(object):
 
             _log.info(f"Creating secret: {secret_name} at {FAAS_GATEWAY}")
             response = requests_method(
-                f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": self.get_faas_auth()}, json={"name": secret_name, "value": value}
+                f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": faas.get_faas_auth()}, json={"name": secret_name, "value": value}
             )
 
             _log.info(f"Response: {response.status_code}")
@@ -337,7 +324,7 @@ class ContractJob(object):
         _log.info(f"Deleting OpenFaaS secrets: {self.model.existing_secrets}")
         for secret in self.model.existing_secrets:
             secret_name = f"sc-{self.model.id}-{secret.lower()}"
-            response = requests.delete(f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": self.get_faas_auth()}, json={"name": secret_name})
+            response = requests.delete(f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": faas.get_faas_auth()}, json={"name": secret_name})
             if response.status_code != 202:
                 self.model.set_state(state=self.end_error_state, msg="Error deleting secrets")
             _log.info(f"Delete secret response: {response.status_code}")
@@ -352,7 +339,7 @@ class ContractJob(object):
         spec = self.get_openfaas_spec()
         requests_method = requests.post if self.model.task_type == "create" else requests.put
 
-        response = requests_method(f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": self.get_faas_auth()}, json=spec)
+        response = requests_method(f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": faas.get_faas_auth()}, json=spec)
         _log.info(f"Deployment status: {response.status_code}")
         if response.status_code not in [200, 202]:
             _log.info(f"OpenFaaS deploy failure: {response.status_code}")
@@ -372,7 +359,7 @@ class ContractJob(object):
         """
         _log.info("Deleting OpenFaaS function")
         response = requests.delete(
-            f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": self.get_faas_auth()}, json={"functionName": self.function_name}
+            f"{FAAS_GATEWAY}/system/functions", headers={"Authorization": faas.get_faas_auth()}, json={"functionName": self.function_name}
         )
 
         _log.info(f"Response Status: {response.status_code}")
@@ -390,7 +377,7 @@ class ContractJob(object):
         try:
             storage.delete_directory(f"SMARTCONTRACT/{self.model.id}")
             _log.info("Removing index")
-            elasticsearch.remove_index(doc_id=self.model.id, folder="SMARTCONTRACT")
+            smart_contract_dao.remove_smart_contract_index(self.model.id)
             _log.info("Deleting txn type")
             transaction_type_dao.remove_existing_transaction_type(self.model.txn_type)
             key = f"KEYS/{self.model.auth_key_id}"
@@ -474,12 +461,18 @@ class ContractJob(object):
         execution_order_condition = self.update_model.execution_order
 
         # Schedule conditions
-        old_schedule_exists = self.model.seconds or self.model.cron
-        new_schedule_exists = self.update_model.seconds or self.update_model.cron
-        inactive_to_active = self.update_model.desired_state == "active" and self.model.start_state == "inactive"
-        inactive_to_active_with_existing_schedule = (inactive_to_active and old_schedule_exists) and not new_schedule_exists
-        schedule_condition = new_schedule_exists or inactive_to_active_with_existing_schedule
-        unschedule_condition = self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
+        if self.update_model.disable_schedule:
+            schedule_condition = False
+            unschedule_condition = True
+            self.model.seconds = None
+            self.model.cron = None
+        else:
+            old_schedule_exists = self.model.seconds or self.model.cron
+            new_schedule_exists = self.update_model.seconds or self.update_model.cron
+            inactive_to_active = self.update_model.desired_state == "active" and self.model.start_state == "inactive"
+            inactive_to_active_with_existing_schedule = (inactive_to_active and old_schedule_exists) and not new_schedule_exists
+            schedule_condition = new_schedule_exists or inactive_to_active_with_existing_schedule
+            unschedule_condition = self.update_model.desired_state == smart_contract_model.ContractState.INACTIVE.value
 
         _log.info("Beginning update")
         # Update execution order

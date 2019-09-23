@@ -22,6 +22,8 @@ and public blockchain interoperability, Dragonchain shines a new and interesting
 - [Project Documentation](https://dragonchain-core-docs.dragonchain.com/latest/)
 - [Dragonchain Console](https://console.dragonchain.com/)
 - [Dragonchain Inc](https://dragonchain.com/)
+- [Bug and Security Bounty Program](https://dragonchain.com/bug-and-security-bounty)
+- [Project Bounty Program](https://dragonchain.com/strategic-projects-bounty)
 - [Dragonchain Academy](https://academy.dragonchain.org/)
 - [Dragonchain Blog](https://dragonchain.com/blog)
 - [Dragonchain Architecture Document](https://dragonchain.com/assets/Dragonchain-Architecture.pdf)
@@ -49,7 +51,7 @@ For interaction and using the Dragonchain, check out the SDKs (or CLI) and their
 Dragonchain is implemented in Python 3, packaged into container images with Docker, and intended to be run on Kubernetes (at the moment).
 
 The [tools.sh](/tools.sh) script is used to assist in various development functions such as installing dependencies,
-automatically formatting/linting code, runnint tests, etc. Simply run `./tools.sh` with no parameters to view what it
+automatically formatting/linting code, running tests, etc. Simply run `./tools.sh` with no parameters to view what it
 can do.
 
 In order to develop locally you should be able to run `./tools.sh full-test` and have all checks pass. For this, a few requirements should be met:
@@ -63,12 +65,14 @@ In order to develop locally you should be able to run `./tools.sh full-test` and
 1. Install the python requirements: `./tools.sh pip-install`
    (Note this will install the python packages to the current user's site-packages.
    For a python venv, follow the steps below)
+1. [Helm](https://helm.sh/) is required to be installed for the docs to be built properly,
+   as it is used to package the helm chart when the docs build
 
 ### Using a Python Virtual Environment
 
 It is highly recommended to use a python virtual environment rather than simply installing the python
 package requirements to your global environment. This allows the required packages for this project
-to be seperated from the rest of the (potentially conflicting) packages from the rest of the system.
+to be separated from the rest of the (potentially conflicting) packages from the rest of the system.
 
 In order to do this, instead of step 3 above, perform the following steps:
 
@@ -84,7 +88,14 @@ For more information, including a deeper dive on the architecture/code structure
 
 ## 🚀 Contributing
 
-For info on contributing, please read the [contributing](/CONTRIBUTING.md) document.
+Want to make some money for helping the project?
+We have project, bug, and security bounty programs which we invite anyone to participate in.
+Details for these programs can be found here:
+
+- [Bug and Security Bounty Program](https://dragonchain.com/bug-and-security-bounty)
+- [Project Bounty Program](https://dragonchain.com/strategic-projects-bounty)
+
+For more info on contributing, please read the [contributing](/CONTRIBUTING.md) document.
 
 ## ✔️ Support
 

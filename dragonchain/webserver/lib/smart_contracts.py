@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, Optional
 
 from dragonchain import logger
 from dragonchain import exceptions
@@ -24,11 +24,9 @@ from dragonchain import job_processor
 from dragonchain.lib.dao import transaction_type_dao
 from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.dto import smart_contract_model
-from dragonchain.lib.database import elasticsearch
 from dragonchain.lib.interfaces import storage
+from dragonchain.lib.database import redisearch
 
-if TYPE_CHECKING:
-    from dragonchain.lib.types import ESSearch
 
 _log = logger.get_logger()
 
@@ -40,32 +38,23 @@ def get_by_id_v1(smart_contract_id: str) -> Dict[str, Any]:
 
 
 def get_by_txn_type_v1(txn_type: str) -> Dict[str, Any]:
-    results = elasticsearch.search(folder=smart_contract_dao.FOLDER, query={"query": {"match_phrase": {"txn_type": txn_type}}})["results"]
-    if results:
-        return results[0]
-    raise exceptions.NotFound(f"Smart contract {txn_type} could not be found.")
+    return get_by_id_v1(smart_contract_dao.get_contract_id_by_txn_type(txn_type))
 
 
-def query_contracts_v1(params: Optional[dict]) -> "ESSearch":
-    """Lambda function used by the smartcontract endpoint with method GET.
-        Returns smart contracts matching SC txn_type, with query parameters accepted.
-    Args:
-        contract_id (str, exclusive): SC contract_id to search for.
-        txn_type (str, exclusive): SC txn_type to search for.
-        params (dict, exclusive): Dict of params for Elastic searching.
+def list_contracts_v1() -> Dict[str, List[Dict[str, Any]]]:
+    """ Function used by the smartcontract endpoint with method GET.
+        Returns a list of all smart contracts.
     Returns:
-        The Elastic search results of the query specified.
+        The search results of the query specified.
     """
-    if params:
-        query_params = params.get("q") or "*"  # default to returning all results (limit 10 by default)
-        sort_param = params.get("sort") or None
-        limit_param = params.get("limit") or None
-        offset_param = params.get("offset") or None
-
-        _log.info(f"QUERY STRING PARAMS FOUND: {query_params}")
-        return elasticsearch.search(folder=smart_contract_dao.FOLDER, q=query_params, sort=sort_param, limit=limit_param, offset=offset_param)
-    else:
-        return elasticsearch.search(folder=smart_contract_dao.FOLDER, q="*")
+    sc_list = smart_contract_dao.list_all_contract_ids()
+    sc_metadata = []
+    for sc_id in sc_list:
+        try:
+            sc_metadata.append(storage.get_json_from_object(f"{smart_contract_dao.FOLDER}/{sc_id}/metadata.json"))
+        except exceptions.NotFound:  # If smart contract metadata is not found, simply ignore it and don't add it to the list
+            pass
+    return {"smart_contracts": sc_metadata}
 
 
 def create_contract_v1(body: dict) -> dict:
@@ -76,23 +65,31 @@ def create_contract_v1(body: dict) -> dict:
         DTO of the contract at rest which is being created
     """
     # Before anything else, check to see if this chain has too many contracts
-    if elasticsearch.get_count(folder=smart_contract_dao.FOLDER) >= MAX_CONTRACT_LIMIT:
+    if redisearch.get_document_count(redisearch.Indexes.smartcontract.value) >= MAX_CONTRACT_LIMIT:
         raise exceptions.ContractLimitExceeded(MAX_CONTRACT_LIMIT)
     # Create model and validate fields
     _log.info(f"Creating data model for {body['txn_type']}")
     contract = smart_contract_model.new_contract_from_user(body)
 
-    # Register new trasnsaction type for smart contract
-    _log.info("Registering new smart contract transaction type")
-    transaction_type_dao.register_smart_contract_transaction_type(contract)
+    # Check that this transaction type isn't already taken
+    try:
+        transaction_type_dao.get_registered_transaction_type(contract.txn_type)
+        raise exceptions.TransactionTypeConflict(f"Transaction type {contract.txn_type} already registered")
+    except exceptions.NotFound:
+        pass
 
     # Start build task
+    job_processor.begin_task(contract, task_type=smart_contract_model.ContractActions.CREATE)
     try:
-        job_processor.begin_task(contract, task_type=smart_contract_model.ContractActions.CREATE)
-    except RuntimeError:
-        transaction_type_dao.remove_existing_transaction_type(contract.txn_type)
+        # Register new transaction type for smart contract
+        _log.info("Registering new smart contract transaction type")
+        smart_contract_dao.add_smart_contract_index(contract)
+        transaction_type_dao.register_smart_contract_transaction_type(contract, body.get("custom_indexes"))
+        return contract.export_as_at_rest()
+    except Exception:  # Try to cleanup if contract doesn't create successfully
+        _log.exception("Error creating contract index or transaction type. Reverting")
+        job_processor.begin_task(contract, task_type=smart_contract_model.ContractActions.DELETE)
         raise
-    return contract.export_as_at_rest()
 
 
 def update_contract_v1(contract_id: str, update: dict) -> dict:
@@ -145,6 +142,12 @@ def delete_contract_v1(contract_id: str) -> None:
         contract.set_state(state=smart_contract_model.ContractState.ACTIVE, msg="Contract delete failed: could not start deletion")
         contract.save()
         raise
+
+
+def get_logs_v1(contract_id: str, since: Optional[str] = None, tail: Optional[int] = None) -> Dict[str, List]:
+    get_by_id_v1(contract_id)
+    logs = smart_contract_dao.get_contract_logs(contract_id, since, tail)
+    return {"logs": logs}
 
 
 def heap_list_v1(contract_id: str, path: str) -> List[str]:

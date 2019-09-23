@@ -27,7 +27,7 @@ from apscheduler.triggers.cron import CronTrigger
 from dragonchain.lib.dto import schema
 from dragonchain.lib.dto import model
 from dragonchain import exceptions
-from dragonchain.lib.database import elasticsearch
+from dragonchain.lib.interfaces import storage
 
 STAGE = os.environ["STAGE"]
 
@@ -60,6 +60,7 @@ def new_from_build_task(data: Mapping[str, Any]) -> "SmartContractModel":
             sc_id=data["id"],
             auth=data["auth"],
             image=data["image"],
+            image_digest=data.get("image_digest"),
             cmd=data["cmd"],
             args=data["args"] or [],
             secrets=data["secrets"] or {},
@@ -104,7 +105,7 @@ def new_contract_from_user(data: Mapping[str, Any]) -> "SmartContractModel":
         raise NotImplementedError(f"Version {data.get('version')} is not supported")
 
 
-def new_contract_at_rest(data: Mapping[str, Any]) -> "SmartContractModel":
+def new_from_at_rest(data: Mapping[str, Any]) -> "SmartContractModel":
     """
     Used in querying contracts
     Input: SmartContract::L1::AtRest DTO
@@ -151,6 +152,7 @@ def new_update_contract(data: Mapping[str, Any], existing_contract: "SmartContra
             seconds=data.get("seconds"),
             cron=data.get("cron"),
             execution_order=data.get("execution_order"),
+            disable_schedule=data.get("disable_schedule"),
         )
         sc_model.validate_secret_names()
         sc_model.check_env_names()
@@ -185,6 +187,7 @@ class SmartContractModel(model.Model):
         seconds=None,
         auth=None,
         image_digest=None,
+        disable_schedule: Optional[bool] = None,
     ):
         """Model Constructor"""
         self.txn_type = txn_type
@@ -205,9 +208,7 @@ class SmartContractModel(model.Model):
         self.args = args or []
         self.cron = cron
         self.auth = auth
-        # This is a lame hack for elasticsearch to know if this model is a smartcontract model without having to import
-        # This should be resolved with active record pattern
-        self.is_sc_model = True
+        self.disable_schedule = disable_schedule
 
     def export_as_invoke_request(self, invoke_transaction: dict) -> Dict[str, Any]:
         """Export as a invoke request DTO"""
@@ -215,16 +216,7 @@ class SmartContractModel(model.Model):
 
     def export_as_search_index(self) -> Dict[str, Any]:
         """Export as search index DTO"""
-        return {
-            "dcrn": schema.DCRN.SmartContract_L1_Search_Index.value,
-            "version": "1",
-            "id": self.id,
-            "state": self.status.get("state"),
-            "txn_type": self.txn_type,
-            "execution_order": self.execution_order,
-            "s3_object_folder": "SMARTCONTRACT",
-            "s3_object_id": f"{self.id}/metadata.json",
-        }
+        return {"sc_name": self.txn_type}
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export as at rest DTO"""
@@ -317,4 +309,5 @@ class SmartContractModel(model.Model):
             self.existing_secrets = update_model.existing_secrets
 
     def save(self) -> None:
-        elasticsearch.put_index_in_storage("SMARTCONTRACT", self.id, self)
+        """Active record-style save for smart contract state"""
+        storage.put_object_as_json(f"SMARTCONTRACT/{self.id}/metadata.json", self.export_as_at_rest())

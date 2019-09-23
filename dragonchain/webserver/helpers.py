@@ -18,13 +18,18 @@
 import json
 import os
 import functools
-from typing import Tuple, Dict, Any, Callable
+from typing import Tuple, Dict, Any, Callable, Iterable, TYPE_CHECKING
 
+import fastjsonschema
 from werkzeug import exceptions as werkzeug_exceptions
 
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib import error_reporter
+from dragonchain.lib.dto import schema
+
+if TYPE_CHECKING:
+    from dragonchain.lib.types import custom_index  # noqa: F401
 
 _log = logger.get_logger()
 _is_lab = os.environ.get("LAB") == "true"
@@ -71,6 +76,7 @@ METHOD_NOT_ALLOWED = format_error("METHOD_NOT_ALLOWED", "The method is not allow
 CONTRACT_CONFLICT = format_error("CONTRACT_CONFLICT", "Contract or transaction type already exists.")
 BAD_STATE = format_error("BAD_STATE", "The action attempted could not be completed because the contract is in an invalid starting state.")
 INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "The server experienced an internal error. Please try again later.")
+OPENFAAS_ERROR = format_error("OPENFAAS_ERROR", "Internal system error. Please try again later.")
 ACTION_FORBIDDEN = format_error("ACTION_FORBIDDEN", "This action is currently disabled.")
 NOT_FOUND = format_error("NOT_FOUND", "The requested resource(s) cannot be found.")
 BAD_DOCKER_AUTH_ERROR = format_error("BAD_DOCKER_AUTH_ERROR", "The provided docker registry auth cannot be used")
@@ -175,6 +181,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, werkzeug_exceptions.MethodNotAllowed):
         status_code = 405
         surface_error = METHOD_NOT_ALLOWED
+    elif isinstance(exception, exceptions.OpenFaasException):
+        status_code = 500
+        surface_error = OPENFAAS_ERROR
     else:
         status_code = 500
         surface_error = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")
@@ -191,3 +200,45 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
         _log.exception("Error:")
 
     return flask_http_response(status_code, surface_error)
+
+
+_valid_custom_text_index_options_v1 = fastjsonschema.compile(schema.custom_index_text_options_v1)
+_valid_custom_tag_index_options_v1 = fastjsonschema.compile(schema.custom_index_tag_options_v1)
+_valid_custom_number_index_options_v1 = fastjsonschema.compile(schema.custom_index_number_options_v1)
+
+
+def verify_custom_indexes_options(custom_indexes: Iterable["custom_index"]) -> None:
+    """Validate an array of custom index DTOs from user input (Raises on error)"""
+    for index in custom_indexes:
+        index_type = index.get("type")
+        if index_type == "text":
+            _valid_custom_text_index_options_v1(index.get("options") or {})
+        elif index_type == "tag":
+            _valid_custom_tag_index_options_v1(index.get("options") or {})
+        elif index_type == "number":
+            _valid_custom_number_index_options_v1(index.get("options") or {})
+        else:
+            raise exceptions.ValidationException(f"Index {index} does not contain a valid type")
+
+
+def parse_query_parameters(params: Dict[str, str]) -> Dict[str, Any]:
+    query_params: Dict[str, Any] = {}
+    if not params.get("q"):
+        raise exceptions.ValidationException("User must specify a redisearch query string.")
+    query_params["q"] = params["q"]
+    if params.get("transaction_type"):
+        query_params["transaction_type"] = params["transaction_type"]
+    query_params["id_only"] = params.get("id_only") and params["id_only"].lower() != "false" or False
+    query_params["verbatim"] = params.get("verbatim") and params["verbatim"].lower() != "false" or False
+    if params.get("sort_by"):
+        query_params["sort_by"] = params["sort_by"]
+        query_params["sort_asc"] = params.get("sort_asc") and params["sort_asc"].lower() != "false"
+        if query_params["sort_asc"] is None:  # the above line resolves to None if the get fails
+            query_params["sort_asc"] = True
+    try:
+        query_params["limit"] = int(params["limit"]) if params.get("limit") else 10
+        query_params["offset"] = int(params["offset"]) if params.get("offset") else 0
+    except ValueError:
+        raise exceptions.ValidationException("Limit and offset must be integer values.")
+
+    return query_params

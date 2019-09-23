@@ -16,19 +16,27 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain.webserver.lib import transactions
 
 
 class TestQueryTransactions(unittest.TestCase):
-    @patch("dragonchain.webserver.lib.transactions._search_transaction")
+    @patch("dragonchain.lib.database.redisearch.search")
     def test_query_transactions_calls_search(self, mock_get_txn):
-        transactions.query_transactions_v1(None, False)
-        mock_get_txn.assert_called_with(q="*", sort="block_id:desc", should_parse=False)
+        transactions.query_transactions_v1({"transaction_type": "banana", "q": "*"}, False)
+        mock_get_txn.assert_called_with(
+            index="banana", limit=None, offset=None, only_id=None, query_str="*", sort_asc=None, sort_by=None, verbatim=None
+        )
 
-    @patch("dragonchain.webserver.lib.transactions._search_transaction", return_value={"fake": "result"})
-    def test_query_transactions_returns_search_result(self, mock_search):
-        response = transactions.query_transactions_v1(None, False)
-        self.assertEqual(response, {"fake": "result"})
+    @patch("dragonchain.webserver.lib.transactions.storage.select_transaction", return_value="a txn")
+    @patch(
+        "dragonchain.webserver.lib.transactions.redisearch.search", return_value=MagicMock(docs=[MagicMock(id="fake", block_id="banana")], total=4)
+    )
+    def test_query_transactions_returns_search_result(self, mock_search, mock_select):
+        response = transactions.query_transactions_v1({"transaction_type": "banana", "q": "query"}, False)
+        self.assertEqual(response, {"total": 4, "results": ["a txn"]})
+
+        mock_search.assert_called_once()
+        mock_select.assert_called_once()

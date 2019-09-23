@@ -89,34 +89,8 @@ bulk_transaction_create_schema_v1 = {
 
 transaction_search_index_schema = {
     "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "dcrn": {"type": "string", "enum": [DCRN.Transaction_L1_Search_Index.value]},
-        "txn_type": {"type": "string"},
-        "dc_id": {"type": "string"},
-        "txn_id": {"type": "string"},
-        "tag": {"type": "string"},
-        "block_id": {"type": "integer"},
-        "timestamp": {"type": "integer"},
-        "invoker": {"type": "string"},
-        "s3_object_folder": {"type": "string"},
-        "s3_object_id": {"type": "string"},
-        "l2_rejections": {"type": "integer"},
-    },
-    "required": [
-        "version",
-        "dcrn",
-        "txn_type",
-        "dc_id",
-        "txn_id",
-        "tag",
-        "block_id",
-        "timestamp",
-        "invoker",
-        "s3_object_folder",
-        "s3_object_id",
-        "l2_rejections",
-    ],
+    "properties": {"timestamp": {"type": "integer"}, "tag": {"type": "string"}, "block_id": {"type": "integer"}},
+    "required": ["timestamp", "tag", "block_id"],
 }
 
 
@@ -190,38 +164,10 @@ transaction_stripped_schema = {
 }
 
 
-l1_search_index_schema = {
+block_search_index_schema = {
     "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "dcrn": {"type": "string", "enum": [DCRN.Block_L1_Search_Index.value]},
-        "dc_id": {"type": "string"},
-        "block_id": {"type": "integer"},
-        "timestamp": {"type": "integer"},
-        "prev_id": {"type": "integer"},
-        "prev_proof": {"type": "string"},
-        "s3_object_folder": {"type": "string"},
-        "s3_object_id": {"type": "string"},
-        "l2_verifications": {"type": "integer"},
-        "l3_verifications": {"type": "integer"},
-        "l4_verifications": {"type": "integer"},
-        "l5_verifications": {"type": "integer"},
-    },
-    "required": [
-        "version",
-        "dcrn",
-        "dc_id",
-        "block_id",
-        "timestamp",
-        "prev_id",
-        "prev_proof",
-        "s3_object_folder",
-        "s3_object_id",
-        "l2_verifications",
-        "l3_verifications",
-        "l4_verifications",
-        "l5_verifications",
-    ],
+    "properties": {"block_id": {"type": "integer"}, "timestamp": {"type": "integer"}, "prev_id": {"type": "integer"}},
+    "required": ["block_id", "timestamp", "prev_id"],
 }
 
 
@@ -293,49 +239,6 @@ smart_contract_build_task_schema = {
 }
 
 
-smart_contract_create_schema_v1 = {
-    "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "txn_type": {"type": "string", "pattern": "[a-zA-Z0-9][a-zA-Z0-9-]+", "maxLength": 20},
-        "image": {
-            "type": "string",
-            "pattern": r"""^(?:(?=[^:\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(:(?![.-])[a-zA-Z0-9_.-]{1,128})$""",  # noqa: B950
-        },
-        "auth": {"type": "string"},
-        "cmd": {"type": "string"},
-        "args": {"type": "array", "items": {"type": "string"}},
-        "env": {"type": "object"},
-        "secrets": {"type": "object"},
-        "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
-        "cron": {"type": "string"},
-        "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
-    },
-    "required": ["version", "txn_type", "image", "cmd", "execution_order"],
-}
-
-
-smart_contract_update_schema_v1 = {
-    "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "desired_state": {"type": "string", "enum": ["active", "inactive"]},
-        "image": {
-            "type": "string",
-            "pattern": r"""^(?:(?=[^:\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(:(?![.-])[a-zA-Z0-9_.-]{1,128})$""",  # noqa: B950
-        },
-        "auth": {"type": "string"},
-        "cmd": {"type": "string"},
-        "args": {"type": "array", "items": {"type": "string"}},
-        "env": {"type": "object"},
-        "secrets": {"type": "object"},
-        "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
-        "cron": {"type": "string"},
-        "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
-    },
-}
-
-
 smart_contract_at_rest_schema = {
     "type": "object",
     "properties": {
@@ -367,18 +270,7 @@ smart_contract_at_rest_schema = {
 }
 
 
-smart_contract_index_schema = {
-    "type": "object",
-    "properties": {
-        "dcrn": {"type": "string", "enum": [DCRN.SmartContract_L1_Search_Index.value]},
-        "version": {"type": "string"},
-        "id": {"type": "string"},
-        "txn_type": {"type": "string"},
-        "image_digest": {"type": ["string", "null"]},
-        "state": {"type": "string"},
-    },
-    "required": ["dcrn", "version", "id", "state"],
-}
+smart_contract_index_schema = {"type": "object", "properties": {"sc_name": {"type": "string"}}, "required": ["sc_name"]}
 
 
 l2_block_at_rest_schema = {
@@ -414,22 +306,6 @@ l2_block_at_rest_schema = {
         },
     },
     "required": ["version", "dcrn", "header", "validation", "proof"],
-}
-
-
-l2_search_index_schema = {
-    "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "dcrn": {"type": "string", "enum": [DCRN.Block_L2_Search_Index.value]},
-        "dc_id": {"type": "string"},
-        "block_id": {"type": "integer"},
-        "timestamp": {"type": "integer"},
-        "prev_proof": {"type": "string"},
-        "s3_object_folder": {"type": "string"},
-        "s3_object_id": {"type": "string"},
-    },
-    "required": ["version", "dcrn", "dc_id", "block_id", "timestamp", "prev_proof", "s3_object_folder", "s3_object_id"],
 }
 
 
@@ -522,22 +398,6 @@ l3_block_at_rest_schema = {
 }
 
 
-l3_search_index_schema = {
-    "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "dcrn": {"type": "string", "enum": [DCRN.Block_L3_Search_Index.value]},
-        "dc_id": {"type": "string"},
-        "block_id": {"type": "integer"},
-        "timestamp": {"type": "integer"},
-        "prev_proof": {"type": "string"},
-        "s3_object_folder": {"type": "string"},
-        "s3_object_id": {"type": "string"},
-    },
-    "required": ["version", "dcrn", "dc_id", "block_id", "timestamp", "prev_proof", "s3_object_folder", "s3_object_id"],
-}
-
-
 l4_broadcast_schema_v1 = {
     "type": "object",
     "properties": {
@@ -585,22 +445,6 @@ l4_block_at_rest_schema = {
 }
 
 
-l4_search_index_schema = {
-    "type": "object",
-    "properties": {
-        "version": {"type": "string"},
-        "dcrn": {"type": "string", "enum": [DCRN.Block_L4_Search_Index.value]},
-        "dc_id": {"type": "string"},
-        "block_id": {"type": "integer"},
-        "timestamp": {"type": "integer"},
-        "prev_proof": {"type": "string"},
-        "s3_object_folder": {"type": "string"},
-        "s3_object_id": {"type": "string"},
-    },
-    "required": ["version", "dcrn", "dc_id", "block_id", "timestamp", "prev_proof", "s3_object_folder", "s3_object_id"],
-}
-
-
 # L5 methods
 
 
@@ -631,34 +475,99 @@ l5_block_at_rest_schema = {
 }
 
 
-custom_index_items = {
+custom_indexes_v1 = {
     "type": "object",
-    "properties": {"key": {"type": "string"}, "path": {"type": "string"}},
+    "properties": {
+        "path": {"type": "string"},
+        "field_name": {
+            "type": "string",
+            "not": {"enum": ["timestamp", "tag", "block_id"]},
+        },  # Don't allow the transaction index reserved keywords in the schema
+        "type": {"type": "string", "enum": ["text", "tag", "number"]},
+        "options": {"type": "object"},
+    },
     "additionalProperties": False,
-    "required": ["key", "path"],
+    "required": ["path", "field_name", "type"],
+}
+
+custom_index_tag_options_v1 = {
+    "type": "object",
+    "properties": {"separator": {"type": "string"}, "no_index": {"type": "boolean"}},
+    "additionalProperties": False,
+}
+
+custom_index_text_options_v1 = {
+    "type": "object",
+    "properties": {
+        "weight": {"type": "number", "minimum": 0, "maximum": 1},
+        "no_stem": {"type": "boolean"},
+        "sortable": {"type": "boolean"},
+        "no_index": {"type": "boolean"},
+    },
+    "additionalProperties": False,
+}
+
+custom_index_number_options_v1 = {
+    "type": "object",
+    "properties": {"sortable": {"type": "boolean"}, "no_index": {"type": "boolean"}},
+    "additionalProperties": False,
 }
 
 
 new_transaction_type_register_request_schema_v1 = {
     "type": "object",
     "properties": {
-        "version": {"type": "string", "enum": ["1"]},
+        "version": {"type": "string", "enum": ["2"]},
         "txn_type": {"type": "string"},
-        "custom_indexes": {"type": "array", "items": custom_index_items, "maxItems": MAX_CUSTOM_INDEXES},
+        "custom_indexes": {"type": "array", "items": custom_indexes_v1, "maxItems": MAX_CUSTOM_INDEXES},
     },
     "additionalProperties": False,
     "required": ["version", "txn_type"],
 }
 
 
-update_transaction_type_request_schema_v1 = {
+smart_contract_create_schema_v1 = {
     "type": "object",
     "properties": {
-        "version": {"type": "string", "enum": ["1"]},
-        "custom_indexes": {"type": "array", "items": custom_index_items, "maxItems": MAX_CUSTOM_INDEXES},
+        "version": {"type": "string"},
+        "txn_type": {"type": "string", "pattern": "[a-zA-Z0-9][a-zA-Z0-9-]+", "maxLength": 20},
+        "image": {
+            "type": "string",
+            "pattern": r"""^(?:(?=[^:\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(:(?![.-])[a-zA-Z0-9_.-]{1,128})$""",  # noqa: B950
+        },
+        "auth": {"type": "string"},
+        "cmd": {"type": "string"},
+        "args": {"type": "array", "items": {"type": "string"}},
+        "env": {"type": "object"},
+        "secrets": {"type": "object"},
+        "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "cron": {"type": "string"},
+        "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
+        "custom_indexes": {"type": "array", "items": custom_indexes_v1, "maxItems": MAX_CUSTOM_INDEXES},
     },
-    "additionalProperties": False,
-    "required": ["version", "custom_indexes"],
+    "required": ["version", "txn_type", "image", "cmd", "execution_order"],
+}
+
+
+smart_contract_update_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string"},
+        "desired_state": {"type": "string", "enum": ["active", "inactive"]},
+        "image": {
+            "type": "string",
+            "pattern": r"""^(?:(?=[^:\/]{4,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?((?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*)(:(?![.-])[a-zA-Z0-9_.-]{1,128})$""",  # noqa: B950
+        },
+        "auth": {"type": "string"},
+        "cmd": {"type": "string"},
+        "args": {"type": "array", "items": {"type": "string"}},
+        "env": {"type": "object"},
+        "secrets": {"type": "object"},
+        "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "cron": {"type": "string"},
+        "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
+        "disable_schedule": {"type": "boolean"},
+    },
 }
 
 set_default_interchain_schema_v1 = {

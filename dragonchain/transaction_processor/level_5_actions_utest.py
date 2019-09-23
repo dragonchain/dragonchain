@@ -190,9 +190,10 @@ class TestLevelFiveActions(unittest.TestCase):
         self.assertIsNone(l4_block.get("is_invalid"))
         self.assertEqual(l4_block, fake_l4_block)
 
+    @patch("dragonchain.transaction_processor.level_5_actions.storage.put_object_as_json")
     @patch("dragonchain.transaction_processor.level_5_actions.keys.get_my_keys")
-    @patch("dragonchain.transaction_processor.level_5_actions.elasticsearch.put_index_in_storage")
-    def test_broadcast_to_public_chain(self, mock_put_index_in_storage, mock_keys):
+    @patch("dragonchain.transaction_processor.level_5_actions.redisearch.put_document")
+    def test_broadcast_to_public_chain(self, mock_put_document, mock_keys, mock_storage_put):
         mock_keys.return_value = MagicMock(hash_l5_for_public_broadcast=MagicMock(return_value="PoE"))
         mock_block = MagicMock(transaction_hash=[], block_id="123")
         level_5_actions._interchain_client.publish_l5_hash_to_public_network = MagicMock(return_value="0xTransactionHash")
@@ -200,9 +201,10 @@ class TestLevelFiveActions(unittest.TestCase):
 
         level_5_actions.broadcast_to_public_chain(mock_block)
 
-        mock_keys.return_value.hash_l5_for_public_broadcast.assert_called_once_with(mock_block)
+        mock_keys.assert_called_once_with()
         level_5_actions._interchain_client.publish_l5_hash_to_public_network.assert_called_once_with("PoE")
-        mock_put_index_in_storage.assert_called_once_with("BLOCK", "123", ANY)
+        mock_storage_put.assert_called_once_with("BLOCK/123", ANY)
+        mock_put_document.assert_called_once_with("bk", "123", ANY)
         self.assertEqual(mock_block.transaction_hash, ["0xTransactionHash"])
         self.assertEqual(mock_block.block_last_sent_at, 8754)
         self.assertEqual(mock_block.network, "eth")
@@ -278,19 +280,19 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_finalize.assert_not_called()
         mock_retry.assert_not_called()
 
+    @patch("dragonchain.transaction_processor.level_5_actions.storage.put_object_as_json")
     @patch("dragonchain.transaction_processor.level_5_actions.broadcast.dispatch")
     @patch("dragonchain.transaction_processor.level_5_actions.keys.get_my_keys")
-    @patch("dragonchain.transaction_processor.level_5_actions.elasticsearch.put_index_in_storage")
     @patch("dragonchain.transaction_processor.level_5_actions.set_last_confirmed_block")
-    def test_finalize_block_calls_correct_actions(self, mock_set_last_confirmed, mock_put_index_in_storage, mock_keys, mock_dispatch):
+    def test_finalize_block_calls_correct_actions(self, mock_set_last_confirmed, mock_keys, mock_dispatch, mock_put_json):
         mock_keys.return_value = MagicMock(sign_block=MagicMock(return_value="MyProof"))
         mock_block = MagicMock(block_id="1234")
         level_5_actions.finalize_block(mock_block, {"proof": {"proof": "MyLastProof"}}, "0xTransactionHash")
 
         mock_set_last_confirmed.assert_called_once_with(mock_block)
-        mock_put_index_in_storage.assert_called_once_with("BLOCK", "1234", mock_block)
         mock_dispatch.assert_called_once_with(mock_block)
         mock_keys.return_value.sign_block.assert_called_once_with(mock_block)
+        mock_put_json.assert_called_once()
 
         self.assertEqual(mock_block.proof, "MyProof")
         self.assertEqual(mock_block.prev_proof, "MyLastProof")
