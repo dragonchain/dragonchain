@@ -29,13 +29,14 @@ for more details on upgrading to v4.
   - Expose redis and redisearch image locations in opensource-config.yaml
   - Add redisearch and remove elasticsearch from requirements.txt
   - Update boto3, bit, and aiohttp packages
-  - Update fwatchdog to 0.17.0 for OpenFaaS smart contracts
+  - Update fwatchdog to 0.18.0 for OpenFaaS smart contracts
 - **CICD:**
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
   - Make helm chart be packaged on demand when creating docs
 - **Bugs:**
   - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
   - Fixed a bug with ethereum classic and ethereum classic testnet interchains which caused transactions to be signed improperly
+  - Fixed a bug which caused built smart contract images to not be deleted from the image repository when deleting a smart contract
 
 ## 3.5.0
 

@@ -206,7 +206,7 @@ class ContractJob(object):
                 "com.openfaas.scale.max": "20",
                 "com.openfaas.scale.factor": "20",
                 "com.dragonchain.id": INTERNAL_ID,
-                "com.openfaas.fwatchdog.version": "0.17.0",  # Update this as the fwatchdog executable in bin is updates
+                "com.openfaas.fwatchdog.version": "0.18.0",  # Update this as the fwatchdog executable in bin is updates
             },
             "limits": {"cpu": "0.50", "memory": "600M"},
             "requests": {"cpu": "0.25", "memory": "600M"},

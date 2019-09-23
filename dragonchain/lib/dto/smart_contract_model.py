@@ -60,6 +60,7 @@ def new_from_build_task(data: Mapping[str, Any]) -> "SmartContractModel":
             sc_id=data["id"],
             auth=data["auth"],
             image=data["image"],
+            image_digest=data.get("image_digest"),
             cmd=data["cmd"],
             args=data["args"] or [],
             secrets=data["secrets"] or {},
