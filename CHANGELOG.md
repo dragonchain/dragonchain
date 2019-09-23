@@ -36,6 +36,7 @@ for more details on upgrading to v4.
 - **Bugs:**
   - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
   - Fixed a bug with ethereum classic and ethereum classic testnet interchains which caused transactions to be signed improperly
+  - Fixed a bug which caused built smart contract images to not be deleted from the image repository when deleting a smart contract
 
 ## 3.5.0
 
