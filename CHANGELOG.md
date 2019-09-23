@@ -29,7 +29,7 @@ for more details on upgrading to v4.
   - Expose redis and redisearch image locations in opensource-config.yaml
   - Add redisearch and remove elasticsearch from requirements.txt
   - Update boto3, bit, and aiohttp packages
-  - Update fwatchdog to 0.17.0 for OpenFaaS smart contracts
+  - Update fwatchdog to 0.18.0 for OpenFaaS smart contracts
 - **CICD:**
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
   - Make helm chart be packaged on demand when creating docs
