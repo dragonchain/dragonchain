@@ -1,0 +1,131 @@
+# Environment Variable Map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-configmap
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: configmap
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+data:
+  HASH: blake2b
+  ENCRYPTION: secp256k1
+  PROOF_SCHEME: trust
+  REDIS_PORT: "6379"
+  WEB_PORT: "8080"
+  RATE_LIMIT: "0"
+  REDIS_ENDPOINT: "{{ .Release.Name }}-pr-service"
+  LRU_REDIS_ENDPOINT: "{{ .Release.Name }}-cr-service"
+  REDISEARCH_ENDPOINT: "{{ .Release.Name }}-rs-service"
+  REGISTRY: "{{ .Values.dragonchain.image.registry }}"
+  FAAS_GATEWAY: "{{ .Values.faas.gateway }}"
+  FAAS_REGISTRY: "{{ .Values.faas.registry }}"
+  NAMESPACE: "{{ .Release.Namespace }}"
+  STACK_NAME: "d-{{ .Values.global.environment.INTERNAL_ID }}-{{ .Values.global.environment.STAGE }}"
+  DEPLOYMENT_NAME: "{{ .Release.Name }}"
+  ERROR_REPORTING_TYPE: "{{ .Values.dragonchain.reporting_type }}"
+  DRAGONCHAIN_NAME: "{{ .Values.global.environment.DRAGONCHAIN_NAME }}"
+  DRAGONCHAIN_VERSION: "{{ .Values.dragonchain.image.version }}"
+  DRAGONCHAIN_ENDPOINT: "{{ .Values.global.environment.DRAGONCHAIN_ENDPOINT }}"
+  BROADCAST_INTERVAL: "{{ .Values.global.environment.BROADCAST_INTERVAL }}"
+{{- if .Values.faas.registry_username }}
+  REGISTRY_USERNAME: "{{ .Values.faas.registry_username }}"
+{{- end }}
+{{- if .Values.faas.registry_username }}
+  REGISTRY_PASSWORD: "{{ .Values.faas.registry_password }}"
+{{- end }}
+  STORAGE_TYPE: disk
+  STORAGE_LOCATION: "{{ .Values.dragonchain.storage.mount }}"
+  SECRET_TYPE: env
+  SECRET_LOCATION: SECRETSTRING
+{{ toYaml .Values.global.environment | indent 2 }}
+---
+# Persistent Redis Config Map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-pr-configmap
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-pr-configmap
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: persistent-redis-configmap
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+data:
+  redis-config: |
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    appendonly yes
+    appendfilename "redis.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    aof-load-truncated yes
+    aof-use-rdb-preamble yes
+---
+# Redisearch Config Map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-rs-configmap
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-rs-configmap
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: redisearch-configmap
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+data:
+  redis-config: |
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    appendonly yes
+    appendfilename "redisearch.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    aof-load-truncated yes
+    aof-use-rdb-preamble yes
+    loadmodule /usr/lib/redis/modules/redisearch.so TIMEOUT 2000 ON_TIMEOUT fail
+---
+# Cache Redis Config Map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cr-configmap
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-cr-configmap
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: cacheredis-configmap
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+data:
+  redis-config: |
+    appendonly no
+    maxmemory 190mb
+    maxmemory-policy allkeys-lru

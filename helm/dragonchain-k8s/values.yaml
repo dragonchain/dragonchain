@@ -1,0 +1,135 @@
+webserverLiveliness: true
+
+global:
+  environment:
+    STAGE: "prod"
+    STORAGE_LOCATION: "/dragonchain"
+
+reporting_type: null
+aws: null
+
+service:
+  # If using ingress, this should remain ClusterIP, if exposing via the cluster directly, this should be NodePort
+  type: ClusterIP
+  # Port is only needed if type is "NodePort", and exposing a chain without ingress. Must be 30000-32767 and unique per cluster
+  port: 30000
+
+# User/Group to use when running container.
+runContainerUser: 1000
+runContainerGroup: 1000
+
+# Default stage for dragonchain should be prod
+dragonchain:
+  image:
+    stage: prod
+
+# Mountpath location for secret storage.
+secret:
+  name: SecretString
+  mountPath: /etc/chain-secrets
+
+# Dragonchain uses two redis instances. Both should be the same version.
+redis:
+  image:
+    repository: docker.io/redis
+    tag: 5.0.5-alpine
+
+# LRU Cache Redis Configuration
+cacheredis:
+  resources:
+    limits:
+      cpu: 50m
+      memory: 200Mi
+    requests:
+      cpu: 15m
+      memory: 200Mi
+
+# Persistent redis Configuration
+persistentredis:
+  resources:
+    limits:
+      cpu: 50m
+      memory: 100Mi
+    requests:
+      cpu: 15m
+      memory: 100Mi
+
+# Webserver configuration
+webserver:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+# Transaction processor configuration
+transactionProcessor:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 40m
+      memory: 128Mi
+
+# Contract invoker configuration
+contractInvoker:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 20m
+      memory: 128Mi
+
+# Broadcast processor configuration
+broadcastProcessor:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 20m
+      memory: 128Mi
+
+# Scheduler configuration
+scheduler:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 20m
+      memory: 128Mi
+
+# Scheduler configuration
+jobProcessor:
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 50m
+      memory: 64Mi
+    requests:
+      cpu: 20m
+      memory: 64Mi
+
+# Persistent redis Configuration
+redisearch:
+  image:
+    repository: docker.io/redislabs/redisearch
+    tag: 1.4.16
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 300Mi
+    requests:
+      cpu: 50m
+      memory: 300Mi

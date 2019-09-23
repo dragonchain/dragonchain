@@ -22,6 +22,7 @@ for more details on upgrading to v4.
 - **Development:**
   - Add logs when getting storage errors
   - Resolve all bandit errors and turn up bandit verbosity
+  - Move/extract entire helm chart for better control
 - **Packaging:**
   - Update helm chart version, adding redisearch while removing elasticsearch
   - Remove service links from mounting on pods in the helm chart
@@ -31,6 +32,7 @@ for more details on upgrading to v4.
   - Update fwatchdog to 0.17.0 for OpenFaaS smart contracts
 - **CICD:**
   - Fixed an issue where the CICD wouldn't properly render changelog or contributing pages
+  - Make helm chart be packaged on demand when creating docs
 - **Bugs:**
   - Fixed an issue where transaction types whose contracts no longer exist couldn't be deleted
   - Fixed a bug with ethereum classic and ethereum classic testnet interchains which caused transactions to be signed improperly
