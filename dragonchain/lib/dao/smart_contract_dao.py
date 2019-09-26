@@ -57,12 +57,23 @@ def get_serial_contracts() -> List[smart_contract_model.SmartContractModel]:
     Searches for serial contracts
     Please note this function fetches all smart contract metadata from storage each time it is run, so should be used sparingly
     """
+    # First check and remove bad contracts or this function could fail
+    remove_bad_contracts()
     serial_contracts = []
     for sc_id in list_all_contract_ids():
         sc_model = get_contract_by_id(sc_id)
         if sc_model.execution_order == "serial":
             serial_contracts.append(sc_model)
     return serial_contracts
+
+
+def remove_bad_contracts() -> None:
+    """Remove contract(s) from the index if its metadata doesn't exist"""
+    for sc_id in list_all_contract_ids():
+        try:
+            get_contract_by_id(sc_id)
+        except exceptions.NotFound:
+            redisearch.delete_document(index=redisearch.Indexes.smartcontract.value, doc_name=sc_id)
 
 
 def add_smart_contract_index(contract: smart_contract_model.SmartContractModel) -> None:
