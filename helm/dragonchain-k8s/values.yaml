@@ -18,10 +18,10 @@ service:
 runContainerUser: 1000
 runContainerGroup: 1000
 
-# Default stage for dragonchain should be prod
+# Default storage mount location
 dragonchain:
-  image:
-    stage: prod
+  storage:
+    mount: "/dragonchain"
 
 # Mountpath location for secret storage.
 secret:
@@ -32,7 +32,7 @@ secret:
 redis:
   image:
     repository: docker.io/redis
-    tag: 5.0.5-alpine
+    tag: 5.0.6-alpine
 
 # LRU Cache Redis Configuration
 cacheredis:
@@ -104,10 +104,10 @@ scheduler:
   resources:
     limits:
       cpu: 100m
-      memory: 128Mi
+      memory: 64Mi
     requests:
       cpu: 20m
-      memory: 128Mi
+      memory: 64Mi
 
 # Scheduler configuration
 jobProcessor:
