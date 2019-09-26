@@ -65,28 +65,16 @@ dragonchain:
     # Just keep in mind that Always with a 'latest' tag means your node may receive unexpected updates
     pullPolicy: Always
 
-    # -- dragonchain.image.registry --
-    # This value should be registry at which your dragonchain image is stored.
-    # e.g.: docker.io
-    registry: docker.io
-
-    # -- dragonchain.image.repository --
-    # This value should be the name of the repository inside the registry which house your dragonchain image
-    # e.g.: {registry}/{repository}:{version}
-    repository: dragonchain/dragonchain_core
-
-    # -- dragonchain.image.version --
-    # Version of your dragonchain. This value is used to interpolate the tag name.
-    # e.g.: {registry}/{repository}:{version}
+    # -- dragonchain.image.value --
+    # The image to use as the dragonchain core image
     # Check here for available tags: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
     # PLEASE USE A PINNED VERSION, AND NOT 'latest' FOR PRODUCTION DEPLOYMENTS
-    version: latest
+    value: docker.io/dragonchain/dragonchain_core:latest
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.
   # This is where your actual blockchain data will be stored at-rest
   storage:
-    mount: "/dragonchain" # Don't change this value
     spec:
       # Switch storage class name to something usable within your cluster. Minikube accepts 'standard'
       storageClassName: standard
@@ -109,11 +97,6 @@ redis:
       resources:
         requests:
           storage: 1Gi
-  # -- redis.image --
-  # This is the image that dragonchain uses for a persistent and LRU redis
-  image:
-    repository: docker.io/redis
-    tag: 5.0.5-alpine
 
 redisearch:
   # -- redis.storage --
@@ -128,10 +111,6 @@ redisearch:
       resources:
         requests:
           storage: 1Gi
-  # -- redis.image --
-  # This is the image that dragonchain uses for the redisearch used for indexing
-  image:
-    repository: docker.io/redislabs/redisearch
-    tag: 1.4.16
+
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 # PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core

@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.0.1
+
+- **Bugs:**
+  - Fix a bug where the smart contract list and actual underlying data can become out of sync and crash the contract invoker
+- **Packaging:**
+  - Adjust RAM usage of scheduler pod for L1s
+  - Update Redis to 5.0.6 in the helm deployment
+  - Remove unnecessarily configurable options from opensource-config.yaml
+
 ## 4.0.0
 
 This update introduces a breaking change required by the switch from
