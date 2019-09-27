@@ -4,6 +4,8 @@
 
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
+- **Packaging:**
+  - Update aioredis, boto3, web3, and aiohttp dependencies
 
 ## 4.0.1
 
