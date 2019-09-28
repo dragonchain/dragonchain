@@ -82,6 +82,7 @@ NOT_FOUND = format_error("NOT_FOUND", "The requested resource(s) cannot be found
 BAD_DOCKER_AUTH_ERROR = format_error("BAD_DOCKER_AUTH_ERROR", "The provided docker registry auth cannot be used")
 INVALID_NODE_LEVEL = format_error("INVALID_NODE_LEVEL", "Please specify a valid node level (2-5)")
 TRANSACTION_TYPE_CONFLICT = format_error("TRANSACTION_TYPE_CONFLICT", "The transaction type you are trying to register already exists")
+INTERCHAIN_CONFLICT = format_error("INTERCHAIN_CONFLICT", "An interchain network with the name you provided already exists")
 INSUFFICIENT_CRYPTO = format_error("INSUFFICIENT_CRYPTO", "You do not have enough UTXOs or funds in this address to sign a transaction with")
 NOT_ACCEPTING_VERIFICATIONS = format_error("NOT_ACCEPTING_VERIFICATIONS", "Not currently accepting verifications")
 INVALID_TRANSACTION_TYPE = format_error(
@@ -157,6 +158,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, exceptions.TransactionTypeConflict):
         status_code = 409
         surface_error = TRANSACTION_TYPE_CONFLICT
+    elif isinstance(exception, exceptions.InterchainConflict):
+        status_code = 409
+        surface_error = INTERCHAIN_CONFLICT
     elif isinstance(exception, exceptions.InvalidTransactionType):
         status_code = 403
         surface_error = INVALID_TRANSACTION_TYPE

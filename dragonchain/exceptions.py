@@ -93,6 +93,10 @@ class TransactionTypeConflict(DragonchainException):
     """Exception raised by the Transaction Type Registry when attempted register is existing"""
 
 
+class InterchainConflict(DragonchainException):
+    """Excepiton raised when trying to create an interchain with a name that already exists"""
+
+
 class InsufficientFunds(DragonchainException):
     """Exception raised by the call to matchmaking for a claimcheck"""
 
