@@ -32,6 +32,19 @@ class TestTransactionTypeDAO(unittest.TestCase):
         fake_interchain.export_as_at_rest.assert_called_once()
         patch_save.assert_called_once_with(f"INTERCHAINS/{fake_interchain.blockchain}/{fake_interchain.name}", "banana")
 
+    @patch("dragonchain.lib.interfaces.storage.does_object_exist", return_value=True)
+    def test_does_interchain_exist_returns_true(self, mock_exist):
+        self.assertTrue(interchain_dao.does_interchain_exist("bitcoin", "whatever"))
+        self.assertTrue(interchain_dao.does_interchain_exist("ethereum", "whatever"))
+
+    @patch("dragonchain.lib.interfaces.storage.does_object_exist", return_value=False)
+    def test_does_interchain_exist_returns_false(self, mock_exist):
+        self.assertFalse(interchain_dao.does_interchain_exist("bitcoin", "whatever"))
+        self.assertFalse(interchain_dao.does_interchain_exist("ethereum", "whatever"))
+
+    def test_does_interchain_exist_returns_false_with_bad_blockchain(self):
+        self.assertFalse(interchain_dao.does_interchain_exist("badblockchaintype", "whatever"))
+
     @patch("dragonchain.lib.interfaces.storage.get_json_from_object", return_value="thing")
     @patch("dragonchain.lib.dto.eth.new_from_at_rest")
     @patch("dragonchain.lib.dto.btc.new_from_at_rest")

@@ -33,6 +33,20 @@ def save_interchain_client(interchain_client: "model.InterchainModel") -> None:
     storage.put_object_as_json(f"{FOLDER}/{interchain_client.blockchain}/{interchain_client.name}", interchain_client.export_as_at_rest())
 
 
+def does_interchain_exist(blockchain: str, name: str) -> bool:
+    """Check if a specific interchain exists
+    Args:
+        blockchain: the blockchain of the desired client (i.e. bitcoin, ethereum, etc)
+        name: the name (id) of the network to get (user defined on the creation of the interchain)
+    """
+    if blockchain == "bitcoin":
+        return storage.does_object_exist(f"{FOLDER}/bitcoin/{name}")
+    elif blockchain == "ethereum":
+        return storage.does_object_exist(f"{FOLDER}/ethereum/{name}")
+    else:
+        return False
+
+
 def get_interchain_client(blockchain: str, name: str) -> "model.InterchainModel":
     """Get a specific interchain client
     Args:
