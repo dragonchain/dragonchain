@@ -5,6 +5,9 @@
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
   - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name
+  - Fix a bug where the chain could not parse very old legacy transactions from storage
+  - Fix a bug where L5s returned a 404 for the status endpoint when a default interchain was not yet set
+  - Fix a bug where very large payloads could attempt to be cached and crash the caching redis
 - **Packaging:**
   - Update aioredis, boto3, web3, and aiohttp dependencies
 

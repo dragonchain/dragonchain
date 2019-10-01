@@ -32,6 +32,7 @@ LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"].lower()
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
+CACHE_LIMIT = 52428800  # Will not cache individual objects larger than this size (in bytes) (hardcoded to 50Mb for now. Can change if needed)
 
 
 if STORAGE_TYPE == "s3":
@@ -60,7 +61,7 @@ def get(key: str, cache_expire: Optional[int] = None, should_cache: bool = True)
             obj = redis.cache_get(key)
         if not obj:
             obj = storage.get(STORAGE_LOCATION, key)
-            if should_cache:
+            if should_cache and len(obj) < CACHE_LIMIT:
                 redis.cache_put(key, obj, cache_expire)
         return obj
     except exceptions.NotFound:
@@ -81,7 +82,7 @@ def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache
     """
     try:
         storage.put(STORAGE_LOCATION, key, value)
-        if should_cache:
+        if should_cache and len(value) < CACHE_LIMIT:
             redis.cache_put(key, value, cache_expire)
     except Exception:
         _log.exception("Uncaught exception while performing storage put")
@@ -139,7 +140,9 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
         if obj:
             return json.loads(obj)
         obj = storage.select_transaction(STORAGE_LOCATION, block_id, txn_id)
-        redis.cache_put(key, json.dumps(obj, separators=(",", ":")), cache_expire)
+        cache_val = json.dumps(obj, separators=(",", ":")).encode("utf-8")
+        if len(cache_val) < CACHE_LIMIT:
+            redis.cache_put(key, cache_val, cache_expire)
         return obj
     except exceptions.NotFound:
         raise

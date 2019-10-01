@@ -75,18 +75,21 @@ def get_matchmaking_config() -> dict:
     }
 
     if os.environ["LEVEL"] == "5":
-        client = interchain_dao.get_default_interchain_client()
-        network_extra = ""
-        if client.blockchain == "ethereum":
-            client = cast("eth.EthereumNetwork", client)
-            network_extra += f" network_id {client.chain_id}"
-        elif client.blockchain == "bitcoin":
-            client = cast("btc.BitcoinNetwork", client)
-            network_extra += f" {'testnet3' if client.testnet else 'mainnet'}"
-        config["network"] = f"{client.blockchain}{network_extra}"
+        try:
+            client = interchain_dao.get_default_interchain_client()
+            network_extra = ""
+            if client.blockchain == "ethereum":
+                client = cast("eth.EthereumNetwork", client)
+                network_extra += f" network_id {client.chain_id}"
+            elif client.blockchain == "bitcoin":
+                client = cast("btc.BitcoinNetwork", client)
+                network_extra += f" {'testnet3' if client.testnet else 'mainnet'}"
+            config["network"] = f"{client.blockchain}{network_extra}"
+            config["interchainWallet"] = client.address
+        except exceptions.NotFound:
+            _log.warning("L5 chain does not have a default interchain network set")
         config["funded"] = bool(redis.get_sync("dc:isFunded", decode=False))
         config["broadcastInterval"] = float(os.environ.get("BROADCAST_INTERVAL") or "2")
-        config["interchainWallet"] = client.address
     return config
 
 
