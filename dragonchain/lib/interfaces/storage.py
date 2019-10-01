@@ -32,7 +32,7 @@ LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"].lower()
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
-CACHE_LIMIT = 52428800  # Will not cache individual objects larger than this size (in bytes) (hardcoded to 50Mb for now. Can change if needed)
+CACHE_LIMIT = 52428800  # Will not cache individual objects larger than this size (in bytes) (hardcoded to 50MB for now. Can change if needed)
 
 
 if STORAGE_TYPE == "s3":

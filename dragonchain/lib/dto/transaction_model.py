@@ -107,7 +107,7 @@ def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
                 dc_id=full_txn["header"]["dc_id"],
                 block_id=full_txn["header"]["block_id"],
                 txn_id=full_txn["header"]["txn_id"],
-                timestamp=full_txn["header"].get("timestamp"),
+                timestamp=full_txn["header"].get("timestamp") or "0",
                 txn_type=full_txn["header"]["txn_type"],
                 tag=full_txn["header"]["tag"],
                 invoker=full_txn["header"]["invoker"],
