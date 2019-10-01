@@ -224,6 +224,13 @@ class EthereumNetwork(model.InterchainModel):
         """
         return self.get_current_block() - last_sent_block > BLOCK_THRESHOLD
 
+    def get_network_string(self) -> str:
+        """Get the network string for this blockchain. This is what's included in l5 blocks or sent to matchmaking
+        Returns:
+            Network string
+        """
+        return f"ethereum network_id {self.chain_id}"
+
     def get_private_key(self) -> str:
         """Get the base64 encoded private key for this network
         Returns:
