@@ -1,6 +1,6 @@
 # Changelog
 
-## Latest
+## 4.0.2
 
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
