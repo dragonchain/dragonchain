@@ -128,7 +128,7 @@ faas:
   registry_password: MyPassword
 
 dragonchain:
-  reporting_type: ""
+  reporting_type: storage
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core

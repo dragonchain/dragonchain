@@ -17,6 +17,7 @@
 
 import os
 import json
+import time
 from typing import Optional, List, Any, TYPE_CHECKING
 
 from dragonchain import logger
@@ -219,3 +220,11 @@ def does_object_exist(key: str) -> bool:
     except Exception:
         _log.exception("Uncaught exception while performing storage does_object_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_object_exist")
+
+
+def save_error_message(message: str) -> None:
+    """Can save an error, such as a stack traceback or any other string to storage
+    Args:
+        message: The error message to save
+    """
+    put(f"error_{time.time()}.log", message.encode("utf8"), should_cache=False)
