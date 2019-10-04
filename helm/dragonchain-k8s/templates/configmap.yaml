@@ -22,7 +22,7 @@ data:
   REDIS_ENDPOINT: "{{ .Release.Name }}-pr-service"
   LRU_REDIS_ENDPOINT: "{{ .Release.Name }}-cr-service"
   REDISEARCH_ENDPOINT: "{{ .Release.Name }}-rs-service"
-  REGISTRY: "{{ .Values.dragonchain.image.registry }}"
+  REGISTRY: "docker.io/dragonchain"
   FAAS_GATEWAY: "{{ .Values.faas.gateway }}"
   FAAS_REGISTRY: "{{ .Values.faas.registry }}"
   NAMESPACE: "{{ .Release.Namespace }}"
@@ -40,7 +40,6 @@ data:
   REGISTRY_PASSWORD: "{{ .Values.faas.registry_password }}"
 {{- end }}
   STORAGE_TYPE: disk
-  STORAGE_LOCATION: "{{ .Values.dragonchain.storage.mount }}"
   SECRET_TYPE: env
   SECRET_LOCATION: SECRETSTRING
 {{ toYaml .Values.global.environment | indent 2 }}

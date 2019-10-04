@@ -1,6 +1,6 @@
 # Changelog
 
-## Latest
+## 4.0.2
 
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
@@ -9,7 +9,10 @@
   - Fix a bug where L5s returned a 404 for the status endpoint when a default interchain was not yet set
   - Fix a bug where very large payloads could attempt to be cached and crash the caching redis
 - **Packaging:**
-  - Update aioredis, boto3, web3, and aiohttp dependencies
+  - Update aioredis, docker, boto3, web3, and aiohttp dependencies
+- **Development:**
+  - Enforce `appVersion` in Chart.yaml and image version tags to be always up to date (and add associated version bump helper function in `tools.sh`)
+  - Add strict helm lint checking
 
 ## 4.0.1
 

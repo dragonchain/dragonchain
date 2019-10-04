@@ -2,15 +2,26 @@ webserverLiveliness: true
 
 global:
   environment:
+    DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
+    REGISTRATION_TOKEN: "" # Use token from Dragon Net Registration (or arbitrary string if no Dragon Net)
+    INTERNAL_ID: "" # Use id from Dragon Net registration (or arbitrary string if no Dragon Net)
+    DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
+    # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
+    # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
+    LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
+    TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
+    LOG_LEVEL: "debug"
+    BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
+    BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
     STAGE: "prod"
     STORAGE_LOCATION: "/dragonchain"
+    LAB: ""
 
-reporting_type: null
 aws: null
 
 service:
   # If using ingress, this should remain ClusterIP, if exposing via the cluster directly, this should be NodePort
-  type: ClusterIP
+  type: NodePort
   # Port is only needed if type is "NodePort", and exposing a chain without ingress. Must be 30000-32767 and unique per cluster
   port: 30000
 
@@ -18,21 +29,10 @@ service:
 runContainerUser: 1000
 runContainerGroup: 1000
 
-# Default storage mount location
-dragonchain:
-  storage:
-    mount: "/dragonchain"
-
 # Mountpath location for secret storage.
 secret:
   name: SecretString
   mountPath: /etc/chain-secrets
-
-# Dragonchain uses two redis instances. Both should be the same version.
-redis:
-  image:
-    repository: docker.io/redis
-    tag: 5.0.6-alpine
 
 # LRU Cache Redis Configuration
 cacheredis:
@@ -120,7 +120,43 @@ jobProcessor:
       cpu: 20m
       memory: 64Mi
 
-# Persistent redis Configuration
+isMinikube: true
+
+faas:
+  gateway: https://my-faas-gateway-url
+  mountFaasSecret: false
+  registry: mycompany.docker.io
+  registry_username: MyUsername
+  registry_password: MyPassword
+
+dragonchain:
+  reporting_type: ""
+  image:
+    pullPolicy: Always
+    value: docker.io/dragonchain/dragonchain_core
+    version: 4.0.2
+  storage:
+    spec:
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+
+redis:
+  image:
+    repository: docker.io/redis
+    tag: 5.0.6-alpine
+  storage:
+    spec:
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
@@ -133,3 +169,11 @@ redisearch:
     requests:
       cpu: 50m
       memory: 300Mi
+  storage:
+    spec:
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

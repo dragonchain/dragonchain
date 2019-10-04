@@ -2,7 +2,7 @@
 set -e
 
 # Check and try to use python3.7 explicitly, if possible
-if command -v python3.7 > /dev/null 2> /dev/null; then
+if command -v python3.7 > /dev/null 2>&1; then
     py_exec=python3.7
 else
     py_exec=python3
@@ -27,9 +27,10 @@ mac-install  : install dependencies for MacOS systems with brew
 pip-install  : install python dependencies with pip
 clean        : remove compiled python/docs/other build or distrubition artifacts from the local project
 cicd-update  : update cloudformation for the CICD
-full-test    : run all the checks that a PR will test for"
+full-test    : run all the checks that a PR will test for
+version      : perform a version bump"
 
-if [ $# -ne 1 ]; then
+if [ $# -lt 1 ]; then
     printf "%s\\n" "$USAGE"
     exit 1
 elif [ "$1" = "unit" ]; then
@@ -43,9 +44,13 @@ elif [ "$1" = "tests" ]; then
     sh tools.sh unit
     sh tools.sh coverage
 elif [ "$1" = "lint" ]; then
+    test "$(tail -c 1 .version)" || (printf "Bad newline at end of version file\\nRun tools.sh version" && exit 1)
+    if ! grep "appVersion: $(cat .version)" helm/dragonchain-k8s/Chart.yaml > /dev/null 2>&1; then printf "Helm Chart.yaml appVersion doesn't match .version file\\nRun tools.sh version\\n" && exit 1; fi
+    if ! grep "version: $(cat .version)" helm/dragonchain-k8s/values.yaml > /dev/null 2>&1; then printf "Helm values.yaml version doesn't match .version file\\nRun tools.sh version\\n" && exit 1; fi
+    if ! grep "version: $(cat .version)" helm/opensource-config.yaml > /dev/null 2>&1; then printf "Helm opensource-config.yaml version doesn't match .version file\\nRun tools.sh version\\n" && exit 1; fi
+    helm lint helm/dragonchain-k8s/ --strict
     find dragonchain -name "*.py" -exec $py_exec -m flake8 {} +
     $py_exec -m black --check -l 150 -t py37 dragonchain
-    test "$(tail -c 1 .version)" || (printf "Bad newline at end of version file!" && exit 1)
 elif [ "$1" = "format" ]; then
     $py_exec -m black -l 150 -t py37 dragonchain
 elif [ "$1" = "bandit" ]; then
@@ -83,6 +88,15 @@ elif [ "$1" = "full-test" ]; then
     printf "\\nRunning all tests\\n\\n"
     if ! sh tools.sh tests; then printf "\\n!!! Tests Failure !!!\\n" && exit 1; fi
     printf "\\nSuccess!\\nUse 'tools.sh clean' to cleanup if desired\\n"
+elif [ "$1" = "version" ]; then
+    set +e
+    semver="$(echo "$2" | grep '^[0-9]\{1,\}\.[0-9]\{1,\}\.[0-9]\{1,\}$')"
+    set -e
+    if [ -z "$semver" ]; then printf "Version must be provided and valid semvar\\nex: tools.sh version 1.2.3\\n" && exit 1; fi
+    printf "%s" "$semver" > .version
+    sed -i "s/appVersion:.*/appVersion: $semver/" helm/dragonchain-k8s/Chart.yaml
+    sed -i "s/version:.*/version: $semver/" helm/dragonchain-k8s/values.yaml
+    sed -i "s/version:.*/version: $semver/" helm/opensource-config.yaml
 else
     printf "%s\\n" "$USAGE"
     exit 1
