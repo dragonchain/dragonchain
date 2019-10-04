@@ -17,8 +17,6 @@ global:
     STORAGE_LOCATION: "/dragonchain"
     LAB: ""
 
-aws: null
-
 service:
   # If using ingress, this should remain ClusterIP, if exposing via the cluster directly, this should be NodePort
   type: NodePort
