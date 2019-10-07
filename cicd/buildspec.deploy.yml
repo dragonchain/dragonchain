@@ -42,6 +42,7 @@ phases:
       - docker build . -t $TAG
       - docker tag $TAG $PUB_TAG_LATEST
       - docker tag $TAG $PUB_TAG_VERSION
+      - docker tag $TAG $PUB_TAG_EDGE
       # Upload built containers and docs
       - docker push $TAG
       - docker push $PUB_TAG_EDGE
