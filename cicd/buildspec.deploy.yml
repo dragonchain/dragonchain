@@ -30,6 +30,7 @@ phases:
       # Set docker tags
       - export VERSION=$(cat .version)
       - TAG="381978683274.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/dragonchain_core:$STAGE-$VERSION"
+      - PUB_TAG_EDGE="dragonchain/dragonchain_core:edge"
       - PUB_TAG_LATEST="dragonchain/dragonchain_core:latest"
       - PUB_TAG_VERSION="dragonchain/dragonchain_core:$VERSION"
       # Login to docker repositories
@@ -43,6 +44,7 @@ phases:
       - docker tag $TAG $PUB_TAG_VERSION
       # Upload built containers and docs
       - docker push $TAG
+      - docker push $PUB_TAG_EDGE
       - sh cicd/deploy_docs.sh
       - if [ "$STAGE" = dev ]; then echo Generating Banana Index && jq -c ".message |= \"$(grep -ir banana . | wc -l)\"" cicd/banana-shield.json > shield.json && aws s3 cp shield.json s3://dragonchain-core-docs/banana-shield.json; fi
       - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_LATEST && docker push $PUB_TAG_VERSION; fi
