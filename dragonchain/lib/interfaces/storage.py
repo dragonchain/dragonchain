@@ -227,4 +227,4 @@ def save_error_message(message: str) -> None:
     Args:
         message: The error message to save
     """
-    put(f"error_{time.time()}.log", message.encode("utf8"), should_cache=False)
+    put(f"error_{os.environ.get('SERVICE')}_{time.time()}.log", message.encode("utf8"), should_cache=False)
