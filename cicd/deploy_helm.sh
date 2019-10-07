@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 if [ "$STAGE" = "prod" ]; then
     echo Packaging and uploading helm chart to public repository
