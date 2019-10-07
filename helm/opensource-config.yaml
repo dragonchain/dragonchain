@@ -13,7 +13,6 @@ global:
     TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
-    BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
 
 # -- isMinikube --
 # When running on minikube this should be boolean true. otherwise boolean false.
@@ -66,10 +65,13 @@ dragonchain:
     pullPolicy: Always
 
     # -- dragonchain.image.value --
-    # The image to use as the dragonchain core image
-    # Check here for available tags: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
-    # PLEASE USE A PINNED VERSION, AND NOT 'latest' FOR PRODUCTION DEPLOYMENTS
-    value: docker.io/dragonchain/dragonchain_core:latest
+    # The image to use for the dragonchain core container
+    value: docker.io/dragonchain/dragonchain_core
+
+    # -- dragonchain.image.version --
+    # The tag to use with the dragonchain image
+    # Check here for available values: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
+    version: 4.0.2
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.

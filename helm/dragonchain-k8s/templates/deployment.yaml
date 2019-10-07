@@ -49,7 +49,7 @@ spec:
 {{- end }}
       containers:
         - name: {{ .Release.Name }}-webserver
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/webserver.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -104,7 +104,7 @@ spec:
 {{- end }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -173,7 +173,7 @@ spec:
         fsGroup: {{ .Values.runContainerGroup }}
       containers:
         - name: {{ .Release.Name }}-tx-processor
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/transaction_processor.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -192,7 +192,7 @@ spec:
               mountPath: {{ .Values.secret.mountPath }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -252,7 +252,7 @@ spec:
         fsGroup: {{ .Values.runContainerGroup }}
       containers:
         - name: {{ .Release.Name }}-contract-invoker
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/contract_invoker.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -271,7 +271,7 @@ spec:
               mountPath: {{ .Values.secret.mountPath }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -333,7 +333,7 @@ spec:
         fsGroup: {{ .Values.runContainerGroup }}
       containers:
         - name: {{ .Release.Name }}-job-processor
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/job_processor.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -352,7 +352,7 @@ spec:
               mountPath: {{ .Values.secret.mountPath }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -412,7 +412,7 @@ spec:
         fsGroup: {{ .Values.runContainerGroup }}
       containers:
         - name: {{ .Release.Name }}-bc-processor
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/broadcast_processor.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -431,7 +431,7 @@ spec:
               mountPath: {{ .Values.secret.mountPath }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -491,7 +491,7 @@ spec:
         fsGroup: {{ .Values.runContainerGroup }}
       containers:
         - name: {{ .Release.Name }}-scheduler
-          image: "{{ .Values.dragonchain.image.value }}"
+          image: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
           command: ["sh"]
           args: ["entrypoints/scheduler.sh"]
           imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
@@ -510,7 +510,7 @@ spec:
               mountPath: {{ .Values.secret.mountPath }}
 {{- if .Values.dragonchain.storage }}
             - name: storage
-              mountPath: {{ .Values.dragonchain.storage.mount }}
+              mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
       volumes:
         - name: secrets
@@ -537,7 +537,7 @@ metadata:
     app.kubernetes.io/component: cacheredis
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
 spec:
-  replicas: {{ .Values.cacheredis.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-cacheredis
@@ -554,7 +554,6 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         app.kubernetes.io/part-of: dragonchain
         app.kubernetes.io/component: cacheredis
-        dragonchainId: {{ .Values.global.environment.DRAGONCHAIN_ID }}
         stage: {{ .Values.global.environment.STAGE }}
         dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
         dragonchainRedis: {{ .Values.global.environment.INTERNAL_ID }}
@@ -606,7 +605,7 @@ metadata:
     app.kubernetes.io/component: persistent-redis
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
 spec:
-  replicas: {{ .Values.persistentredis.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
@@ -679,7 +678,7 @@ metadata:
     app.kubernetes.io/component: redisearch
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
 spec:
-  replicas: {{ .Values.redisearch.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ .Release.Name }}-redisearch

@@ -1,15 +1,26 @@
 # Changelog
 
-## Latest
+## 4.0.2
 
+- **Feature:**
+  - Default error reporting to save to disk, so that crash logs/tracebacks can be automatically saved.
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
   - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name
   - Fix a bug where the chain could not parse very old legacy transactions from storage
   - Fix a bug where L5s returned a 404 for the status endpoint when a default interchain was not yet set
   - Fix a bug where very large payloads could attempt to be cached and crash the caching redis
+- **Documentation:**
+  - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
+  - Stop posting helm chart directly to docs
 - **Packaging:**
-  - Update aioredis, boto3, web3, and aiohttp dependencies
+  - Update aioredis, docker, boto3, web3, and aiohttp dependencies
+  - Update helm chart to use a pinned container version by default
+  - Use a helm chart repository for helm distribution
+- **Development:**
+  - Enforce `appVersion` in Chart.yaml and image version tags to be always up to date (and add associated version bump helper function in `tools.sh`)
+  - Add strict helm lint checking
+  - Add a public docker container for the current build of the master (development) branch (`dragonchain/dragonchain_core:edge`)
 
 ## 4.0.1
 

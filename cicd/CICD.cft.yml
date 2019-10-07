@@ -1,4 +1,4 @@
-Description: CI/CD Pipeline for Dragonchain Docker Builds
+Description: CI/CD Pipeline for Dragonchain Builds
 
 Parameters:
   GitHubSecret:
@@ -82,6 +82,8 @@ Resources:
                   - !GetAtt Bucket.Arn
                   - !Join ["", [!GetAtt DocsWebsiteBucket.Arn, /*]]
                   - !GetAtt DocsWebsiteBucket.Arn
+                  - !Join ["", [!GetAtt HelmChartRepoBucket.Arn, /*]]
+                  - !GetAtt HelmChartRepoBucket.Arn
               - Action:
                   - "secretsmanager:GetSecretValue"
                 Effect: Allow
@@ -185,6 +187,11 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: index.html
 
+  HelmChartRepoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: dragonchain-charts
+
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -213,8 +220,7 @@ Resources:
     Properties:
       AliasTarget:
         HostedZoneId: Z2FDTNDATAQYW2
-        DNSName:
-          Fn::GetAtt: [CloudFrontDistribution, DomainName]
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
       HostedZoneId: Z2ADV4KXMZWAVJ
       Name: dragonchain-core-docs.dragonchain.com
       Type: A

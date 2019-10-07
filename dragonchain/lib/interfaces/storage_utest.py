@@ -18,7 +18,7 @@
 import os
 import importlib
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain import exceptions
@@ -51,7 +51,6 @@ class TestStorageInterface(unittest.TestCase):
         importlib.reload(storage.redis)
 
     def test_get_calls_storage_get_with_params(self):
-        storage.storage.get = MagicMock()
         storage.get("thing")
         storage.storage.get.assert_called_once_with("test", "thing")
 
@@ -72,7 +71,6 @@ class TestStorageInterface(unittest.TestCase):
         self.assertRaises(exceptions.NotFound, storage.get, "thing")
 
     def test_put_calls_storage_put_with_params(self):
-        storage.storage.put = MagicMock()
         storage.put("thing", b"val")
         storage.storage.put.assert_called_once_with("test", "thing", b"val")
 
@@ -81,13 +79,10 @@ class TestStorageInterface(unittest.TestCase):
         self.assertRaises(exceptions.StorageError, storage.put, "thing", b"val")
 
     def test_put_calls_cache_with_correct_params(self):
-        storage.storage.put = MagicMock()
-        storage.redis.cache_put = MagicMock()
         storage.put("thing", b"val")
         storage.redis.cache_put.assert_called_once_with("thing", b"val", None)
 
     def test_delete_calls_storage_delete_with_params(self):
-        storage.storage.delete = MagicMock()
         storage.delete("thing")
         storage.storage.delete.assert_called_once_with("test", "thing")
 
@@ -96,8 +91,6 @@ class TestStorageInterface(unittest.TestCase):
         self.assertRaises(exceptions.StorageError, storage.delete, "thing")
 
     def test_delete_calls_cache_with_correct_params(self):
-        storage.storage.delete = MagicMock()
-        storage.redis.cache_delete = MagicMock()
         storage.delete("thing")
         storage.redis.cache_delete.assert_called_once_with("thing")
 
@@ -111,7 +104,6 @@ class TestStorageInterface(unittest.TestCase):
         self.assertRaises(exceptions.StorageError, storage.list_objects, "thing")
 
     def test_does_superkey_exist_calls_storage_does_superkey_exist_with_params(self):
-        storage.storage.does_superkey_exist = MagicMock()
         storage.does_superkey_exist("prefix")
         storage.storage.does_superkey_exist.assert_called_once_with("test", "prefix")
 
@@ -120,7 +112,6 @@ class TestStorageInterface(unittest.TestCase):
         self.assertRaises(exceptions.StorageError, storage.does_superkey_exist, "thing")
 
     def test_does_object_exist_calls_storage_does_object_exist_with_params(self):
-        storage.storage.does_object_exist = MagicMock()
         storage.does_object_exist("prefix")
         storage.storage.does_object_exist.assert_called_once_with("test", "prefix")
 
@@ -145,26 +136,22 @@ class TestStorageInterface(unittest.TestCase):
 
     def test_delete_directory_calls_list_objects_with_correct_params(self):
         storage.list_objects = MagicMock(return_value=[])
-        storage.storage.delete_directory = MagicMock()
         storage.delete_directory("thing")
         storage.list_objects.assert_called_once_with("thing")
 
     def test_delete_directory_calls_delete_with_correct_params(self):
         storage.list_objects = MagicMock(return_value=["obj"])
         storage.delete = MagicMock()
-        storage.storage.delete_directory = MagicMock()
         storage.delete_directory("thing")
         storage.delete.assert_called_once_with("obj")
 
     def test_delete_directory_calls_delete_directory_with_correct_params(self):
         storage.list_objects = MagicMock(return_value=[])
-        storage.storage.delete_directory = MagicMock()
         storage.delete_directory("thing")
         storage.storage.delete_directory.assert_called_once_with("test", "thing")
 
     def test_delete_directory_raises_storage_exception(self):
         storage.list_objects = MagicMock(side_effect=RuntimeError)
-        storage.storage.delete_directory = MagicMock()
         self.assertRaises(exceptions.StorageError, storage.delete_directory, "thing")
 
     def test_select_transaction_calls_storage_select_transaction_with_params(self):
@@ -189,7 +176,6 @@ class TestStorageInterface(unittest.TestCase):
 
     def test_select_transaction_calls_cache_put_with_params(self):
         storage.storage.select_transaction = MagicMock(return_value={})
-        storage.redis.cache_put = MagicMock()
         storage.select_transaction("block", "txn")
         storage.redis.cache_put("block/txn", "{}", None)
 
@@ -200,3 +186,9 @@ class TestStorageInterface(unittest.TestCase):
     def test_select_transaction_raises_storage_error(self):
         storage.storage.select_transaction = MagicMock(side_effect=RuntimeError)
         self.assertRaises(exceptions.StorageError, storage.select_transaction, "block", "txn")
+
+    @patch("time.time", return_value=123)
+    def test_save_error_message(self, mock_time):
+        storage.put = MagicMock()
+        storage.save_error_message("some message")
+        storage.put.assert_called_once_with(f"error_testing_123.log", b"some message", should_cache=False)

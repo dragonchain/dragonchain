@@ -1,15 +1,10 @@
 Deployment Links
 ================
 
-Here are download links for the deployment of a Dragonchain to a
-local kubernetes cluster.
-
-Helm Chart
-""""""""""
-
-:download:`Download Link For Helm Chart </static/chart/dragonchain-k8s-1.0.0.tgz>`
+Here is the download link for a documented example of some common Helm chart
+values for the current version of the dragonchain-k8s helm chart.
 
 Helm Values
 """""""""""
 
-:download:`Download Link For Helm Values Template </static/chart/opensource-config.yaml>`
+:download:`opensource-config.yaml </static/chart/opensource-config.yaml>`
