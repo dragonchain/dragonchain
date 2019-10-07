@@ -65,8 +65,8 @@ In order to develop locally you should be able to run `./tools.sh full-test` and
 1. Install the python requirements: `./tools.sh pip-install`
    (Note this will install the python packages to the current user's site-packages.
    For a python venv, follow the steps below)
-1. [Helm](https://helm.sh/) is required to be installed for the docs to be built properly,
-   as it is used to package the helm chart when the docs build
+1. [Helm](https://helm.sh/) is required to be installed for linting the helm chart.
+1. [yq](https://github.com/mikefarah/yq) is required to be installed for building the docs, as it parses the helm chart's version to update the docs dynamically.
 
 ### Using a Python Virtual Environment
 

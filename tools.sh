@@ -57,11 +57,12 @@ elif [ "$1" = "bandit" ]; then
     $py_exec -m bandit -r dragonchain
 elif [ "$1" = "docs" ]; then
     rm -rf docs/static/chart && mkdir -p docs/static/chart
-    helm package helm/dragonchain-k8s -d docs/static/chart/
     cp -v helm/opensource-config.yaml docs/static/chart/
+    CHART_VERSION="$(yq r helm/dragonchain-k8s/Chart.yaml version)"
+    sed -i "s/--version [0-9]\\{1,\\}\\.[0-9]\\{1,\\}\\.[0-9]\\{1,\\}/--version $CHART_VERSION/" docs/deployment/deploying.md
     (
-    cd docs || exit 1
-    make html
+        cd docs || exit 1
+        make html
     )
 elif [ "$1" = "arch-install" ]; then
     sudo pacman -Sy base-devel libsecp256k1
@@ -76,7 +77,7 @@ elif [ "$1" = "pip-install" ]; then
 elif [ "$1" = "clean" ]; then
     find . \( -path ./.venv -o -path ./.mypy_cache \) -prune -o \( -name __pycache__ -o -name .build -o -name .coverage -o -name coverage.xml \) -exec rm -rfv {} +
 elif [ "$1" = "cicd-update" ]; then
-    aws cloudformation update-stack --stack-name Dragonchain-CICD --template-body file://./cicd/CICD.cft.yml --region us-west-2  --profile default --capabilities CAPABILITY_NAMED_IAM
+    aws cloudformation deploy --stack-name Dragonchain-CICD --template-file ./cicd/CICD.cft.yml --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
 elif [ "$1" = "full-test" ]; then
     set +e
     printf "\\nChecking for linting errors\\n\\n"
