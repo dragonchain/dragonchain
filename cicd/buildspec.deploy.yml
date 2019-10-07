@@ -11,7 +11,7 @@ phases:
       - curl -LO https://git.io/get_helm.sh
       - bash get_helm.sh --version v2.14.3
       - helm init --client-only
-      - helm plugin install https://github.com/cheeseandcereal/s3-public-helm-repo
+      - helm plugin install https://github.com/cheeseandcereal/s3-public-helm-repo --version 0.1.0
       # Codebuild doesn't set correct execute bit permission when cloning
       - chmod +x ./dragonchain/job_processor/bin/fwatchdog
       # For some reason codebuild doesn't handle these symlinks correctly when cloning, so we just copy the relevant source files instead
