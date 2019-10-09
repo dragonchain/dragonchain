@@ -25,7 +25,7 @@ arch-install : install dependencies for arch based systems
 deb-install  : install dependencies for debian (and derivatives like ubuntu) based systems
 mac-install  : install dependencies for MacOS systems with brew
 pip-install  : install python dependencies with pip
-clean        : remove compiled python/docs/other build or distrubition artifacts from the local project
+clean        : remove compiled python/docs/other build or distribution artifacts from the local project
 cicd-update  : update cloudformation for the CICD
 full-test    : run all the checks that a PR will test for
 docker-test  : run all the checks in a docker container that a PR will test for

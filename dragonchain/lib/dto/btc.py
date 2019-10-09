@@ -175,7 +175,7 @@ class BitcoinNetwork(model.InterchainModel):
         Args:
             transaction_hash: The hash of the transaction to check
         Returns:
-            Boolean if the transaction has receieved enough confirmations to be considered confirmed
+            Boolean if the transaction has received enough confirmations to be considered confirmed
         Raises:
             exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
         """

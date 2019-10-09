@@ -155,6 +155,10 @@ class RPCError(DragonchainException):
     """Exception raise when RPC has an error"""
 
 
+class APIError(DragonchainException):
+    """Exception raise when API has an error"""
+
+
 class RPCTransactionNotFound(DragonchainException):
     """Exception raised when a transaction is not found on an interchain network"""
 

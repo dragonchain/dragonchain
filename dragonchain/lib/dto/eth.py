@@ -127,7 +127,7 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
             b64_private_key=ethereum_network_at_rest["private_key"],
         )
     else:
-        raise NotImplementedError(f"DTO version {dto_version} not supported for bitcoin network")
+        raise NotImplementedError(f"DTO version {dto_version} not supported for ethereum network")
 
 
 class EthereumNetwork(model.InterchainModel):
@@ -179,7 +179,7 @@ class EthereumNetwork(model.InterchainModel):
         Args:
             transaction_hash: The hash of the transaction to check
         Returns:
-            Boolean if the transaction has receieved enough confirmations to be considered confirmed
+            Boolean if the transaction has received enough confirmations to be considered confirmed
         Raises:
             exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
         """
