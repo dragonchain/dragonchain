@@ -191,7 +191,7 @@ def check_confirmations() -> None:
                     finalize_block(block, last_confirmed_block, txn_hash)
                     # Stop execution here!
                     return
-            except exceptions.RPCTransactionNotFound:
+            except exceptions.TransactionNotFound:
                 #  If transaction not found, it may have been dropped, so we remove it from the block
                 block.transaction_hash.remove(txn_hash)
 

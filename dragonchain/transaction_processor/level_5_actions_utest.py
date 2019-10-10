@@ -233,7 +233,7 @@ class TestLevelFiveActions(unittest.TestCase):
     def test_check_confirmations_removes_unneeded_hashes(
         self, mock_block_model, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
     ):
-        level_5_actions._interchain_client.is_transaction_confirmed.side_effect = exceptions.RPCTransactionNotFound
+        level_5_actions._interchain_client.is_transaction_confirmed.side_effect = exceptions.TransactionNotFound
         mock_block_model.return_value.transaction_hash = ["1"]
 
         level_5_actions.check_confirmations()

@@ -151,15 +151,11 @@ class SanityCheckFailure(DragonchainException):
     """Exception raised when sanity check fails"""
 
 
-class RPCError(DragonchainException):
-    """Exception raise when RPC has an error"""
+class InterchainConnectionError(DragonchainException):
+    """Exception raise when RPC / API call has an error"""
 
 
-class APIError(DragonchainException):
-    """Exception raise when API has an error"""
-
-
-class RPCTransactionNotFound(DragonchainException):
+class TransactionNotFound(DragonchainException):
     """Exception raised when a transaction is not found on an interchain network"""
 
 

@@ -15,9 +15,8 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-import base64
+import base64, binascii
 from typing import Dict, Any
-from ast import literal_eval
 
 from binance_chain.messages import TransferMsg, Signature
 from binance_chain.wallet import Wallet
@@ -33,8 +32,8 @@ DC_MAINNET_NODE = "http://10.2.1.197"  # Mainnet BNB
 DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org:443/"  # Testnet BNB
 # we currently don't have a private testnet node set up...
 
-MAINNET_RPC_PORT = ":27147/"
-MAINNET_API_PORT = ":1169/api/v1/"
+MAINNET_RPC_PORT = "27147"
+MAINNET_API_PORT = "1169"
 
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
@@ -64,24 +63,26 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 if len(user_input["private_key"]) == 66:  # private keys in hex are 66 chars with leading 0x
                     user_input["private_key"] = user_input["private_key"][2:]  # Trim the 0x
                 if len(user_input["private_key"]) == 64:  # private keys in hex are 64 chars
-                    user_input["private_key"] = base64.b64encode(bytes.fromhex(user_input["private_key"])).decode("ascii")
+                    user_input["private_key"] = base64.b64encode(binascii.unhexlify(user_input["private_key"])).decode("ascii")
                 else:  # assume key is a mnemonic string
                     wallet = Wallet.create_wallet_from_mnemonic(user_input.get("private_key"))
-                    user_input["private_key"] = wallet.private_key
+                    user_input["private_key"] = base64.b64encode(binascii.unhexlify(wallet.private_key)).decode("ascii")
             except Exception:
-                # If there's an error here, it's a bad key. Just set it to something bad as bad keys are caught later when making the client
+                # If there's an error here, it's a bad key. Sets it to a bad key, will be caught later when making the client
                 user_input["private_key"] = "BAD_KEY_WAS_FOUND"
-        # check if it's hex...
-
-        # initialize from mem:
-        # wallet = Wallet.create_wallet_from_mnemonic('mnemonic word string', env=testnet_env)
 
         # check for user-provided node address
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
-            user_input["node_ip"] = DC_TESTNET_NODE if user_input["testnet"] else DC_MAINNET_NODE
-            user_input["rpc_port"] = MAINNET_RPC_PORT
-            user_input["api_port"] = MAINNET_API_PORT
+            user_input["node_ip"] = DC_TESTNET_NODE if user_input.get("testnet") else DC_MAINNET_NODE
+            user_input["rpc_port"] = f":{MAINNET_RPC_PORT}/"
+            user_input["api_port"] = f":{MAINNET_API_PORT}/api/v1/"
+        else:
+            # accept port #s from user, then fix formatting behind the scenes for them to work
+            user_input["rpc_port"] = f":{user_input['rpc_port']}/"
+            user_input["api_port"] = f":{user_input['api_port']}/api/v1/"
+
+        # TODO: need to check that IP & two ports exist & are valid
 
         # Create the actual client and check that the given node is reachable
         try:
@@ -95,7 +96,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
             )
         except Exception:
             raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
-        # check that the binance node is reachable
+        # check that the binance node is reachable (this checks both RPC and API endpoints)
         try:
             client.ping()
         except Exception as e:
@@ -144,12 +145,12 @@ class BinanceNetwork(model.InterchainModel):
             prod_env = BinanceEnvironment(api_url=api_port, hrp="bnb")
             self.wallet = Wallet(private_key, env=prod_env)
 
-        self.priv_key = self.wallet.private_key
         self.wallet_address = self.wallet.address
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         self._call_node_rpc("status", {})
+        self._call_node_api("version", {})
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -159,15 +160,16 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             Boolean if the transaction has received enough confirmations to be considered confirmed
         Raises:
-            exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
+            exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        transaction_hash = "0x" + transaction_hash  # GET call needs this in front of the hash
+        # TODO: will this function be called with a txn hash that has this prepended already?   do I need a conditional check?
+        # transaction_hash = f"0x{transaction_hash}"  # GET call needs this in front of the hash
         try:
             response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": "true"})
             transaction_block_number = response["result"]["height"]
-        except exceptions.RPCError:
-            raise exceptions.RPCTransactionNotFound(f"Transaction {transaction_hash} not found")
+        except exceptions.InterchainConnectionError:
+            raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
         latest_block_number = self.get_current_block()
         _log.info(f"[BINANCE] Latest block number: {latest_block_number} | Block number of transaction: {transaction_block_number}")
         return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
@@ -194,13 +196,12 @@ class BinanceNetwork(model.InterchainModel):
         """
         _log.info("Double checking the send fee...")
         response = self._call_node_api("fees", {})
-        fee_type = response[12]["fixed_fee_params"]["msg_type"]  # should be "send"
-        if fee_type == "send":
-            fee_amt = response[12]["fixed_fee_params"]["fee"]  # fixed fee: 37500 (0.000375 BNB)
-            return fee_amt
-        else:
-            _log.info("Double-check failed; resorting to saved fee value.")
-            return SEND_FEE  # SET GLOBALLY
+        for fee_block in response:
+            if "fixed_fee_params" in fee_block:
+                if fee_block["fixed_fee_params"]["msg_type"] == "send":
+                    return fee_block["fixed_fee_params"]["fee"]  # fixed fee: 37500 (0.000375 BNB)
+        _log.info("Double-check failed; resorting to saved fee value.")
+        return SEND_FEE  # SET GLOBALLY
 
     # https://docs.binance.org/api-reference/node-rpc.html#6110-query-block
     def get_current_block(self) -> int:
@@ -235,27 +236,16 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             string of the private key
         """
-        return self.priv_key
+        return base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
 
-    def create_signed_transaction(self, raw_txn: Dict[str, Any]) -> str:
+    def create_signed_transaction(self, raw_txn: str) -> str:
         """Sign a transaction for this network
         Args:
-            raw_transaction: The dictionary of the raw transaction containing:
-                amt: amount of BNB to be sent
-                to_address: address to send BNB to
-                memo: string of arbitrary data to add with this transaction
+            raw_transaction: string of arbitrary data to add with this transaction
         Returns:
             Hex string of the signed transaction
         """
-
-        transfer_msg = TransferMsg(
-            wallet=self.wallet,
-            symbol="BNB",
-            amount=raw_txn["amount"],
-            to_address=raw_txn["to_address"],
-            memo=raw_txn["memo"],
-            # STOP LINTING!
-        )
+        transfer_msg = TransferMsg(symbol="BNB", amount=0, to_address="0x0000000000000000000000000000000000000000", memo=raw_txn)
 
         try:
             _log.info(f"[BINANCE] Signing raw transaction: {transfer_msg}")
@@ -273,21 +263,29 @@ class BinanceNetwork(model.InterchainModel):
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
         # create and sign transaction data
-        signed_transaction = self.create_signed_transaction(literal_eval(transaction_payload))
+        signed_transaction = self.create_signed_transaction(transaction_payload)
         # Send signed transaction
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_transaction})
         return response["result"]["hash"]  # transaction hash
+
+    # TODO: IMPLEMENT
+    def _get_api_address(self):
+        pass
+
+    # TODO: IMPLEMENT
+    def _get_rpc_address(self):
+        pass
 
     def _call_node_api(self, method: str, params: Dict[str, Any]) -> Any:
         full_address = self.api_port + method
         r = requests.get(full_address, params, timeout=30)
         error_status = f"Error from binance node with http status code {r.status_code} | {r.text}"
         if r.status_code != 200:
-            raise exceptions.APIError(error_status)
+            raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
         error_response = "The API server call got an error response: {response}"
         if response.get("error") or response.get("errors"):
-            raise exceptions.APIError(error_response)
+            raise exceptions.InterchainConnectionError(error_response)
         return response
 
     def _call_node_rpc(self, method: str, params: Dict[str, Any]) -> Any:
@@ -295,12 +293,16 @@ class BinanceNetwork(model.InterchainModel):
         r = requests.get(full_address, params, timeout=30)
         error_status = f"Error from binance node with http status code {r.status_code} | {r.text}"
         if r.status_code != 200:
-            raise exceptions.RPCError(error_status)
+            raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
         error_response = "The RPC server call got an error response: {response}"
         if response.get("error") or response.get("errors"):
-            raise exceptions.RPCError(error_response)
+            raise exceptions.InterchainConnectionError(error_response)
         return response
+
+    # TODO:
+    def _call_node(self, full_address, params: Dict[str, Any]) -> Any:
+        pass
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export this network to be saved in storage

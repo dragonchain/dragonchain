@@ -680,8 +680,9 @@ create_binance_interchain_schema_v1 = {
         "version": {"type": "string", "enum": ["1"]},
         "name": {"type": "string"},
         "testnet": {"type": "boolean"},
-        "rpc_address": {"type": "string"},
-        "api_address": {"type": "string"},
+        "node_ip": {"type": "string"},
+        "rpc_port": {"type": "string"},
+        "api_port": {"type": "string"},
         "private_key": {"type": "string"},
     },
     "additionalProperties": False,
@@ -695,38 +696,23 @@ update_binance_interchain_schema_v1 = {
         "version": {"type": "string", "enum": ["1"]},
         "name": {"type": "string"},
         "testnet": {"type": "boolean"},
-        "rpc_address": {"type": "string"},
-        "api_address": {"type": "string"},
+        "node_ip": {"type": "string"},
+        "rpc_port": {"type": "string"},
+        "api_port": {"type": "string"},
         "private_key": {"type": "string"},
     },
     "additionalProperties": False,
     "required": ["version"],
 }
 
-
 bnb_transaction_schema_v1 = {
     "type": "object",
     "properties": {
-        "wallet": {"type": "object"},
         "symbol": {"type": "string"},
         "amount": {"type": "integer"},
         "to_address": {"type": "string"},
+        "memo": {"type": "string"},
     },
-    "required": ["wallet", "amount", "to_address"],
+    "required": ["amount", "to_address"],
     "additionalProperties": False,
 }
-
-# # LITECOIN INTERCHAIN #
-
-# create_litecoin_interchain_schema_v1 = {
-
-# }
-
-# # Same as create without required name field
-# update_litecoin_interchain_schema_v1 = {
-
-# }
-
-# ltc_transaction_schema_v1 = {
-
-# }

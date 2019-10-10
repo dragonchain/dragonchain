@@ -95,7 +95,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BitcoinNetwork":
         # Now finally register the given address
         try:
             client.register_address(user_input.get("utxo_scan") or False)
-        except exceptions.RPCError as e:
+        except exceptions.InterchainConnectionError as e:
             raise exceptions.BadRequest(f"Error registering address with bitcoin node. Error: {e}")
 
         return client
@@ -177,14 +177,14 @@ class BitcoinNetwork(model.InterchainModel):
         Returns:
             Boolean if the transaction has received enough confirmations to be considered confirmed
         Raises:
-            exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
+            exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BTC] Getting confirmations for {transaction_hash}")
         try:
             confirmations = self._call("getrawtransaction", transaction_hash, True).get("confirmations") or 0
-        except exceptions.RPCError:
+        except exceptions.InterchainConnectionError:
             _log.warning("The transaction may have been dropped.")
-            raise exceptions.RPCTransactionNotFound(f"Transaction {transaction_hash} not found")
+            raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
         _log.info(f"[BTC] {confirmations} confirmations")
         return confirmations >= CONFIRMATIONS_CONSIDERED_FINAL
 
@@ -300,7 +300,7 @@ class BitcoinNetwork(model.InterchainModel):
         Returns:
             The result from the rpc call
         Raises:
-            exceptions.RPCError: If the remote call returned an error
+            exceptions.InterchainConnectionError: If the remote call returned an error
         """
         # Note: Even though sending json, documentation still says to use text/plain content type header
         # https://bitcoin.org/en/developer-reference#remote-procedure-calls-rpcs
@@ -311,10 +311,10 @@ class BitcoinNetwork(model.InterchainModel):
             timeout=30,
         )
         if r.status_code != 200:
-            raise exceptions.RPCError(f"Error from bitcoin node with http status code {r.status_code} | {r.text}")
+            raise exceptions.InterchainConnectionError(f"Error from bitcoin node with http status code {r.status_code} | {r.text}")
         response = r.json()
         if response.get("error") or response.get("errors"):
-            raise exceptions.RPCError(f"The RPC call got an error response: {response}")
+            raise exceptions.InterchainConnectionError(f"The RPC call got an error response: {response}")
         return response["result"]
 
     def export_as_at_rest(self) -> Dict[str, Any]:

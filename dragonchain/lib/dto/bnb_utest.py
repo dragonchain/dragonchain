@@ -117,8 +117,8 @@ class TestBinanceMethods(unittest.TestCase):
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_error(self):
-        self.client._call_node_rpc = MagicMock(side_effect=exceptions.RPCError)
-        self.assertRaises(exceptions.RPCTransactionNotFound, self.client.is_transaction_confirmed, "FakeTxnHash")
+        self.client._call_node_rpc = MagicMock(side_effect=exceptions.InterchainConnectionError)
+        self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "FakeTxnHash")
         self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": "true"})
 
     def test_export_as_at_rest(self):
@@ -144,7 +144,7 @@ class TestBinanceMethods(unittest.TestCase):
 
     @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
     def test_rpc_request_error(self, mock_get):
-        self.assertRaises(exceptions.RPCError, self.client._call_node_rpc, "--MyMethod", {"flag": True, "symbol": "BANANA"})
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "--MyMethod", {"flag": True, "symbol": "BANANA"})
         mock_get.assert_called_once_with("rpc_27147--MyMethod", {"flag": True, "symbol": "BANANA"}, timeout=30)
 
     def test_from_user_input_throws_with_bad_private_key(self):
