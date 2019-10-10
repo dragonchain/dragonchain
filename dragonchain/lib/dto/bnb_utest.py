@@ -66,7 +66,7 @@ class TestBinanceMethods(unittest.TestCase):
 
     @patch("binance_chain.messages.Signature.sign", MagicMock(return_value="fake_signed_txn"))
     def test_create_signed_transaction(self):
-        fake_raw_txn = {"amount": 123, "to_address": "tbnb_bogus_addy", "memo": "BNB test txn"}
+        fake_raw_txn = "fake_L5_hash"
         response = self.client.create_signed_transaction(fake_raw_txn)
         self.assertEqual(response, "fake_signed_txn")
 
@@ -91,21 +91,21 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.check_balance()
         self.assertEqual(response, 1234567890)
-        self.client._call_node_api.assert_called_once_with(api_string, {})
+        self.client._call_node_api.assert_called_once_with(api_string)
 
     def test_get_transaction_fee(self):
-        fake_response = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, {"fixed_fee_params": {"msg_type": "send", "fee": 31337}}]
+        fake_response = [{}, {}, {"fixed_fee_params": {"msg_type": "send", "fee": 31337}}, {}, {}]
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.get_transaction_fee()
         self.assertEqual(response, 31337)
-        self.client._call_node_api.assert_called_once_with("fees", {})
+        self.client._call_node_api.assert_called_once_with("fees")
 
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
         self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245739}})  # txn 100 blocks ago
         response = self.client.is_transaction_confirmed("FakeTxnHash")
         self.assertTrue(response)
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": "true"})
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "FakeTxnHash", "prove": "true"})
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_unconfirmed(self):
@@ -113,13 +113,13 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245839}})  # txn in latest block
         response = self.client.is_transaction_confirmed("FakeTxnHash")
         self.assertFalse(response)
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": "true"})
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "FakeTxnHash", "prove": "true"})
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_error(self):
         self.client._call_node_rpc = MagicMock(side_effect=exceptions.InterchainConnectionError)
         self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "FakeTxnHash")
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": "true"})
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "FakeTxnHash", "prove": "true"})
 
     def test_export_as_at_rest(self):
         self.assertEqual(
@@ -132,20 +132,35 @@ class TestBinanceMethods(unittest.TestCase):
                 "node_ip": "b.a.n.a.n.a",
                 "rpc_port": "rpc_27147",
                 "api_port": "api_1169",
-                "private_key": "E9873D79C6D87DC0FB6A5778633389F4453213303DA61F20BD67FC233AA33262",
+                "private_key": "6Yc9ecbYfcD7ald4YzOJ9EUyEzA9ph8gvWf8IzqjMmI=",
             },
         )
 
-    @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
-    def test_rpc_request_success(self, mock_get):
-        response = self.client._call_node_rpc("--MyMethod", {"flag": True, "symbol": "BANANA"})
+    @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
+    def test_rpc_request_success(self, mock_post):
+        response = self.client._call_node_rpc("MyMethod", {"symbol": "BANANA"})
         self.assertEqual(response, {"result": "MyResult"})
-        mock_get.assert_called_once_with("rpc_27147--MyMethod", {"flag": True, "symbol": "BANANA"}, timeout=30)
+        mock_post.assert_called_once_with(
+            "b.a.n.a.n.a:rpc_27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
+        )
+
+    @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
+    def test_rpc_request_error(self, mock_post):
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
+        mock_post.assert_called_once_with(
+            "b.a.n.a.n.a:rpc_27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
+        )
+
+    @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
+    def test_api_request_success(self, mock_get):
+        response = self.client._call_node_api("MyPath")
+        self.assertEqual(response, {"result": "MyResult"})
+        mock_get.assert_called_once_with("b.a.n.a.n.a:api_1169/api/v1/MyPath", timeout=30)
 
     @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
-    def test_rpc_request_error(self, mock_get):
-        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "--MyMethod", {"flag": True, "symbol": "BANANA"})
-        mock_get.assert_called_once_with("rpc_27147--MyMethod", {"flag": True, "symbol": "BANANA"}, timeout=30)
+    def test_api_request_error(self, mock_get):
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "MyPath")
+        mock_get.assert_called_once_with("b.a.n.a.n.a:api_1169/api/v1/MyPath", timeout=30)
 
     def test_from_user_input_throws_with_bad_private_key(self):
         fake_input = {

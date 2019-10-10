@@ -15,8 +15,9 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-import base64, binascii
 from typing import Dict, Any
+import base64
+import binascii
 
 from binance_chain.messages import TransferMsg, Signature
 from binance_chain.wallet import Wallet
@@ -75,14 +76,12 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
             user_input["node_ip"] = DC_TESTNET_NODE if user_input.get("testnet") else DC_MAINNET_NODE
-            user_input["rpc_port"] = f":{MAINNET_RPC_PORT}/"
-            user_input["api_port"] = f":{MAINNET_API_PORT}/api/v1/"
+            user_input["rpc_port"] = MAINNET_RPC_PORT
+            user_input["api_port"] = MAINNET_API_PORT
         else:
             # accept port #s from user, then fix formatting behind the scenes for them to work
-            user_input["rpc_port"] = f":{user_input['rpc_port']}/"
-            user_input["api_port"] = f":{user_input['api_port']}/api/v1/"
-
-        # TODO: need to check that IP & two ports exist & are valid
+            user_input["rpc_port"] = user_input["rpc_port"]
+            user_input["api_port"] = user_input["api_port"]
 
         # Create the actual client and check that the given node is reachable
         try:
@@ -150,7 +149,7 @@ class BinanceNetwork(model.InterchainModel):
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         self._call_node_rpc("status", {})
-        self._call_node_api("version", {})
+        self._call_node_api("version")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -183,8 +182,8 @@ class BinanceNetwork(model.InterchainModel):
             The amount of funds of that token in the wallet
         """
         _log.info(f"[BNB] Checking {symbol} balance for {self.wallet_address}")
-        method = f"balances/{self.wallet_address}/{symbol}"
-        response = self._call_node_api(method, {})  # passing empty params dict
+        path = f"balances/{self.wallet_address}/{symbol}"  # params not handled in typical way
+        response = self._call_node_api(path)
         bnb_balance = response["balance"]["free"]
         return bnb_balance
 
@@ -195,7 +194,7 @@ class BinanceNetwork(model.InterchainModel):
             The amount of estimated transaction fee cost for the network
         """
         _log.info("Double checking the send fee...")
-        response = self._call_node_api("fees", {})
+        response = self._call_node_api("fees")
         for fee_block in response:
             if "fixed_fee_params" in fee_block:
                 if fee_block["fixed_fee_params"]["msg_type"] == "send":
@@ -245,8 +244,8 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             Hex string of the signed transaction
         """
-        transfer_msg = TransferMsg(symbol="BNB", amount=0, to_address="0x0000000000000000000000000000000000000000", memo=raw_txn)
-
+        dummy = "0x0000000000000000000000000000000000000000"
+        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=raw_txn)
         try:
             _log.info(f"[BINANCE] Signing raw transaction: {transfer_msg}")
             signed_transaction = Signature(transfer_msg).sign()
@@ -268,41 +267,36 @@ class BinanceNetwork(model.InterchainModel):
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_transaction})
         return response["result"]["hash"]  # transaction hash
 
-    # TODO: IMPLEMENT
-    def _get_api_address(self):
-        pass
-
-    # TODO: IMPLEMENT
-    def _get_rpc_address(self):
-        pass
-
-    def _call_node_api(self, method: str, params: Dict[str, Any]) -> Any:
-        full_address = self.api_port + method
-        r = requests.get(full_address, params, timeout=30)
-        error_status = f"Error from binance node with http status code {r.status_code} | {r.text}"
-        if r.status_code != 200:
-            raise exceptions.InterchainConnectionError(error_status)
-        response = r.json()
-        error_response = "The API server call got an error response: {response}"
-        if response.get("error") or response.get("errors"):
-            raise exceptions.InterchainConnectionError(error_response)
-        return response
-
+    # endpoints currently hit are:
+    #     "tx" (block number check)
+    #     "block" (latest block check)
+    #     "broadcast_tx_commit" (submit txn)
     def _call_node_rpc(self, method: str, params: Dict[str, Any]) -> Any:
-        full_address = self.rpc_port + method
-        r = requests.get(full_address, params, timeout=30)
+        full_address = f"{self.node_ip}:{self.rpc_port}/"
+        body = {"method": method, "jsonrpc": "2.0", "params": params, "id": "dontcare"}
+        r = requests.post(full_address, json=body, timeout=30)
+        response = self._get_response(r)
+        return response
+
+    # endpoints currently hit are:
+    #     "version" (ping check)
+    #     "fees" (fee check)
+    #     "balances" (tokens in address check)
+    def _call_node_api(self, path: str) -> Any:
+        full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
+        r = requests.get(full_address, timeout=30)
+        response = self._get_response(r)
+        return response
+
+    def _get_response(self, r: requests.Response) -> Any:
         error_status = f"Error from binance node with http status code {r.status_code} | {r.text}"
         if r.status_code != 200:
             raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
-        error_response = "The RPC server call got an error response: {response}"
+        error_response = "The server call got an error response: {response}"
         if response.get("error") or response.get("errors"):
             raise exceptions.InterchainConnectionError(error_response)
         return response
-
-    # TODO:
-    def _call_node(self, full_address, params: Dict[str, Any]) -> Any:
-        pass
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export this network to be saved in storage
