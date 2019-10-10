@@ -89,8 +89,8 @@ def post_contract_v1() -> Tuple[str, int, Dict[str, str]]:
         _validate_sc_create_v1(contract)
         if contract.get("custom_indexes"):
             helpers.verify_custom_indexes_options(contract.get("custom_indexes"))
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(202, smart_contracts.create_contract_v1(contract))
 
@@ -105,8 +105,8 @@ def update_contract_v1(contract_id: str) -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_sc_update_v1(update)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(202, smart_contracts.update_contract_v1(contract_id, update))
 

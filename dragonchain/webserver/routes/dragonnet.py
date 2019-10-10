@@ -82,8 +82,8 @@ def enqueue_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_broadcast_schema_v1(content)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("Input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     dragonnet.enqueue_item_for_verification_v1(content, deadline)
     return helpers.flask_http_response(200, helpers.format_success(True))
@@ -100,8 +100,8 @@ def dragonnet_auth_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_interchain_auth_v1(body)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("Request body did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     dragonnet.register_interchain_auth_v1(body)
     return helpers.flask_http_response(201, helpers.format_success(True))

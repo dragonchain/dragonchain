@@ -52,8 +52,8 @@ def create_api_key_v1() -> Tuple[str, int, Dict[str, str]]:
         body = flask.request.json
         try:
             _validate_api_key_creation_v1(body)
-        except fastjsonschema.JsonSchemaException:
-            raise exceptions.ValidationException("User input did not match JSON schema")
+        except fastjsonschema.JsonSchemaException as e:
+            raise exceptions.ValidationException(str(e))
         nickname = body.get("nickname") or ""
 
     return helpers.flask_http_response(201, api_keys.create_api_key_v1(nickname))
@@ -97,8 +97,8 @@ def update_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_api_key_update_v1(body)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     api_keys.update_api_key_v1(key_id, body["nickname"])
     return helpers.flask_http_response(200, helpers.format_success(True))

@@ -50,8 +50,8 @@ def post_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_txn_create_v1(txn)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(201, transactions.submit_transaction_v1(txn, flask.request.headers.get("X-Callback-URL")))
 
@@ -68,8 +68,8 @@ def post_transaction_bulk_v1() -> Tuple[str, int, Dict[str, str]]:
 
     try:
         _validate_bulk_txn_create_v1(content)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     response = transactions.submit_bulk_transaction_v1(content)
     if not response["201"]:

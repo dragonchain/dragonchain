@@ -57,8 +57,8 @@ def register_transaction_type_v1() -> Tuple[str, int, Dict[str, str]]:
         _validate_create_txn_type_v1(content)
         if content.get("custom_indexes"):
             helpers.verify_custom_indexes_options(content["custom_indexes"])
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     transaction_types.register_transaction_type_v1(content)
     return helpers.flask_http_response(200, helpers.format_success(True))
