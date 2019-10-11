@@ -12,6 +12,7 @@
   - Fix a bug where L5s returned a 404 for the status endpoint when a default interchain was not yet set
   - Fix a bug where very large payloads could attempt to be cached and crash the caching redis
   - Fix a bug so that non-existant routes in the api now properly return a 404
+  - Fix a bug where accepting the disable_schedule parameter when updating a contract didn't do anything
 - **Documentation:**
   - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
   - Stop posting helm chart directly to docs
