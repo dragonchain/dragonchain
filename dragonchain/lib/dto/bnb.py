@@ -30,7 +30,7 @@ from dragonchain.lib.dto import model
 
 
 DC_MAINNET_NODE = "http://10.2.1.197"  # Mainnet BNB
-DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org:443/"  # Testnet BNB
+DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org:443"  # Testnet BNB
 # we currently don't have a private testnet node set up...
 
 MAINNET_RPC_PORT = "27147"
@@ -238,19 +238,30 @@ class BinanceNetwork(model.InterchainModel):
         """
         return base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
 
-    def create_signed_transaction(self, raw_txn: str) -> str:
+    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network
         Args:
-            raw_transaction: string of arbitrary data to add with this transaction
+            raw_transaction: The dictionary of the raw transaction containing:
+                to: hex string of the to address
+                symbol: the exchange symbol for the token (NOT defaulted to BNB)
+                amount:  amount of token in transaction
+                to_address:  address sending tokens to
+                memo: Optional string of arbitrary data
+
+                value: The amount of eth (in wei) to send (in hex string)
         Returns:
-            Hex string of the signed transaction
+            String of the signed transaction as hex
         """
-        dummy = "0x0000000000000000000000000000000000000000"
-        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=raw_txn)
+        transfer_msg = TransferMsg(
+            wallet=self.wallet,
+            symbol=raw_transaction["symbol"],
+            amount=raw_transaction["amount"],
+            to_address=raw_transaction["to_address"],
+            memo=raw_transaction.get("memo"),  # optional, don't error if it's missing
+        )
         try:
             _log.info(f"[BINANCE] Signing raw transaction: {transfer_msg}")
-            signed_transaction = Signature(transfer_msg).sign()
-            return signed_transaction
+            return Signature(transfer_msg).sign()  # signed transaction
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
 
@@ -262,10 +273,13 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-        # create and sign transaction data
-        signed_transaction = self.create_signed_transaction(transaction_payload)
+
+        # Sign transaction data
+        dummy = "0x0000000000000000000000000000000000000000"
+        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=transaction_payload)
+
         # Send signed transaction
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_transaction})
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": transfer_msg})
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
