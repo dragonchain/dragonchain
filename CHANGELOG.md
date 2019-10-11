@@ -4,6 +4,7 @@
 
 - **Feature:**
   - Default error reporting to save to disk, so that crash logs/tracebacks can be automatically saved.
+  - Provide better error message when bad input to api doesn't match required schemas
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
   - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name
@@ -15,7 +16,7 @@
   - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
   - Stop posting helm chart directly to docs
 - **Packaging:**
-  - Update aioredis, docker, boto3, web3, and aiohttp dependencies
+  - Update aioredis, docker, boto3, web3, redis, fastjsonschema, and aiohttp dependencies
   - Update helm chart to use a pinned container version by default
   - Use a helm chart repository for helm distribution
 - **Development:**
