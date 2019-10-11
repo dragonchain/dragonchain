@@ -19,6 +19,7 @@ from typing import Dict, Any, List, cast, TYPE_CHECKING
 
 from dragonchain.lib.dto import eth
 from dragonchain.lib.dto import btc
+from dragonchain.lib.dto import bnb
 from dragonchain.lib.dao import interchain_dao
 from dragonchain import exceptions
 from dragonchain import logger
@@ -51,11 +52,26 @@ def _bitcoin_client_to_user_dto_v1(btc_client: btc.BitcoinNetwork) -> Dict[str, 
     }
 
 
+def _binance_client_to_user_dto_v1(bnb_client: bnb.BinanceNetwork) -> Dict[str, Any]:
+    return {
+        "version": "1",
+        "blockchain": bnb_client.blockchain,
+        "name": bnb_client.name,
+        "node_ip": bnb_client.node_ip,
+        "rpc_port": bnb_client.rpc_port,
+        "api_port": bnb_client.api_port,
+        "testnet": bnb_client.testnet,
+        "address": bnb_client.address,
+    }
+
+
 def _get_output_dto_v1(client: "model.InterchainModel") -> Dict[str, Any]:
     if client.blockchain == "ethereum":
         return _ethereum_client_to_user_dto_v1(cast(eth.EthereumNetwork, client))
     elif client.blockchain == "bitcoin":
         return _bitcoin_client_to_user_dto_v1(cast(btc.BitcoinNetwork, client))
+    elif client.blockchain == "binance":
+        return _binance_client_to_user_dto_v1(cast(bnb.BinanceNetwork, client))
     else:
         raise RuntimeError(f"Unkown fetched blockchain type {client.blockchain}")
 
@@ -74,6 +90,15 @@ def create_ethereum_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
     if interchain_dao.does_interchain_exist("ethereum", client.name):
         _log.error("Ethereum network is already registered")
         raise exceptions.InterchainConflict(f"An ethereum interchain network with the name {client.name} is already registered")
+    interchain_dao.save_interchain_client(client)
+    return _get_output_dto_v1(client)
+
+
+def create_binance_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+    client = bnb.new_from_user_input(user_data)
+    if interchain_dao.does_interchain_exist("binance", client.name):
+        _log.error("Binance network is already registered")
+        raise exceptions.InterchainConflict(f"A binance interchain network with the name {client.name} is already registered")
     interchain_dao.save_interchain_client(client)
     return _get_output_dto_v1(client)
 
@@ -108,6 +133,23 @@ def update_ethereum_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[
     }
     # Create and save updated client
     return create_ethereum_interchain_v1(client_data)
+
+
+def update_binance_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Get current client
+    current_client = cast(bnb.BinanceNetwork, interchain_dao.get_interchain_client("binance", name))
+    # Merge user data with existing data
+    client_data = {
+        "version": "1",
+        "name": name,
+        "testnet": user_data["testnet"] if isinstance(user_data.get("testnet"), bool) else current_client.testnet,
+        "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
+        "node_ip": user_data["node_ip"] if isinstance(user_data.get("node_ip"), str) else current_client.node_ip,
+        "rpc_port": user_data["rpc_port"] if isinstance(user_data.get("rpc_port"), str) else current_client.rpc_port,
+        "api_port": user_data["api_port"] if isinstance(user_data.get("api_port"), str) else current_client.api_port,
+    }
+    # Create and save updated client
+    return create_binance_interchain_v1(client_data)
 
 
 def get_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:

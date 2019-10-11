@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, List, Any
 from dragonchain import exceptions
 from dragonchain.lib.dto import eth
 from dragonchain.lib.dto import btc
+from dragonchain.lib.dto import bnb
 from dragonchain.lib.interfaces import storage
 
 if TYPE_CHECKING:
@@ -59,6 +60,8 @@ def get_interchain_client(blockchain: str, name: str) -> "model.InterchainModel"
         return btc.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/bitcoin/{name}"))
     elif blockchain == "ethereum":
         return eth.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/ethereum/{name}"))
+    elif blockchain == "binance":
+        return bnb.new_from_at_rest(storage.get_json_from_object(f"{FOLDER}/binance/{name}"))
     else:
         raise exceptions.NotFound(f"Blockchain network {blockchain} is not supported")
 
@@ -75,6 +78,8 @@ def list_interchain_clients(blockchain: str) -> List["model.InterchainModel"]:
         from_rest_function = btc.new_from_at_rest
     elif blockchain == "ethereum":
         from_rest_function = eth.new_from_at_rest
+    elif blockchain == "binance":
+        from_rest_function = bnb.new_from_at_rest
     else:
         raise exceptions.NotFound(f"Blockchain network {blockchain} is not supported")
 

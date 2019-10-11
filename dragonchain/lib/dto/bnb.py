@@ -128,6 +128,7 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
         raise NotImplementedError(f"DTO version {dto_version} not supported for binance network")
 
 
+# TODO: why am I not taking in private_key as base64 like in eth.py & btc.py
 class BinanceNetwork(model.InterchainModel):
     def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: str, api_port: str, private_key: str):
         self.blockchain = "binance"
@@ -144,7 +145,7 @@ class BinanceNetwork(model.InterchainModel):
             prod_env = BinanceEnvironment(api_url=api_port, hrp="bnb")
             self.wallet = Wallet(private_key, env=prod_env)
 
-        self.wallet_address = self.wallet.address
+        self.address = self.wallet.address
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
@@ -181,8 +182,8 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             The amount of funds of that token in the wallet
         """
-        _log.info(f"[BNB] Checking {symbol} balance for {self.wallet_address}")
-        path = f"balances/{self.wallet_address}/{symbol}"  # params not handled in typical way
+        _log.info(f"[BNB] Checking {symbol} balance for {self.address}")
+        path = f"balances/{self.address}/{symbol}"  # params not handled in typical way
         response = self._call_node_api(path)
         bnb_balance = response["balance"]["free"]
         return bnb_balance

@@ -37,6 +37,10 @@ _validate_ethereum_network_create_v1 = fastjsonschema.compile(schema.create_ethe
 _validate_ethereum_network_update_v1 = fastjsonschema.compile(schema.update_ethereum_interchain_schema_v1)
 _validate_ethereum_transaction_v1 = fastjsonschema.compile(schema.eth_transaction_schema_v1)
 
+_validate_binance_network_create_v1 = fastjsonschema.compile(schema.create_binance_interchain_schema_v1)
+_validate_binance_network_update_v1 = fastjsonschema.compile(schema.update_binance_interchain_schema_v1)
+_validate_binance_transaction_v1 = fastjsonschema.compile(schema.bnb_transaction_schema_v1)
+
 _validate_set_default_interchain_v1 = fastjsonschema.compile(schema.set_default_interchain_schema_v1)
 
 
@@ -97,6 +101,19 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated()
+def create_binance_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_binance_network_create_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(201, interchain.create_binance_interchain_v1(data))
+
+
+@request_authorizer.Authenticated()
 def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
@@ -123,6 +140,19 @@ def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated()
+def update_binance_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_binance_network_update_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.update_binance_interchain_v1(name, data))
+
+
+@request_authorizer.Authenticated()
 def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
@@ -146,6 +176,19 @@ def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]
         raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("ethereum", name, data))
+
+
+@request_authorizer.Authenticated()
+def create_binance_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_binance_transaction_v1(data)
+    except fastjsonschema.JsonSchemaException:
+        raise exceptions.ValidationException("User input did not match JSON schema")
+
+    return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("binance", name, data))
 
 
 @request_authorizer.Authenticated()
