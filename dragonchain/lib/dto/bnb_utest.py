@@ -25,11 +25,11 @@ from dragonchain.lib.dto import bnb
 
 class TestBinanceMethods(unittest.TestCase):
     def setUp(self):
-        private_key = "E9873D79C6D87DC0FB6A5778633389F4453213303DA61F20BD67FC233AA33262"
-        self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", "rpc_27147", "api_1169", private_key)
+        # private_key = "495bb2a3f229eb0abb2bf71a3dca56b31d60c128dfd81e9e907e5eedb67f19a0"
+        b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
+        self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", "rpc_27147", "api_1169", b64_private_key)
 
     def test_new_from_at_rest_good_input_v1(self):
-        private_key = "E9873D79C6D87DC0FB6A5778633389F4453213303DA61F20BD67FC233AA33262"
         client = bnb.new_from_at_rest(
             {
                 "version": "1",
@@ -38,7 +38,7 @@ class TestBinanceMethods(unittest.TestCase):
                 "rpc_port": "rpc_27147",
                 "api_port": "api_1169",
                 "testnet": True,
-                "private_key": private_key,
+                "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
             }
         )
         self.assertEqual(client.name, "banana")
@@ -46,7 +46,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.rpc_port, "rpc_27147")
         self.assertEqual(client.api_port, "api_1169")
         self.assertTrue(client.testnet)
-        self.assertEqual(client.wallet.address, "tbnb1ttpkkjhlj3w6xrqkhakztkavgdrxfk5vzdzaxm")
+        self.assertEqual(client.wallet.address, "tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk")
 
     def test_new_from_at_rest_bad_version(self):
         self.assertRaises(NotImplementedError, bnb.new_from_at_rest, {"version": "1337"})  # good is "1"
@@ -89,7 +89,7 @@ class TestBinanceMethods(unittest.TestCase):
 
     def test_check_balance(self):
         fake_response = {"balance": {"free": 1234567890}}
-        api_string = "balances/tbnb1ttpkkjhlj3w6xrqkhakztkavgdrxfk5vzdzaxm/BNB"
+        api_string = "balances/tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk/BNB"
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.check_balance()
         self.assertEqual(response, 1234567890)
@@ -134,7 +134,7 @@ class TestBinanceMethods(unittest.TestCase):
                 "node_ip": "b.a.n.a.n.a",
                 "rpc_port": "rpc_27147",
                 "api_port": "api_1169",
-                "private_key": "6Yc9ecbYfcD7ald4YzOJ9EUyEzA9ph8gvWf8IzqjMmI=",
+                "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
             },
         )
 
@@ -187,39 +187,50 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.api_port, "api_1169")
         self.assertTrue(client.testnet)
 
-    # TODO: implement
-    def test_new_from_user_input_sets_good_private_keys(self):
-        pass
+    # BROKEN:
+    # def test_new_from_user_input_sets_good_private_keys(self):
 
-    # FYI: example from other testcases
-    #     clienta = eth.new_from_user_input(
-    #         {"version": "1", "name": "banana", "chain_id": 1, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+    #     # before_body["address"] = "bnb1u06kxdru0we8at0ktd6q4c5qk80zwdyveh2cl8"
+    #     # priv_key = "495bb2a3f229eb0abb2bf71a3dca56b31d60c128dfd81e9e907e5eedb67f19a0"
+    #     # base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
+
+    #     # binascii.unhexlify(self.wallet.private_key)
+
+    #     # Good hex key without 0x
+    #     client_a = bnb.new_from_user_input(
+    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
     #     )
+
     #     # Good hex key with 0x
-    #     clientb = eth.new_from_user_input(
-    #         {"version": "1", "name": "banana", "chain_id": 1, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+    #     client_b = bnb.new_from_user_input(
+    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
     #     )
     #     # Good base64 key
-    #     clientc = eth.new_from_user_input(
-    #         {"version": "1", "name": "banana", "chain_id": 1, "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="}
+    #     client_c = bnb.new_from_user_input(
+    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="}
     #     )
-    #     self.assertEqual(clienta.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
-    #     self.assertEqual(clientb.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
-    #     self.assertEqual(clientc.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
+    #     print(client_b.wallet.private_key.to_bytes)
+    #     print("poop")
+    #     print(client_b.wallet.private_key)
+
+    #     self.assertEqual(
+    #         client_a.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+    #     )
+    #     self.assertEqual(
+    #         client_b.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+    #     )
+    #     self.assertEqual(
+    #         client_c.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+    #     )
 
     def test_new_from_user_input_throws_with_bad_keys(self):
-        pass
-
-    # FYI: example from other testcases
-    #     # Bad hex
-    #     self.assertRaises(
-    #         exceptions.BadRequest,
-    #         eth.new_from_user_input,
-    #         {"version": "1", "name": "banana", "chain_id": 1, "private_key": "0xnothexnothexab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"},
-    #     )
-    #     # Bad base64
-    #     self.assertRaises(
-    #         exceptions.BadRequest,
-    #         eth.new_from_user_input,
-    #         {"version": "1", "name": "banana", "chain_id": 1, "private_key": "badrEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="},
-    #     )
+        # Bad hex
+        self.assertRaises(
+            exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "0xNotHexButBanana"}
+        )
+        # Bad base64
+        self.assertRaises(
+            exceptions.BadRequest,
+            bnb.new_from_user_input,
+            {"version": "1", "name": "banana", "testnet": True, "private_key": "BadPrivateKeyNoBanana="},
+        )

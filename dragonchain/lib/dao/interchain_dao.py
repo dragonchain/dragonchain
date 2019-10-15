@@ -44,6 +44,8 @@ def does_interchain_exist(blockchain: str, name: str) -> bool:
         return storage.does_object_exist(f"{FOLDER}/bitcoin/{name}")
     elif blockchain == "ethereum":
         return storage.does_object_exist(f"{FOLDER}/ethereum/{name}")
+    elif blockchain == "binance":
+        return storage.does_object_exist(f"{FOLDER}/binance/{name}")
     else:
         return False
 

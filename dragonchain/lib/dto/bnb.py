@@ -30,11 +30,13 @@ from dragonchain.lib.dto import model
 
 
 DC_MAINNET_NODE = "http://10.2.1.197"  # Mainnet BNB
-DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org:443"  # Testnet BNB
+DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org"  # Testnet BNB
 # we currently don't have a private testnet node set up...
 
 MAINNET_RPC_PORT = "27147"
 MAINNET_API_PORT = "1169"
+TESTNET_RPC_PORT = "443"  # FIXME:  add in to user setup / testnet boolean conditional
+TESTNET_API_PORT = ""  # FIXME: unfortunately I don't think there are public testnet API-server endpoints...
 
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
@@ -57,7 +59,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
         if not user_input.get("private_key"):
             # We need to create a private key if not provided
             wallet = Wallet.create_random_wallet()
-            user_input["private_key"] = wallet.private_key
+            user_input["private_key"] = base64.b64encode(binascii.unhexlify(wallet.private_key)).decode("ascii")
         else:
             try:
                 # Check if user provided key is hex and convert if necessary
@@ -76,8 +78,8 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
             user_input["node_ip"] = DC_TESTNET_NODE if user_input.get("testnet") else DC_MAINNET_NODE
-            user_input["rpc_port"] = MAINNET_RPC_PORT
-            user_input["api_port"] = MAINNET_API_PORT
+            user_input["rpc_port"] = TESTNET_RPC_PORT if user_input.get("testnet") else MAINNET_RPC_PORT
+            user_input["api_port"] = TESTNET_API_PORT if user_input.get("testnet") else MAINNET_API_PORT
         else:
             # accept port #s from user, then fix formatting behind the scenes for them to work
             user_input["rpc_port"] = user_input["rpc_port"]
@@ -91,7 +93,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 node_ip=user_input["node_ip"],
                 rpc_port=user_input["rpc_port"],
                 api_port=user_input["api_port"],
-                private_key=user_input["private_key"],
+                b64_private_key=user_input["private_key"],
             )
         except Exception:
             raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
@@ -122,7 +124,7 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
             node_ip=binance_network_at_rest["node_ip"],
             rpc_port=binance_network_at_rest["rpc_port"],
             api_port=binance_network_at_rest["api_port"],
-            private_key=binance_network_at_rest["private_key"],
+            b64_private_key=binance_network_at_rest["private_key"],
         )
     else:
         raise NotImplementedError(f"DTO version {dto_version} not supported for binance network")
@@ -130,7 +132,7 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
 
 # TODO: why am I not taking in private_key as base64 like in eth.py & btc.py
 class BinanceNetwork(model.InterchainModel):
-    def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: str, api_port: str, private_key: str):
+    def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: str, api_port: str, b64_private_key: str):
         self.blockchain = "binance"
         self.name = name
         self.testnet = testnet
@@ -140,10 +142,10 @@ class BinanceNetwork(model.InterchainModel):
 
         if testnet:
             testnet_env = BinanceEnvironment(api_url=api_port, hrp="tbnb")
-            self.wallet = Wallet(private_key, env=testnet_env)
+            self.wallet = Wallet(binascii.hexlify(base64.b64decode(b64_private_key)).decode("ascii"), env=testnet_env)
         else:
             prod_env = BinanceEnvironment(api_url=api_port, hrp="bnb")
-            self.wallet = Wallet(private_key, env=prod_env)
+            self.wallet = Wallet(binascii.hexlify(base64.b64decode(b64_private_key)).decode("ascii"), env=prod_env)
 
         self.address = self.wallet.address
 
@@ -298,7 +300,10 @@ class BinanceNetwork(model.InterchainModel):
     #     "fees" (fee check)
     #     "balances" (tokens in address check)
     def _call_node_api(self, path: str) -> Any:
-        full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
+        if path == "version":  # the only API endpoint that doesn't have the regular path
+            full_address = f"{self.node_ip}:{self.api_port}/{path}"
+        else:
+            full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response

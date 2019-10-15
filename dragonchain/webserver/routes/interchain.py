@@ -48,14 +48,17 @@ def apply_routes(app: flask.Flask):
     # Create Interchain Network
     app.add_url_rule("/v1/interchains/bitcoin", "create_bitcoin_interchain_v1", create_bitcoin_interchain_v1, methods=["POST"])
     app.add_url_rule("/v1/interchains/ethereum", "create_ethereum_interchain_v1", create_ethereum_interchain_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/binance", "create_binance_interchain_v1", create_binance_interchain_v1, methods=["POST"])
     # Update Interchain Network
     app.add_url_rule("/v1/interchains/bitcoin/<name>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
     app.add_url_rule("/v1/interchains/ethereum/<name>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
+    app.add_url_rule("/v1/interchains/ethereum/<name>", "update_binance_interchain_v1", update_binance_interchain_v1, methods=["PATCH"])
     # Create Interchain Transaction
     app.add_url_rule("/v1/interchains/bitcoin/<name>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
     app.add_url_rule(
         "/v1/interchains/ethereum/<name>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"]
     )
+    app.add_url_rule("/v1/interchains/binance/<name>/transaction", "create_binance_transaction_v1", create_binance_transaction_v1, methods=["POST"])
     # List
     app.add_url_rule("/v1/interchains/<blockchain>", "list_interchains_v1", list_interchains_v1, methods=["GET"])
     # Get
