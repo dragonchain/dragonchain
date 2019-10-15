@@ -78,7 +78,7 @@ class BroadcastProcessorTests(unittest.TestCase):
 
     def test_get_level_from_storage_location_returns_none_when_fails(self):
         level = broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf")
-        self.assertEqual(level, None)
+        self.assertIsNone(level)
 
     def test_notification_urls_returns_set(self):
         urls = broadcast_processor.get_notification_urls("banana")
