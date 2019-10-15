@@ -86,7 +86,6 @@ dragonchain:
         requests:
           storage: 2Gi
 
-
   # -- dragonchain.verificationNotifications --
   # This Level 1 Dragonchain configuration will send received verifications via HTTP unique URL's configured here.
   # Verifications will be sent with HTTP POST, and contain three relevant headers documented below.
@@ -113,6 +112,7 @@ dragonchain:
     #   - https://yourUrlHere
     # l5:
     #   - https://yourUrlHere
+
 
 redis:
   # -- redis.storage --

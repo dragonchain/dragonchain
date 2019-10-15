@@ -18,7 +18,7 @@
 import os
 import time
 import asyncio
-from typing import Dict, Mapping, Iterable, Optional, Any, Union, cast
+from typing import Dict, Mapping, Iterable, Optional, Any, Union, cast, List
 
 import aioredis
 import aioredis.util
@@ -159,6 +159,16 @@ async def z_range_by_score_async(
     return await async_redis_client.zrangebyscore(
         key, min_num, max_num, withscores=withscores, offset=offset, count=count, encoding="utf8" if decode else aioredis.util._NOTSET
     )
+
+
+async def lrange_async(key: str, start: int, end: int) -> List:
+    await _set_redis_client_async_if_necessary()
+    return await async_redis_client.lrange(key, start, end)
+
+
+async def lrem_async(key: str, value: str, count=1) -> int:
+    await _set_redis_client_async_if_necessary()
+    return await async_redis_client.lrem(key, count, value)
 
 
 async def get_async(key: str, *, decode: bool = True) -> Optional[str]:
