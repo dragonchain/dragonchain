@@ -139,6 +139,10 @@ class AddressRegistrationFailure(DragonchainException):
     """Exception raised when a bitcoin address fails to register with the BTC node"""
 
 
+class NotificationVerificationError(DragonchainException):
+    """Exception raised when a verification notification is unable to determine level"""
+
+
 class LedgerError(DragonchainException):
     """Exception raised when there is an error ledgering data on to the chain"""
 

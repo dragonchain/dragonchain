@@ -23,6 +23,7 @@ from unittest.mock import patch, MagicMock
 from dragonchain import test_env  # noqa: F401
 from dragonchain.broadcast_processor import broadcast_processor
 from dragonchain import exceptions
+from dragonchain.exceptions import NotificationVerificationError
 
 
 def async_test(function):
@@ -77,8 +78,8 @@ class BroadcastProcessorTests(unittest.TestCase):
         self.assertEqual(level, "3")
 
     def test_get_level_from_storage_location_returns_none_when_fails(self):
-        level = broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf")
-        self.assertIsNone(level)
+        with self.assertRaises(NotificationVerificationError):
+            broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf")
 
     def test_notification_urls_returns_set(self):
         urls = broadcast_processor.get_notification_urls("banana")
@@ -480,7 +481,7 @@ class BroadcastProcessorTests(unittest.TestCase):
     async def test_process_verification_notification_calls_configured_url(
         self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
     ):
-        get_location_mock.return_value.set_result(["banana-location"])
+        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
         mock = MagicMock(return_value=asyncio.Future())
         mock.return_value.set_result(MagicMock(status=200))
         fake_session = MagicMock(post=mock)
@@ -489,4 +490,4 @@ class BroadcastProcessorTests(unittest.TestCase):
         fake_session.post.assert_called_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        srem_mock.assert_called_once_with("broadcast:notifications", "banana-location")
+        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")

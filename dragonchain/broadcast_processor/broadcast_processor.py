@@ -35,6 +35,7 @@ from dragonchain.lib import crypto
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.interfaces import storage
+from dragonchain.exceptions import NotificationVerificationError
 
 BROADCAST = os.environ["BROADCAST"]
 LEVEL = os.environ["LEVEL"]
@@ -120,10 +121,10 @@ def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level:
     return broadcasts
 
 
-def get_level_from_storage_location(storage_location: str) -> Optional[str]:
+def get_level_from_storage_location(storage_location: str) -> str:
     result = re.search("BLOCK/.*?-l([2-5])-", storage_location)
     if result is None:
-        return None
+        raise NotificationVerificationError(f"Unable to find level in the string '{storage_location}'")
     return result.group(1)
 
 
@@ -139,9 +140,7 @@ def sign(message: bytes) -> str:
     return keys.get_my_keys().make_signature(message, crypto.SupportedHashes.sha256)
 
 
-def get_all_notification_endpoints(level: Optional[str]) -> set:
-    if level is None:
-        return get_notification_urls("all")
+def get_all_notification_endpoints(level: str) -> set:
     return get_notification_urls("all").union(get_notification_urls(f"l{level}"))
 
 
