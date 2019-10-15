@@ -114,7 +114,7 @@ async def get_blocks_to_process_for_broadcast_async() -> List[Tuple[str, int]]:
 async def get_notification_verifications_for_broadcast_async() -> set:
     """Get the notifications scheduled to be checked by the broadcast processor right now
     Returns:
-        List of notifications to be re-transmitted by the broadcast processor (limit of 1000)
+        List of notifications to be re-transmitted by the broadcast processor
     """
     return await redis.smembers_async(NOTIFICATION_KEY)
 
