@@ -475,18 +475,18 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
     @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
     @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
-    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.lrem_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
     @async_test
     async def test_process_verification_notification_calls_configured_url(
-        self, redis_lrem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
+        self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
     ):
         get_location_mock.return_value.set_result(["banana-location"])
         mock = MagicMock(return_value=asyncio.Future())
         mock.return_value.set_result(MagicMock(status=200))
         fake_session = MagicMock(post=mock)
-        redis_lrem_mock.return_value.set_result("OK")
+        srem_mock.return_value.set_result("OK")
         await broadcast_processor.process_verification_notifications(fake_session)
         fake_session.post.assert_called_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        redis_lrem_mock.assert_called_once_with("broadcast:notifications", "banana-location")
+        srem_mock.assert_called_once_with("broadcast:notifications", "banana-location")

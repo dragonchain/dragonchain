@@ -120,7 +120,7 @@ def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level:
     return broadcasts
 
 
-def get_level_from_storage_location(storage_location: str):
+def get_level_from_storage_location(storage_location: str) -> Optional[str]:
     result = re.search("BLOCK/.*?-l([2-5])-", storage_location)
     if result is None:
         return None
@@ -139,6 +139,12 @@ def sign(message: bytes) -> str:
     return keys.get_my_keys().make_signature(message, crypto.SupportedHashes.sha256)
 
 
+def get_all_notification_endpoints(level: Optional[str]) -> set:
+    if level is None:
+        return get_notification_urls("all")
+    return get_notification_urls("all").union(get_notification_urls(f"l{level}"))
+
+
 async def process_verification_notifications(session: aiohttp.ClientSession) -> None:
     """Main function for the verification notification broadcast system
 
@@ -153,14 +159,13 @@ async def process_verification_notifications(session: aiohttp.ClientSession) -> 
             verification_bytes = storage.get(storage_location)
             level = get_level_from_storage_location(storage_location)
             signature = sign(verification_bytes)
-            all_endpoints = get_notification_urls("all").union(get_notification_urls(f"l{level}"))
-            for url in all_endpoints:
+            for url in get_all_notification_endpoints(level):
                 future = send_notification_verification(session, url, verification_bytes, signature, storage_location)
                 futures.add(asyncio.ensure_future(future))
-    try:
-        await asyncio.gather(*futures)  # "Fire & forget"
-    except Exception:
-        _log.exception("Error while notifying verification")
+        try:
+            await asyncio.gather(*futures)  # "Fire & forget"
+        except Exception:
+            _log.exception("Error while notifying verification")
 
 
 async def send_notification_verification(
@@ -175,7 +180,7 @@ async def send_notification_verification(
         url: The url to which bytes should be POSTed
         verification_bytes: the verification object read from disk as bytes
         signature: The signature of the bytes, signed by this dragonchain
-        redis_list_value: the key within a redis queue which should be removed after successful http request
+        redis_list_value: the key within a redis set which should be removed after successful http request
 
     Returns:
         None

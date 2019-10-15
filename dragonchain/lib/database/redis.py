@@ -18,7 +18,7 @@
 import os
 import time
 import asyncio
-from typing import Dict, Mapping, Iterable, Optional, Any, Union, cast, List
+from typing import Dict, Mapping, Iterable, Optional, Any, Union, cast
 
 import aioredis
 import aioredis.util
@@ -161,14 +161,14 @@ async def z_range_by_score_async(
     )
 
 
-async def lrange_async(key: str, start: int, end: int) -> List:
-    await _set_redis_client_async_if_necessary()
-    return await async_redis_client.lrange(key, start, end)
-
-
 async def lrem_async(key: str, value: str, count=1) -> int:
     await _set_redis_client_async_if_necessary()
     return await async_redis_client.lrem(key, count, value)
+
+
+async def srem_async(key: str, value: str) -> int:
+    await _set_redis_client_async_if_necessary()
+    return await async_redis_client.srem(key, value)
 
 
 async def get_async(key: str, *, decode: bool = True) -> Optional[str]:
@@ -263,6 +263,11 @@ def lpush_sync(name: str, *values: str) -> int:
     return redis_client.lpush(name, *values)
 
 
+def sadd_sync(name: str, *values: str) -> int:
+    _set_redis_client_if_necessary()
+    return redis_client.sadd(name, *values)
+
+
 def rpush_sync(name: str, *values: str) -> int:
     _set_redis_client_if_necessary()
     return redis_client.rpush(name, *values)
@@ -320,11 +325,6 @@ def hget_sync(name: str, key: str, decode: bool = True) -> Optional[str]:
     _set_redis_client_if_necessary()
     response = redis_client.hget(name, key)
     return _decode_response(response, decode)
-
-
-def sadd_sync(name: str, *values: str) -> int:
-    _set_redis_client_if_necessary()
-    return redis_client.sadd(name, *values)
 
 
 def smembers_sync(name: str, decode: bool = True) -> set:

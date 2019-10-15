@@ -17,6 +17,7 @@
 
 import re
 import time
+import os
 from typing import List, Tuple, Set
 
 from dragonchain.lib import dragonnet_config
@@ -104,29 +105,28 @@ def increment_storage_error_sync(block_id: str, current_level: int) -> None:
 
 async def get_blocks_to_process_for_broadcast_async() -> List[Tuple[str, int]]:
     """Get the blocks scheduled to be checked by the broadcast processor right now
-    Args:
     Returns:
         List of (block_id, score) tuples to be processed by the broadcast processor (limit of 1000)
     """
     return await redis.z_range_by_score_async(IN_FLIGHT_KEY, 0, int(time.time()), withscores=True, offset=0, count=1000)
 
 
-async def get_notification_verifications_for_broadcast_async() -> List[str]:
+async def get_notification_verifications_for_broadcast_async() -> set:
     """Get the notifications scheduled to be checked by the broadcast processor right now
-    Args:
     Returns:
         List of notifications to be re-transmitted by the broadcast processor (limit of 1000)
     """
-    return await redis.lrange_async(NOTIFICATION_KEY, 0, 1000)
+    return await redis.smembers_async(NOTIFICATION_KEY)
 
 
 async def remove_notification_verification_for_broadcast_async(value: str) -> int:
     """Removes the notification object
     Args:
+        value: string to remove from the notification verification set
     Returns:
         Number of elements removed from the notification verification list
     """
-    return await redis.lrem_async(NOTIFICATION_KEY, value)
+    return await redis.srem_async(NOTIFICATION_KEY, value)
 
 
 async def get_current_block_level_async(block_id: str) -> int:
@@ -196,23 +196,22 @@ async def schedule_block_for_broadcast_async(block_id: str, time: int = 0) -> No
     await redis.zadd_async(IN_FLIGHT_KEY, time, block_id)
 
 
-def schedule_notification_for_broadcast_sync(notification_location: str, time: int = 0) -> None:
+def schedule_notification_for_broadcast_sync(notification_location: str) -> None:
     """Schedule a certain notification to be checked by the broadcast processor (sync)
     Args:
         notification_location: notification_location to schedule
-        time: unix timestamp to re-schedule for checking (0 means ASAP)
     """
-    redis.lpush_sync(NOTIFICATION_KEY, notification_location)
+    redis.sadd_sync(NOTIFICATION_KEY, notification_location)
 
 
-def verification_storage_location(l1_block_id: str, level_received_from, chain_id) -> str:
+def verification_storage_location(l1_block_id: str, level_received_from: int, chain_id: str) -> str:
     """ Format the path for the storage of a verification object
     Args:
         l1_block_id: the id of the L1 block which this verification verifies
-        level_received_from: (int 2-5) the level from which this verification was received
-        chain_id: (str) the internal id of the chain who sent this verification
+        level_received_from: the level from which this verification was received
+        chain_id: the internal id of the chain who sent this verification
     Returns:
-        path: (str) the formatted path
+        path: the formatted path
     """
     return f"BLOCK/{l1_block_id}-l{level_received_from}-{chain_id}"
 
@@ -238,8 +237,9 @@ def set_receieved_verification_for_block_from_chain_sync(block_id: str, level: i
     verifications = p.execute()[1]  # Execute the commands and get the result of the scard operation (number of members in the set)
     required = dragonnet_config.DRAGONNET_CONFIG[f"l{level}"]["nodesRequired"]
 
-    # Schedule the notification of this verification
-    schedule_notification_for_broadcast_sync(verification_storage_location(block_id, level, chain_id))
+    if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
+        # Schedule the notification of this verification
+        schedule_notification_for_broadcast_sync(verification_storage_location(block_id, level, chain_id))
 
     # Check if this block needs to be promoted to the next level
     if verifications >= required:
