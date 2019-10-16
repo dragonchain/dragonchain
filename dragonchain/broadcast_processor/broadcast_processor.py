@@ -35,7 +35,6 @@ from dragonchain.lib import crypto
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.interfaces import storage
-from dragonchain.exceptions import NotificationVerificationError
 
 BROADCAST = os.environ["BROADCAST"]
 LEVEL = os.environ["LEVEL"]
@@ -121,10 +120,10 @@ def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level:
     return broadcasts
 
 
-def get_level_from_storage_location(storage_location: str) -> str:
+def get_level_from_storage_location(storage_location: str) -> Optional[str]:
     result = re.search("BLOCK/.*?-l([2-5])-", storage_location)
     if result is None:
-        raise NotificationVerificationError(f"Unable to find level in the string '{storage_location}'")
+        return None
     return result.group(1)
 
 
@@ -157,12 +156,16 @@ async def process_verification_notifications(session: aiohttp.ClientSession) -> 
         for storage_location in await broadcast_functions.get_notification_verifications_for_broadcast_async():
             verification_bytes = storage.get(storage_location)
             level = get_level_from_storage_location(storage_location)
+            if level is None:
+                _log.error(f"Unable to parse level value from string {storage_location}. Removing verification notification from set.")
+                broadcast_functions.remove_notification_verification_for_broadcast_async(storage_location)
+                continue
             signature = sign(verification_bytes)
             for url in get_all_notification_endpoints(level):
                 future = send_notification_verification(session, url, verification_bytes, signature, storage_location)
                 futures.add(asyncio.ensure_future(future))
         try:
-            await asyncio.gather(*futures)  # "Fire & forget"
+            await asyncio.gather(*futures, return_exceptions=True)  # "Fire & forget"
         except Exception:
             _log.exception("Error while notifying verification")
 

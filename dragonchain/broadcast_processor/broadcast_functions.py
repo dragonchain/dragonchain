@@ -32,6 +32,7 @@ CLAIM_CHECK_KEY = "broadcast:claimcheck"
 NOTIFICATION_KEY = "broadcast:notifications"
 
 FAULT_TOLERATION = 10  # Number of times fetching verifications fails before rolling back block verification state
+HAS_VERIFICATION_NOTIFICATIONS = os.environ.get("VERIFICATION_NOTIFICATION") is not None
 
 
 def state_key(block_id: str) -> str:
@@ -237,7 +238,7 @@ def set_receieved_verification_for_block_from_chain_sync(block_id: str, level: i
     verifications = p.execute()[1]  # Execute the commands and get the result of the scard operation (number of members in the set)
     required = dragonnet_config.DRAGONNET_CONFIG[f"l{level}"]["nodesRequired"]
 
-    if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
+    if HAS_VERIFICATION_NOTIFICATIONS:
         # Schedule the notification of this verification
         schedule_notification_for_broadcast_sync(verification_storage_location(block_id, level, chain_id))
 

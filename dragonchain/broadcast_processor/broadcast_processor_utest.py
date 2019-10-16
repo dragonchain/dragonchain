@@ -23,7 +23,6 @@ from unittest.mock import patch, MagicMock
 from dragonchain import test_env  # noqa: F401
 from dragonchain.broadcast_processor import broadcast_processor
 from dragonchain import exceptions
-from dragonchain.exceptions import NotificationVerificationError
 
 
 def async_test(function):
@@ -78,8 +77,7 @@ class BroadcastProcessorTests(unittest.TestCase):
         self.assertEqual(level, "3")
 
     def test_get_level_from_storage_location_returns_none_when_fails(self):
-        with self.assertRaises(NotificationVerificationError):
-            broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf")
+        self.assertIsNone(broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf"))
 
     def test_notification_urls_returns_set(self):
         urls = broadcast_processor.get_notification_urls("banana")
