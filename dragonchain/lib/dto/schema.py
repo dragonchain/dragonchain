@@ -712,6 +712,7 @@ bnb_transaction_schema_v1 = {
         "amount": {"type": "integer"},
         "to_address": {"type": "string"},
         "memo": {"type": "string"},
+        # STOP LINTING
     },
     "required": ["amount", "to_address"],
     "additionalProperties": False,
