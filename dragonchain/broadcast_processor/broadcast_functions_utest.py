@@ -269,3 +269,26 @@ class BroadcastFunctionTests(unittest.TestCase):
         broadcast_functions.redis.pipeline_sync = MagicMock(return_value=fake_pipeline)
         broadcast_functions.set_receieved_verification_for_block_from_chain_sync("block_id", 5, "chain_id")
         mock_remove.assert_called_once_with("block_id")
+
+    @async_test
+    async def test_get_notification_verifications_for_broadcast_async(self):
+        broadcast_functions.redis.smembers_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.redis.smembers_async.return_value.set_result({"thing"})
+        await broadcast_functions.get_notification_verifications_for_broadcast_async()
+        broadcast_functions.redis.smembers_async.assert_called_once_with("broadcast:notifications")
+
+    @async_test
+    async def test_remove_notification_verification_for_broadcast_async(self):
+        broadcast_functions.redis.srem_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.redis.srem_async.return_value.set_result(1)
+        await broadcast_functions.remove_notification_verification_for_broadcast_async("banana")
+        broadcast_functions.redis.srem_async.assert_called_once_with("broadcast:notifications", "banana")
+
+    def test_schedule_notification_for_broadcast_sync(self):
+        broadcast_functions.redis.sadd_sync = MagicMock(return_value=1)
+        broadcast_functions.schedule_notification_for_broadcast_sync("banana")
+        broadcast_functions.redis.sadd_sync.assert_called_once_with("broadcast:notifications", "banana")
+
+    def test_verification_storage_location(self):
+        result = broadcast_functions.verification_storage_location("l1_block_id", 2, "chain_id")
+        self.assertEqual(result, "BLOCK/l1_block_id-l2-chain_id")

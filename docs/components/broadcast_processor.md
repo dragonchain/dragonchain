@@ -8,12 +8,20 @@ The broadcast processor is responsible for retrieving verifications for
 completed L1 blocks. The microservice uses Dragon Net to find validating nodes
 that match criteria and request verifications from them.
 
-The service's responsibilities include managing discovered Dragon Net chains
-and re-broadcasting blocks if verifications aren't returned in time.
+The service's responsibilities include:
+- Managing discovered Dragon Net chains.
+- Re-broadcasting blocks if verifications aren't returned in time.
+- Optionally notifying a preconfigured URL via HTTP POST when block verifications
+are received.
 
 Turning off or removing the broadcast processor removes the chain from Dragon
 Net (although the `BROADCAST` environment variable should also be set to False
 so that unnecessary state isn't loaded when creating blocks).
+
+HTTP verification notifications may also be broadcast to a preconfigured URL by
+changing the value of `dragonchain.verificationNotification` within the helm
+template's relevant `values.yaml` file i.e.:
+`/docs/static/chart/opensource-config.yaml`.
 
 ### Entrypoint
 
