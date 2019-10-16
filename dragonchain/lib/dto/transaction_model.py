@@ -204,6 +204,8 @@ class TransactionModel(model.Model):
         """Get the search index DTO from this transaction"""
         # Please note that extract_custom_indexes should be ran first, or else custom indexes for this transaction will not be exported
         search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id) if not stub else 0}
+        if self.invoker:  # Add invoker tag if it exists
+            search_indexes["invoker"] = self.invoker
         if not stub:
             reserved_keywords = search_indexes.keys()
             for key, value in self.custom_indexed_data.items():
