@@ -161,11 +161,6 @@ async def z_range_by_score_async(
     )
 
 
-async def lrem_async(key: str, value: str, count=1) -> int:
-    await _set_redis_client_async_if_necessary()
-    return await async_redis_client.lrem(key, count, value)
-
-
 async def srem_async(key: str, value: str) -> int:
     await _set_redis_client_async_if_necessary()
     return await async_redis_client.srem(key, value)

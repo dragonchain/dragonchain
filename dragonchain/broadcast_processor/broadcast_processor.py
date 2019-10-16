@@ -163,11 +163,8 @@ async def process_verification_notifications(session: aiohttp.ClientSession) -> 
             signature = sign(verification_bytes)
             for url in get_all_notification_endpoints(level):
                 future = send_notification_verification(session, url, verification_bytes, signature, storage_location)
-                futures.add(asyncio.ensure_future(future))
-        try:
+                futures.add(asyncio.create_task(future))
             await asyncio.gather(*futures, return_exceptions=True)  # "Fire & forget"
-        except Exception:
-            _log.exception("Error while notifying verification")
 
 
 async def send_notification_verification(
