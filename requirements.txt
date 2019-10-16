@@ -1,5 +1,5 @@
-boto3==1.9.247
-redis==3.3.10
+boto3==1.9.250
+redis==3.3.11
 apscheduler==3.6.1
 jsonpath==0.82
 Flask==1.1.1
