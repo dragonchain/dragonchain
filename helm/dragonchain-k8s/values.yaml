@@ -128,6 +128,7 @@ faas:
   registry_password: MyPassword
 
 dragonchain:
+  verificationNotification: false
   reporting_type: storage
   image:
     pullPolicy: Always

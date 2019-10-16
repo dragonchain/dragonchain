@@ -5,6 +5,7 @@
 - **Feature:**
   - Default error reporting to save to disk, so that crash logs/tracebacks can be automatically saved.
   - Provide better error message when bad input to api doesn't match required schemas
+  - Adds verification-notification callback in the reciept endpoint
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
   - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name

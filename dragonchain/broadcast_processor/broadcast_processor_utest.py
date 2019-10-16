@@ -72,6 +72,22 @@ class BroadcastProcessorTests(unittest.TestCase):
         self.assertEqual(broadcast_processor.chain_id_set_from_matchmaking_claim(fake_claim, 4), {"test4"})
         self.assertEqual(broadcast_processor.chain_id_set_from_matchmaking_claim(fake_claim, 5), {"test5"})
 
+    def test_get_level_from_storage_location_returns_level_string(self):
+        level = broadcast_processor.get_level_from_storage_location("/BLOCK/something-l3-asdfsdf")
+        self.assertEqual(level, "3")
+
+    def test_get_level_from_storage_location_returns_none_when_fails(self):
+        self.assertIsNone(broadcast_processor.get_level_from_storage_location("/BLOCK/something-apples-asdfsdf"))
+
+    def test_notification_urls_returns_set(self):
+        urls = broadcast_processor.get_notification_urls("banana")
+        self.assertEqual(type(urls), set)
+
+    @patch.dict("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
+    def test_notification_urls_returns_values_from_env(self):
+        urls = broadcast_processor.get_notification_urls("all")
+        self.assertEqual(urls, {"url1"})
+
     @patch("dragonchain.broadcast_processor.broadcast_processor.block_dao.get_broadcast_dto")
     def test_broadcast_futures_gets_broadcast_dto_for_block_id(self, patch_get_broadcast):
         broadcast_processor.make_broadcast_futures(None, "id", 3, set())
@@ -452,3 +468,45 @@ class BroadcastProcessorTests(unittest.TestCase):
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once()
         mock_schedule_broadcast.assert_not_called()
+
+    @patch("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
+    @patch("dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
+    @async_test
+    async def test_process_verification_notification_calls_configured_url(
+        self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
+    ):
+        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
+        mock = MagicMock(return_value=asyncio.Future())
+        mock.return_value.set_result(MagicMock(status=200))
+        fake_session = MagicMock(post=mock)
+        srem_mock.return_value.set_result("OK")
+        await broadcast_processor.process_verification_notifications(fake_session)
+        fake_session.post.assert_called_once_with(
+            data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
+        )
+        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+
+    @patch("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
+    @patch("dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
+    @async_test
+    async def test_process_verification_notification_removes_from_set_when_fail(
+        self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
+    ):
+        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
+        mock = MagicMock(side_effect=Exception("boom"))
+        mock.return_value.set_result(MagicMock(status=200))
+        fake_session = MagicMock(post=mock)
+        srem_mock.return_value.set_result("OK")
+        await broadcast_processor.process_verification_notifications(fake_session)
+        fake_session.post.assert_called_once_with(
+            data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
+        )
+        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")

@@ -28,6 +28,7 @@ pip-install  : install python dependencies with pip
 clean        : remove compiled python/docs/other build or distrubition artifacts from the local project
 cicd-update  : update cloudformation for the CICD
 full-test    : run all the checks that a PR will test for
+docker-test  : run all the checks in a docker container that a PR will test for
 version      : perform a version bump"
 
 if [ $# -lt 1 ]; then
@@ -78,6 +79,9 @@ elif [ "$1" = "clean" ]; then
     find . \( -path ./.venv -o -path ./.mypy_cache \) -prune -o \( -name __pycache__ -o -name .build -o -name .coverage -o -name coverage.xml \) -exec rm -rfv {} +
 elif [ "$1" = "cicd-update" ]; then
     aws cloudformation deploy --stack-name Dragonchain-CICD --template-file ./cicd/CICD.cft.yml --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
+elif [ "$1" = "docker-test" ]; then
+    docker build . -f ./cicd/Dockerfile.test -t test
+    docker run -v $(pwd):/usr/src/core test
 elif [ "$1" = "full-test" ]; then
     set +e
     printf "\\nChecking for linting errors\\n\\n"

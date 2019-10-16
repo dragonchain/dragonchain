@@ -16,9 +16,11 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
+import re
 import time
+import json
 import asyncio
-from typing import Any, Set, Optional
+from typing import Any, Set, Optional, cast, List, Dict
 
 import aiohttp
 
@@ -28,8 +30,11 @@ from dragonchain.lib import matchmaking
 from dragonchain.lib import error_reporter
 from dragonchain.lib.dao import block_dao
 from dragonchain.lib import dragonnet_config
+from dragonchain.lib import keys
+from dragonchain.lib import crypto
 from dragonchain import logger
 from dragonchain import exceptions
+from dragonchain.lib.interfaces import storage
 
 BROADCAST = os.environ["BROADCAST"]
 LEVEL = os.environ["LEVEL"]
@@ -37,6 +42,11 @@ HTTP_REQUEST_TIMEOUT = 30  # seconds
 BROADCAST_RECEIPT_WAIT_TIME = 35  # seconds
 # TODO Make L5 wait time dynamic
 BROADCAST_RECEIPT_WAIT_TIME_L5 = 43200  # seconds
+
+VERIFICATION_NOTIFICATION: Dict[str, List[str]] = {}
+if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
+    VERIFICATION_NOTIFICATION = cast(Dict[str, List[str]], json.loads(os.environ["VERIFICATION_NOTIFICATION"]))
+
 
 _log = logger.get_logger()
 # For these variables, we are sure to call setup() when initializing this module before using it, so we ignore type error for None
@@ -108,6 +118,82 @@ def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level:
         except Exception:
             _log.exception(f"[BROADCAST PROCESSOR] Exception trying to broadcast to {chain}")
     return broadcasts
+
+
+def get_level_from_storage_location(storage_location: str) -> Optional[str]:
+    result = re.search("BLOCK/.*?-l([2-5])-", storage_location)
+    if result is None:
+        return None
+    return result.group(1)
+
+
+def get_notification_urls(key: str) -> set:
+    try:
+        urls = set(VERIFICATION_NOTIFICATION[key])
+    except KeyError:
+        urls = set()
+    return urls
+
+
+def sign(message: bytes) -> str:
+    return keys.get_my_keys().make_signature(message, crypto.SupportedHashes.sha256)
+
+
+def get_all_notification_endpoints(level: str) -> set:
+    return get_notification_urls("all").union(get_notification_urls(f"l{level}"))
+
+
+async def process_verification_notifications(session: aiohttp.ClientSession) -> None:
+    """Main function for the verification notification broadcast system
+
+    Retrieves verifications that need to be processed and sends http requests
+
+    Args:
+        session: aiohttp session for http requests
+    """
+    if VERIFICATION_NOTIFICATION:
+        futures = set()
+        for storage_location in await broadcast_functions.get_notification_verifications_for_broadcast_async():
+            verification_bytes = storage.get(storage_location)
+            level = get_level_from_storage_location(storage_location)
+            if level is None:
+                _log.error(f"Unable to parse level value from string {storage_location}. Removing verification notification from set.")
+                broadcast_functions.remove_notification_verification_for_broadcast_async(storage_location)
+                continue
+            signature = sign(verification_bytes)
+            for url in get_all_notification_endpoints(level):
+                future = send_notification_verification(session, url, verification_bytes, signature, storage_location)
+                futures.add(asyncio.create_task(future))
+            await asyncio.gather(*futures, return_exceptions=True)  # "Fire & forget"
+
+
+async def send_notification_verification(
+    session: aiohttp.ClientSession, url: str, verification_bytes: bytes, signature: str, redis_list_value: str
+) -> None:
+    """ Send a notification verification to a preconfigured address
+
+    This is the actual async broadcast of a single notification at its most atomic
+
+    Args:
+        session: aiohttp session for http requests
+        url: The url to which bytes should be POSTed
+        verification_bytes: the verification object read from disk as bytes
+        signature: The signature of the bytes, signed by this dragonchain
+        redis_list_value: the key within a redis set which should be removed after successful http request
+
+    Returns:
+        None
+    """
+    _log.debug(f"Notification -> {url}")
+    try:
+        resp = await session.post(
+            url=url, data=verification_bytes, headers={"dragonchainId": keys.get_public_id(), "signature": signature}, timeout=HTTP_REQUEST_TIMEOUT
+        )
+        _log.debug(f"Notification <- {resp.status} {url}")
+    except Exception:
+        _log.exception(f"Unable to send verification notification.")
+
+    await broadcast_functions.remove_notification_verification_for_broadcast_async(redis_list_value)
 
 
 async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None:
@@ -207,6 +293,7 @@ async def loop() -> None:
         while True:
             await asyncio.sleep(1)
             await process_blocks_for_broadcast(session)
+            await process_verification_notifications(session)
     except Exception:
         await session.close()
         raise
