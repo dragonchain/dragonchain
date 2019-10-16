@@ -80,8 +80,8 @@ elif [ "$1" = "clean" ]; then
 elif [ "$1" = "cicd-update" ]; then
     aws cloudformation deploy --stack-name Dragonchain-CICD --template-file ./cicd/CICD.cft.yml --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
 elif [ "$1" = "docker-test" ]; then
-    docker build . -f ./cicd/Dockerfile.test -t test
-    docker run -v $(pwd):/usr/src/core test
+    docker build . -f ./cicd/Dockerfile.test -t dragonchain_testing_container
+    docker run -v "$(pwd)":/usr/src/core dragonchain_testing_container
 elif [ "$1" = "full-test" ]; then
     set +e
     printf "\\nChecking for linting errors\\n\\n"

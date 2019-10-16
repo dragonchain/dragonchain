@@ -171,6 +171,7 @@ def create_transaction_index(index: str, custom_indexes: Optional[Iterable["cust
         redisearch.TextField("tag"),
         redisearch.NumericField("timestamp", sortable=True),
         redisearch.NumericField("block_id", sortable=True),
+        redisearch.TagField("invoker"),
     ]
     # Add custom indexes if they exist
     if custom_indexes:

@@ -49,6 +49,19 @@ be automatically deleted. You can manually delete the old ElasticSearch
 persistent volume from kubernetes and its corresponding data to clear up space
 after upgrading if desired.
 
+#### Manually Triggering a Reindex
+
+If you want to re-index all your blockchain data in the future for any reason,
+you can do so by running the following command in the redisearch pod and
+subsequently restarting the webserver:
+
+```sh
+# Make sure to run this on the redisearch and NOT the persistent redis, or else you will permantently break the chain
+redis-cli flushall
+```
+
+All the notes above still applying when manually triggering a re-index like this.
+
 ### Custom Indexing Changes
 
 As redisearch uses a different schema for indexing, any custom indexes that
@@ -88,6 +101,7 @@ can be queried by default:
 - `timestamp` - Sortable numeric field
 - `block_id` - Sortable numeric field
 - `tag` - Text field
+- `invoker` - Tag field (Only exists on transactions created by smart contract output) (as of 4.1.0)
 
 In addition to these fields, any fields specified as custom index fields
 when creating the transaction type (or smart contract), can also be used when
