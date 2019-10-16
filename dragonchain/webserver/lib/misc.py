@@ -39,7 +39,7 @@ def get_v1_status() -> Dict[str, Any]:
     # Return extra data if level 5
     if os.environ["LEVEL"] == "5":
         response["funded"] = bool(matchmaking_data["funded"])
-        response["network"] = str(matchmaking_data["network"])
         response["broadcastInterval"] = float(matchmaking_data["broadcastInterval"])
-        response["interchainWallet"] = str(matchmaking_data["interchainWallet"])
+        response["network"] = str(matchmaking_data.get("network"))
+        response["interchainWallet"] = str(matchmaking_data.get("interchainWallet"))
     return response
