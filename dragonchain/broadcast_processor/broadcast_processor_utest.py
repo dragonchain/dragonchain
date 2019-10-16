@@ -497,7 +497,7 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
     @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
     @async_test
-    async def test_process_verification_notification_calls_configured_url(
+    async def test_process_verification_notification_removes_from_set_when_fail(
         self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
     ):
         get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
