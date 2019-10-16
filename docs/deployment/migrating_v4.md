@@ -56,7 +56,8 @@ you can do so by running the following command in the redisearch pod and
 subsequently restarting the webserver:
 
 ```sh
-redis-cli del dc:index_generation_complete
+# Make sure to run this on the redisearch and NOT the persistent redis, or else you will permantently break the chain
+redis-cli flushall
 ```
 
 All the notes above still applying when manually triggering a re-index like this.
