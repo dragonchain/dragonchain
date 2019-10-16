@@ -185,10 +185,14 @@ async def send_notification_verification(
         None
     """
     _log.debug(f"Notification -> {url}")
-    resp = await session.post(
-        url=url, data=verification_bytes, headers={"dragonchainId": keys.get_public_id(), "signature": signature}, timeout=HTTP_REQUEST_TIMEOUT
-    )
-    _log.debug(f"Notification <- {resp.status} {url}")
+    try:
+        resp = await session.post(
+            url=url, data=verification_bytes, headers={"dragonchainId": keys.get_public_id(), "signature": signature}, timeout=HTTP_REQUEST_TIMEOUT
+        )
+        _log.debug(f"Notification <- {resp.status} {url}")
+    except Exception:
+        _log.exception(f"Unable to send verification notification.")
+
     await broadcast_functions.remove_notification_verification_for_broadcast_async(redis_list_value)
 
 

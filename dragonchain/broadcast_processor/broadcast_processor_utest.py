@@ -489,3 +489,24 @@ class BroadcastProcessorTests(unittest.TestCase):
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
         srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+
+    @patch("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
+    @patch("dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
+    @async_test
+    async def test_process_verification_notification_calls_configured_url(
+        self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
+    ):
+        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
+        mock = MagicMock(side_effect=Exception("boom"))
+        mock.return_value.set_result(MagicMock(status=200))
+        fake_session = MagicMock(post=mock)
+        srem_mock.return_value.set_result("OK")
+        await broadcast_processor.process_verification_notifications(fake_session)
+        fake_session.post.assert_called_once_with(
+            data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
+        )
+        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
