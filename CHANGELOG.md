@@ -57,6 +57,7 @@ field where necessary.
   - Enforce `appVersion` in Chart.yaml and image version tags to be always up to date (and add associated version bump helper function in `tools.sh`)
   - Add strict helm lint checking
   - Add a public docker container for the current build of the master (development) branch (`dragonchain/dragonchain_core:edge`)
+  - Update to python 3.8
 
 ## 4.0.1
 

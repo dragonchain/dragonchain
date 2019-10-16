@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-# Check and try to use python3.7 explicitly, if possible
-if command -v python3.7 > /dev/null 2>&1; then
-    py_exec=python3.7
+# Check and try to use python3.8 explicitly, if possible
+if command -v python3.8 > /dev/null 2>&1; then
+    py_exec=python3.8
 else
     py_exec=python3
 fi
