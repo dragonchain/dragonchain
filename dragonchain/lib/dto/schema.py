@@ -708,11 +708,11 @@ update_binance_interchain_schema_v1 = {
 bnb_transaction_schema_v1 = {
     "type": "object",
     "properties": {
+        "version": {"type": "string", "enum": ["1"]},
         "symbol": {"type": "string"},
-        "amount": {"type": "integer"},
+        "amount": {"type": "number"},
         "to_address": {"type": "string"},
         "memo": {"type": "string"},
-        # STOP LINTING
     },
     "required": ["amount", "to_address"],
     "additionalProperties": False,
