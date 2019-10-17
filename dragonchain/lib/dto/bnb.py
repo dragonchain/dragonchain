@@ -29,7 +29,7 @@ from dragonchain import exceptions
 from dragonchain.lib.dto import model
 
 
-DC_MAINNET_NODE = "http://10.2.1.197"  # Mainnet BNB
+DC_MAINNET_NODE = "http://10.2.1.53"  # Mainnet BNB
 DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org"  # Testnet BNB
 # we currently don't have a private testnet node set up...
 
@@ -84,7 +84,9 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
             # accept port #s from user, then fix formatting behind the scenes for them to work
             user_input["rpc_port"] = user_input["rpc_port"]
             user_input["api_port"] = user_input["api_port"]
-
+        # check if user specified that node is a testnet
+        if user_input.get("testnet") is None:
+            user_input["testnet"] = True  # default to testnet
         # Create the actual client and check that the given node is reachable
         try:
             client = BinanceNetwork(
@@ -96,6 +98,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 b64_private_key=user_input["private_key"],
             )
         except Exception:
+            _log.exception(f"[BINANCE] Exception thrown during key handling.  Bad key: {user_input['private_key']}")
             raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
         # check that the binance node is reachable (this checks both RPC and API endpoints)
         try:
@@ -130,7 +133,6 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
         raise NotImplementedError(f"DTO version {dto_version} not supported for binance network")
 
 
-# TODO: why am I not taking in private_key as base64 like in eth.py & btc.py
 class BinanceNetwork(model.InterchainModel):
     def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: str, api_port: str, b64_private_key: str):
         self.blockchain = "binance"
@@ -152,7 +154,7 @@ class BinanceNetwork(model.InterchainModel):
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         self._call_node_rpc("status", {})
-        self._call_node_api("version")
+        self._call_node_api("tokens/BNB")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -285,6 +287,7 @@ class BinanceNetwork(model.InterchainModel):
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
+    #     "status" (ping check)
     #     "tx" (block number check)
     #     "block" (latest block check)
     #     "broadcast_tx_commit" (submit txn)
@@ -296,14 +299,11 @@ class BinanceNetwork(model.InterchainModel):
         return response
 
     # endpoints currently hit are:
-    #     "version" (ping check)
+    #     "tokens" (ping check)
     #     "fees" (fee check)
     #     "balances" (tokens in address check)
     def _call_node_api(self, path: str) -> Any:
-        if path == "version":  # the only API endpoint that doesn't have the regular path
-            full_address = f"{self.node_ip}:{self.api_port}/{path}"
-        else:
-            full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
+        full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response
@@ -314,8 +314,9 @@ class BinanceNetwork(model.InterchainModel):
             raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
         error_response = "The server call got an error response: {response}"
-        if response.get("error") or response.get("errors"):
-            raise exceptions.InterchainConnectionError(error_response)
+        if not isinstance(response, list):  # "fees" returns list
+            if response.get("error") or response.get("errors"):
+                raise exceptions.InterchainConnectionError(error_response)
         return response
 
     def export_as_at_rest(self) -> Dict[str, Any]:
