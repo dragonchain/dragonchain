@@ -265,9 +265,11 @@ class BinanceNetwork(model.InterchainModel):
         )
         try:
             _log.info(f"[BINANCE] Signing raw transaction: {transfer_msg}")
-            return Signature(transfer_msg).sign()  # signed transaction
+            bin_signed = Signature(transfer_msg).sign()
+            hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
+        return hex_signed  # signed transaction
 
     def _publish_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
