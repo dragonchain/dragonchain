@@ -28,15 +28,11 @@ from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
 
-
-DC_MAINNET_NODE = "http://10.2.1.53"  # Mainnet BNB
-DC_TESTNET_NODE = "https://data-seed-pre-0-s3.binance.org"  # Testnet BNB
-# we currently don't have a private testnet node set up...
-
+NODE_IP = "http://10.2.1.165"  # same IP for mainnet and testnet
 MAINNET_RPC_PORT = "27147"
 MAINNET_API_PORT = "1169"
-TESTNET_RPC_PORT = "443"  # FIXME:  add in to user setup / testnet boolean conditional
-TESTNET_API_PORT = ""  # FIXME: unfortunately I don't think there are public testnet API-server endpoints...
+TESTNET_RPC_PORT = "26657"
+TESTNET_API_PORT = "11699"
 
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
@@ -77,7 +73,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
         # check for user-provided node address
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
-            user_input["node_ip"] = DC_TESTNET_NODE if user_input.get("testnet") else DC_MAINNET_NODE
+            user_input["node_ip"] = NODE_IP
             user_input["rpc_port"] = TESTNET_RPC_PORT if user_input.get("testnet") else MAINNET_RPC_PORT
             user_input["api_port"] = TESTNET_API_PORT if user_input.get("testnet") else MAINNET_API_PORT
         else:
@@ -264,9 +260,9 @@ class BinanceNetwork(model.InterchainModel):
             memo=raw_transaction.get("memo"),  # optional, don't error if it's missing
         )
         try:
-            _log.info(f"[BINANCE] Signing raw transaction: {transfer_msg}")
             bin_signed = Signature(transfer_msg).sign()
             hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
+            _log.info(f"[BINANCE] Signing raw transaction: {hex_signed}")
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
         return hex_signed  # signed transaction
