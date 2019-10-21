@@ -197,7 +197,7 @@ class BinanceNetwork(model.InterchainModel):
         return bnb_balance
 
     # https://docs.binance.org/api-reference/api-server.html#apiv1fees
-    def get_transaction_fee(self) -> int:
+    def get_transaction_fee_estimate(self) -> int:
         """Calculate the transaction fee estimate for a transaction given current fee rates
         Returns:
             The amount of estimated transaction fee cost for the network
