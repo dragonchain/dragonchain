@@ -184,17 +184,13 @@ class BinanceNetwork(model.InterchainModel):
         """
         _log.info(f"[BNB] Checking {symbol} balance for {self.address}")
         path = f"balances/{self.address}/{symbol}"  # params not handled in typical way
-        response = self._call_node_api(path)
-
-        # HACK - Binance API will return 500 for address' which have no funds
-        if response.status == 500:
-            path = f"balances/{self.address}"
-            banana = self._call_node_api(path)  # We call for balance and confirm that the address exists
-            if banana.status == 200:
-                return 0
-
-        bnb_balance = int(response["balance"]["free"])
-        return bnb_balance
+        try:
+            response = self._call_node_api(path)
+            bnb_balance = int(response["balance"]["free"])
+            return bnb_balance
+        except exceptions.InterchainConnectionError:
+            _log.warning("[BNB] Non 200 response from Binance node. This is actually expected for a zero balance address.")
+            return 0
 
     # https://docs.binance.org/api-reference/api-server.html#apiv1fees
     def get_transaction_fee_estimate(self) -> int:
