@@ -189,8 +189,8 @@ class BinanceNetwork(model.InterchainModel):
         # HACK - Binance API will return 500 for address' which have no funds
         if response.status == 500:
             path = f"balances/{self.address}"
-            banana = self._call_node_api(path)  # We call for balance and confirm that the address exists
-            if banana.status == 200:
+            balance_response = self._call_node_api(path)  # We call for balance and confirm that the address exists
+            if balance_response.status == 200:
                 return 0
 
         bnb_balance = int(response["balance"]["free"])
