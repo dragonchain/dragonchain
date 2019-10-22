@@ -163,7 +163,7 @@ class BinanceNetwork(model.InterchainModel):
             exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        transaction_hash = f"0x{transaction_hash}"
+        transaction_hash = f"0x{transaction_hash}"  # FYI: RPC needs this prepended
         try:
             response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True})
             transaction_block_number = int(response["result"]["height"])
@@ -225,7 +225,7 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             Boolean whether a broadcast should be re-attempted
         """
-        #_log.debug(f"{type(self.get_current_block())}")
+        # _log.debug(f"{type(self.get_current_block())}")
         _log.debug("========================")
         _log.debug(f"last_sent_block type: {type(last_sent_block)}")
         _log.debug(f"last_sent_block : {last_sent_block}")
@@ -284,10 +284,6 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-
-        # bin_signed = Signature(transfer_msg).sign()
-        # hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
-
         raw_msg = {
             "wallet": self.wallet,
             "symbol": "BNB",
@@ -296,6 +292,7 @@ class BinanceNetwork(model.InterchainModel):
             "memo": transaction_payload,
         }
         signed_txn = self.sign_transaction(raw_msg)
+        signed_txn = f"0x{signed_txn}"  # FYI: RPC needs this prepended
         # Send signed transaction
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_txn})
         return response["result"]["hash"]  # transaction hash
@@ -320,7 +317,7 @@ class BinanceNetwork(model.InterchainModel):
     #     "balances" (tokens in address check)
     def _call_node_api(self, path: str) -> Any:
         full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
-        _log.debug(f"Binance API: -> {full_address}")
+        # _log.debug(f"Binance API: -> {full_address}")
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response
