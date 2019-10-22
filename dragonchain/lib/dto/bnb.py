@@ -268,9 +268,9 @@ class BinanceNetwork(model.InterchainModel):
             memo=raw_transaction.get("memo"),  # optional, don't error if it's missing
         )
         try:
+            _log.info(f"[BINANCE] Signing raw transaction: {raw_transaction}")
             bin_signed = Signature(transfer_msg).sign()
             hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
-            _log.info(f"[BINANCE] Signing raw transaction: {hex_signed}")
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
         return hex_signed  # signed transaction
@@ -293,7 +293,7 @@ class BinanceNetwork(model.InterchainModel):
         }
         signed_txn = self.sign_transaction(raw_msg)
         signed_txn = f"0x{signed_txn}"  # FYI: RPC needs this prepended
-        # Send signed transaction
+        _log.info(f"[BINANCE] Sending signed transaction: {signed_txn}")
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_txn})
         return response["result"]["hash"]  # transaction hash
 
