@@ -163,11 +163,10 @@ class BinanceNetwork(model.InterchainModel):
             exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        # TODO: will this function be called with a txn hash that has this prepended already?   do I need a conditional check?
-        # transaction_hash = f"0x{transaction_hash}"  # GET call needs this in front of the hash
+        transaction_hash = f"0x{transaction_hash}"
         try:
-            response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": "true"})
-            transaction_block_number = response["result"]["height"]
+            response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True})
+            transaction_block_number = int(response["result"]["height"])
         except exceptions.InterchainConnectionError:
             raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
         latest_block_number = self.get_current_block()
@@ -217,7 +216,7 @@ class BinanceNetwork(model.InterchainModel):
         response = self._call_node_rpc("block", {})
         current_block = response["result"]["block"]["header"]["height"]
         # current_block = json_data.result.block.header.height
-        return current_block
+        return int(current_block)
 
     def should_retry_broadcast(self, last_sent_block: int) -> bool:
         """Check whether a new broadcast should be attempted, given a number of blocks past (for L5)
@@ -226,7 +225,12 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             Boolean whether a broadcast should be re-attempted
         """
-        return self.get_current_block() - last_sent_block > BLOCK_THRESHOLD
+        #_log.debug(f"{type(self.get_current_block())}")
+        _log.debug("========================")
+        _log.debug(f"last_sent_block type: {type(last_sent_block)}")
+        _log.debug(f"last_sent_block : {last_sent_block}")
+        _log.debug("========================")
+        return self.get_current_block() - int(last_sent_block) > BLOCK_THRESHOLD
 
     def get_network_string(self) -> str:
         """Get the network string for this blockchain. This is what's included in l5 blocks or sent to matchmaking
@@ -271,6 +275,7 @@ class BinanceNetwork(model.InterchainModel):
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
         return hex_signed  # signed transaction
 
+    # https://docs.binance.org/api-reference/node-rpc.html#622-broadcasttxcommit
     def _publish_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:
@@ -280,11 +285,19 @@ class BinanceNetwork(model.InterchainModel):
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
 
-        # Sign transaction data
-        dummy = "0x0000000000000000000000000000000000000000"
-        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=transaction_payload).to_dict()
+        # bin_signed = Signature(transfer_msg).sign()
+        # hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
+
+        raw_msg = {
+            "wallet": self.wallet,
+            "symbol": "BNB",
+            "amount": 0,
+            "to_address": "0x0000000000000000000000000000000000000000",
+            "memo": transaction_payload,
+        }
+        signed_txn = self.sign_transaction(raw_msg)
         # Send signed transaction
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": transfer_msg})
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_txn})
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
