@@ -198,13 +198,13 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             The amount of estimated transaction fee cost for the network
         """
-        _log.info("Double checking the send fee...")
+        _log.info("[BINANCE] Double checking the send fee...")
         response = self._call_node_api("fees")
         for fee_block in response:
             if "fixed_fee_params" in fee_block:
                 if fee_block["fixed_fee_params"]["msg_type"] == "send":
                     return fee_block["fixed_fee_params"]["fee"]  # fixed fee: 37500 (0.000375 BNB)
-        _log.info("Double-check failed; resorting to saved fee value.")
+        _log.info("[BINANCE] Double-check failed; resorting to saved fee value.")
         return SEND_FEE  # SET GLOBALLY
 
     # https://docs.binance.org/api-reference/node-rpc.html#6110-query-block
