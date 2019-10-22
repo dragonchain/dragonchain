@@ -295,7 +295,7 @@ class BinanceNetwork(model.InterchainModel):
     def _call_node_rpc(self, method: str, params: Dict[str, Any]) -> Any:
         full_address = f"{self.node_ip}:{self.rpc_port}/"
         body = {"method": method, "jsonrpc": "2.0", "params": params, "id": "dontcare"}
-        _log.debug(f"Binance -> {full_address} {body}")
+        _log.debug(f"Binance RPC: -> {full_address} {body}")
         r = requests.post(full_address, json=body, timeout=30)
 
         response = self._get_response(r)
@@ -307,6 +307,7 @@ class BinanceNetwork(model.InterchainModel):
     #     "balances" (tokens in address check)
     def _call_node_api(self, path: str) -> Any:
         full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
+        _log.debug(f"Binance API: -> {full_address}")
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response
@@ -316,8 +317,7 @@ class BinanceNetwork(model.InterchainModel):
         if r.status_code != 200:
             raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
-        _log.debug(f"Binance <- {r.status_code} {r}")
-
+        _log.debug(f"Binance <- {r.status_code} {r.text}")
         error_response = f"The server call got an error response: {response}"
         if not isinstance(response, list):  # "fees" returns list
             if response.get("error") or response.get("errors"):
