@@ -28,7 +28,7 @@ from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
 
-NODE_IP = "http://10.2.1.165"  # same IP for mainnet and testnet
+NODE_IP = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
 MAINNET_RPC_PORT = "27147"
 MAINNET_API_PORT = "1169"
 TESTNET_RPC_PORT = "26657"
@@ -182,14 +182,14 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             The amount of funds of that token in the wallet
         """
-        _log.info(f"[BNB] Checking {symbol} balance for {self.address}")
+        _log.info(f"[BINANCE] Checking {symbol} balance for {self.address}")
         path = f"balances/{self.address}/{symbol}"  # params not handled in typical way
         try:
             response = self._call_node_api(path)
             bnb_balance = int(response["balance"]["free"])
             return bnb_balance
         except exceptions.InterchainConnectionError:
-            _log.warning("[BNB] Non 200 response from Binance node. This is actually expected for a zero balance address.")
+            _log.warning("[BINANCE] Non 200 response from Binance node. This is actually expected for a zero balance address.")
             return 0
 
     # https://docs.binance.org/api-reference/api-server.html#apiv1fees
@@ -282,8 +282,7 @@ class BinanceNetwork(model.InterchainModel):
 
         # Sign transaction data
         dummy = "0x0000000000000000000000000000000000000000"
-        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=transaction_payload)
-
+        transfer_msg = TransferMsg(wallet=self.wallet, symbol="BNB", amount=0, to_address=dummy, memo=transaction_payload).to_dict()
         # Send signed transaction
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": transfer_msg})
         return response["result"]["hash"]  # transaction hash
@@ -296,7 +295,9 @@ class BinanceNetwork(model.InterchainModel):
     def _call_node_rpc(self, method: str, params: Dict[str, Any]) -> Any:
         full_address = f"{self.node_ip}:{self.rpc_port}/"
         body = {"method": method, "jsonrpc": "2.0", "params": params, "id": "dontcare"}
+        _log.debug(f"Binance -> {full_address} {body}")
         r = requests.post(full_address, json=body, timeout=30)
+
         response = self._get_response(r)
         return response
 
@@ -315,7 +316,9 @@ class BinanceNetwork(model.InterchainModel):
         if r.status_code != 200:
             raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
-        error_response = "The server call got an error response: {response}"
+        _log.debug(f"Binance <- {r.status_code} {r}")
+
+        error_response = f"The server call got an error response: {response}"
         if not isinstance(response, list):  # "fees" returns list
             if response.get("error") or response.get("errors"):
                 raise exceptions.InterchainConnectionError(error_response)
