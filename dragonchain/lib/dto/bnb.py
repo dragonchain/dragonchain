@@ -270,10 +270,10 @@ class BinanceNetwork(model.InterchainModel):
         try:
             _log.info(f"[BINANCE] Signing raw transaction: {raw_transaction}")
             bin_signed = Signature(transfer_msg).sign()
-            hex_signed = binascii.hexlify(bin_signed).decode("utf-8")
+            hex_signed = bin_signed.hex()
+            return hex_signed  # signed transaction
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
-        return hex_signed  # signed transaction
 
     # https://docs.binance.org/api-reference/node-rpc.html#622-broadcasttxcommit
     def _publish_transaction(self, transaction_payload: str) -> str:
@@ -292,7 +292,7 @@ class BinanceNetwork(model.InterchainModel):
             "memo": transaction_payload,
         }
         signed_txn = self.sign_transaction(raw_msg)
-        signed_txn = f"0x{signed_txn}"  # FYI: RPC needs this prepended
+        # signed_txn = f"0x{signed_txn}"  # FYI: RPC needs this prepended
         _log.info(f"[BINANCE] Sending signed transaction: {signed_txn}")
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_txn})
         return response["result"]["hash"]  # transaction hash
@@ -323,15 +323,11 @@ class BinanceNetwork(model.InterchainModel):
         return response
 
     def _get_response(self, r: requests.Response) -> Any:
-        error_status = f"Error from binance node with http status code {r.status_code} | {r.text}"
-        if r.status_code != 200:
-            raise exceptions.InterchainConnectionError(error_status)
         response = r.json()
         _log.debug(f"Binance <- {r.status_code} {r.text}")
-        error_response = f"The server call got an error response: {response}"
         if not isinstance(response, list):  # "fees" returns list
             if response.get("error") or response.get("errors"):
-                raise exceptions.InterchainConnectionError(error_response)
+                raise exceptions.InterchainConnectionError(f"Error from binance node with http status code {r.status_code} | {r.text}")
         return response
 
     def export_as_at_rest(self) -> Dict[str, Any]:
