@@ -22,7 +22,8 @@ import binascii
 from binance_chain.messages import TransferMsg, Signature
 from binance_chain.wallet import Wallet
 from binance_chain.environment import BinanceEnvironment
-from binance_transaction import BnbTransaction, TestBnbTransaction  # bnb-tx-python module
+from binance_transaction import BnbTransaction, TestBnbTransaction, Send  # bnb-tx-python module
+from binance_transaction.crypto import uncompress_key, verify_sig
 import requests
 
 from dragonchain import logger
@@ -57,7 +58,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
             # We need to create a private key if not provided
             wallet = Wallet.create_random_wallet()
             user_input["private_key"] = base64.b64encode(binascii.unhexlify(wallet.private_key)).decode("ascii")
-            # BROKEN: won't make a tbnb-prefixed (testnet) address even if testnet is specified.
+            # BROKEN: when Wallet is removed, need to have conditional to create *testnet* address vs *mainnet* address
         else:
             try:
                 # Check if user provided key is hex and convert if necessary
@@ -140,6 +141,7 @@ class BinanceNetwork(model.InterchainModel):
         self.rpc_port = rpc_port
         self.api_port = api_port
 
+        # DEPRECATE: remove when removing creation of addresses via Wallet from SDK
         if testnet:
             testnet_env = BinanceEnvironment(hrp="tbnb")
             self.wallet = Wallet(binascii.hexlify(base64.b64decode(b64_private_key)).decode("ascii"), env=testnet_env)
@@ -243,36 +245,6 @@ class BinanceNetwork(model.InterchainModel):
         """
         return base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
 
-    # DEPRECATE:
-    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
-        """Sign a transaction for this network
-        Args:
-            raw_transaction: The dictionary of the raw transaction containing:
-                to: hex string of the to address
-                symbol: the exchange symbol for the token (NOT defaulted to BNB)
-                amount:  amount of token in transaction
-                to_address:  address sending tokens to
-                memo: Optional string of arbitrary data
-
-                value: The amount of eth (in wei) to send (in hex string)
-        Returns:
-            String of the signed transaction as hex
-        """
-        transfer_msg = TransferMsg(
-            wallet=self.wallet,
-            symbol=raw_transaction["symbol"],
-            amount=raw_transaction["amount"],
-            to_address=raw_transaction["to_address"],
-            memo=raw_transaction.get("memo"),  # optional, don't error if it's missing
-        )
-        try:
-            _log.info(f"[BINANCE] Signing raw transaction: {raw_transaction}")
-            bin_signed = Signature(transfer_msg).sign()
-            hex_signed = bin_signed.hex()
-            return hex_signed  # signed transaction
-        except Exception as e:
-            raise exceptions.BadRequest(f"Error signing transaction: {e}")
-
     # https://docs.binance.org/api-reference/api-server.html#apiv1accountaddress
     def _fetch_account(self):
         """Fetch the account metadata for an address
@@ -288,22 +260,55 @@ class BinanceNetwork(model.InterchainModel):
             _log.warning("[BINANCE] Non 200 response from Binance node. May have been a 500 Bad Request or a 404 Not Found.")
             return 0
 
-    def _build_transaction_msg(self, raw_msg: Dict[str, Any]):
+    def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str):
+        dummy_to_address = "0x0000000000000000000000000000000000000000"
+        inputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
+        outputs = {"address": dummy_to_address, "coins": [{"amount": 0, "denom": "BNB"}]}
         response = self._fetch_account()
-        if self.testnet:
-            tx = TestBnbTransaction(response["account_number"], response["sequence"])
-        else:  # mainnet
-            tx = BnbTransaction(response["account_number"], response["sequence"])
-        # use TestBnbTransaction
-        tx.add_msg()
-        _log.info(f"[BINANCE] raw tx to sign: {tx.signing_json()}")
-        sig = sk.sign_digest(tx.signing_hash())
-        public_key = uncompressed_public_key(sk)
-        tx.apply_sig(sig, public_key)
-        signed_transaction_bytes = tx.encode()
-        print(f'Signed bytes: {signed_transaction_bytes.hex()}')
+        
+        transaction_data = {
+            "account_number": response["account_number"],
+            "sequence": response["sequence"],
+            "from": self.address,
+            "memo": transaction_payload,
+            "msgs": [{
+                'type': 'cosmos-sdk/Send',
+                'inputs': [inputs],
+                'outputs': [outputs],
+            }],
+        }
+        return transaction_data
 
-    # DEPRECATE:
+    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
+        """Sign a transaction for this network
+        Args:
+            raw_transaction: The dictionary of the raw transaction containing:
+                to: hex string of the to address
+                symbol: the exchange symbol for the token (NOT defaulted to BNB)
+                amount:  amount of token in transaction
+                to_address:  address sending tokens to
+                memo: Optional string of arbitrary data
+
+                value: The amount of eth (in wei) to send (in hex string)
+        Returns:
+            String of the signed transaction as hex
+        """
+        try:
+            if self.testnet:
+                tx = TestBnbTransaction.from_obj(raw_transaction)
+            else:  # mainnet
+                tx = BnbTransaction.from_obj(raw_transaction)
+            _log.info(f"[BINANCE] Signing raw transaction: {tx.signing_json()}")
+            sig = tx.signing_hash().hex()  # FIXME: think this is wrong
+            tx.apply_sig(sig, uncompress_key(self.wallet.public_key))  # wallet.public_key is in bytes
+            signed_transaction_bytes = tx.encode()
+            # sig = sk.sign_digest(tx.signing_hash())
+            # public_key = uncompressed_public_key(sk)
+            # tx.apply_sig(sig, public_key)
+            return signed_transaction_bytes.hex()
+        except Exception as e:
+            raise exceptions.BadRequest(f"Error signing transaction: {e}")
+
     # https://docs.binance.org/api-reference/node-rpc.html#622-broadcasttxcommit
     def _publish_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
@@ -313,16 +318,10 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-        raw_msg = {
-            "wallet": self.wallet,
-            "symbol": "BNB",
-            "amount": 0,
-            "to_address": "0x0000000000000000000000000000000000000000",
-            "memo": transaction_payload,
-        }
-        tx_data = self._build_transaction_msg(raw_msg)  # BROKEN:
-        _log.info(f"[BINANCE] Sending signed transaction: {tx_data}")
-        response = self._call_node_rpc("broadcast_tx_commit", tx_data)
+        built_tx = self._build_transaction_msg(self._fetch_account(), transaction_payload)
+        signed_tx = self.sign_transaction(built_tx)
+        _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": "0x" + signed_tx})
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
