@@ -142,7 +142,8 @@ class TestInterchain(unittest.TestCase):
                 "rpc_address": "overwritten",
                 "rpc_authorization": mock_get_interchain.return_value.authorization,
                 "utxo_scan": False,
-            }
+            },
+            conflict_check=False,
         )
 
     @patch("dragonchain.webserver.lib.interchain.create_ethereum_interchain_v1", return_value="cool")
@@ -157,5 +158,6 @@ class TestInterchain(unittest.TestCase):
                 "private_key": mock_get_interchain.return_value.get_private_key(),
                 "rpc_address": "overwritten",
                 "chain_id": mock_get_interchain.return_value.chain_id,
-            }
+            },
+            conflict_check=False,
         )
