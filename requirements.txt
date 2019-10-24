@@ -16,3 +16,4 @@ base58==1.0.3
 bit==0.6.0
 redisearch==0.7.1
 python-binance-chain==0.1.20
+bnb-tx==0.0.4
