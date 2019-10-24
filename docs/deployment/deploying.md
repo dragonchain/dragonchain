@@ -72,7 +72,7 @@ Once the values are set, install the helm chart with:
 ```sh
 helm repo add dragonchain https://dragonchain-charts.s3.amazonaws.com
 helm repo update
-helm upgrade --install my-dragonchain --values opensource-config.yaml --namespace dragonchain dragonchain/dragonchain-k8s --version 1.0.1
+helm upgrade --install my-dragonchain --values opensource-config.yaml --namespace dragonchain dragonchain/dragonchain-k8s --version 1.0.2
 ```
 
 If you need to change any values AFTER the helm chart has already been
