@@ -60,18 +60,18 @@ def _get_output_dto_v1(client: "model.InterchainModel") -> Dict[str, Any]:
         raise RuntimeError(f"Unkown fetched blockchain type {client.blockchain}")
 
 
-def create_bitcoin_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+def create_bitcoin_interchain_v1(user_data: Dict[str, Any], conflict_check: bool = True) -> Dict[str, Any]:
     client = btc.new_from_user_input(user_data)
-    if interchain_dao.does_interchain_exist("bitcoin", client.name):
+    if conflict_check and interchain_dao.does_interchain_exist("bitcoin", client.name):
         _log.error("Bitcoin network is already registered")
         raise exceptions.InterchainConflict(f"A bitcoin interchain network with the name {client.name} is already registered")
     interchain_dao.save_interchain_client(client)
     return _get_output_dto_v1(client)
 
 
-def create_ethereum_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+def create_ethereum_interchain_v1(user_data: Dict[str, Any], conflict_check: bool = True) -> Dict[str, Any]:
     client = eth.new_from_user_input(user_data)
-    if interchain_dao.does_interchain_exist("ethereum", client.name):
+    if conflict_check and interchain_dao.does_interchain_exist("ethereum", client.name):
         _log.error("Ethereum network is already registered")
         raise exceptions.InterchainConflict(f"An ethereum interchain network with the name {client.name} is already registered")
     interchain_dao.save_interchain_client(client)
@@ -92,7 +92,7 @@ def update_bitcoin_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[s
         "utxo_scan": user_data["utxo_scan"] if isinstance(user_data.get("utxo_scan"), bool) else False,
     }
     # Create and save updated client
-    return create_bitcoin_interchain_v1(client_data)
+    return create_bitcoin_interchain_v1(client_data, conflict_check=False)
 
 
 def update_ethereum_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -107,7 +107,7 @@ def update_ethereum_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[
         "chain_id": user_data["chain_id"] if isinstance(user_data.get("chain_id"), int) else current_client.chain_id,
     }
     # Create and save updated client
-    return create_ethereum_interchain_v1(client_data)
+    return create_ethereum_interchain_v1(client_data, conflict_check=False)
 
 
 def get_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:
