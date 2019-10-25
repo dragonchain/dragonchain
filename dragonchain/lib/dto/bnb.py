@@ -265,7 +265,7 @@ class BinanceNetwork(model.InterchainModel):
             return 0
 
     def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str):
-        dummy_to_address = "0x0000000000000000000000000000000000000000"
+        dummy_to_address = "tbnb1zesqcktldshz7tat9u74duc037frzwvdq83wan"
         inputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
         outputs = {"address": dummy_to_address, "coins": [{"amount": 0, "denom": "BNB"}]}
         response = self._fetch_account()
@@ -274,7 +274,7 @@ class BinanceNetwork(model.InterchainModel):
             "account_number": response["account_number"],
             "sequence": response["sequence"],
             "from": self.address,
-            "memo": transaction_payload,
+            "memo": transaction_payload.encode("utf-8"),
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
         }
         return transaction_data
@@ -295,6 +295,7 @@ class BinanceNetwork(model.InterchainModel):
         """
         try:
             if self.testnet:
+                _log.info(f"Transaction {raw_transaction}")
                 tx = TestBnbTransaction.from_obj(raw_transaction)
             else:  # mainnet
                 tx = BnbTransaction.from_obj(raw_transaction)
@@ -325,7 +326,7 @@ class BinanceNetwork(model.InterchainModel):
         built_tx = self._build_transaction_msg(self._fetch_account(), transaction_payload)
         signed_tx = self.sign_transaction(built_tx)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": "0x" + signed_tx})
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": "0x" + signed_tx.hex()})
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
