@@ -18,6 +18,8 @@
 from typing import Dict, Any
 import base64
 import binascii
+import ecdsa
+
 
 from binance_chain.messages import TransferMsg, Signature
 from binance_chain.wallet import Wallet
@@ -29,6 +31,8 @@ import requests
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
+from dragonchain.lib import keys
+from dragonchain.lib import crypto
 
 NODE_IP = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
 MAINNET_RPC_PORT = "27147"
@@ -265,17 +269,13 @@ class BinanceNetwork(model.InterchainModel):
         inputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
         outputs = {"address": dummy_to_address, "coins": [{"amount": 0, "denom": "BNB"}]}
         response = self._fetch_account()
-        
+
         transaction_data = {
             "account_number": response["account_number"],
             "sequence": response["sequence"],
             "from": self.address,
             "memo": transaction_payload,
-            "msgs": [{
-                'type': 'cosmos-sdk/Send',
-                'inputs': [inputs],
-                'outputs': [outputs],
-            }],
+            "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
         }
         return transaction_data
 
@@ -299,13 +299,20 @@ class BinanceNetwork(model.InterchainModel):
             else:  # mainnet
                 tx = BnbTransaction.from_obj(raw_transaction)
             _log.info(f"[BINANCE] Signing raw transaction: {tx.signing_json()}")
-            sig = tx.signing_hash().hex()  # FIXME: think this is wrong
-            tx.apply_sig(sig, uncompress_key(self.wallet.public_key))  # wallet.public_key is in bytes
-            signed_transaction_bytes = tx.encode()
-            # sig = sk.sign_digest(tx.signing_hash())
-            # public_key = uncompressed_public_key(sk)
-            # tx.apply_sig(sig, public_key)
-            return signed_transaction_bytes.hex()
+
+            # DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG:
+            mykeys = keys.DCKeys(pull_keys=False)
+            mykeys.initialize(private_key_string=self.get_private_key())
+            # mykeys.make_signature(content=tx.signing_hash(), hash_type=crypto.SupportedHashes.sha256)
+            signature = crypto.encrypt_message(crypto.SupportedEncryption.secp256k1, mykeys.priv, tx.signing_hash())
+            _log.info(f"||||||| SIGNING_HASH: {len(tx.signing_hash())} : {tx.signing_hash()}")  # DEBUG:
+            _log.info(f"||||||| SIGNATURE: {len(signature)} : {signature}")  # 96 chars, expecting 64  # BROKEN:
+            unc_pub_key_len = len(uncompress_key(self.wallet.public_key))  # DEBUG:
+            _log.info(f"||||||| PUB_KEY: {unc_pub_key_len} : {uncompress_key(self.wallet.public_key)}")  # DEBUG:
+            # going to error, expecting pub_key to be len 65, it's 66...
+            tx.apply_sig(signature, uncompress_key(self.wallet.public_key))
+            # DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG:
+            return tx.encode().hex()  # signed_transaction_bytes
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
 
