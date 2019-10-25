@@ -18,21 +18,19 @@
 from typing import Dict, Any
 import base64
 import binascii
-import ecdsa
-
-
-from binance_chain.messages import TransferMsg, Signature
-from binance_chain.wallet import Wallet
-from binance_chain.environment import BinanceEnvironment
-from binance_transaction import BnbTransaction, TestBnbTransaction, Send  # bnb-tx-python module
-from binance_transaction.crypto import uncompress_key, verify_sig
 import requests
+
+from binance_chain.wallet import Wallet  # DEPRECATE:
+from binance_chain.environment import BinanceEnvironment  # DEPRECATE:
+
+# bnb-tx-python module
+from binance_transaction import BnbTransaction
+from binance_transaction import TestBnbTransaction
 
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
 from dragonchain.lib import keys
-from dragonchain.lib import crypto
 
 NODE_IP = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
 MAINNET_RPC_PORT = "27147"
@@ -265,9 +263,9 @@ class BinanceNetwork(model.InterchainModel):
             return 0
 
     def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str):
-        dummy_to_address = "tbnb1zesqcktldshz7tat9u74duc037frzwvdq83wan"
+        # easier to just use from-addy for the to-addy than create a properly formatted dummy addy
         inputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
-        outputs = {"address": dummy_to_address, "coins": [{"amount": 0, "denom": "BNB"}]}
+        outputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
         response = self._fetch_account()
 
         transaction_data = {
@@ -305,12 +303,8 @@ class BinanceNetwork(model.InterchainModel):
             signature = base64.b64decode(mykeys.make_binance_signature(content=tx.signing_json()))
             # TODO: need to add unit tests to keys for make_binance_signature() and associated function(s)
             tx.apply_sig(signature, self.wallet.public_key)
-            signed_transaction_bytes = tx.encode()  # BROKEN:
-            _log.info("-------------------------------------------------------------------------------")
-            _log.info(f"tx.encode(): {signed_transaction_bytes}")  # DEBUG:
-            _log.info("-------------------------------------------------------------------------------")
-            # DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG:
-            return signed_transaction_bytes
+            signed_transaction_bytes = tx.encode()
+            return signed_transaction_bytes.hex()
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
 
@@ -326,7 +320,7 @@ class BinanceNetwork(model.InterchainModel):
         built_tx = self._build_transaction_msg(self._fetch_account(), transaction_payload)
         signed_tx = self.sign_transaction(built_tx)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": "0x" + signed_tx.hex()})
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": "0x" + signed_tx})
         return response["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
