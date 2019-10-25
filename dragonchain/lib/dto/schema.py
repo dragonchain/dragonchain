@@ -18,8 +18,6 @@
 import enum
 from typing import Dict, Any
 
-MAX_CUSTOM_INDEXES = 5
-
 
 class DCRN(enum.Enum):
     """Dragonchain Resource Name Enum"""
@@ -519,7 +517,7 @@ new_transaction_type_register_request_schema_v1 = {
     "properties": {
         "version": {"type": "string", "enum": ["2"]},
         "txn_type": {"type": "string"},
-        "custom_indexes": {"type": "array", "items": custom_indexes_v1, "maxItems": MAX_CUSTOM_INDEXES},
+        "custom_indexes": {"type": "array", "items": custom_indexes_v1},
     },
     "additionalProperties": False,
     "required": ["version", "txn_type"],
@@ -543,7 +541,7 @@ smart_contract_create_schema_v1 = {
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
         "cron": {"type": "string"},
         "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
-        "custom_indexes": {"type": "array", "items": custom_indexes_v1, "maxItems": MAX_CUSTOM_INDEXES},
+        "custom_indexes": {"type": "array", "items": custom_indexes_v1},
     },
     "required": ["version", "txn_type", "image", "cmd", "execution_order"],
 }

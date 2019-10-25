@@ -1,10 +1,18 @@
 apiVersion: v1
-appVersion: 4.0.0
-description: Dragonchain on kubernetes
 name: dragonchain-k8s
-version: 1.0.0
+version: 1.0.2
 icon: https://dragonchain.com/static/media/dragonchain-logo-treasure.png
+description: Dragonchain on kubernetes
+appVersion: 4.1.0
+keywords:
+  - dragonchain
+  - blockchain
+sources:
+  - https://github.com/dragonchain/dragonchain
+home: https://dragonchain.com
 maintainers:
   - name: Dragonchain
     email: support@dragonchain.com
-    url: https://dragonchain.com
+  - name: Adam
+    email: adam@dragonchain.com
+engine: gotpl

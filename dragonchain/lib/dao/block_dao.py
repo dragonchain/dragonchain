@@ -42,7 +42,7 @@ def get_verifications_for_l1_block(block_id: str, level: int) -> List[Dict[str, 
         keys = list(broadcast_functions.get_receieved_verifications_for_block_and_level_sync(block_id, level))
         if len(keys) != 0:
             for i in range(len(keys)):
-                keys[i] = f"{FOLDER}/{block_id}-l{level}-{keys[i].decode('utf8')}"
+                keys[i] = f"{FOLDER}/{block_id}-l{level}-{keys[i]}"
             return [storage.get_json_from_object(x) for x in keys]
     except Exception:
         _log.exception("Error getting verifications from cached list. Falling back to direct storage list")

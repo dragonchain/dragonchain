@@ -17,6 +17,7 @@
 
 import os
 import json
+import time
 from typing import Optional, List, Any, TYPE_CHECKING
 
 from dragonchain import logger
@@ -32,6 +33,7 @@ LEVEL = os.environ["LEVEL"]
 STAGE = os.environ["STAGE"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"].lower()
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
+CACHE_LIMIT = 52428800  # Will not cache individual objects larger than this size (in bytes) (hardcoded to 50MB for now. Can change if needed)
 
 
 if STORAGE_TYPE == "s3":
@@ -60,7 +62,7 @@ def get(key: str, cache_expire: Optional[int] = None, should_cache: bool = True)
             obj = redis.cache_get(key)
         if not obj:
             obj = storage.get(STORAGE_LOCATION, key)
-            if should_cache:
+            if should_cache and len(obj) < CACHE_LIMIT:
                 redis.cache_put(key, obj, cache_expire)
         return obj
     except exceptions.NotFound:
@@ -81,7 +83,7 @@ def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache
     """
     try:
         storage.put(STORAGE_LOCATION, key, value)
-        if should_cache:
+        if should_cache and len(value) < CACHE_LIMIT:
             redis.cache_put(key, value, cache_expire)
     except Exception:
         _log.exception("Uncaught exception while performing storage put")
@@ -139,7 +141,9 @@ def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] =
         if obj:
             return json.loads(obj)
         obj = storage.select_transaction(STORAGE_LOCATION, block_id, txn_id)
-        redis.cache_put(key, json.dumps(obj, separators=(",", ":")), cache_expire)
+        cache_val = json.dumps(obj, separators=(",", ":")).encode("utf-8")
+        if len(cache_val) < CACHE_LIMIT:
+            redis.cache_put(key, cache_val, cache_expire)
         return obj
     except exceptions.NotFound:
         raise
@@ -216,3 +220,11 @@ def does_object_exist(key: str) -> bool:
     except Exception:
         _log.exception("Uncaught exception while performing storage does_object_exist")
         raise exceptions.StorageError("Uncaught exception while performing storage does_object_exist")
+
+
+def save_error_message(message: str) -> None:
+    """Can save an error, such as a stack traceback or any other string to storage
+    Args:
+        message: The error message to save
+    """
+    put(f"error_{os.environ.get('SERVICE')}_{time.time()}.log", message.encode("utf8"), should_cache=False)

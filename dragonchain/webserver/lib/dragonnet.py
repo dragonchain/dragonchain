@@ -16,7 +16,8 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
-from typing import cast, Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast, Dict, Any
+
 
 from dragonchain.broadcast_processor import broadcast_functions
 from dragonchain.lib.interfaces import storage
@@ -37,8 +38,7 @@ if TYPE_CHECKING:
 
 REDIS_HOST = os.environ["REDIS_ENDPOINT"]
 REDIS_PORT = os.environ["REDIS_PORT"]
-INTERNAL_ID = os.environ["INTERNAL_ID"]
-FOLDER = "BLOCK"
+
 
 _log = logger.get_logger()
 
@@ -48,7 +48,7 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
         raise exceptions.ValidationException("block_dto missing")
     _log.info(f"[RECEIPT] Got receipt from L{block_dto['header']['level']}: {block_dto}")
     block_model = cast("model.BlockModel", None)  # This will always get defined, or it will raise
-    level_received_from = block_dto["header"]["level"]
+    level_received_from: int = block_dto["header"]["level"]
     if level_received_from == 2:
         block_model = l2_block_model.new_from_at_rest(block_dto)
     elif level_received_from == 3:
@@ -69,7 +69,8 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
         validations = matchmaking.get_claim_check(l1_block_id)["validations"][f"l{level_received_from}"]
         if (block_model.dc_id in validations) and broadcast_functions.is_block_accepting_verifications_from_level(l1_block_id, level_received_from):
             _log.info(f"Verified that block {l1_block_id} was sent. Inserting receipt")
-            storage.put_object_as_json(f"{FOLDER}/{l1_block_id}-l{level_received_from}-{block_model.dc_id}", block_model.export_as_at_rest())
+            storage_location = broadcast_functions.verification_storage_location(l1_block_id, level_received_from, block_model.dc_id)
+            storage.put_object_as_json(storage_location, block_model.export_as_at_rest())
             # Set new receipt for matchmaking claim check
             try:
                 block_id = block_model.block_id

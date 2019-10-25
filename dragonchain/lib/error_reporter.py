@@ -32,6 +32,9 @@ _reporting_type = (os.environ.get("ERROR_REPORTING_TYPE") or "").lower()
 if _reporting_type == "sns":
     REPORT_ERRORS = True
     from dragonchain.lib.interfaces.aws.sns import send_error_message as reporter
+elif _reporting_type == "storage":
+    REPORT_ERRORS = True
+    from dragonchain.lib.interfaces.storage import save_error_message as reporter  # noqa: T484 alternative import is expected
 
 
 def get_exception_message(exception: Exception) -> str:

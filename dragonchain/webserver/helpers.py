@@ -75,13 +75,14 @@ def format_error(category: str, msg: str) -> Dict[str, dict]:
 METHOD_NOT_ALLOWED = format_error("METHOD_NOT_ALLOWED", "The method is not allowed for the requested URL.")
 CONTRACT_CONFLICT = format_error("CONTRACT_CONFLICT", "Contract or transaction type already exists.")
 BAD_STATE = format_error("BAD_STATE", "The action attempted could not be completed because the contract is in an invalid starting state.")
-INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "The server experienced an internal error. Please try again later.")
 OPENFAAS_ERROR = format_error("OPENFAAS_ERROR", "Internal system error. Please try again later.")
 ACTION_FORBIDDEN = format_error("ACTION_FORBIDDEN", "This action is currently disabled.")
 NOT_FOUND = format_error("NOT_FOUND", "The requested resource(s) cannot be found.")
+ROUTE_NOT_FOUND = format_error("NOT_FOUND", "The requested route was not found.")
 BAD_DOCKER_AUTH_ERROR = format_error("BAD_DOCKER_AUTH_ERROR", "The provided docker registry auth cannot be used")
 INVALID_NODE_LEVEL = format_error("INVALID_NODE_LEVEL", "Please specify a valid node level (2-5)")
 TRANSACTION_TYPE_CONFLICT = format_error("TRANSACTION_TYPE_CONFLICT", "The transaction type you are trying to register already exists")
+INTERCHAIN_CONFLICT = format_error("INTERCHAIN_CONFLICT", "An interchain network with the name you provided already exists")
 INSUFFICIENT_CRYPTO = format_error("INSUFFICIENT_CRYPTO", "You do not have enough UTXOs or funds in this address to sign a transaction with")
 NOT_ACCEPTING_VERIFICATIONS = format_error("NOT_ACCEPTING_VERIFICATIONS", "Not currently accepting verifications")
 INVALID_TRANSACTION_TYPE = format_error(
@@ -91,6 +92,7 @@ ACTION_FORBIDDEN_LAB_CHAIN = format_error(
     "ACTION_FORBIDDEN_LAB_CHAIN",
     "This feature is disabled for Labs. If you are interested in this feature, please visit https://dragonchain.com/pricing",
 )
+INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")
 
 
 """ Dynamic error messages """
@@ -157,6 +159,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, exceptions.TransactionTypeConflict):
         status_code = 409
         surface_error = TRANSACTION_TYPE_CONFLICT
+    elif isinstance(exception, exceptions.InterchainConflict):
+        status_code = 409
+        surface_error = INTERCHAIN_CONFLICT
     elif isinstance(exception, exceptions.InvalidTransactionType):
         status_code = 403
         surface_error = INVALID_TRANSACTION_TYPE
@@ -181,12 +186,15 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, werkzeug_exceptions.MethodNotAllowed):
         status_code = 405
         surface_error = METHOD_NOT_ALLOWED
+    elif isinstance(exception, werkzeug_exceptions.NotFound):
+        status_code = 404
+        surface_error = ROUTE_NOT_FOUND
     elif isinstance(exception, exceptions.OpenFaasException):
         status_code = 500
         surface_error = OPENFAAS_ERROR
     else:
         status_code = 500
-        surface_error = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")
+        surface_error = INTERNAL_SERVER_ERROR
 
     _log.error(f"Responding: {status_code} {surface_error}")
 

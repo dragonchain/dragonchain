@@ -77,8 +77,8 @@ def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_bitcoin_network_create_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(201, interchain.create_bitcoin_interchain_v1(data))
 
@@ -90,8 +90,8 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_ethereum_network_create_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(201, interchain.create_ethereum_interchain_v1(data))
 
@@ -103,8 +103,8 @@ def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_bitcoin_network_update_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.update_bitcoin_interchain_v1(name, data))
 
@@ -116,8 +116,8 @@ def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_ethereum_network_update_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.update_ethereum_interchain_v1(name, data))
 
@@ -129,8 +129,8 @@ def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_bitcoin_transaction_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("bitcoin", name, data))
 
@@ -142,8 +142,8 @@ def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]
     data = flask.request.json
     try:
         _validate_ethereum_transaction_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("ethereum", name, data))
 
@@ -171,8 +171,8 @@ def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_set_default_interchain_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.set_default_interchain_v1(data["blockchain"], data["name"]))
 
@@ -205,8 +205,8 @@ def public_blockchain_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
         elif data["network"] in ["ETH_MAINNET", "ETH_ROPSTEN", "ETC_MAINNET", "ETC_MORDEN"]:
             _validate_ethereum_transaction_v1(data.get("transaction"))
         else:
-            raise exceptions.ValidationException("User input did not match JSON schema")
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+            raise exceptions.ValidationException("Invalid network provided")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.legacy_sign_blockchain_transaction_v1(data["network"], data["transaction"]))

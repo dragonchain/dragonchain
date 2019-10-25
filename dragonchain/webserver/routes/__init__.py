@@ -15,10 +15,9 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING
 import os
 
-from dragonchain import exceptions
 from dragonchain.webserver import helpers
 from dragonchain.webserver.routes import api_keys
 from dragonchain.webserver.routes import blocks
@@ -56,10 +55,5 @@ def route(app: "flask.Flask"):
     if LEVEL == "1" or LEVEL == "5":
         interchain.apply_routes(app)
 
-    # Error Handlers
-    app.register_error_handler(404, not_found)
+    # Error Handler
     app.register_error_handler(Exception, helpers.webserver_error_handler)
-
-
-def not_found(e: Any) -> NoReturn:
-    raise exceptions.NotFound("Route not found")

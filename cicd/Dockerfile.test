@@ -1,12 +1,15 @@
 # Change FROM to python:3.7-alpine to test without the dependencies container
 FROM dragonchain/dragonchain_core_dependencies:latest as base
 
-# Install Helm for doc builds if it doesn't exist
+# Install Helm for chart linting and/or yq for doc builds if it doesn't exist
 RUN if ! command -v helm; then \
-    wget 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
+    wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
     tar xzf helm-v2.14.3-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
     rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64; fi && \
-    helm init --client-only
+    helm init --client-only && \
+    if ! command -v yq; then \
+    wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.0/yq_linux_amd64' && \
+    chmod +x yq && mv yq /usr/local/bin/; fi
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler

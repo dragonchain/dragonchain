@@ -1,5 +1,46 @@
 # Changelog
 
+## 4.1.0
+
+Note this update adds the invoker tag field for indexing smart contract
+transactions. This will only be added for all new smart contracts after
+updating to this version (or newer). If you want/need to retroactively index
+this field for existing transactions,
+[check these docs](https://dragonchain-core-docs.dragonchain.com/latest/deployment/migrating_v4.html#manually-triggering-a-reindex)
+for info on manually triggering a re-index which will populate the invoker
+field where necessary.
+
+- **Feature:**
+  - Default error reporting to save to disk, so that crash logs/tracebacks can be automatically saved
+  - Provide better error message when bad input to api doesn't match required schemas
+  - Adds verification-notification callback in the reciept endpoint
+  - Add indexed redisearch tag field "invoker" by default when indexing smart contract transactions
+  - Remove max limit for custom indexes on a transaction type/smart contract
+- **Bugs:**
+  - Fix a bug where getting the cached list of verifications for a block would always fail
+  - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name
+  - Fix a bug where the chain could not parse very old legacy transactions from storage
+  - Fix a bug where L5s returned a 404 for the status endpoint when a default interchain was not yet set
+  - Fix a bug where very large payloads could attempt to be cached and crash the caching redis
+  - Fix a bug so that non-existant routes in the api now properly return a 404
+  - Fix a bug where accepting the disable_schedule parameter when updating a contract didn't do anything
+  - Fix a bug where the deadline key for l2+ nodes skipping unneeded blocks was generated incorrectly
+  - Fix a bug where custom indexes text fields couldn't have both sortable and nostem at the same time
+- **Documentation:**
+  - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
+  - Stop posting helm chart directly to docs
+- **Packaging:**
+  - Update aioredis, docker, boto3, web3, redis, fastjsonschema, and aiohttp dependencies
+  - Update installed version of redisearch to 1.4.17
+  - Update fwatchdog to 0.18.2 for OpenFaaS smart contracts
+  - Update helm chart to use a pinned container version by default
+  - Use a helm chart repository for helm distribution
+  - Add a README for the helm chart itself which will be rendered [on helm hub](https://hub.helm.sh/charts/dragonchain/dragonchain-k8s)
+- **Development:**
+  - Enforce `appVersion` in Chart.yaml and image version tags to be always up to date (and add associated version bump helper function in `tools.sh`)
+  - Add strict helm lint checking
+  - Add a public docker container for the current build of the master (development) branch (`dragonchain/dragonchain_core:edge`)
+
 ## 4.0.1
 
 - **Bugs:**

@@ -227,10 +227,11 @@ class BroadcastFunctionTests(unittest.TestCase):
             exceptions.NotAcceptingVerifications, broadcast_functions.set_receieved_verification_for_block_from_chain_sync, "block_id", 2, "chain_id"
         )
 
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.sadd_sync")
     @patch("dragonchain.broadcast_processor.broadcast_functions.dragonnet_config.DRAGONNET_CONFIG", {"l2": {"nodesRequired": 3}})
     @patch("dragonchain.broadcast_processor.broadcast_functions.verifications_key", return_value="key")
     @patch("dragonchain.broadcast_processor.broadcast_functions.get_current_block_level_sync", return_value=2)
-    def test_set_record_for_block_sync_calls_redis_with_correct_params(self, mock_get_block_level, mock_key):
+    def test_set_record_for_block_sync_calls_redis_with_correct_params(self, mock_get_block_level, mock_key, mock_sadd):
         fake_pipeline = MagicMock()
         fake_pipeline.execute = MagicMock(return_value=[1, 2])
         broadcast_functions.redis.pipeline_sync = MagicMock(return_value=fake_pipeline)
@@ -240,6 +241,7 @@ class BroadcastFunctionTests(unittest.TestCase):
         fake_pipeline.scard.assert_called_once_with("key")
         fake_pipeline.execute.assert_called_once()
 
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.sadd_sync")
     @patch("dragonchain.broadcast_processor.broadcast_functions.dragonnet_config.DRAGONNET_CONFIG", {"l3": {"nodesRequired": 3}})
     @patch("dragonchain.broadcast_processor.broadcast_functions.set_current_block_level_sync")
     @patch("dragonchain.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_sync")
@@ -247,7 +249,7 @@ class BroadcastFunctionTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_functions.get_current_block_level_sync", return_value=3)
     @patch("dragonchain.broadcast_processor.broadcast_functions.redis.delete_sync")
     def test_set_record_for_block_sync_promotes_when_needed_met(
-        self, mock_delete_sync, mock_get_block_level, mock_key, mock_schedule, mock_set_block
+        self, mock_delete_sync, mock_get_block_level, mock_key, mock_schedule, mock_set_block, mock_sadd
     ):
         fake_pipeline = MagicMock()
         fake_pipeline.execute = MagicMock(return_value=[1, 3])
@@ -256,13 +258,37 @@ class BroadcastFunctionTests(unittest.TestCase):
         mock_set_block.assert_called_once_with("block_id", 4)
         mock_schedule.assert_called_once_with("block_id")
 
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.sadd_sync")
     @patch("dragonchain.broadcast_processor.broadcast_functions.dragonnet_config.DRAGONNET_CONFIG", {"l5": {"nodesRequired": 3}})
     @patch("dragonchain.broadcast_processor.broadcast_functions.remove_block_from_broadcast_system_sync")
     @patch("dragonchain.broadcast_processor.broadcast_functions.verifications_key", return_value="key")
     @patch("dragonchain.broadcast_processor.broadcast_functions.get_current_block_level_sync", return_value=5)
-    def test_set_record_for_block_sync_calls_remove_when_required_met_and_level_5(self, mock_get_block_level, mock_key, mock_remove):
+    def test_set_record_for_block_sync_calls_remove_when_required_met_and_level_5(self, mock_get_block_level, mock_key, mock_remove, mock_sadd):
         fake_pipeline = MagicMock()
         fake_pipeline.execute = MagicMock(return_value=[1, 3])
         broadcast_functions.redis.pipeline_sync = MagicMock(return_value=fake_pipeline)
         broadcast_functions.set_receieved_verification_for_block_from_chain_sync("block_id", 5, "chain_id")
         mock_remove.assert_called_once_with("block_id")
+
+    @async_test
+    async def test_get_notification_verifications_for_broadcast_async(self):
+        broadcast_functions.redis.smembers_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.redis.smembers_async.return_value.set_result({"thing"})
+        await broadcast_functions.get_notification_verifications_for_broadcast_async()
+        broadcast_functions.redis.smembers_async.assert_called_once_with("broadcast:notifications")
+
+    @async_test
+    async def test_remove_notification_verification_for_broadcast_async(self):
+        broadcast_functions.redis.srem_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.redis.srem_async.return_value.set_result(1)
+        await broadcast_functions.remove_notification_verification_for_broadcast_async("banana")
+        broadcast_functions.redis.srem_async.assert_called_once_with("broadcast:notifications", "banana")
+
+    def test_schedule_notification_for_broadcast_sync(self):
+        broadcast_functions.redis.sadd_sync = MagicMock(return_value=1)
+        broadcast_functions.schedule_notification_for_broadcast_sync("banana")
+        broadcast_functions.redis.sadd_sync.assert_called_once_with("broadcast:notifications", "banana")
+
+    def test_verification_storage_location(self):
+        result = broadcast_functions.verification_storage_location("l1_block_id", 2, "chain_id")
+        self.assertEqual(result, "BLOCK/l1_block_id-l2-chain_id")

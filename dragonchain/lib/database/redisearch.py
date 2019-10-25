@@ -94,7 +94,7 @@ class Indexes(enum.Enum):
 _redis_connection = None
 
 
-# Until redisearch is fixed (https://github.com/RediSearch/redisearch-py/pull/37) for args, we have to use our own (fixed) tag class
+# Until redisearch tagfield is fixed (https://github.com/RediSearch/redisearch-py/pull/37) for tag args, we have to use our own (fixed) tag class
 class TagField(redisearch.client.Field):  # noqa: F484
     """
     TagField is a tag-indexing field with simpler compression and tokenization.
@@ -105,6 +105,28 @@ class TagField(redisearch.client.Field):  # noqa: F484
         args = [redisearch.client.Field.TAG, redisearch.client.Field.SEPARATOR, separator]
         if no_index:
             args.append(redisearch.client.Field.NOINDEX)
+        redisearch.client.Field.__init__(self, name, *args)
+
+
+# Until redisearch textfield is fixed (https://github.com/RediSearch/redisearch-py/pull/44) for text args, we have to use our own (fixed) text class
+class TextField(redisearch.client.Field):  # noqa: F484
+    """
+    TextField is used to define a text field in a schema definition
+    """
+
+    NOSTEM = "NOSTEM"
+
+    def __init__(self, name, weight=1.0, sortable=False, no_stem=False, no_index=False):
+        args = [redisearch.client.Field.TEXT, redisearch.client.Field.WEIGHT, weight]
+        if no_stem:
+            args.append(self.NOSTEM)
+        if sortable:
+            args.append(redisearch.client.Field.SORTABLE)
+        if no_index:
+            args.append(self.NOINDEX)
+
+        if no_index and not sortable:
+            raise ValueError("Non-Sortable non-Indexable fields are ignored")
         redisearch.client.Field.__init__(self, name, *args)
 
 
@@ -137,7 +159,7 @@ def _get_custom_field_from_input(custom_index_input: "custom_index") -> redisear
             cust_weight = options.get("weight")
             if isinstance(cust_weight, (int, float)) and cust_weight >= 0 and cust_weight <= 1:
                 weight = float(cust_weight)
-        return redisearch.TextField(field_name, weight=weight, sortable=sortable, no_stem=no_stem, no_index=no_index)
+        return TextField(field_name, weight=weight, sortable=sortable, no_stem=no_stem, no_index=no_index)  # TODO: replace after redisearch is fixed
     elif input_type == "tag":
         separator = ","
         no_index = False
@@ -171,6 +193,7 @@ def create_transaction_index(index: str, custom_indexes: Optional[Iterable["cust
         redisearch.TextField("tag"),
         redisearch.NumericField("timestamp", sortable=True),
         redisearch.NumericField("block_id", sortable=True),
+        redisearch.TagField("invoker"),
     ]
     # Add custom indexes if they exist
     if custom_indexes:

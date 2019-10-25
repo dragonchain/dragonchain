@@ -13,7 +13,6 @@ global:
     TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
-    BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
 
 # -- isMinikube --
 # When running on minikube this should be boolean true. otherwise boolean false.
@@ -66,10 +65,13 @@ dragonchain:
     pullPolicy: Always
 
     # -- dragonchain.image.value --
-    # The image to use as the dragonchain core image
-    # Check here for available tags: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
-    # PLEASE USE A PINNED VERSION, AND NOT 'latest' FOR PRODUCTION DEPLOYMENTS
-    value: docker.io/dragonchain/dragonchain_core:latest
+    # The image to use for the dragonchain core container
+    value: docker.io/dragonchain/dragonchain_core
+
+    # -- dragonchain.image.version --
+    # The tag to use with the dragonchain image
+    # Check here for available values: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
+    version: 4.1.0
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.
@@ -83,6 +85,34 @@ dragonchain:
       resources:
         requests:
           storage: 2Gi
+
+  # -- dragonchain.verificationNotifications --
+  # This Level 1 Dragonchain configuration will send received verifications via HTTP unique URL's configured here.
+  # Verifications will be sent with HTTP POST, and contain three relevant headers documented below.
+  # -- Headers --
+  # Authentication: Bearer ${signature}
+  # DragonchainId: PublicIdOfThisL1Dragonchain
+  # Content-Type: application/json
+  # -- Body --
+  # The post body will be JSON of the raw verification object received by this dragonchain. See Dragonchain documentation for details.
+  # -- Signature --
+  # The bearer token will be the signature of the utf8 encoded bytes of the post body signed with the private key, and verifiable with
+  # the public key found in the DragonchainId header. NOTE: Do not trust this header alone to verify signature. Make sure it's a public id
+  # that you trust and expect.
+  verificationNotification: null
+    # -- Example:
+    # all:
+    #   - https://yourUrlHere
+    #   - https://yourUrlHere
+    # l2:
+    #   - https://yourUrlHere
+    # l3:
+    #   - https://yourUrlHere
+    # l4:
+    #   - https://yourUrlHere
+    # l5:
+    #   - https://yourUrlHere
+
 
 redis:
   # -- redis.storage --

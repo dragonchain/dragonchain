@@ -56,11 +56,9 @@ by the chain. Once doing this, simply remember to set
 ## Helm Chart
 
 **Please Note**: The helm chart is subject to significant changes.
-A helm chart is provided here, but will have better support in the
-future.
 
-Both the helm chart and a template for the necessary values can be downloaded
-[HERE](links).
+A documented template for the necessary configurable helm chart values can be
+downloaded [HERE](links).
 
 ### Deploying Helm Chart
 
@@ -72,7 +70,9 @@ are in the first section).
 Once the values are set, install the helm chart with:
 
 ```sh
-helm upgrade --install my-dragonchain dragonchain-k8s-1.0.0.tgz --values opensource-config.yaml --namespace dragonchain
+helm repo add dragonchain https://dragonchain-charts.s3.amazonaws.com
+helm repo update
+helm upgrade --install my-dragonchain --values opensource-config.yaml --namespace dragonchain dragonchain/dragonchain-k8s --version 1.0.2
 ```
 
 If you need to change any values AFTER the helm chart has already been

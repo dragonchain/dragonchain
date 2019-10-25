@@ -114,6 +114,13 @@ class InterchainModel(Model):
         """
         raise NotImplementedError("This is an abstract method")
 
+    def get_network_string(self) -> str:
+        """Get the network string for this blockchain. This is what's included in l5 blocks or sent to matchmaking
+        Returns:
+            Network string
+        """
+        raise NotImplementedError("This is an abstract method")
+
     def _publish_transaction(self, payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:

@@ -71,6 +71,7 @@ def new_from_build_task(data: Mapping[str, Any]) -> "SmartContractModel":
             execution_order=data["execution_order"],
             start_state=data["start_state"],
             desired_state=data["desired_state"],
+            disable_schedule=data["disable_schedule"],
         )
     else:
         raise NotImplementedError(f"Version {data.get('version')} is not supported")
@@ -258,6 +259,7 @@ class SmartContractModel(model.Model):
             "execution_order": self.execution_order,
             "start_state": self.start_state,
             "desired_state": self.desired_state,
+            "disable_schedule": self.disable_schedule,
         }
 
     def validate_schedule(self) -> None:

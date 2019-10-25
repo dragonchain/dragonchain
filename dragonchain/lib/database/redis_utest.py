@@ -135,6 +135,13 @@ class TestRedisAccess(unittest.TestCase):
         redis.async_redis_client.hset.assert_called_once_with("banana", "banana", "banana")
 
     @async_test
+    async def test_srem_async(self):
+        redis.async_redis_client.srem = MagicMock(return_value=asyncio.Future())
+        redis.async_redis_client.srem.return_value.set_result(1)
+        await redis.srem_async("apple", "banana")
+        redis.async_redis_client.srem.assert_called_once_with("apple", "banana")
+
+    @async_test
     async def test_hdel_async(self):
         redis.async_redis_client.hdel = MagicMock(return_value=asyncio.Future())
         redis.async_redis_client.hdel.return_value.set_result("dummy")

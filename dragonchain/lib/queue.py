@@ -122,7 +122,7 @@ def clear_processing_queue() -> None:
 
 def get_deadline_key(item_as_bytes: bytes) -> str:
     unique_id = crypto.hash_bytes(crypto.SupportedHashes.sha256, item_as_bytes)
-    return f"dc:tx:deadline:{base64.b64encode(unique_id)}"
+    return f"dc:tx:deadline:{base64.b64encode(unique_id).decode('ascii')}"
 
 
 def item_is_expired(item_as_bytes: bytes) -> bool:

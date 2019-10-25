@@ -107,7 +107,7 @@ def new_from_at_rest_full(full_txn: Dict[str, Any]) -> "TransactionModel":
                 dc_id=full_txn["header"]["dc_id"],
                 block_id=full_txn["header"]["block_id"],
                 txn_id=full_txn["header"]["txn_id"],
-                timestamp=full_txn["header"]["timestamp"],
+                timestamp=full_txn["header"].get("timestamp") or "0",
                 txn_type=full_txn["header"]["txn_type"],
                 tag=full_txn["header"]["tag"],
                 invoker=full_txn["header"]["invoker"],
@@ -204,6 +204,8 @@ class TransactionModel(model.Model):
         """Get the search index DTO from this transaction"""
         # Please note that extract_custom_indexes should be ran first, or else custom indexes for this transaction will not be exported
         search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id) if not stub else 0}
+        if self.invoker:  # Add invoker tag if it exists
+            search_indexes["invoker"] = self.invoker
         if not stub:
             reserved_keywords = search_indexes.keys()
             for key, value in self.custom_indexed_data.items():
