@@ -378,6 +378,18 @@ def encrypt_message(encryption_type: SupportedEncryption, priv_key: Union["Priva
     return base64.b64encode(sig_bytes).decode("ascii")
 
 
+def encrypt_secp256k1_message_compact(priv_key: Union["PrivateKey"], message_bytes: bytes) -> str:
+    """Encrypt a 32byte message (typically a hash, to use as a signature) (in its compact form)
+    Args:
+        priv_key: private key object defined by encryption_type
+        message_bytes: 32 byte python bytes object to encrypt
+    Returns:
+        Base 64 encoded signature string
+    """
+    sig_bytes = priv_key.ecdsa_serialize_compact(priv_key.ecdsa_signature_normalize(priv_key.ecdsa_sign(msg=message_bytes, raw=True))[1])
+    return base64.b64encode(sig_bytes).decode("ascii")
+
+
 def verify_signature(encryption_type: SupportedEncryption, pub_key: Union["PublicKey"], message_bytes: bytes, signature_bytes: bytes) -> bool:
     """Verify a signature with a given encryption type, message, and signature to use
     Args:

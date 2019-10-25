@@ -299,20 +299,17 @@ class BinanceNetwork(model.InterchainModel):
             else:  # mainnet
                 tx = BnbTransaction.from_obj(raw_transaction)
             _log.info(f"[BINANCE] Signing raw transaction: {tx.signing_json()}")
-
-            # DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG:
             mykeys = keys.DCKeys(pull_keys=False)
-            mykeys.initialize(private_key_string=self.get_private_key())
-            # mykeys.make_signature(content=tx.signing_hash(), hash_type=crypto.SupportedHashes.sha256)
-            signature = crypto.encrypt_message(crypto.SupportedEncryption.secp256k1, mykeys.priv, tx.signing_hash())
-            _log.info(f"||||||| SIGNING_HASH: {len(tx.signing_hash())} : {tx.signing_hash()}")  # DEBUG:
-            _log.info(f"||||||| SIGNATURE: {len(signature)} : {signature}")  # 96 chars, expecting 64  # BROKEN:
-            unc_pub_key_len = len(uncompress_key(self.wallet.public_key))  # DEBUG:
-            _log.info(f"||||||| PUB_KEY: {unc_pub_key_len} : {uncompress_key(self.wallet.public_key)}")  # DEBUG:
-            # going to error, expecting pub_key to be len 65, it's 66...
-            tx.apply_sig(signature, uncompress_key(self.wallet.public_key))
+            mykeys.initialize(private_key_string=self.get_private_key())  # FIXME: use Wallet's privkey for now
+            signature = base64.b64decode(mykeys.make_binance_signature(content=tx.signing_json()))
+            # TODO: need to add unit tests to keys for make_binance_signature() and associated function(s)
+            tx.apply_sig(signature, self.wallet.public_key)
+            signed_transaction_bytes = tx.encode()  # BROKEN:
+            _log.info("-------------------------------------------------------------------------------")
+            _log.info(f"tx.encode(): {signed_transaction_bytes}")  # DEBUG:
+            _log.info("-------------------------------------------------------------------------------")
             # DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG: DEBUG:
-            return tx.encode().hex()  # signed_transaction_bytes
+            return signed_transaction_bytes
         except Exception as e:
             raise exceptions.BadRequest(f"Error signing transaction: {e}")
 

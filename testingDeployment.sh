@@ -2,9 +2,7 @@
 
 command_spacers() {
     sleep 2
-    echo
     echo "============================================================" # 60 
-    echo
 }
 
 # set vars
