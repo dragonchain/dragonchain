@@ -25,6 +25,7 @@ field where necessary.
   - Fix a bug so that non-existant routes in the api now properly return a 404
   - Fix a bug where accepting the disable_schedule parameter when updating a contract didn't do anything
   - Fix a bug where the deadline key for l2+ nodes skipping unneeded blocks was generated incorrectly
+  - Fix a bug where custom indexes text fields couldn't have both sortable and nostem at the same time
 - **Documentation:**
   - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
   - Stop posting helm chart directly to docs
