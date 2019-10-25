@@ -15,6 +15,7 @@ field where necessary.
   - Provide better error message when bad input to api doesn't match required schemas
   - Adds verification-notification callback in the reciept endpoint
   - Add indexed redisearch tag field "invoker" by default when indexing smart contract transactions
+  - Remove max limit for custom indexes on a transaction type/smart contract
 - **Bugs:**
   - Fix a bug where getting the cached list of verifications for a block would always fail
   - Fix a bug where existing interchain networks could be overwritten if trying to create a new network with the same blockchain and name
@@ -24,11 +25,14 @@ field where necessary.
   - Fix a bug so that non-existant routes in the api now properly return a 404
   - Fix a bug where accepting the disable_schedule parameter when updating a contract didn't do anything
   - Fix a bug where the deadline key for l2+ nodes skipping unneeded blocks was generated incorrectly
+  - Fix a bug where custom indexes text fields couldn't have both sortable and nostem at the same time
 - **Documentation:**
   - Change dragonchain deployment docs to reflect helm install changes from helm repository with pinned version
   - Stop posting helm chart directly to docs
 - **Packaging:**
   - Update aioredis, docker, boto3, web3, redis, fastjsonschema, and aiohttp dependencies
+  - Update installed version of redisearch to 1.4.17
+  - Update fwatchdog to 0.18.2 for OpenFaaS smart contracts
   - Update helm chart to use a pinned container version by default
   - Use a helm chart repository for helm distribution
   - Add a README for the helm chart itself which will be rendered [on helm hub](https://hub.helm.sh/charts/dragonchain/dragonchain-k8s)

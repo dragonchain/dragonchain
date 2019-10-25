@@ -159,8 +159,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.16
-  replicaCount: 1
+    tag: 1.4.17
   resources:
     limits:
       cpu: 500m
