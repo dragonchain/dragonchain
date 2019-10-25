@@ -1,5 +1,5 @@
 <div align="center">
-<img width=300px height=300px src="https://dragonchain.com/static/media/dragonchain-logo-treasure.png" alt="Dragonchain Logo">
+<img width=300px height=300px src="https://dragonchain-assets.s3.amazonaws.com/jojo.png" alt="Dragonchain Logo">
 
 # Dragonchain
 
