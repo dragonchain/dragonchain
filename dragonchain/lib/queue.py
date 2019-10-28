@@ -158,8 +158,7 @@ def get_new_transactions() -> List[transaction_model.TransactionModel]:
     for _ in range(0, length):
         p.rpoplpush(INCOMING_TX_KEY, PROCESSING_TX_KEY)
     txn = p.execute()
-    for i in range(0, length):
-        string = cast(bytes, txn[i])
+    for string in txn:
         dictionary = json.loads(string)
         txn_model = transaction_model.new_from_queue_input(dictionary)
         transactions.append(txn_model)

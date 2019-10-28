@@ -62,7 +62,7 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     Also updates the indexes for each indexed transaction in ES with block information.
     """
     _log.info("[TRANSACTION DAO] Putting transaction to storage")
-    storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"), should_cache=False)
+    storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
     txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
     txn_dict[redisearch.Indexes.transaction.value] = {}
     # O(N) loop where N = # of txn
