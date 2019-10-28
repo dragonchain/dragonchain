@@ -122,9 +122,6 @@ def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[st
     _log.info("[TRANSACTION] Txn valid. Queueing txn object")
     queue.enqueue_item(txn_model.export_as_queue_task())
 
-    _log.info("[TRANSACTION] insert transaction stub for pending transaction")
-    _add_transaction_stub(txn_model)
-
     if callback_url:
         _log.info("[TRANSACTION] Registering callback for queued txn")
         callback.register_callback(txn_model.txn_id, callback_url)
@@ -148,8 +145,6 @@ def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]]) -> Di
 
             _log.info("[TRANSACTION] Txn valid. Queueing txn object")
             queue.enqueue_item(txn_model.export_as_queue_task())
-            _log.info("[TRANSACTION] insert transaction stub for pending transaction")
-            _add_transaction_stub(txn_model)
             success.append(txn_model.txn_id)
         except Exception:
             _log.exception("Processing transaction failed")
@@ -167,12 +162,3 @@ def _generate_transaction_model(transaction: Dict[str, Any]) -> transaction_mode
     txn_model.txn_id = str(uuid.uuid4())
     txn_model.timestamp = str(math.floor(time.time()))
     return txn_model
-
-
-def _add_transaction_stub(txn_model: transaction_model.TransactionModel) -> None:
-    """store a stub for a transaction in the index to prevent 404s from getting immediately after posting
-    Args:
-        txn_model: txn model to stub in the index
-    """
-    redisearch.put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(stub=True))
-    redisearch.put_document(redisearch.Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": "0"})

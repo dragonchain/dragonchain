@@ -153,9 +153,13 @@ def get_new_transactions() -> List[transaction_model.TransactionModel]:
 
     transactions = []
     # Only allow up to 1000 transactions to process at a time
-    length = min(redis.llen_sync(INCOMING_TX_KEY), 1000)
+    length = min(redis.llen_sync(INCOMING_TX_KEY), 10000)
+    p = redis.pipeline_sync()
     for _ in range(0, length):
-        string = cast(bytes, redis.rpoplpush_sync(INCOMING_TX_KEY, PROCESSING_TX_KEY, decode=False))
+        p.rpoplpush(INCOMING_TX_KEY, PROCESSING_TX_KEY)
+    txn = p.execute()
+    for i in range(0, length):
+        string = cast(bytes, txn[i])
         dictionary = json.loads(string)
         txn_model = transaction_model.new_from_queue_input(dictionary)
         transactions.append(txn_model)
