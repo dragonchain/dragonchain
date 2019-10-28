@@ -28,7 +28,6 @@ keepalive = 90  # Make sure this is higher than the load balancer/ingress contro
 sendfile = False
 accesslog = "-"
 loglevel = "info"
-worker_tmp_dir = "/dev/shm"
 if os.environ.get("TLS_SUPPORT") == "true":
     certfile = "/etc/cert/tls.crt"
     keyfile = "/etc/cert/tls.key"
