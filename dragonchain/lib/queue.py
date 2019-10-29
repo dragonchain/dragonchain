@@ -171,9 +171,8 @@ def get_new_transactions() -> List[transaction_model.TransactionModel]:
     p = redis.pipeline_sync()
     for _ in range(0, length):
         p.rpoplpush(INCOMING_TX_KEY, PROCESSING_TX_KEY)
-    txn = p.execute()
-    for string in txn:
-        dictionary = json.loads(string)
+    for value in p.execute():
+        dictionary = json.loads(value)
         txn_model = transaction_model.new_from_queue_input(dictionary)
         transactions.append(txn_model)
     return transactions
