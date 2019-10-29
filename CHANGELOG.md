@@ -2,10 +2,13 @@
 
 ## 4.1.1
 
+- **Feature:**
+  - Add performance improvements when creating transactions and processing L1 blocks
 - **Packaging:**
   - Update redisearch, boto3 dependencies
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
+  - Change the way that transaction 404 stubbing is handled for pending transactions
 
 ## 4.1.0
 
