@@ -262,7 +262,7 @@ class BinanceNetwork(model.InterchainModel):
             _log.warning("[BINANCE] Non 200 response from Binance node. May have been a 500 Bad Request or a 404 Not Found.")
             return 0
 
-    def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str):
+    def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str) -> Dict:
         # easier to just use from-addy for the to-addy than create a properly formatted dummy addy
         inputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}
         outputs = {"address": self.address, "coins": [{"amount": 0, "denom": "BNB"}]}

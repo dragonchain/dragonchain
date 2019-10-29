@@ -64,7 +64,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertFalse(self.client.should_retry_broadcast(99))
         self.client.get_current_block.assert_called_once()
 
-    @patch("binance_transaction.BnbTransaction.encode", return_value=b'fake_encoded_txn')
+    @patch("binance_transaction.BnbTransaction.encode", return_value=b"fake_encoded_txn")
     def test_sign_transaction(self, mock_encode):
         random_addy = "bnb1l09g77u8wslyg9vjza3rfgmq776jy2lt8gtmvm"
         inputs = {"address": random_addy, "coins": [{"amount": 0, "denom": "BNB"}]}
@@ -77,20 +77,19 @@ class TestBinanceMethods(unittest.TestCase):
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
         }
         response = self.client.sign_transaction(fake_raw_txn)
-        self.assertEqual(response, '66616b655f656e636f6465645f74786e')
+        self.assertEqual(response, "66616b655f656e636f6465645f74786e")
         mock_encode.assert_called_once()
 
-    # BROKEN:
     def test_publish_transaction(self):
-        pass
-        # self.client._call_node_rpc = MagicMock(return_value={"result": {"hash": "submitted_txn_hash"}})
-        # self.client._build_transaction_msg = MagicMock(return_value={'built_tx': 'fake'})
-        # self.client.sign_transaction = MagicMock(return_value={'signed_tx': 'fake'})
-        # fake_txn_payload = "DC-L5:_fake_L5_block_hash"
-        # response = self.client._publish_transaction(fake_txn_payload)
-        # self.assertEqual(response, "submitted_txn_hash")
+        self.client._build_transaction_msg = MagicMock(return_value={"built_tx": "fake"})  # actual function returns dict
+        self.client.sign_transaction = MagicMock(return_value="signed_tx")  # actual function returns hex string
+        self._fetch_account = MagicMock(return_value="")
+        self.client._call_node_api = MagicMock(return_value="")
+        self.client._call_node_rpc = MagicMock(return_value={"result": {"hash": "BOGUS_RESULT_HASH"}})
+        response = self.client._publish_transaction("DC-L5:_fake_L5_block_hash")
+        self.assertEqual(response, "BOGUS_RESULT_HASH")
         # BROKEN: mocking instance of class as object is not working
-        # self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": mock_signedtx})
+        # self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": "0x" + 'signed_tx'})
 
     def test_get_current_block(self):
         fake_response = {"result": {"block": {"header": {"height": 12345678}}}}
