@@ -16,7 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain.lib.dao import transaction_dao
@@ -25,7 +25,12 @@ from dragonchain.lib.dao import transaction_dao
 class TestStoreFullTxns(unittest.TestCase):
     @patch("dragonchain.lib.interfaces.storage.put")
     @patch("dragonchain.lib.database.redisearch.put_many_documents")
-    def test_store_full_txns_calls_redis_a_lot(self, mock_put, mock_index_many):
+    def test_store_full_txns_calls_redis_a_lot(self, mock_index_many, mock_put):
         mock_block = MagicMock(block_id="banana", transactions=[MagicMock(txn_id="apple", block_id="banana", txn_type="fruity")])
         transaction_dao.store_full_txns(mock_block)
-        mock_index_many.assert_called_twice()
+        mock_index_many.assert_has_calls(
+            [
+                call("tx", {"txn-apple": {"block_id": "banana"}}, upsert=True),
+                call("fruity", {"apple": mock_block.transactions[0].export_as_search_index.return_value}, upsert=True),
+            ]
+        )
