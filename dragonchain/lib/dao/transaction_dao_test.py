@@ -26,6 +26,6 @@ class TestStoreFullTxns(unittest.TestCase):
     @patch("dragonchain.lib.interfaces.storage.put")
     @patch("dragonchain.lib.database.redisearch.put_many_documents")
     def test_store_full_txns_calls_redis_a_lot(self, mock_put, mock_index_many):
-        mock_block = MagicMock(block_id="banana", transactions=[MagicMock(txn_id="apple", block_id="banana", txn_type="fruity")]))
+        mock_block = MagicMock(block_id="banana", transactions=[MagicMock(txn_id="apple", block_id="banana", txn_type="fruity")])
         transaction_dao.store_full_txns(mock_block)
         mock_index_many.assert_called_twice()
