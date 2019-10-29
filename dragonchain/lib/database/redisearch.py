@@ -94,42 +94,6 @@ class Indexes(enum.Enum):
 _redis_connection = None
 
 
-# Until redisearch tagfield is fixed (https://github.com/RediSearch/redisearch-py/pull/37) for tag args, we have to use our own (fixed) tag class
-class TagField(redisearch.client.Field):  # noqa: F484
-    """
-    TagField is a tag-indexing field with simpler compression and tokenization.
-    See http://redisearch.io/Tags/
-    """
-
-    def __init__(self, name, separator=",", no_index=False):
-        args = [redisearch.client.Field.TAG, redisearch.client.Field.SEPARATOR, separator]
-        if no_index:
-            args.append(redisearch.client.Field.NOINDEX)
-        redisearch.client.Field.__init__(self, name, *args)
-
-
-# Until redisearch textfield is fixed (https://github.com/RediSearch/redisearch-py/pull/44) for text args, we have to use our own (fixed) text class
-class TextField(redisearch.client.Field):  # noqa: F484
-    """
-    TextField is used to define a text field in a schema definition
-    """
-
-    NOSTEM = "NOSTEM"
-
-    def __init__(self, name, weight=1.0, sortable=False, no_stem=False, no_index=False):
-        args = [redisearch.client.Field.TEXT, redisearch.client.Field.WEIGHT, weight]
-        if no_stem:
-            args.append(self.NOSTEM)
-        if sortable:
-            args.append(redisearch.client.Field.SORTABLE)
-        if no_index:
-            args.append(self.NOINDEX)
-
-        if no_index and not sortable:
-            raise ValueError("Non-Sortable non-Indexable fields are ignored")
-        redisearch.client.Field.__init__(self, name, *args)
-
-
 def _get_redisearch_index_client(index: str) -> redisearch.Client:
     """Get an initialized redisearch client for an index
     Args:
@@ -159,14 +123,14 @@ def _get_custom_field_from_input(custom_index_input: "custom_index") -> redisear
             cust_weight = options.get("weight")
             if isinstance(cust_weight, (int, float)) and cust_weight >= 0 and cust_weight <= 1:
                 weight = float(cust_weight)
-        return TextField(field_name, weight=weight, sortable=sortable, no_stem=no_stem, no_index=no_index)  # TODO: replace after redisearch is fixed
+        return redisearch.TextField(field_name, weight=weight, sortable=sortable, no_stem=no_stem, no_index=no_index)
     elif input_type == "tag":
         separator = ","
         no_index = False
         if options:
             separator = options.get("separator") or ","
             no_index = bool(options.get("no_index"))
-        return TagField(field_name, separator=separator, no_index=no_index)  # TODO: replace after redisearch is fixed
+        return redisearch.TagField(field_name, separator=separator, no_index=no_index)
     elif input_type == "number":
         sortable = False
         no_index = False
@@ -392,7 +356,7 @@ def _generate_block_indexes() -> None:
 def _generate_smart_contract_indexes() -> None:
     delete_index(Indexes.smartcontract.value)  # Always generate smart contract indexes from scratch by dropping existing ones
     client = _get_redisearch_index_client(Indexes.smartcontract.value)
-    client.create_index([TagField("sc_name")])  # TODO: replace after redisearch is fixed
+    client.create_index([redisearch.TagField("sc_name")])
     # Find what smart contracts exist in storage
     _log.info("Listing all smart contracts in storage")
     sc_object_paths = storage.list_objects("SMARTCONTRACT/")
@@ -408,8 +372,7 @@ def _generate_transaction_indexes() -> None:  # noqa: C901
     # -- CREATE INDEXES FOR TRANSACTIONS --
     client = _get_redisearch_index_client(Indexes.transaction.value)
     try:
-        # TODO: replace after redisearch is fixed
-        client.create_index([TagField("block_id")])  # Used for reverse-lookup of transactions by id (with no txn_type)
+        client.create_index([redisearch.TagField("block_id")])  # Used for reverse-lookup of transactions by id (with no txn_type)
     except redis.exceptions.ResponseError as e:
         if not str(e).startswith("Index already exists"):  # We don't care if index already exists
             raise

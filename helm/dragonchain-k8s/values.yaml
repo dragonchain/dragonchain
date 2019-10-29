@@ -133,7 +133,7 @@ dragonchain:
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core
-    version: 4.1.0
+    version: 4.1.1
   storage:
     spec:
       storageClassName: standard
