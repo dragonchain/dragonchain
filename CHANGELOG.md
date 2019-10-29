@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.1
+
+- **Packaging:**
+  - Update redisearch, boto3 dependencies
+- **Development:**
+  - Revert manual redisearch fixes with dependency fixes
+
 ## 4.1.0
 
 Note this update adds the invoker tag field for indexing smart contract
