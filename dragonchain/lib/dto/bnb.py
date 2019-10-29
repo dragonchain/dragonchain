@@ -291,6 +291,7 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             String of the signed transaction as hex
         """
+
         try:
             if self.testnet:
                 _log.info(f"Transaction {raw_transaction}")
@@ -301,7 +302,6 @@ class BinanceNetwork(model.InterchainModel):
             mykeys = keys.DCKeys(pull_keys=False)
             mykeys.initialize(private_key_string=self.get_private_key())  # FIXME: use Wallet's privkey for now
             signature = base64.b64decode(mykeys.make_binance_signature(content=tx.signing_json()))
-            # TODO: need to add unit tests to keys for make_binance_signature() and associated function(s)
             tx.apply_sig(signature, self.wallet.public_key)
             signed_transaction_bytes = tx.encode()
             return signed_transaction_bytes.hex()

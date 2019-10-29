@@ -374,7 +374,6 @@ def encrypt_message(encryption_type: SupportedEncryption, priv_key: Union["Priva
         sig_bytes = priv_key.ecdsa_serialize(priv_key.ecdsa_signature_normalize(priv_key.ecdsa_sign(msg=message_bytes, raw=True))[1])
     else:
         raise NotImplementedError("Unsupported encryption type")
-
     return base64.b64encode(sig_bytes).decode("ascii")
 
 
