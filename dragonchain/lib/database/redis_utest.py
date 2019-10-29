@@ -220,6 +220,10 @@ class TestRedisAccess(unittest.TestCase):
         redis.sadd_sync("banana", "banana", "banana")
         redis.redis_client.sadd.assert_called_once_with("banana", "banana", "banana")
 
+    def test_sismember(self):
+        redis.sismember_sync("banana", "banana")
+        redis.redis_client.sismember.assert_called_once_with("banana", "banana")
+
     def test_smembers(self):
         redis.smembers_sync("banana")
         redis.redis_client.smembers.assert_called_once_with("banana")

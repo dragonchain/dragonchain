@@ -200,19 +200,18 @@ class TransactionModel(model.Model):
             "payload": json.dumps(self.payload, separators=(",", ":")) if not dict_payload else self.payload,
         }
 
-    def export_as_search_index(self, stub: bool = False) -> Dict[str, Any]:
+    def export_as_search_index(self) -> Dict[str, Any]:
         """Get the search index DTO from this transaction"""
         # Please note that extract_custom_indexes should be ran first, or else custom indexes for this transaction will not be exported
-        search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id) if not stub else 0}
+        search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id)}
         if self.invoker:  # Add invoker tag if it exists
             search_indexes["invoker"] = self.invoker
-        if not stub:
-            reserved_keywords = search_indexes.keys()
-            for key, value in self.custom_indexed_data.items():
-                if key not in reserved_keywords:
-                    search_indexes[key] = value
-                else:
-                    _log.error(f"Requested field name: {key} is a reserved keyword. Will not index")
+        reserved_keywords = search_indexes.keys()
+        for key, value in self.custom_indexed_data.items():
+            if key not in reserved_keywords:
+                search_indexes[key] = value
+            else:
+                _log.error(f"Requested field name: {key} is a reserved keyword. Will not index")
         return search_indexes
 
     def extract_custom_indexes(self, transaction_type_model: "transaction_type_model.TransactionTypeModel") -> None:
