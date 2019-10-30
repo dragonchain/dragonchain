@@ -19,9 +19,10 @@ from typing import Dict, Any
 import base64
 import binascii
 import requests
+import secp256k1
+import mnemonic
 
-from binance_chain.wallet import Wallet  # DEPRECATE:
-from binance_chain.environment import BinanceEnvironment  # DEPRECATE:
+from pycoin.symbols.btc import network
 
 # bnb-tx-python module
 from binance_transaction import BnbTransaction
@@ -31,6 +32,7 @@ from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import model
 from dragonchain.lib import keys
+from dragonchain.lib import segwit_addr
 
 NODE_IP = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
 MAINNET_RPC_PORT = "27147"
@@ -58,9 +60,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
     if dto_version == "1":
         if not user_input.get("private_key"):
             # We need to create a private key if not provided
-            wallet = Wallet.create_random_wallet()
-            user_input["private_key"] = base64.b64encode(binascii.unhexlify(wallet.private_key)).decode("ascii")
-            # BROKEN: when Wallet is removed, need to have conditional to create *testnet* address vs *mainnet* address
+            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
         else:
             try:
                 # Check if user provided key is hex and convert if necessary
@@ -69,8 +69,12 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 if len(user_input["private_key"]) == 64:  # private keys in hex are 64 chars
                     user_input["private_key"] = base64.b64encode(binascii.unhexlify(user_input["private_key"])).decode("ascii")
                 else:  # assume key is a mnemonic string
-                    wallet = Wallet.create_wallet_from_mnemonic(user_input.get("private_key"))
-                    user_input["private_key"] = base64.b64encode(binascii.unhexlify(wallet.private_key)).decode("ascii")
+                    seed = mnemonic.Mnemonic.to_seed(mnemonic)
+                    parent_wallet = network.keys.bip32_seed(seed)
+                    child_wallet = parent_wallet.subkey_for_path("44'/714'/0'/0/0")
+                    # convert secret exponent (private key) int to hex
+                    key_hex = format(child_wallet.secret_exponent(), 'x')
+                    user_input["private_key"] = base64.b64encode(binascii.unhexlify(key_hex)).decode("ascii")
             except Exception:
                 # If there's an error here, it's a bad key. Sets it to a bad key, will be caught later when making the client
                 user_input["private_key"] = "BAD_KEY_WAS_FOUND"
@@ -142,16 +146,15 @@ class BinanceNetwork(model.InterchainModel):
         self.node_ip = node_ip
         self.rpc_port = rpc_port
         self.api_port = api_port
+        self.b64_private_key = b64_private_key
 
-        # DEPRECATE: remove when removing creation of addresses via Wallet from SDK
-        if testnet:
-            testnet_env = BinanceEnvironment(hrp="tbnb")
-            self.wallet = Wallet(binascii.hexlify(base64.b64decode(b64_private_key)).decode("ascii"), env=testnet_env)
-        else:
-            prod_env = BinanceEnvironment(hrp="bnb")
-            self.wallet = Wallet(binascii.hexlify(base64.b64decode(b64_private_key)).decode("ascii"), env=prod_env)
+        decoded_key = base64.b64decode(b64_private_key)
+        priv_key = secp256k1.PrivateKey(privkey=decoded_key, raw=True)
+        self.priv = priv_key
+        self.pub = priv_key.pubkey
 
-        self.address = self.wallet.address
+        hrp = 'tbnb' if testnet else 'bnb'
+        self.address = segwit_addr.address_from_public_key(self.pub.serialize(compressed=True), hrp=hrp)
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
@@ -169,7 +172,7 @@ class BinanceNetwork(model.InterchainModel):
             exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        transaction_hash = f"0x{transaction_hash}"  # FYI: RPC needs this prepended
+        transaction_hash = f"0x{transaction_hash}"  # FYI: RPC needs this prepended  #BROKEN:
         try:
             response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True})
             transaction_block_number = int(response["result"]["height"])
@@ -245,7 +248,7 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             string of the private key
         """
-        return base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
+        return self.b64_private_key
 
     # https://docs.binance.org/api-reference/api-server.html#apiv1accountaddress
     def _fetch_account(self):
@@ -300,9 +303,9 @@ class BinanceNetwork(model.InterchainModel):
                 tx = BnbTransaction.from_obj(raw_transaction)
             _log.info(f"[BINANCE] Signing raw transaction: {tx.signing_json()}")
             mykeys = keys.DCKeys(pull_keys=False)
-            mykeys.initialize(private_key_string=self.get_private_key())  # FIXME: use Wallet's privkey for now
+            mykeys.initialize(private_key_string=self.b64_private_key)
             signature = base64.b64decode(mykeys.make_binance_signature(content=tx.signing_json()))
-            tx.apply_sig(signature, self.wallet.public_key)
+            tx.apply_sig(signature, self.pub.serialize(compressed=True))
             signed_transaction_bytes = tx.encode()
             return signed_transaction_bytes.hex()
         except Exception as e:
@@ -344,7 +347,6 @@ class BinanceNetwork(model.InterchainModel):
     #     "account"  (fetch account metadata)
     def _call_node_api(self, path: str) -> Any:
         full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
-        # _log.debug(f"Binance API: -> {full_address}")
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response
