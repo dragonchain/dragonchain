@@ -799,6 +799,12 @@ class TestCrypto(unittest.TestCase):
         sig = crypto.make_generic_signature(secp256k1, sha256, key, content)
         self.assertTrue(crypto.check_generic_signature(secp256k1, sha256, key.pubkey, content, b64decode(sig)))
 
+    def test_encrypt_secp256k1_message_compact(self):
+        content = b"Ndj\x8e`tH\x06\x9f\xe2=\xb7\xc0\x85K\xcf4{;,Wn\x7fi\xba=A\x1b\xee<d\xbb"
+        encrypted = crypto.encrypt_secp256k1_message_compact(key, content)
+        expected_result = "ozzVHgADaCfxa2jO+nfwmpeaw836dKutXvtOVngkS6U2kimcFC3JRng4Dta0d+JMOSbEhZ8dX59epnaQmxrNHQ=="
+        self.assertEqual(encrypted, expected_result)
+
     def test_unsupported_crypto(self):
         l1block = make_l1_block()
         l1block.proof = "sig="

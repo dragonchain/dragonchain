@@ -247,6 +247,20 @@ class DCKeys(object):
             hash_type = self.hash
         return crypto.make_generic_signature(self.encryption, hash_type, self.priv, content)
 
+    def make_binance_signature(self, content: bytes) -> str:
+        """Make a generic signature for some bytes of data
+        Args:
+            content: json bytes to sign
+        Returns:
+            base64 encoded signature string
+        Raises:
+            RuntimeError when no private key is set
+        """
+        if self.priv is None:
+            raise RuntimeError("No private key has been set for signing")
+        message = crypto.hash_bytes(hash_type=crypto.SupportedHashes.sha256, bytes_param=content)
+        return crypto.encrypt_secp256k1_message_compact(self.priv, message)
+
     def sign_block(self, signable_block: "model.BlockModel") -> str:
         """Sign a block with this class' keys
         Args:

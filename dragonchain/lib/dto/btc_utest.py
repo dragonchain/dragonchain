@@ -117,8 +117,8 @@ class TestBitcoinMethods(unittest.TestCase):
         self.client._call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
 
     def test_is_transaction_confirmed_error(self):
-        self.client._call = MagicMock(side_effect=exceptions.RPCError)
-        self.assertRaises(exceptions.RPCTransactionNotFound, self.client.is_transaction_confirmed, "0xFakeHash")
+        self.client._call = MagicMock(side_effect=exceptions.InterchainConnectionError)
+        self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "0xFakeHash")
         self.client._call.assert_called_once_with("getrawtransaction", "0xFakeHash", True)
 
     def test_is_transaction_confirmed_pending(self):
@@ -166,7 +166,7 @@ class TestBitcoinMethods(unittest.TestCase):
 
     @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
     def test_rpc_request_error(self, mock_post):
-        self.assertRaises(exceptions.RPCError, self.client._call, "myMethod", "arg1", 2, True)
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call, "myMethod", "arg1", 2, True)
         mock_post.assert_called_once_with(
             "http://whatever",
             json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},

@@ -80,7 +80,7 @@ class InterchainModel(Model):
         Returns:
             Boolean if the transaction has receieved enough confirmations to be considered confirmed
         Raises:
-            exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
+            exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         raise NotImplementedError("This is an abstract method")
 
