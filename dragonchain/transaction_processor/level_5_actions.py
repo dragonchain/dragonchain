@@ -169,7 +169,7 @@ def broadcast_to_public_chain(l5_block: l5_block_model.L5BlockModel) -> None:
     storage_key = f"BLOCK/{l5_block.block_id}"
     _log.info(f"[L5] Adding to storage at {storage_key} and creating index")
     storage.put_object_as_json(storage_key, l5_block.export_as_at_rest())
-    redisearch.put_document(redisearch.Indexes.block.value, l5_block.block_id, l5_block.export_as_search_index())
+    redisearch.put_document(redisearch.Indexes.block.value, l5_block.block_id, l5_block.export_as_search_index(), upsert=True)
 
 
 def check_confirmations() -> None:
