@@ -15,6 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
+import base64
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -46,7 +47,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.rpc_port, "rpc_27147")
         self.assertEqual(client.api_port, "api_1169")
         self.assertTrue(client.testnet)
-        self.assertEqual(client.wallet.address, "tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk")
+        self.assertEqual(client.address, "tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk")
 
     def test_new_from_at_rest_bad_version(self):
         self.assertRaises(NotImplementedError, bnb.new_from_at_rest, {"version": "1337"})  # good is "1"
@@ -77,7 +78,7 @@ class TestBinanceMethods(unittest.TestCase):
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
         }
         response = self.client.sign_transaction(fake_raw_txn)
-        self.assertEqual(response, "66616b655f656e636f6465645f74786e")
+        self.assertEqual(response, "ZmFrZV9lbmNvZGVkX3R4bg==")
         mock_encode.assert_called_once()
 
     def test_publish_transaction(self):
@@ -88,8 +89,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_rpc = MagicMock(return_value={"result": {"hash": "BOGUS_RESULT_HASH"}})
         response = self.client._publish_transaction("DC-L5:_fake_L5_block_hash")
         self.assertEqual(response, "BOGUS_RESULT_HASH")
-        # BROKEN: mocking instance of class as object is not working
-        # self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": "0x" + 'signed_tx'})
+        self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": 'signed_tx'})
 
     def test_get_current_block(self):
         fake_response = {"result": {"block": {"header": {"height": 12345678}}}}
@@ -116,23 +116,23 @@ class TestBinanceMethods(unittest.TestCase):
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
         self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245739}})  # txn 100 blocks ago
-        response = self.client.is_transaction_confirmed("FakeTxnHash")
+        response = self.client.is_transaction_confirmed("46616b6554786e48617368")
         self.assertTrue(response)
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": True})
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_unconfirmed(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
         self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245839}})  # txn in latest block
-        response = self.client.is_transaction_confirmed("FakeTxnHash")
+        response = self.client.is_transaction_confirmed("46616b6554786e48617368")
         self.assertFalse(response)
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": True})
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_error(self):
         self.client._call_node_rpc = MagicMock(side_effect=exceptions.InterchainConnectionError)
-        self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "FakeTxnHash")
-        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "0xFakeTxnHash", "prove": True})
+        self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "46616b6554786e48617368")
+        self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
 
     def test_export_as_at_rest(self):
         self.assertEqual(
@@ -198,41 +198,22 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.api_port, "api_1169")
         self.assertTrue(client.testnet)
 
-    # BROKEN:
-    # def test_new_from_user_input_sets_good_private_keys(self):
-
-    #     # before_body["address"] = "bnb1u06kxdru0we8at0ktd6q4c5qk80zwdyveh2cl8"
-    #     # priv_key = "495bb2a3f229eb0abb2bf71a3dca56b31d60c128dfd81e9e907e5eedb67f19a0"
-    #     # base64.b64encode(binascii.unhexlify(self.wallet.private_key)).decode("ascii")
-
-    #     # binascii.unhexlify(self.wallet.private_key)
-
-    #     # Good hex key without 0x
-    #     client_a = bnb.new_from_user_input(
-    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
-    #     )
-
-    #     # Good hex key with 0x
-    #     client_b = bnb.new_from_user_input(
-    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
-    #     )
-    #     # Good base64 key
-    #     client_c = bnb.new_from_user_input(
-    #         {"version": "1", "name": "banana", "testnet": True, "private_key": "d5a5rEM/qyqD0oHoBk8pyTUTMTm2LsUsjnPeKEQMDcY="}
-    #     )
-    #     print(client_b.wallet.private_key.to_bytes)
-    #     print("poop")
-    #     print(client_b.wallet.private_key)
-
-    #     self.assertEqual(
-    #         client_a.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
-    #     )
-    #     self.assertEqual(
-    #         client_b.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
-    #     )
-    #     self.assertEqual(
-    #         client_c.wallet.private_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
-    #     )
+    @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
+    def test_new_from_user_input_sets_good_private_keys(self, mock_ping):
+        # Good hex key without 0x
+        client_a = bnb.new_from_user_input(
+            {"version": "1", "name": "banana", "testnet": True, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+        )
+        # Good hex key with 0x
+        client_b = bnb.new_from_user_input(
+            {"version": "1", "name": "banana", "testnet": True, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
+        )
+        self.assertEqual(
+            base64.b64decode(client_a.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+        )
+        self.assertEqual(
+            base64.b64decode(client_b.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+        )
 
     def test_new_from_user_input_throws_with_bad_keys(self):
         # Bad hex
