@@ -36,7 +36,6 @@ MAINNET_RPC_PORT = 27147
 MAINNET_API_PORT = 1169
 TESTNET_RPC_PORT = 26657
 TESTNET_API_PORT = 11699
-# FIXME: make sure these are changed to ints in model / schema files
 
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
@@ -81,20 +80,20 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
         if user_input.get("testnet") is None:
             user_input["testnet"] = True  # default to testnet
         # check for user-provided node address
-        if not user_input.get("node_ip"):
+        if not user_input.get("node_url"):
             # default to Dragonchain managed Binance node if not provided
-            user_input["node_ip"] = NODE_URL
+            user_input["node_url"] = NODE_URL
             user_input["rpc_port"] = TESTNET_RPC_PORT if user_input.get("testnet") else MAINNET_RPC_PORT
             user_input["api_port"] = TESTNET_API_PORT if user_input.get("testnet") else MAINNET_API_PORT
-        else:  # FIXME: could fall over if user specifies a node address but not ports...
-            user_input["rpc_port"] = user_input["rpc_port"]
-            user_input["api_port"] = user_input["api_port"]
+        else:  # user specified NODE_URL; make sure they specified ports, too!
+            if not user_input["rpc_port"] or not user_input["api_port"]:
+                raise exceptions.BadRequest("Node URL specified, but RPC or API ports not specified.")
         # Create the actual client and check that the given node is reachable
         try:
             client = BinanceNetwork(
                 name=user_input["name"],
                 testnet=user_input["testnet"],
-                node_ip=user_input["node_ip"],
+                node_url=user_input["node_url"],
                 rpc_port=user_input["rpc_port"],
                 api_port=user_input["api_port"],
                 b64_private_key=user_input["private_key"],
@@ -126,7 +125,7 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
         return BinanceNetwork(
             name=binance_network_at_rest["name"],
             testnet=binance_network_at_rest["testnet"],
-            node_ip=binance_network_at_rest["node_ip"],
+            node_url=binance_network_at_rest["node_url"],
             rpc_port=binance_network_at_rest["rpc_port"],
             api_port=binance_network_at_rest["api_port"],
             b64_private_key=binance_network_at_rest["private_key"],
@@ -136,11 +135,11 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
 
 
 class BinanceNetwork(model.InterchainModel):
-    def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: int, api_port: int, b64_private_key: str):
+    def __init__(self, name: str, testnet: bool, node_url: str, rpc_port: int, api_port: int, b64_private_key: str):
         self.blockchain = "binance"
         self.name = name
         self.testnet = testnet
-        self.node_ip = node_ip
+        self.node_url = node_url
         self.rpc_port = rpc_port
         self.api_port = api_port
         self.b64_private_key = b64_private_key
@@ -289,25 +288,26 @@ class BinanceNetwork(model.InterchainModel):
         }
         return transaction_data
 
-    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
+    def sign_transaction(self, built_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network
         Args:
-            raw_transaction: The dictionary of the raw transaction containing:
-                to: hex string of the to address
-                symbol: the exchange symbol for the token (NOT defaulted to BNB)
-                amount:  amount of token in transaction
-                to_address:  address sending tokens to
-                memo: Optional string of arbitrary data
-
-                value: The amount of eth (in wei) to send (in hex string)
+            built_transaction: The dictionary of the raw transaction containing:
+                account_number (int): fetched from node endpoint
+                sequence (int): fetched from node endpoint
+                from (str, in hex): address tokens are being sent from
+                memo: (str): arbitrary data [optional]
+                msgs: (list): structured as follows:
+                    inputs = {"address": "FROM_ADDRESS", "coins": [{"amount": INT_VALUE, "denom": "TOKEN_SYMBOL"}]}
+                    outputs = {"address": "TO_ADDRESS", "coins": [{"amount": INT_VALUE, "denom": "TOKEN_SYMBOL"}]}
+                    "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}]
         Returns:
-            String of the signed transaction as hex
+            String of the signed transaction as base64
         """
         try:
             if self.testnet:
-                tx = TestBnbTransaction.from_obj(raw_transaction)
+                tx = TestBnbTransaction.from_obj(built_transaction)
             else:  # mainnet
-                tx = BnbTransaction.from_obj(raw_transaction)
+                tx = BnbTransaction.from_obj(built_transaction)
             _log.info(f"[BINANCE] Signing raw transaction: {tx.signing_json()}")
             mykeys = keys.DCKeys(pull_keys=False)
             mykeys.initialize(private_key_string=self.b64_private_key)
@@ -328,8 +328,8 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-        built_tx = self._build_transaction_msg(self._fetch_account(), transaction_payload)
-        signed_tx = self.sign_transaction(built_tx)
+        built_transaction = self._build_transaction_msg(self._fetch_account(), transaction_payload)
+        signed_tx = self.sign_transaction(built_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx})
         return response["result"]["hash"]  # transaction hash
@@ -341,7 +341,7 @@ class BinanceNetwork(model.InterchainModel):
     #     "block" (latest block check)
     #     "broadcast_tx_commit" (submit txn)
     def _call_node_rpc(self, method: str, params: Dict[str, Any]) -> Any:
-        full_address = f"{self.node_ip}:{self.rpc_port}/"
+        full_address = f"{self.node_url}:{self.rpc_port}/"
         body = {"method": method, "jsonrpc": "2.0", "params": params, "id": "dontcare"}
         _log.debug(f"Binance RPC: -> {full_address} {body}")
         r = requests.post(full_address, json=body, timeout=30)
@@ -355,7 +355,7 @@ class BinanceNetwork(model.InterchainModel):
     #     "balances" (tokens in address check)
     #     "account"  (fetch account metadata)
     def _call_node_api(self, path: str) -> Any:
-        full_address = f"{self.node_ip}:{self.api_port}/api/v1/{path}"
+        full_address = f"{self.node_url}:{self.api_port}/api/v1/{path}"
         r = requests.get(full_address, timeout=30)
         response = self._get_response(r)
         return response
@@ -378,7 +378,7 @@ class BinanceNetwork(model.InterchainModel):
             "blockchain": self.blockchain,
             "name": self.name,
             "testnet": self.testnet,
-            "node_ip": self.node_ip,
+            "node_url": self.node_url,
             "rpc_port": self.rpc_port,
             "api_port": self.api_port,
             "private_key": self.get_private_key(),

@@ -110,8 +110,8 @@ def create_binance_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_binance_network_create_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(201, interchain.create_binance_interchain_v1(data))
 
@@ -149,8 +149,8 @@ def update_binance_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_binance_network_update_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.update_binance_interchain_v1(name, data))
 
@@ -188,8 +188,8 @@ def create_binance_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     data = flask.request.json
     try:
         _validate_binance_transaction_v1(data)
-    except fastjsonschema.JsonSchemaException:
-        raise exceptions.ValidationException("User input did not match JSON schema")
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("binance", name, data))
 
