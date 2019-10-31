@@ -208,12 +208,16 @@ class TestBinanceMethods(unittest.TestCase):
         client_b = bnb.new_from_user_input(
             {"version": "1", "name": "banana", "testnet": True, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
         )
+        # Good key from mnemonic string
+        # TODO:
+
         self.assertEqual(
             base64.b64decode(client_a.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
         )
         self.assertEqual(
             base64.b64decode(client_b.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
         )
+        # TODO:  self.assertEqual()  # client_c
 
     def test_new_from_user_input_throws_with_bad_keys(self):
         # Bad hex

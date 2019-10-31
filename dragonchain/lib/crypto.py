@@ -380,7 +380,7 @@ def encrypt_message(encryption_type: SupportedEncryption, priv_key: Union["Priva
 def encrypt_secp256k1_message_compact(priv_key: Union["PrivateKey"], message_bytes: bytes) -> str:
     """Encrypt a 32byte message (typically a hash, to use as a signature) (in its compact form)
     Args:
-        priv_key: private key object defined by encryption_type
+        priv_key: private key object of encryption type secp256k1
         message_bytes: 32 byte python bytes object to encrypt
     Returns:
         Base 64 encoded signature string

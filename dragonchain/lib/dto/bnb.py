@@ -66,7 +66,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 if len(user_input["private_key"]) == 64:  # private keys in hex are 64 chars
                     user_input["private_key"] = base64.b64encode(bytes.fromhex(user_input["private_key"])).decode("ascii")
                 else:  # assume key is a mnemonic string
-                    seed = mnemonic.Mnemonic.to_seed(mnemonic)
+                    seed = mnemonic.Mnemonic.to_seed(user_input["private_key"])
                     parent_wallet = network.keys.bip32_seed(seed)
                     child_wallet = parent_wallet.subkey_for_path("44'/714'/0'/0/0")
                     # convert secret exponent (private key) int to hex
@@ -76,19 +76,19 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 # If there's an error here, it's a bad key. Sets it to a bad key, will be caught later when making the client
                 user_input["private_key"] = "BAD_KEY_WAS_FOUND"
 
+
+        # check if user specified that node is a testnet
+        if user_input.get("testnet") is None:
+            user_input["testnet"] = True  # default to testnet
         # check for user-provided node address
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
             user_input["node_ip"] = NODE_IP
             user_input["rpc_port"] = TESTNET_RPC_PORT if user_input.get("testnet") else MAINNET_RPC_PORT
             user_input["api_port"] = TESTNET_API_PORT if user_input.get("testnet") else MAINNET_API_PORT
-        else:
-            # accept port #s from user, then fix formatting behind the scenes for them to work
+        else:  # FIXME: could fall over if user specifies a node address but not ports...
             user_input["rpc_port"] = user_input["rpc_port"]
             user_input["api_port"] = user_input["api_port"]
-        # check if user specified that node is a testnet
-        if user_input.get("testnet") is None:
-            user_input["testnet"] = True  # default to testnet
         # Create the actual client and check that the given node is reachable
         try:
             client = BinanceNetwork(
@@ -171,7 +171,7 @@ class BinanceNetwork(model.InterchainModel):
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
         try:
             # Binance docs lie -- txn_hash is expected to be base64, not hex:
-            transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("utf-8")
+            transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("ascii")
             response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True})
             transaction_block_number = int(response["result"]["height"])
         except exceptions.InterchainConnectionError:
@@ -180,6 +180,17 @@ class BinanceNetwork(model.InterchainModel):
         _log.info(f"[BINANCE] Latest block number: {latest_block_number} | Block number of transaction: {transaction_block_number}")
         return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
 
+    # TODO: add check for 500 status error, and error string, in case of 0 balance response:
+    # http://54.191.253.244:11699/api/v1/balances/tbnb1r7d3r00fdfvucqpqxj5d53pz3uz37hrsxv0cr0/BNB 
+    # {
+    #     "jsonrpc": "2.0",
+    #     "id": "",
+    #     "error": {
+    #         "code": -32603,
+    #         "message": "Internal error",
+    #         "data": "interface conversion: interface is nil, not types.NamedAccount"
+    #     }
+    # }
     # https://docs.binance.org/api-reference/api-server.html#apiv1balanceaddresssymbol
     def check_balance(self, symbol: str = "BNB") -> int:
         """Check the balance of the address for this network
@@ -260,8 +271,8 @@ class BinanceNetwork(model.InterchainModel):
             response = self._call_node_api(path)
             return response
         except exceptions.InterchainConnectionError:
-            _log.warning("[BINANCE] Non 200 response from Binance node. May have been a 500 Bad Request or a 404 Not Found.")
-            return 0
+            _log.warning("[BINANCE] Non 200 response from Binance node.")
+            _log.warning("May have been a 500 Bad Request or a 404 Not Found.")
 
     def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str) -> Dict:
         # easier to just use from-addy for the to-addy than create a properly formatted dummy addy
@@ -304,7 +315,7 @@ class BinanceNetwork(model.InterchainModel):
             tx.apply_sig(signature, self.pub.serialize(compressed=True))
             signed_transaction_bytes = tx.encode()
             # Binance docs lie -- signed_transaction expected to be base64, not hex:
-            return base64.b64encode(signed_transaction_bytes).decode("utf-8")
+            return base64.b64encode(signed_transaction_bytes).decode("ascii")
         except Exception as e:
             raise exceptions.BadRequest(f"[BINANCE] Error signing transaction: {e}")
 
@@ -323,6 +334,7 @@ class BinanceNetwork(model.InterchainModel):
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx})
         return response["result"]["hash"]  # transaction hash
 
+    # TODO: requests.exceptions.ConnectTimeout
     # endpoints currently hit are:
     #     "status" (ping check)
     #     "tx" (block number check)
@@ -336,6 +348,7 @@ class BinanceNetwork(model.InterchainModel):
         response = self._get_response(r)
         return response
 
+    # TODO: requests.exceptions.ConnectTimeout
     # endpoints currently hit are:
     #     "abci_info" (ping check)
     #     "fees" (fee check)
