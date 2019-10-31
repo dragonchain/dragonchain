@@ -145,8 +145,8 @@ def update_binance_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[s
         "testnet": user_data["testnet"] if isinstance(user_data.get("testnet"), bool) else current_client.testnet,
         "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
         "node_ip": user_data["node_ip"] if isinstance(user_data.get("node_ip"), str) else current_client.node_ip,
-        "rpc_port": user_data["rpc_port"] if isinstance(user_data.get("rpc_port"), str) else current_client.rpc_port,
-        "api_port": user_data["api_port"] if isinstance(user_data.get("api_port"), str) else current_client.api_port,
+        "rpc_port": user_data["rpc_port"] if isinstance(user_data.get("rpc_port"), int) else current_client.rpc_port,
+        "api_port": user_data["api_port"] if isinstance(user_data.get("api_port"), int) else current_client.api_port,
     }
     # Create and save updated client
     return create_binance_interchain_v1(client_data)

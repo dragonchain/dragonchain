@@ -31,11 +31,12 @@ from dragonchain.lib.dto import model
 from dragonchain.lib import keys
 from dragonchain.lib import segwit_addr
 
-NODE_IP = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
-MAINNET_RPC_PORT = "27147"
-MAINNET_API_PORT = "1169"
-TESTNET_RPC_PORT = "26657"
-TESTNET_API_PORT = "11699"
+NODE_URL = "http://binance-node.dragonchain.com"  # mainnet and testnet are the same EC2
+MAINNET_RPC_PORT = 27147
+MAINNET_API_PORT = 1169
+TESTNET_RPC_PORT = 26657
+TESTNET_API_PORT = 11699
+# FIXME: make sure these are changed to ints in model / schema files
 
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
@@ -76,14 +77,13 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 # If there's an error here, it's a bad key. Sets it to a bad key, will be caught later when making the client
                 user_input["private_key"] = "BAD_KEY_WAS_FOUND"
 
-
         # check if user specified that node is a testnet
         if user_input.get("testnet") is None:
             user_input["testnet"] = True  # default to testnet
         # check for user-provided node address
         if not user_input.get("node_ip"):
             # default to Dragonchain managed Binance node if not provided
-            user_input["node_ip"] = NODE_IP
+            user_input["node_ip"] = NODE_URL
             user_input["rpc_port"] = TESTNET_RPC_PORT if user_input.get("testnet") else MAINNET_RPC_PORT
             user_input["api_port"] = TESTNET_API_PORT if user_input.get("testnet") else MAINNET_API_PORT
         else:  # FIXME: could fall over if user specifies a node address but not ports...
@@ -136,7 +136,7 @@ def new_from_at_rest(binance_network_at_rest: Dict[str, Any]) -> "BinanceNetwork
 
 
 class BinanceNetwork(model.InterchainModel):
-    def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: str, api_port: str, b64_private_key: str):
+    def __init__(self, name: str, testnet: bool, node_ip: str, rpc_port: int, api_port: int, b64_private_key: str):
         self.blockchain = "binance"
         self.name = name
         self.testnet = testnet
@@ -181,7 +181,7 @@ class BinanceNetwork(model.InterchainModel):
         return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
 
     # TODO: add check for 500 status error, and error string, in case of 0 balance response:
-    # http://54.191.253.244:11699/api/v1/balances/tbnb1r7d3r00fdfvucqpqxj5d53pz3uz37hrsxv0cr0/BNB 
+    # http://54.191.253.244:11699/api/v1/balances/tbnb1r7d3r00fdfvucqpqxj5d53pz3uz37hrsxv0cr0/BNB
     # {
     #     "jsonrpc": "2.0",
     #     "id": "",
@@ -275,8 +275,8 @@ class BinanceNetwork(model.InterchainModel):
             _log.warning("May have been a 500 Bad Request or a 404 Not Found.")
 
     def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str) -> Dict:
-        # easier to just use from-addy for the to-addy than create a properly formatted dummy addy
-        inputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}  # cannot send 0 amount
+        # cannot send an amount of 0; send funds to yourself and avoid hardcoding a dummy recipient address
+        inputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
         outputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
         response = self._fetch_account()
 
