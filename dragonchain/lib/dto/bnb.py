@@ -154,8 +154,10 @@ class BinanceNetwork(model.InterchainModel):
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
-        self._call_node_rpc("status", {})
-        self._call_node_api("abci_info")
+        response_rpc = self._call_node_rpc("status", {}).json()
+        response_api = self._call_node_api("abci_info").json()
+        if response_rpc.get("errors") or response_rpc.get("errors") or response_api.get("error") or response_api.get("errors"):
+            raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping check failed: {r.status_code} | {r.text}")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -168,28 +170,18 @@ class BinanceNetwork(model.InterchainModel):
             exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        try:
-            # Binance docs lie -- txn_hash is expected to be base64, not hex:
-            transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("ascii")
-            response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True})
-            transaction_block_number = int(response["result"]["height"])
-        except exceptions.InterchainConnectionError:
-            raise exceptions.TransactionNotFound(f"[BINANCE] Transaction {transaction_hash} not found")
+        # Binance docs lie -- txn_hash is expected to be base64, not hex:
+        transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("ascii")
+        response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True}).json()
+        if response.get("error") is not None:  # can't use HTTP status codes, it is a 200
+            if "not found" in response["error"]["data"]:  # txn wasn't found
+                _log.warning(f"[BINANCE] response error: {response['error']['data']}")
+                raise exceptions.TransactionNotFound(f"[BINANCE] Transaction {transaction_hash} not found")
+        transaction_block_number = int(response["result"]["height"])
         latest_block_number = self.get_current_block()
         _log.info(f"[BINANCE] Latest block number: {latest_block_number} | Block number of transaction: {transaction_block_number}")
-        return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
+        return (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
 
-    # TODO: add check for 500 status error, and error string, in case of 0 balance response:
-    # http://54.191.253.244:11699/api/v1/balances/tbnb1r7d3r00fdfvucqpqxj5d53pz3uz37hrsxv0cr0/BNB
-    # {
-    #     "jsonrpc": "2.0",
-    #     "id": "",
-    #     "error": {
-    #         "code": -32603,
-    #         "message": "Internal error",
-    #         "data": "interface conversion: interface is nil, not types.NamedAccount"
-    #     }
-    # }
     # https://docs.binance.org/api-reference/api-server.html#apiv1balanceaddresssymbol
     def check_balance(self, symbol: str = "BNB") -> int:
         """Check the balance of the address for this network
@@ -200,14 +192,17 @@ class BinanceNetwork(model.InterchainModel):
         """
         _log.info(f"[BINANCE] Checking {symbol} balance for {self.address}")
         path = f"balances/{self.address}/{symbol}"  # params expected inside path string
-        try:
-            response = self._call_node_api(path)
-            bnb_balance = int(response["balance"]["free"])
-            return bnb_balance
-        except exceptions.InterchainConnectionError:
-            _log.warning("[BINANCE] Non 200 response from Binance node;")
-            _log.warning("This is actually expected for a zero balance address.")
-            return 0
+        response = self._call_node_api(path)
+        response_json = response.json()
+        if response_json.get("error") is not None:  # can't use HTTP status codes, it is a 200
+            if "interface is nil, not types.NamedAccount" in response_json["error"]["data"] and response.status_code == 500:
+                _log.warning(f"[BINANCE] Non 200 response from Binance node:")
+                _log.warning(f"[BINANCE] response code: {response.status_code}")
+                _log.warning(f"[BINANCE] response error: {response_json['error']['data']}")
+                _log.warning("[BINANCE] This is actually expected for a zero balance address.")
+                return 0  # return a zero balance
+        bnb_balance = int(response_json["balance"]["free"])
+        return bnb_balance
 
     # https://docs.binance.org/api-reference/api-server.html#apiv1fees
     def get_transaction_fee_estimate(self) -> int:
@@ -216,7 +211,7 @@ class BinanceNetwork(model.InterchainModel):
             The amount of estimated transaction fee cost for the network
         """
         _log.info("[BINANCE] Fetching the send fee...")
-        response = self._call_node_api("fees")
+        response = self._call_node_api("fees")  # don't .json(); "fees" endpoint returns a list!
         for fee_block in response:
             if "fixed_fee_params" in fee_block:
                 if fee_block["fixed_fee_params"]["msg_type"] == "send":
@@ -224,14 +219,15 @@ class BinanceNetwork(model.InterchainModel):
         _log.info("[BINANCE] Fetch failed; resorting to saved value for fixed fee.")
         return SEND_FEE  # SET GLOBALLY
 
+
     # https://docs.binance.org/api-reference/node-rpc.html#6110-query-block
     def get_current_block(self) -> int:
         """Get the current latest block number of the network
         Returns:
             The latest known block number on the network
         """
-        # if no "height" parameter is provided, latest block is fetched:
-        response = self._call_node_rpc("block", {})
+        # if no "height" parameter is provided,the latest block is fetched:
+        response = self._call_node_rpc("block", {}).json()
         current_block = response["result"]["block"]["header"]["height"]
         return int(current_block)
 
@@ -268,7 +264,7 @@ class BinanceNetwork(model.InterchainModel):
         path = f"account/{self.address}"  # params expected inside path string
         try:
             response = self._call_node_api(path)
-            return response
+            return response.json()
         except exceptions.InterchainConnectionError:
             _log.warning("[BINANCE] Non 200 response from Binance node.")
             _log.warning("May have been a 500 Bad Request or a 404 Not Found.")
@@ -331,10 +327,10 @@ class BinanceNetwork(model.InterchainModel):
         built_transaction = self._build_transaction_msg(self._fetch_account(), transaction_payload)
         signed_tx = self.sign_transaction(built_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx})
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx}).json()
+        # cannot check HTTP status codes, errors will return 200
         return response["result"]["hash"]  # transaction hash
 
-    # TODO: requests.exceptions.ConnectTimeout
     # endpoints currently hit are:
     #     "status" (ping check)
     #     "tx" (block number check)
@@ -344,28 +340,27 @@ class BinanceNetwork(model.InterchainModel):
         full_address = f"{self.node_url}:{self.rpc_port}/"
         body = {"method": method, "jsonrpc": "2.0", "params": params, "id": "dontcare"}
         _log.debug(f"Binance RPC: -> {full_address} {body}")
-        r = requests.post(full_address, json=body, timeout=30)
-        response = self._get_response(r)
+        try:
+            response = requests.post(full_address, json=body, timeout=30)
+        except requests.exceptions.ConnectTimeout:
+            error_msg = "Error from binance node with http status code"
+            raise exceptions.InterchainConnectionError(f"{error_msg} {response.status_code} | {response.text}")
+        _log.debug(f"Binance <- {response.status_code} {response.text}")
         return response
 
-    # TODO: requests.exceptions.ConnectTimeout
     # endpoints currently hit are:
     #     "abci_info" (ping check)
-    #     "fees" (fee check)
+    #     "fees" (transaction fee check)
     #     "balances" (tokens in address check)
     #     "account"  (fetch account metadata)
     def _call_node_api(self, path: str) -> Any:
         full_address = f"{self.node_url}:{self.api_port}/api/v1/{path}"
-        r = requests.get(full_address, timeout=30)
-        response = self._get_response(r)
-        return response
-
-    def _get_response(self, r: requests.Response) -> Any:
-        response = r.json()
-        _log.debug(f"Binance <- {r.status_code} {r.text}")
-        if not isinstance(response, list):  # "fees" returns a list
-            if response.get("error") or response.get("errors"):
-                raise exceptions.InterchainConnectionError(f"Error from binance node with http status code {r.status_code} | {r.text}")
+        try:
+            response = requests.get(full_address, timeout=30)
+        except requests.exceptions.ConnectTimeout:
+            error_msg = "Error from binance node with http status code"
+            raise exceptions.InterchainConnectionError(f"{error_msg} {response.status_code} | {response.text}")
+        _log.debug(f"Binance <- {response.status_code} {response.text}")
         return response
 
     def export_as_at_rest(self) -> Dict[str, Any]:

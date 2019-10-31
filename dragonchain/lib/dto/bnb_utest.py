@@ -17,6 +17,7 @@
 
 import base64
 import unittest
+import requests
 from unittest.mock import MagicMock, patch
 
 from dragonchain import exceptions
@@ -28,24 +29,24 @@ class TestBinanceMethods(unittest.TestCase):
     def setUp(self):
         # private_key = "495bb2a3f229eb0abb2bf71a3dca56b31d60c128dfd81e9e907e5eedb67f19a0"
         b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
-        self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", "rpc_27147", "api_1169", b64_private_key)
+        self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", 27147, 1169, b64_private_key)
 
     def test_new_from_at_rest_good_input_v1(self):
         client = bnb.new_from_at_rest(
             {
                 "version": "1",
                 "name": "banana",
-                "node_ip": "b.a.n.a.n.a",
-                "rpc_port": "rpc_27147",
-                "api_port": "api_1169",
+                "node_url": "b.a.n.a.n.a",
+                "rpc_port": 27147,
+                "api_port": 1169,
                 "testnet": True,
                 "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
             }
         )
         self.assertEqual(client.name, "banana")
-        self.assertEqual(client.node_ip, "b.a.n.a.n.a")
-        self.assertEqual(client.rpc_port, "rpc_27147")
-        self.assertEqual(client.api_port, "api_1169")
+        self.assertEqual(client.node_url, "b.a.n.a.n.a")
+        self.assertEqual(client.rpc_port, 27147)
+        self.assertEqual(client.api_port, 1169)
         self.assertTrue(client.testnet)
         self.assertEqual(client.address, "tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk")
 
@@ -82,24 +83,29 @@ class TestBinanceMethods(unittest.TestCase):
         mock_encode.assert_called_once()
 
     def test_publish_transaction(self):
-        self.client._build_transaction_msg = MagicMock(return_value={"built_tx": "fake"})  # actual function returns dict
-        self.client.sign_transaction = MagicMock(return_value="signed_tx")  # actual function returns hex string
-        self._fetch_account = MagicMock(return_value="")
-        self.client._call_node_api = MagicMock(return_value="")
-        self.client._call_node_rpc = MagicMock(return_value={"result": {"hash": "BOGUS_RESULT_HASH"}})
+        fake_response = requests.Response()
+        fake_response._content = b'{"result": {"hash": "BOGUS_RESULT_HASH"}}'
+        self.client._build_transaction_msg = MagicMock(return_value={"built_tx": "fake"})
+        self.client.sign_transaction = MagicMock(return_value="signed_tx")
+        fake_acct = requests.Response()
+        fake_acct._content = b'{"sequence": 0, "account_number": 12345}'
+        self.client._call_node_api = MagicMock(return_value=fake_acct)
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)
         response = self.client._publish_transaction("DC-L5:_fake_L5_block_hash")
         self.assertEqual(response, "BOGUS_RESULT_HASH")
         self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": 'signed_tx'})
 
     def test_get_current_block(self):
-        fake_response = {"result": {"block": {"header": {"height": 12345678}}}}
+        fake_response = requests.Response()
+        fake_response._content = b'{"result": {"block": {"header": {"height": 12345678}}}}'
         self.client._call_node_rpc = MagicMock(return_value=fake_response)
         response = self.client.get_current_block()
         self.assertEqual(response, 12345678)
         self.client._call_node_rpc.assert_called_once_with("block", {})
 
     def test_check_balance(self):
-        fake_response = {"balance": {"free": 1234567890}}
+        fake_response = requests.Response()
+        fake_response._content = b'{"balance": {"free": 1234567890}}'
         api_string = "balances/tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk/BNB"
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.check_balance()
@@ -115,7 +121,9 @@ class TestBinanceMethods(unittest.TestCase):
 
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
-        self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245739}})  # txn 100 blocks ago
+        fake_response = requests.Response()
+        fake_response._content = b'{"result": {"height": 1245739}}'        
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)  # txn 100 blocks ago
         response = self.client.is_transaction_confirmed("46616b6554786e48617368")
         self.assertTrue(response)
         self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
@@ -123,14 +131,18 @@ class TestBinanceMethods(unittest.TestCase):
 
     def test_is_transaction_confirmed_unconfirmed(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
-        self.client._call_node_rpc = MagicMock(return_value={"result": {"height": 1245839}})  # txn in latest block
+        fake_response = requests.Response()
+        fake_response._content = b'{"result": {"height": 1245839}}'
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)  # txn in latest block
         response = self.client.is_transaction_confirmed("46616b6554786e48617368")
         self.assertFalse(response)
         self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
         self.client.get_current_block.assert_called_once()
 
     def test_is_transaction_confirmed_error(self):
-        self.client._call_node_rpc = MagicMock(side_effect=exceptions.InterchainConnectionError)
+        fake_response = requests.Response()
+        fake_response._content = b'{"error": {"data": "Tx (1245839) not found"}}'   
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)
         self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "46616b6554786e48617368")
         self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
 
@@ -142,9 +154,9 @@ class TestBinanceMethods(unittest.TestCase):
                 "blockchain": "binance",
                 "name": "banana",
                 "testnet": True,
-                "node_ip": "b.a.n.a.n.a",
-                "rpc_port": "rpc_27147",
-                "api_port": "api_1169",
+                "node_url": "b.a.n.a.n.a",
+                "rpc_port": 27147,
+                "api_port": 1169,
                 "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
             },
         )
@@ -152,36 +164,34 @@ class TestBinanceMethods(unittest.TestCase):
     @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
     def test_rpc_request_success(self, mock_post):
         response = self.client._call_node_rpc("MyMethod", {"symbol": "BANANA"})
-        self.assertEqual(response, {"result": "MyResult"})
+        self.assertEqual(response.json(), {"result": "MyResult"})
         mock_post.assert_called_once_with(
-            "b.a.n.a.n.a:rpc_27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
+            "b.a.n.a.n.a:27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
         )
 
-    @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
-    def test_rpc_request_error(self, mock_post):
-        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
-        mock_post.assert_called_once_with(
-            "b.a.n.a.n.a:rpc_27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
-        )
+    # @patch("requests")
+    # def test_rpc_request_error(self, mock_requests):
+    #     mock_requests.post = MagicMock(side_effect=requests.exceptions.ConnectTimeout)
+    #     self.assertRaises(requests.exceptions.ConnectTimeout, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
 
     @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
     def test_api_request_success(self, mock_get):
         response = self.client._call_node_api("MyPath")
-        self.assertEqual(response, {"result": "MyResult"})
-        mock_get.assert_called_once_with("b.a.n.a.n.a:api_1169/api/v1/MyPath", timeout=30)
+        self.assertEqual(response.json(), {"result": "MyResult"})
+        mock_get.assert_called_once_with("b.a.n.a.n.a:1169/api/v1/MyPath", timeout=30)
 
-    @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
-    def test_api_request_error(self, mock_get):
-        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "MyPath")
-        mock_get.assert_called_once_with("b.a.n.a.n.a:api_1169/api/v1/MyPath", timeout=30)
+    # @patch("requests")
+    # def test_api_request_error(self, mock_requests):
+    #     mock_requests.get = MagicMock(side_effect=requests.exceptions.ConnectTimeout)
+    #     self.assertRaises(requests.exceptions.ConnectTimeout, self.client._call_node_api, "MyPath")
 
     def test_from_user_input_throws_with_bad_private_key(self):
         fake_input = {
             "version": "1",
             "testnet": True,
-            "node_ip": "b.a.n.a.n.a",
-            "rpc_port": "rpc_27147",
-            "api_port": "api_1169",
+            "node_url": "b.a.n.a.n.a",
+            "rpc_port": 27147,
+            "api_port": 1169,
             "private_key": "badKey",
         }
         self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, fake_input)
@@ -189,13 +199,13 @@ class TestBinanceMethods(unittest.TestCase):
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
     def test_from_user_input_works_with_no_provided_key(self, mock_ping):
         client = bnb.new_from_user_input(
-            {"version": "1", "name": "no_private_key", "node_ip": "b.a.n.a.n.a", "rpc_port": "rpc_27147", "api_port": "api_1169", "testnet": True}
+            {"version": "1", "name": "no_private_key", "node_url": "b.a.n.a.n.a", "rpc_port": 27147, "api_port": 1169, "testnet": True}
         )
         mock_ping.assert_called_once()
         self.assertEqual(client.name, "no_private_key")
-        self.assertEqual(client.node_ip, "b.a.n.a.n.a")
-        self.assertEqual(client.rpc_port, "rpc_27147")
-        self.assertEqual(client.api_port, "api_1169")
+        self.assertEqual(client.node_url, "b.a.n.a.n.a")
+        self.assertEqual(client.rpc_port, 27147)
+        self.assertEqual(client.api_port, 1169)
         self.assertTrue(client.testnet)
 
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
