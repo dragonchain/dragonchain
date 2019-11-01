@@ -324,7 +324,7 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-        built_transaction = self._build_transaction_msg(self._fetch_account(), transaction_payload)
+        built_transaction = self._build_transaction_msg(transaction_payload)
         signed_tx = self.sign_transaction(built_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx}).json()
