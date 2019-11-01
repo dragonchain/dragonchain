@@ -94,7 +94,7 @@ def create_ethereum_interchain_v1(user_data: Dict[str, Any], conflict_check: boo
     return _get_output_dto_v1(client)
 
 
-def create_binance_interchain_v1(user_data: Dict[str, Any]) -> Dict[str, Any]:
+def create_binance_interchain_v1(user_data: Dict[str, Any], conflict_check: bool = True) -> Dict[str, Any]:
     client = bnb.new_from_user_input(user_data)
     if interchain_dao.does_interchain_exist("binance", client.name):
         _log.error("Binance network is already registered")
@@ -149,7 +149,7 @@ def update_binance_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[s
         "api_port": user_data["api_port"] if isinstance(user_data.get("api_port"), int) else current_client.api_port,
     }
     # Create and save updated client
-    return create_binance_interchain_v1(client_data)
+    return create_binance_interchain_v1(client_data, conflict_check=False)
 
 
 def get_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:

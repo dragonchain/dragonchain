@@ -73,8 +73,8 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                     key_hex = format(child_wallet.secret_exponent(), "x")
                     user_input["private_key"] = base64.b64encode(bytes.fromhex(key_hex)).decode("ascii")
             except Exception:
-                # If there's an error here, it's a bad key. Sets it to a bad key, will be caught later when making the client
-                user_input["private_key"] = "BAD_KEY_WAS_FOUND"
+                _log.exception(f"[BINANCE] Exception thrown during key handling.  Bad key: {user_input['private_key']}")
+                raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key.")
 
         # check if user specified that node is a testnet
         if user_input.get("testnet") is None:
@@ -98,9 +98,9 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                 api_port=user_input["api_port"],
                 b64_private_key=user_input["private_key"],
             )
-        except Exception:
-            _log.exception(f"[BINANCE] Exception thrown during key handling.  Bad key: {user_input['private_key']}")
-            raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key.")
+        except Exception as e:
+            _log.exception("[BINANCE] Exception thrown during client creation.")
+            raise exceptions.BadRequest(f"Client creation failed. Error: {e}")
         # check that the binance node is reachable (this checks both RPC and API endpoints)
         try:
             client.ping()
@@ -156,7 +156,7 @@ class BinanceNetwork(model.InterchainModel):
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         response_rpc = self._call_node_rpc("status", {}).json()
         response_api = self._call_node_api("abci_info").json()
-        if response_rpc.get("errors") or response_rpc.get("errors") or response_api.get("error") or response_api.get("errors"):
+        if response_rpc.get("error") or response_api.get("error"):
             raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
@@ -170,7 +170,7 @@ class BinanceNetwork(model.InterchainModel):
             exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[BINANCE] Getting confirmations for {transaction_hash}")
-        # Binance docs lie -- txn_hash is expected to be base64, not hex:
+        # txn_hash is expected to be base64, not hex:
         transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("ascii")
         response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True}).json()
         if response.get("error") is not None:  # can't use HTTP status codes, it is a 200
@@ -211,7 +211,7 @@ class BinanceNetwork(model.InterchainModel):
             The amount of estimated transaction fee cost for the network
         """
         _log.info("[BINANCE] Fetching the send fee...")
-        response = self._call_node_api("fees")  # don't .json(); "fees" endpoint returns a list!
+        response = self._call_node_api("fees").json()
         for fee_block in response:
             if "fixed_fee_params" in fee_block:
                 if fee_block["fixed_fee_params"]["msg_type"] == "send":
@@ -266,9 +266,10 @@ class BinanceNetwork(model.InterchainModel):
             return response.json()
         except exceptions.InterchainConnectionError:
             _log.warning("[BINANCE] Non 200 response from Binance node.")
-            _log.warning("May have been a 500 Bad Request or a 404 Not Found.")
+            _log.warning("[BINANCE] May have been a 500 Bad Request or a 404 Not Found.")
+            raise exceptions.InterchainConnectionError("[BINANCE] Error fetching metadata from 'account' endpoint.")
 
-    def _build_transaction_msg(self, account_response: Dict[str, Any], transaction_payload: str) -> Dict:
+    def _build_transaction_msg(self, transaction_payload: str) -> Dict:
         # cannot send an amount of 0; send funds to yourself and avoid hardcoding a dummy recipient address
         inputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
         outputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
@@ -309,7 +310,7 @@ class BinanceNetwork(model.InterchainModel):
             signature = base64.b64decode(mykeys.make_binance_signature(content=tx.signing_json()))
             tx.apply_sig(signature, self.pub.serialize(compressed=True))
             signed_transaction_bytes = tx.encode()
-            # Binance docs lie -- signed_transaction expected to be base64, not hex:
+            # signed_transaction expected to be base64, not hex:
             return base64.b64encode(signed_transaction_bytes).decode("ascii")
         except Exception as e:
             raise exceptions.BadRequest(f"[BINANCE] Error signing transaction: {e}")
