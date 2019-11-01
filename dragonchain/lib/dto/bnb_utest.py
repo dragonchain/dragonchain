@@ -17,8 +17,9 @@
 
 import base64
 import unittest
-import requests
 from unittest.mock import MagicMock, patch
+
+import requests
 
 from dragonchain import exceptions
 from dragonchain import test_env  # noqa: F401
@@ -93,7 +94,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_rpc = MagicMock(return_value=fake_response)
         response = self.client._publish_transaction("DC-L5:_fake_L5_block_hash")
         self.assertEqual(response, "BOGUS_RESULT_HASH")
-        self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": 'signed_tx'})
+        self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": "signed_tx"})
 
     def test_get_current_block(self):
         fake_response = requests.Response()
@@ -122,7 +123,7 @@ class TestBinanceMethods(unittest.TestCase):
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
         fake_response = requests.Response()
-        fake_response._content = b'{"result": {"height": 1245739}}'        
+        fake_response._content = b'{"result": {"height": 1245739}}'
         self.client._call_node_rpc = MagicMock(return_value=fake_response)  # txn 100 blocks ago
         response = self.client.is_transaction_confirmed("46616b6554786e48617368")
         self.assertTrue(response)
@@ -141,7 +142,7 @@ class TestBinanceMethods(unittest.TestCase):
 
     def test_is_transaction_confirmed_error(self):
         fake_response = requests.Response()
-        fake_response._content = b'{"error": {"data": "Tx (1245839) not found"}}'   
+        fake_response._content = b'{"error": {"data": "Tx (1245839) not found"}}'
         self.client._call_node_rpc = MagicMock(return_value=fake_response)
         self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "46616b6554786e48617368")
         self.client._call_node_rpc.assert_called_once_with("tx", {"hash": "RmFrZVR4bkhhc2g=", "prove": True})
@@ -186,14 +187,7 @@ class TestBinanceMethods(unittest.TestCase):
     #     self.assertRaises(requests.exceptions.ConnectTimeout, self.client._call_node_api, "MyPath")
 
     def test_from_user_input_throws_with_bad_private_key(self):
-        fake_input = {
-            "version": "1",
-            "testnet": True,
-            "node_url": "b.a.n.a.n.a",
-            "rpc_port": 27147,
-            "api_port": 1169,
-            "private_key": "badKey",
-        }
+        fake_input = {"version": "1", "testnet": True, "node_url": "b.a.n.a.n.a", "rpc_port": 27147, "api_port": 1169, "private_key": "badKey"}
         self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, fake_input)
 
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")

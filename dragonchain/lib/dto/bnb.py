@@ -157,7 +157,7 @@ class BinanceNetwork(model.InterchainModel):
         response_rpc = self._call_node_rpc("status", {}).json()
         response_api = self._call_node_api("abci_info").json()
         if response_rpc.get("errors") or response_rpc.get("errors") or response_api.get("error") or response_api.get("errors"):
-            raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping check failed: {r.status_code} | {r.text}")
+            raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -218,7 +218,6 @@ class BinanceNetwork(model.InterchainModel):
                     return fee_block["fixed_fee_params"]["fee"]  # fixed fee: 37500 (0.000375 BNB)
         _log.info("[BINANCE] Fetch failed; resorting to saved value for fixed fee.")
         return SEND_FEE  # SET GLOBALLY
-
 
     # https://docs.binance.org/api-reference/node-rpc.html#6110-query-block
     def get_current_block(self) -> int:
