@@ -96,7 +96,7 @@ def create_ethereum_interchain_v1(user_data: Dict[str, Any], conflict_check: boo
 
 def create_binance_interchain_v1(user_data: Dict[str, Any], conflict_check: bool = True) -> Dict[str, Any]:
     client = bnb.new_from_user_input(user_data)
-    if interchain_dao.does_interchain_exist("binance", client.name):
+    if conflict_check and interchain_dao.does_interchain_exist("binance", client.name):
         _log.error("Binance network is already registered")
         raise exceptions.InterchainConflict(f"A binance interchain network with the name {client.name} is already registered")
     interchain_dao.save_interchain_client(client)

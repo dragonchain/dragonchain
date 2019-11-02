@@ -244,7 +244,9 @@ class BinanceNetwork(model.InterchainModel):
         Returns:
             Network string
         """
-        return f"binance {'testnet' if self.testnet else 'mainnet'}"
+        tn = 'testnet: Binance-Chain-Nile'
+        mn = 'mainnet: Binance-Chain-Tigris'
+        return f"binance {tn if self.testnet else mn}"
 
     def get_private_key(self) -> str:
         """Get the private key for this network

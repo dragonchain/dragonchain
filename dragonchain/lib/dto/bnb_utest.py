@@ -54,6 +54,8 @@ class TestBinanceMethods(unittest.TestCase):
     def test_new_from_at_rest_bad_version(self):
         self.assertRaises(NotImplementedError, bnb.new_from_at_rest, {"version": "1337"})  # good is "1"
 
+    # TODO: check that this is failing in the RIGHT way -- think I'm not passing args right
+    # shouldn't it be bnb.new_from_user_input(args)?
     def test_new_from_user_input_throws_with_bad_version(self):
         self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, {"version": "99999"})  # good is "1"
 
@@ -171,21 +173,25 @@ class TestBinanceMethods(unittest.TestCase):
             "b.a.n.a.n.a:27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
         )
 
-    # @patch("requests")
-    # def test_rpc_request_error(self, mock_requests):
-    #     mock_requests.post = MagicMock(side_effect=requests.exceptions.ConnectTimeout)
-    #     self.assertRaises(requests.exceptions.ConnectTimeout, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
-
     @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
     def test_api_request_success(self, mock_get):
         response = self.client._call_node_api("MyPath")
         self.assertEqual(response.json(), {"result": "MyResult"})
         mock_get.assert_called_once_with("b.a.n.a.n.a:1169/api/v1/MyPath", timeout=30)
 
-    # @patch("requests")
-    # def test_api_request_error(self, mock_requests):
-    #     mock_requests.get = MagicMock(side_effect=requests.exceptions.ConnectTimeout)
-    #     self.assertRaises(requests.exceptions.ConnectTimeout, self.client._call_node_api, "MyPath")
+    # BROKEN:
+    @patch("dragonchain.lib.dto.bnb.requests")
+    def test_rpc_request_error(self, mock_requests):
+        pass
+        # mock_requests.post.side_effect = requests.exceptions.ConnectTimeout
+        # self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
+
+    # BROKEN:
+    @patch("dragonchain.lib.dto.bnb.requests")
+    def test_api_request_error(self, mock_requests):
+        pass
+        # mock_requests.get.side_effect = requests.exceptions.ConnectTimeout
+        # self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "MyPath")
 
     def test_from_user_input_throws_with_bad_private_key(self):
         fake_input = {"version": "1", "testnet": True, "node_url": "b.a.n.a.n.a", "rpc_port": 27147, "api_port": 1169, "private_key": "badKey"}
@@ -206,23 +212,20 @@ class TestBinanceMethods(unittest.TestCase):
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
     def test_new_from_user_input_sets_good_keys(self, mock_ping):
         # Good hex key without 0x
-        client_a = bnb.new_from_user_input(
-            {"version": "1", "name": "banana", "testnet": True, "private_key": "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
-        )
+        privkey = "7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"
+        client_a = bnb.new_from_user_input({"version": "1", "name": "banana", "testnet": True, "private_key": privkey})
         # Good hex key with 0x
-        client_b = bnb.new_from_user_input(
-            {"version": "1", "name": "banana", "testnet": True, "private_key": "0x7796b9ac433fab2a83d281e8064f29c935133139b62ec52c8e73de28440c0dc6"}
-        )
+        client_b = bnb.new_from_user_input({"version": "1", "name": "banana", "testnet": True, "private_key": f"0x{privkey}"})
         # Good key from mnemonic string
-        # TODO:
+        mnemonic = ("banana " * 24).rstrip()
+        client_c = bnb.new_from_user_input({"version": "1", "name": "banana", "testnet": True, "private_key": mnemonic})
+        from_hex = b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
+        from_mem = b"\xc6G\xd2\xdf\xdb\x97\xb3B`\x82Yx\xe7\x10\xf9g\x0bY\xc7o\xa8n\xd0m\xf7\x07\xadv'\t\x17_"
+        self.assertEqual(base64.b64decode(client_a.b64_private_key), from_hex)
+        self.assertEqual(base64.b64decode(client_b.b64_private_key), from_hex)
+        self.assertEqual(base64.b64decode(client_c.b64_private_key), from_mem)
 
-        self.assertEqual(
-            base64.b64decode(client_a.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
-        )
-        self.assertEqual(
-            base64.b64decode(client_b.b64_private_key), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
-        )
-
+    # TODO:
     # # MagicMock(side_effect=exceptions.BadRequest)
     # def test_new_from_user_input_throws_with_bad_keys(self):
     #     # Bad hex
@@ -235,3 +238,87 @@ class TestBinanceMethods(unittest.TestCase):
     #     self.assertRaises(
     #         exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "Bad Banana Mnemonic"}
     #     )
+
+    # if  user input doesn't include testnet:
+    # TODO:
+    def test_new_from_user_input_no_testnet_argument(self):
+        pass
+
+    # if user includes node_url, but not rpc or api ports, throw BadRequest exception
+    # TODO:
+    def test_new_from_user_input_no_ports(self):
+        user_input = {
+            "version": "1",
+            "name": "banana",
+            "node_url": "b.a.n.a.n.a",
+            "rpc_port": 27147,
+            "api_port": 1169,
+            "testnet": True,
+            "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        }
+
+        client = bnb.new_from_at_rest(
+            {
+                "version": "1",
+                "name": "banana",
+                "node_url": "b.a.n.a.n.a",
+                "rpc_port": 27147,
+                "api_port": 1169,
+                "testnet": True,
+                "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+            }
+        )
+        self.assertEqual(client.rpc_port, 27147)
+        self.assertEqual(client.api_port, 1169)
+
+        # self.client.api_port = None
+        # FYI: need to make sure this is failing BECAUSE of my specific bad input...
+        # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
+        # self.client.rpc_port = None
+        # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
+
+    # if ping fails, throws BadRequest
+    # TODO:
+    def test_new_from_user_node_ping_fails(self):
+        pass
+
+    # TODO:
+    def test_ping(self):
+        pass
+
+    # TODO: needs coverage of a 0 balance response
+    def test_check_balance(self):
+        pass
+
+    # TODO: needs coverage of a failed fetch
+    def test_get_transaction_fee_estimate_fails(self):
+        pass
+
+    # DONE:
+    def test_get_network_string(self):
+        tn = "testnet: Binance-Chain-Nile"
+        self.assertEqual(self.client.get_network_string(), f"binance {tn}")
+
+        self.client.testnet = False
+        mn = "mainnet: Binance-Chain-Tigris"
+        self.assertEqual(self.client.get_network_string(), f"binance {mn}")
+
+    # DONE:
+    def test_get_private_key(self):
+        b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
+        self.assertEqual(self.client.get_private_key(), b64_private_key)
+        pass
+
+    # TODO:
+    def test_fetch_account(self):
+        pass
+
+    # TODO:
+    def test_build_transaction_msg(self):
+        pass
+
+
+# kinda low priority
+# add testcase to sign_transaction() test, to handle BnbTransaction (only does test right now)
+# sign_transaction() also doesn't check for a bad signing that raises BadRequest exception
+
