@@ -106,7 +106,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(response, 12345678)
         self.client._call_node_rpc.assert_called_once_with("block", {})
 
-    def test_check_balance(self):
+    def test_check_balance_success(self):
         fake_response = requests.Response()
         fake_response._content = b'{"balance": {"free": 1234567890}}'
         api_string = "balances/tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk/BNB"
@@ -115,13 +115,21 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(response, 1234567890)
         self.client._call_node_api.assert_called_once_with(api_string)
 
-    def test_get_transaction_fee(self):
+    # TODO: needs coverage of a 0 balance response
+    def test_check_balance_failure(self):
+        pass
+
+    def test_get_transaction_fee_estimnate_success(self):
         fake_response = requests.Response()
         fake_response._content = b'[{}, {}, {"fixed_fee_params": {"msg_type": "send", "fee": 31337}}, {}, {}]'
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.get_transaction_fee_estimate()
         self.assertEqual(response, 31337)
         self.client._call_node_api.assert_called_once_with("fees")
+
+    # TODO: needs coverage of a failed fetch
+    def test_get_transaction_fee_estimate_failure(self):
+        pass
 
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
@@ -287,15 +295,6 @@ class TestBinanceMethods(unittest.TestCase):
     def test_ping(self):
         pass
 
-    # TODO: needs coverage of a 0 balance response
-    # FYI: already defined elsewhere... ?
-    # def test_check_balance(self):
-    #     pass
-
-    # TODO: needs coverage of a failed fetch
-    def test_get_transaction_fee_estimate_fails(self):
-        pass
-
     # DONE:
     def test_get_network_string(self):
         tn = "testnet: Binance-Chain-Nile"
@@ -311,13 +310,36 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(self.client.get_private_key(), b64_private_key)
         pass
 
-    # TODO:
-    def test_fetch_account(self):
-        pass
+    # DONE:
+    def test_fetch_account_success(self):
+        fake_response = requests.Response()
+        fake_response._content = b'{"account_number": 12345, "sequence": 0}'
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        response = self.client._fetch_account()
+        self.assertEqual(response, fake_response.json())
+        self.client._call_node_api.assert_called_once_with(f"account/{self.client.address}")
 
     # TODO:
-    def test_build_transaction_msg(self):
+    def test_fetch_account_failure(self):
         pass
+
+    # DONE:
+    def test_build_transaction_msg(self):
+        txn_payload = "BANANA_MEMO"
+        fake_account = {"account_number": 12345, "sequence": 0}
+        self.client._fetch_account = MagicMock(return_value=fake_account)
+        inputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
+        outputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
+        built_txn = {
+            "account_number": 12345,
+            "sequence": 0,
+            "from": self.client.address,
+            "memo": "BANANA_MEMO",
+            "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
+        }
+        test_result = self.client._build_transaction_msg(txn_payload)
+        self.assertEqual(test_result, built_txn)
+        self.client._fetch_account.assert_called_once()
 
 
 # kinda low priority
