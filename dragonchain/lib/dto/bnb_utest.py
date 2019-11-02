@@ -247,29 +247,30 @@ class TestBinanceMethods(unittest.TestCase):
     # if user includes node_url, but not rpc or api ports, throw BadRequest exception
     # TODO:
     def test_new_from_user_input_no_ports(self):
-        user_input = {
-            "version": "1",
-            "name": "banana",
-            "node_url": "b.a.n.a.n.a",
-            "rpc_port": 27147,
-            "api_port": 1169,
-            "testnet": True,
-            "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
-        }
+        pass
+        # user_input = {
+        #     "version": "1",
+        #     "name": "banana",
+        #     "node_url": "b.a.n.a.n.a",
+        #     "rpc_port": 27147,
+        #     "api_port": 1169,
+        #     "testnet": True,
+        #     "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        # }
 
-        client = bnb.new_from_at_rest(
-            {
-                "version": "1",
-                "name": "banana",
-                "node_url": "b.a.n.a.n.a",
-                "rpc_port": 27147,
-                "api_port": 1169,
-                "testnet": True,
-                "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
-            }
-        )
-        self.assertEqual(client.rpc_port, 27147)
-        self.assertEqual(client.api_port, 1169)
+        # client = bnb.new_from_at_rest(
+        #     {
+        #         "version": "1",
+        #         "name": "banana",
+        #         "node_url": "b.a.n.a.n.a",
+        #         "rpc_port": 27147,
+        #         "api_port": 1169,
+        #         "testnet": True,
+        #         "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        #     }
+        # )
+        # self.assertEqual(client.rpc_port, 27147)
+        # self.assertEqual(client.api_port, 1169)
 
         # self.client.api_port = None
         # FYI: need to make sure this is failing BECAUSE of my specific bad input...
@@ -287,8 +288,9 @@ class TestBinanceMethods(unittest.TestCase):
         pass
 
     # TODO: needs coverage of a 0 balance response
-    def test_check_balance(self):
-        pass
+    # FYI: already defined elsewhere... ?
+    # def test_check_balance(self):
+    #     pass
 
     # TODO: needs coverage of a failed fetch
     def test_get_transaction_fee_estimate_fails(self):
@@ -321,4 +323,3 @@ class TestBinanceMethods(unittest.TestCase):
 # kinda low priority
 # add testcase to sign_transaction() test, to handle BnbTransaction (only does test right now)
 # sign_transaction() also doesn't check for a bad signing that raises BadRequest exception
-
