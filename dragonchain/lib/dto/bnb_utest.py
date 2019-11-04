@@ -246,6 +246,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.api_port, 1169)
         self.assertTrue(client.testnet)
 
+    # TODO:
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
     def test_new_from_user_input_sets_good_keys(self, mock_ping):
         # Good hex key without 0x
@@ -261,7 +262,6 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(base64.b64decode(client_a.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_b.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_c.b64_private_key), from_mem)
-
     # TODO:
     # # MagicMock(side_effect=exceptions.BadRequest)
     # def test_new_from_user_input_throws_with_bad_keys(self):
@@ -276,8 +276,8 @@ class TestBinanceMethods(unittest.TestCase):
     #         exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "Bad Banana Mnemonic"}
     #     )
 
-    # FIXME:
-    def test_new_from_user_input_no_testnet_parameter(self):
+    @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
+    def test_new_from_user_input_no_testnet_parameter(self, mock_ping):
         # missing "testnet" parameter:
         user_input = {
             "version": "1",
@@ -288,12 +288,10 @@ class TestBinanceMethods(unittest.TestCase):
             "testnet": None,
             "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
         }
-        # self.assertEqual(client.api_port, 1169)
-        # self.assertTrue(client.testnet)
-        # self.assertEqual(exceptions.BadRequest, bnb.new_from_user_input, user_input)
+        client = bnb.new_from_user_input(user_input)
+        self.assertTrue(client.testnet)  # if None, should get set to True
 
-    # if user includes node_url, but not rpc or api ports, throw BadRequest exception
-    # TODO:
+    # TODO: if user includes node_url, but not rpc or api ports, throw BadRequest exception
     def test_new_from_user_input_no_ports(self):
         pass
         # user_input = {
@@ -325,8 +323,6 @@ class TestBinanceMethods(unittest.TestCase):
         # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
         # self.client.rpc_port = None
         # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
-
-
 
     def test_get_network_string(self):
         tn = "testnet: Binance-Chain-Nile"
@@ -362,10 +358,9 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_rpc.assert_called_once_with("status", {})
         self.client._call_node_api.assert_called_once_with("abci_info")
 
-
     # if ping fails, throws BadRequest
-    # ping fail will result in a raising of a InterchainConnectionError, 
-    # which will in turn raise a BadRequest exception 
+    # ping fail will result in a raising of a InterchainConnectionError,
+    # which will in turn raise a BadRequest exception
     # TODO:
     def test_new_from_user_node_ping_fails(self):
         pass
@@ -387,4 +382,3 @@ class TestBinanceMethods(unittest.TestCase):
         # response_api = self._call_node_api("abci_info").json()
         # if response_rpc.get("error") or response_api.get("error"):
         #     raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
-
