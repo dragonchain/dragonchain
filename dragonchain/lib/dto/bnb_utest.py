@@ -40,7 +40,7 @@ class TestBinanceMethods(unittest.TestCase):
                 "node_url": "b.a.n.a.n.a",
                 "rpc_port": 27147,
                 "api_port": 1169,
-                "testnet": True,
+                "testnet": False,
                 "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
             }
         )
@@ -48,14 +48,13 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.node_url, "b.a.n.a.n.a")
         self.assertEqual(client.rpc_port, 27147)
         self.assertEqual(client.api_port, 1169)
-        self.assertTrue(client.testnet)
-        self.assertEqual(client.address, "tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk")
+        self.assertFalse(client.testnet)
+        self.assertEqual(client.address, "bnb1u06kxdru0we8at0ktd6q4c5qk80zwdyveh2cl8")
+        # if testnet is True: tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk
 
     def test_new_from_at_rest_bad_version(self):
         self.assertRaises(NotImplementedError, bnb.new_from_at_rest, {"version": "1337"})  # good is "1"
 
-    # TODO: check that this is failing in the RIGHT way -- think I'm not passing args right
-    # shouldn't it be bnb.new_from_user_input(args)?
     def test_new_from_user_input_throws_with_bad_version(self):
         self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, {"version": "99999"})  # good is "1"
 
@@ -69,6 +68,28 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertFalse(self.client.should_retry_broadcast(99))
         self.client.get_current_block.assert_called_once()
 
+    def test_build_transaction_msg(self):
+        txn_payload = "BANANA_MEMO"
+        fake_account = {"account_number": 12345, "sequence": 0}
+        self.client._fetch_account = MagicMock(return_value=fake_account)
+        inputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
+        outputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
+        built_txn = {
+            "account_number": 12345,
+            "sequence": 0,
+            "from": self.client.address,
+            "memo": "BANANA_MEMO",
+            "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
+        }
+        test_result = self.client._build_transaction_msg(txn_payload)
+        self.assertEqual(test_result, built_txn)
+        self.client._fetch_account.assert_called_once()
+
+    # TODO:
+    # TestBnbTransaction.from_obj(built_transaction) not covered
+    # BUT self.testnet is True; so my testcase worked, but kinda as a lie.
+    # sign_transaction() also doesn't check for a bad signing that raises BadRequest exception
+    # yeah, doesn't care if it's tbnb or bnb
     @patch("binance_transaction.BnbTransaction.encode", return_value=b"fake_encoded_txn")
     def test_sign_transaction(self, mock_encode):
         random_addy = "bnb1l09g77u8wslyg9vjza3rfgmq776jy2lt8gtmvm"
@@ -111,25 +132,33 @@ class TestBinanceMethods(unittest.TestCase):
         fake_response._content = b'{"balance": {"free": 1234567890}}'
         api_string = "balances/tbnb1u06kxdru0we8at0ktd6q4c5qk80zwdyvhzrulk/BNB"
         self.client._call_node_api = MagicMock(return_value=fake_response)
-        response = self.client.check_balance()
-        self.assertEqual(response, 1234567890)
+        self.assertEqual(self.client.check_balance(), 1234567890)
         self.client._call_node_api.assert_called_once_with(api_string)
 
-    # TODO: needs coverage of a 0 balance response
     def test_check_balance_failure(self):
-        pass
-
-    def test_get_transaction_fee_estimnate_success(self):
+        path = f"balances/{self.client.address}/BNB"
         fake_response = requests.Response()
-        fake_response._content = b'[{}, {}, {"fixed_fee_params": {"msg_type": "send", "fee": 31337}}, {}, {}]'
+        fake_response.status_code = 500
+        fake_response._content = b'{"error": {"data": "interface is nil, not types.NamedAccount"}}'
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        self.assertEqual(self.client.check_balance(), 0)
+        self.client._call_node_api.assert_called_once_with(path)
+
+    def test_get_transaction_fee_estimate_success(self):
+        fake_response = requests.Response()
+        fake_response._content = b'[{}, {"fixed_fee_params": {"msg_type": "send", "fee": 31337}}, {}]'
         self.client._call_node_api = MagicMock(return_value=fake_response)
         response = self.client.get_transaction_fee_estimate()
         self.assertEqual(response, 31337)
         self.client._call_node_api.assert_called_once_with("fees")
 
-    # TODO: needs coverage of a failed fetch
     def test_get_transaction_fee_estimate_failure(self):
-        pass
+        fake_response = requests.Response()
+        fake_response._content = b'[{"empty_response": "banana"}]'
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        response = self.client.get_transaction_fee_estimate()
+        self.assertEqual(response, 37500)  # check fails, falls back to default
+        self.client._call_node_api.assert_called_once_with("fees")
 
     def test_is_transaction_confirmed_final(self):
         self.client.get_current_block = MagicMock(return_value=1245839)  # fake block number
@@ -247,10 +276,21 @@ class TestBinanceMethods(unittest.TestCase):
     #         exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "Bad Banana Mnemonic"}
     #     )
 
-    # if  user input doesn't include testnet:
-    # TODO:
-    def test_new_from_user_input_no_testnet_argument(self):
-        pass
+    # FIXME:
+    def test_new_from_user_input_no_testnet_parameter(self):
+        # missing "testnet" parameter:
+        user_input = {
+            "version": "1",
+            "name": "banana",
+            "node_url": "b.a.n.a.n.a",
+            "rpc_port": 27147,
+            "api_port": 1169,
+            "testnet": None,
+            "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        }
+        # self.assertEqual(client.api_port, 1169)
+        # self.assertTrue(client.testnet)
+        # self.assertEqual(exceptions.BadRequest, bnb.new_from_user_input, user_input)
 
     # if user includes node_url, but not rpc or api ports, throw BadRequest exception
     # TODO:
@@ -286,16 +326,8 @@ class TestBinanceMethods(unittest.TestCase):
         # self.client.rpc_port = None
         # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
 
-    # if ping fails, throws BadRequest
-    # TODO:
-    def test_new_from_user_node_ping_fails(self):
-        pass
 
-    # TODO:
-    def test_ping(self):
-        pass
 
-    # DONE:
     def test_get_network_string(self):
         tn = "testnet: Binance-Chain-Nile"
         self.assertEqual(self.client.get_network_string(), f"binance {tn}")
@@ -304,13 +336,11 @@ class TestBinanceMethods(unittest.TestCase):
         mn = "mainnet: Binance-Chain-Tigris"
         self.assertEqual(self.client.get_network_string(), f"binance {mn}")
 
-    # DONE:
     def test_get_private_key(self):
         b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
         self.assertEqual(self.client.get_private_key(), b64_private_key)
         pass
 
-    # DONE:
     def test_fetch_account_success(self):
         fake_response = requests.Response()
         fake_response._content = b'{"account_number": 12345, "sequence": 0}'
@@ -323,25 +353,38 @@ class TestBinanceMethods(unittest.TestCase):
     def test_fetch_account_failure(self):
         pass
 
-    # DONE:
-    def test_build_transaction_msg(self):
-        txn_payload = "BANANA_MEMO"
-        fake_account = {"account_number": 12345, "sequence": 0}
-        self.client._fetch_account = MagicMock(return_value=fake_account)
-        inputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
-        outputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
-        built_txn = {
-            "account_number": 12345,
-            "sequence": 0,
-            "from": self.client.address,
-            "memo": "BANANA_MEMO",
-            "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
-        }
-        test_result = self.client._build_transaction_msg(txn_payload)
-        self.assertEqual(test_result, built_txn)
-        self.client._fetch_account.assert_called_once()
+    def test_ping(self):
+        fake_response = requests.Response()
+        fake_response._content = b'{"good": "response"}'
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        self.client.ping()  # successful run does NOT throw an exception.
+        self.client._call_node_rpc.assert_called_once_with("status", {})
+        self.client._call_node_api.assert_called_once_with("abci_info")
 
 
-# kinda low priority
-# add testcase to sign_transaction() test, to handle BnbTransaction (only does test right now)
-# sign_transaction() also doesn't check for a bad signing that raises BadRequest exception
+    # if ping fails, throws BadRequest
+    # ping fail will result in a raising of a InterchainConnectionError, 
+    # which will in turn raise a BadRequest exception 
+    # TODO:
+    def test_new_from_user_node_ping_fails(self):
+        pass
+        # fake_response = requests.Response()
+        # fake_response._content = b'{"error": "fatal banana error!"}'
+        # self.client._call_node_api = MagicMock(return_value=fake_response)
+        # response = self.client._call_node_api("endpoint").json()
+        ## self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "endpoint")
+        # self.assertRaises(exceptions.InterchainConnectionError, bnb, user_input)
+        ## self.client._call_node_api.assert_called_once_with("endpoint")
+
+        # set mock
+        # call rpc
+        # assert
+        # called once with
+
+        # FYI: content of ping()
+        # response_rpc = self._call_node_rpc("status", {}).json()
+        # response_api = self._call_node_api("abci_info").json()
+        # if response_rpc.get("error") or response_api.get("error"):
+        #     raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
+
