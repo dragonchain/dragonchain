@@ -265,6 +265,10 @@ class BinanceNetwork(model.InterchainModel):
         path = f"account/{self.address}"  # params expected inside path string
         try:
             response = self._call_node_api(path)
+            if response.status_code == 404:
+                _log.warning("[BINANCE] 404 response from Binance node:")
+                _log.warning("[BINANCE] Address not found -- likely has zero funds.")
+                raise exceptions.BadRequest("[BINANCE] Error fetching metadata from 'account' endpoint.")
             return response.json()
         except exceptions.InterchainConnectionError:
             _log.warning("[BINANCE] Non 200 response from Binance node.")

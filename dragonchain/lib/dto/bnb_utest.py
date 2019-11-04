@@ -262,6 +262,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(base64.b64decode(client_a.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_b.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_c.b64_private_key), from_mem)
+
     # TODO:
     # # MagicMock(side_effect=exceptions.BadRequest)
     # def test_new_from_user_input_throws_with_bad_keys(self):
@@ -345,9 +346,12 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(response, fake_response.json())
         self.client._call_node_api.assert_called_once_with(f"account/{self.client.address}")
 
-    # TODO:
     def test_fetch_account_failure(self):
-        pass
+        fake_response = requests.Response()
+        fake_response.status_code = 404
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        self.assertRaises(exceptions.BadRequest, self.client._fetch_account)
+        self.client._call_node_api.assert_called_once_with(f"account/{self.client.address}")
 
     def test_ping(self):
         fake_response = requests.Response()
