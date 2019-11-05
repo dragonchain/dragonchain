@@ -624,6 +624,7 @@ btc_transaction_schema_v1 = {
         "change": {"type": "string"},
     },
     "additionalProperties": False,
+    "required": ["version"],
 }
 
 # ETHEREUM INTERCHAIN #
@@ -666,7 +667,7 @@ eth_transaction_schema_v1 = {
         "gas": {"type": "string"},
         "nonce": {"type": "string"},
     },
-    "required": ["to", "value"],
+    "required": ["version", "to", "value"],
     "additionalProperties": False,
 }
 
@@ -712,6 +713,6 @@ bnb_transaction_schema_v1 = {
         "to_address": {"type": "string"},
         "memo": {"type": "string"},
     },
-    "required": ["amount", "to_address"],
+    "required": ["version", "amount", "to_address"],
     "additionalProperties": False,
 }

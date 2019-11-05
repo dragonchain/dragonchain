@@ -32,6 +32,16 @@ class TestBinanceMethods(unittest.TestCase):
         b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
         self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", 27147, 1169, b64_private_key)
 
+    def assertRaisesWithMessage(self, exception, msg, func, *args, **kwargs):  # noqa N802
+        """
+        Helper to assert a particular exception with a certain message is raised via our UserException
+        """
+        try:
+            func(*args, **kwargs)
+            self.assertFail()
+        except exception as e:
+            self.assertEqual(str(e), msg)
+
     def test_new_from_at_rest_good_input_v1(self):
         client = bnb.new_from_at_rest(
             {
@@ -85,11 +95,6 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(test_result, built_txn)
         self.client._fetch_account.assert_called_once()
 
-    # TODO:
-    # TestBnbTransaction.from_obj(built_transaction) not covered
-    # BUT self.testnet is True; so my testcase worked, but kinda as a lie.
-    # sign_transaction() also doesn't check for a bad signing that raises BadRequest exception
-    # yeah, doesn't care if it's tbnb or bnb
     @patch("binance_transaction.BnbTransaction.encode", return_value=b"fake_encoded_txn")
     def test_sign_transaction(self, mock_encode):
         random_addy = "bnb1l09g77u8wslyg9vjza3rfgmq776jy2lt8gtmvm"
@@ -216,19 +221,15 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(response.json(), {"result": "MyResult"})
         mock_get.assert_called_once_with("b.a.n.a.n.a:1169/api/v1/MyPath", timeout=30)
 
-    # BROKEN:
-    @patch("dragonchain.lib.dto.bnb.requests")
+    @patch("dragonchain.lib.dto.bnb.requests.post")
     def test_rpc_request_error(self, mock_requests):
-        pass
-        # mock_requests.post.side_effect = requests.exceptions.ConnectTimeout
-        # self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "MyMethod", {"symbol": "BANANA"})
+        mock_requests.side_effect = requests.exceptions.ConnectTimeout
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_rpc, "method", "{}")
 
-    # BROKEN:
-    @patch("dragonchain.lib.dto.bnb.requests")
+    @patch("dragonchain.lib.dto.bnb.requests.get")
     def test_api_request_error(self, mock_requests):
-        pass
-        # mock_requests.get.side_effect = requests.exceptions.ConnectTimeout
-        # self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "MyPath")
+        mock_requests.side_effect = requests.exceptions.ConnectTimeout
+        self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "method")
 
     def test_from_user_input_throws_with_bad_private_key(self):
         fake_input = {"version": "1", "testnet": True, "node_url": "b.a.n.a.n.a", "rpc_port": 27147, "api_port": 1169, "private_key": "badKey"}
@@ -246,7 +247,6 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(client.api_port, 1169)
         self.assertTrue(client.testnet)
 
-    # TODO:
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
     def test_new_from_user_input_sets_good_keys(self, mock_ping):
         # Good hex key without 0x
@@ -259,23 +259,16 @@ class TestBinanceMethods(unittest.TestCase):
         client_c = bnb.new_from_user_input({"version": "1", "name": "banana", "testnet": True, "private_key": mnemonic})
         from_hex = b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6"
         from_mem = b"\xc6G\xd2\xdf\xdb\x97\xb3B`\x82Yx\xe7\x10\xf9g\x0bY\xc7o\xa8n\xd0m\xf7\x07\xadv'\t\x17_"
+        # Assertions:
         self.assertEqual(base64.b64decode(client_a.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_b.b64_private_key), from_hex)
         self.assertEqual(base64.b64decode(client_c.b64_private_key), from_mem)
 
-    # TODO:
-    # # MagicMock(side_effect=exceptions.BadRequest)
-    # def test_new_from_user_input_throws_with_bad_keys(self):
-    #     # Bad hex
-    #     # bytes.fromhex will fail, mock it.
-    #     self.assertRaises(
-    #         exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "0xNotHexButBanana"}
-    #     )
-    #     # Bad mnemonic string
-    #     # mnemonic.Mnemonic.to_seed will fail, mock it.
-    #     self.assertRaises(
-    #         exceptions.BadRequest, bnb.new_from_user_input, {"version": "1", "name": "banana", "testnet": True, "private_key": "Bad Banana Mnemonic"}
-    #     )
+    def test_new_from_user_input_throws_with_bad_keys(self):
+        bad_hex = "9iQWROmdJ3iGwIZVDghnp2WpIejd0dpb9KPvgDEA06N3B0zp9CGOW5ya5YkOrwO1"  # 64 random chars
+        msg = "Provided private key did not successfully decode into a valid key."
+        user_input = {"version": "1", "name": "banana", "testnet": True, "private_key": bad_hex}
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, bnb.new_from_user_input, user_input)
 
     @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
     def test_new_from_user_input_no_testnet_parameter(self, mock_ping):
@@ -292,38 +285,22 @@ class TestBinanceMethods(unittest.TestCase):
         client = bnb.new_from_user_input(user_input)
         self.assertTrue(client.testnet)  # if None, should get set to True
 
-    # TODO: if user includes node_url, but not rpc or api ports, throw BadRequest exception
     def test_new_from_user_input_no_ports(self):
-        pass
-        # user_input = {
-        #     "version": "1",
-        #     "name": "banana",
-        #     "node_url": "b.a.n.a.n.a",
-        #     "rpc_port": 27147,
-        #     "api_port": 1169,
-        #     "testnet": True,
-        #     "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
-        # }
-
-        # client = bnb.new_from_at_rest(
-        #     {
-        #         "version": "1",
-        #         "name": "banana",
-        #         "node_url": "b.a.n.a.n.a",
-        #         "rpc_port": 27147,
-        #         "api_port": 1169,
-        #         "testnet": True,
-        #         "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
-        #     }
-        # )
-        # self.assertEqual(client.rpc_port, 27147)
-        # self.assertEqual(client.api_port, 1169)
-
-        # self.client.api_port = None
-        # FYI: need to make sure this is failing BECAUSE of my specific bad input...
-        # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
-        # self.client.rpc_port = None
-        # self.assertRaises(exceptions.BadRequest, bnb.new_from_user_input, user_input)
+        user_input = {
+            "version": "1",
+            "name": "banana",
+            "node_url": "b.a.n.a.n.a",
+            "rpc_port": 27147,
+            "api_port": 1169,
+            "testnet": True,
+            "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        }
+        user_input["api_port"] = None
+        msg = "Node URL specified, but RPC or API ports not specified."
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, bnb.new_from_user_input, user_input)  # no API port specified
+        user_input["api_port"] = 1169  # reset
+        user_input["rpc_port"] = None
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, bnb.new_from_user_input, user_input)  # no RPC port specified
 
     def test_get_network_string(self):
         tn = "testnet: Binance-Chain-Nile"
@@ -349,11 +326,12 @@ class TestBinanceMethods(unittest.TestCase):
     def test_fetch_account_failure(self):
         fake_response = requests.Response()
         fake_response.status_code = 404
+        msg = "[BINANCE] Error fetching metadata from 'account' endpoint."
         self.client._call_node_api = MagicMock(return_value=fake_response)
-        self.assertRaises(exceptions.BadRequest, self.client._fetch_account)
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, self.client._fetch_account)
         self.client._call_node_api.assert_called_once_with(f"account/{self.client.address}")
 
-    def test_ping(self):
+    def test_ping_success(self):
         fake_response = requests.Response()
         fake_response._content = b'{"good": "response"}'
         self.client._call_node_rpc = MagicMock(return_value=fake_response)
@@ -362,27 +340,25 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_rpc.assert_called_once_with("status", {})
         self.client._call_node_api.assert_called_once_with("abci_info")
 
-    # if ping fails, throws BadRequest
-    # ping fail will result in a raising of a InterchainConnectionError,
-    # which will in turn raise a BadRequest exception
-    # TODO:
-    def test_new_from_user_node_ping_fails(self):
-        pass
-        # fake_response = requests.Response()
-        # fake_response._content = b'{"error": "fatal banana error!"}'
-        # self.client._call_node_api = MagicMock(return_value=fake_response)
-        # response = self.client._call_node_api("endpoint").json()
-        ## self.assertRaises(exceptions.InterchainConnectionError, self.client._call_node_api, "endpoint")
-        # self.assertRaises(exceptions.InterchainConnectionError, bnb, user_input)
-        ## self.client._call_node_api.assert_called_once_with("endpoint")
+    def test_ping_failure(self):
+        fake_response = requests.Response()
+        fake_response._content = b'{"error": "fatal banana error!"}'
+        self.client._call_node_rpc = MagicMock(return_value=fake_response)
+        fake_response._content = b'{"error": "everything banana ok."}'
+        self.client._call_node_api = MagicMock(return_value=fake_response)
+        self.assertRaises(exceptions.InterchainConnectionError, self.client.ping)
 
-        # set mock
-        # call rpc
-        # assert
-        # called once with
-
-        # FYI: content of ping()
-        # response_rpc = self._call_node_rpc("status", {}).json()
-        # response_api = self._call_node_api("abci_info").json()
-        # if response_rpc.get("error") or response_api.get("error"):
-        #     raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
+    @patch("dragonchain.lib.dto.bnb.BinanceNetwork.ping")
+    def test_new_from_user_node_ping_fails(self, mock_ping):
+        user_input = {
+            "version": "1",
+            "name": "banana",
+            "node_url": "b.a.n.a.n.a",
+            "rpc_port": 27147,
+            "api_port": 1169,
+            "testnet": True,
+            "private_key": "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA=",
+        }
+        mock_ping.side_effect = exceptions.BadRequest
+        msg = "Provided binance node doesn't seem reachable. Error: "
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, bnb.new_from_user_input, user_input)

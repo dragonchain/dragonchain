@@ -348,9 +348,8 @@ class BinanceNetwork(model.InterchainModel):
         _log.debug(f"Binance RPC: -> {full_address} {body}")
         try:
             response = requests.post(full_address, json=body, timeout=30)
-        except requests.exceptions.ConnectTimeout:
-            error_msg = "Error from binance node with http status code"
-            raise exceptions.InterchainConnectionError(f"{error_msg} {response.status_code} | {response.text}")
+        except Exception as e:
+            raise exceptions.InterchainConnectionError(f"Error sending post request to binance node: {e}")
         _log.debug(f"Binance <- {response.status_code} {response.text}")
         return response
 
@@ -363,9 +362,8 @@ class BinanceNetwork(model.InterchainModel):
         full_address = f"{self.node_url}:{self.api_port}/api/v1/{path}"
         try:
             response = requests.get(full_address, timeout=30)
-        except requests.exceptions.ConnectTimeout:
-            error_msg = "Error from binance node with http status code"
-            raise exceptions.InterchainConnectionError(f"{error_msg} {response.status_code} | {response.text}")
+        except Exception as e:
+            raise exceptions.InterchainConnectionError(f"Error sending get request to binance node: {e}")
         _log.debug(f"Binance <- {response.status_code} {response.text}")
         return response
 
