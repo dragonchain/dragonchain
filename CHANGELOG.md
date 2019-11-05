@@ -4,14 +4,16 @@
 
 - **Feature:**
   - Add performance improvements when creating transactions and processing L1 blocks
-  - L5 Binance
+  - Add interchain support for binance
 - **Packaging:**
   - Update redisearch, boto3 dependencies
+  - Add bnb-tx, pycoin, and mnemonic dependencies for binance
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
   - Change the way that transaction 404 stubbing is handled for pending transactions
 - **Bugs:**
-  - Adds Redisearch index-overwrite using upsert to prevent edge-case failures
+  - Change L5 block redisearch insert to upsert to prevent an occasional edge-case error which could cause an L5 to get stuck
+
 ## 4.1.0
 
 Note this update adds the invoker tag field for indexing smart contract
