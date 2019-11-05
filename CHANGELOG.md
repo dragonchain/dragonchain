@@ -1,14 +1,18 @@
 # Changelog
 
-## 4.1.1
+## 4.2.0
 
 - **Feature:**
   - Add performance improvements when creating transactions and processing L1 blocks
+  - Add interchain support for binance
 - **Packaging:**
   - Update redisearch, boto3 dependencies
+  - Add bnb-tx, pycoin, and mnemonic dependencies for binance
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
   - Change the way that transaction 404 stubbing is handled for pending transactions
+- **Bugs:**
+  - Change L5 block redisearch insert to upsert to prevent an occasional edge-case error which could cause an L5 to get stuck
 
 ## 4.1.0
 

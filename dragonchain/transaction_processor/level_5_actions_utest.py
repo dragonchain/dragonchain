@@ -204,7 +204,7 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_keys.assert_called_once_with()
         level_5_actions._interchain_client.publish_l5_hash_to_public_network.assert_called_once_with("PoE")
         mock_storage_put.assert_called_once_with("BLOCK/123", ANY)
-        mock_put_document.assert_called_once_with("bk", "123", ANY)
+        mock_put_document.assert_called_once_with("bk", "123", ANY, upsert=True)
         self.assertEqual(mock_block.transaction_hash, ["0xTransactionHash"])
         self.assertEqual(mock_block.block_last_sent_at, 8754)
         self.assertEqual(mock_block.network, "eth")
@@ -233,7 +233,7 @@ class TestLevelFiveActions(unittest.TestCase):
     def test_check_confirmations_removes_unneeded_hashes(
         self, mock_block_model, mock_retry, mock_storage_get, mock_finalize, mock_get_last_number, mock_get_last_confirmed
     ):
-        level_5_actions._interchain_client.is_transaction_confirmed.side_effect = exceptions.RPCTransactionNotFound
+        level_5_actions._interchain_client.is_transaction_confirmed.side_effect = exceptions.TransactionNotFound
         mock_block_model.return_value.transaction_hash = ["1"]
 
         level_5_actions.check_confirmations()
