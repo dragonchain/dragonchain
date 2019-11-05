@@ -67,12 +67,13 @@ def list_contract_v1() -> Tuple[str, int, Dict[str, str]]:
 
 @request_authorizer.Authenticated()
 def get_smart_contract_logs_v1(contract_id: str) -> Tuple[str, int, Dict[str, str]]:
-    since = flask.request.args.get("since")
-    tail = cast(Any, flask.request.args.get("tail"))
-    try:
-        tail = int(tail)
-    except Exception:
-        raise exceptions.BadRequest("Invalid parameter for tail")
+    since = flask.request.args.get("since") or None
+    tail = cast(Any, flask.request.args.get("tail") or None)
+    if tail:
+        try:
+            tail = int(tail)
+        except Exception:
+            raise exceptions.BadRequest("Invalid parameter for tail")
 
     return helpers.flask_http_response(200, smart_contracts.get_logs_v1(contract_id, since, tail))
 

@@ -34,7 +34,7 @@ def _get_raw_logs(contract_id: str, since: Optional[str] = None, tail: Optional[
     Returns:
         A list of log JSON strings
     """
-    query_params = cast(Dict[str, Any], {"name": f"contract-{contract_id}", "tail": tail, "since": since})
+    query_params = cast(Dict[str, Any], {"name": f"contract-{contract_id}", "tail": tail or 100, "since": since})
     response = requests.get(f"{FAAS_GATEWAY}/system/logs", params=query_params, headers={"Authorization": get_faas_auth()})
     if response.status_code != 200:
         raise exceptions.OpenFaasException("Error getting contract logs, non-2XX response from OpenFaaS gateway")
