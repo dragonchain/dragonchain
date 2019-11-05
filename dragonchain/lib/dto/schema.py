@@ -693,7 +693,6 @@ update_binance_interchain_schema_v1 = {
     "type": "object",
     "properties": {
         "version": {"type": "string", "enum": ["1"]},
-        "name": {"type": "string"},
         "testnet": {"type": "boolean"},
         "node_url": {"type": "string"},
         "rpc_port": {"type": "integer"},
