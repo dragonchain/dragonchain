@@ -25,11 +25,10 @@ from dragonchain.broadcast_processor import broadcast_processor
 from dragonchain import exceptions
 
 
-def async_test(function):
+def async_test(coro):
     def wrapper(*args, **kwargs):
-        coro = asyncio.coroutine(function)
-        future = coro(*args, **kwargs)
-        asyncio.get_event_loop().run_until_complete(future)
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro(*args, **kwargs))
 
     return wrapper
 
