@@ -17,7 +17,6 @@
   - Revert manual redisearch fixes with dependency fixes
   - Change the way that transaction 404 stubbing is handled for pending transactions
   - Update to python 3.8
-  - Enforce using python from .venv for vscode python interpreter
 
 ## 4.1.0
 
