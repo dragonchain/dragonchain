@@ -5,17 +5,18 @@
 - **Feature:**
   - Add performance improvements when creating transactions and processing L1 blocks
   - Add interchain support for binance
+- **Bugs:**
+  - Change L5 block redisearch insert to upsert to prevent an occasional edge-case error which could cause an L5 to get stuck
+  - Don't require tail to be explicitly provided when requesting smart contract logs
+  - Fix a bug where L2+ chains could have the transaction processor go into a failure loop if a block failed to write to storage at some point
+  - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
 - **Packaging:**
   - Update redisearch, boto3, and apscheduler dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
   - Change the way that transaction 404 stubbing is handled for pending transactions
-- **Bugs:**
-  - Change L5 block redisearch insert to upsert to prevent an occasional edge-case error which could cause an L5 to get stuck
-  - Don't require tail to be explicitly provided when requesting smart contract logs
-  - Fix a bug where L2+ chains could have the transaction processor go into a failure loop if a block failed to write to storage at some point
-  - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
+  - Update to python 3.8
 
 ## 4.1.0
 
@@ -57,7 +58,6 @@ field where necessary.
   - Enforce `appVersion` in Chart.yaml and image version tags to be always up to date (and add associated version bump helper function in `tools.sh`)
   - Add strict helm lint checking
   - Add a public docker container for the current build of the master (development) branch (`dragonchain/dragonchain_core:edge`)
-  - Update to python 3.8
 
 ## 4.0.1
 
