@@ -15,6 +15,7 @@
   - Change L5 block redisearch insert to upsert to prevent an occasional edge-case error which could cause an L5 to get stuck
   - Don't require tail to be explicitly provided when requesting smart contract logs
   - Fix a bug where L2+ chains could have the transaction processor go into a failure loop if a block failed to write to storage at some point
+  - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
 
 ## 4.1.0
 
