@@ -99,7 +99,7 @@ def insert_block(block: "model.BlockModel") -> None:
     #  Create ref to this block for the next block
     last_block_ref = {"block_id": block.block_id, "proof": block.proof}
     #  Upload stripped block
-    redisearch.put_document(redisearch.Indexes.block.value, block.block_id, block.export_as_search_index())
+    redisearch.put_document(redisearch.Indexes.block.value, block.block_id, block.export_as_search_index(), upsert=True)
     storage.put_object_as_json(f"{FOLDER}/{block.block_id}", block.export_as_at_rest())
 
     #  Upload ref
