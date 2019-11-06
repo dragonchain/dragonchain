@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-# Check and try to use python3.7 explicitly, if possible
-if command -v python3.7 > /dev/null 2>&1; then
-    py_exec=python3.7
+# Check and try to use python3.8 explicitly, if possible
+if command -v python3.8 > /dev/null 2>&1; then
+    py_exec=python3.8
 else
     py_exec=python3
 fi
@@ -51,9 +51,9 @@ elif [ "$1" = "lint" ]; then
     if ! grep "version: $(cat .version)" helm/opensource-config.yaml > /dev/null 2>&1; then printf "Helm opensource-config.yaml version doesn't match .version file\\nRun tools.sh version\\n" && exit 1; fi
     helm lint helm/dragonchain-k8s/ --strict
     find dragonchain -name "*.py" -exec $py_exec -m flake8 {} +
-    $py_exec -m black --check -l 150 -t py37 dragonchain
+    $py_exec -m black --check -l 150 -t py38 dragonchain
 elif [ "$1" = "format" ]; then
-    $py_exec -m black -l 150 -t py37 dragonchain
+    $py_exec -m black -l 150 -t py38 dragonchain
 elif [ "$1" = "bandit" ]; then
     $py_exec -m bandit -r dragonchain
 elif [ "$1" = "docs" ]; then
