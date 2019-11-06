@@ -155,7 +155,7 @@ class BinanceNetwork(model.InterchainModel):
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         response_rpc = self._call_node_rpc("status", {}).json()
-        response_api = self._call_node_api("abci_info").json()
+        response_api = self._call_node_api("fees").json()
         if response_rpc.get("error") or response_api.get("error"):
             raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
 
@@ -354,8 +354,7 @@ class BinanceNetwork(model.InterchainModel):
         return response
 
     # endpoints currently hit are:
-    #     "abci_info" (ping check)
-    #     "fees" (transaction fee check)
+    #     "fees" (transaction fee check and ping check)
     #     "balances" (tokens in address check)
     #     "account"  (fetch account metadata)
     def _call_node_api(self, path: str) -> Any:
