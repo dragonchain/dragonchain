@@ -82,12 +82,7 @@ class TestBinanceMethods(unittest.TestCase):
     def test_build_transaction_msg(self):
         fake_account = {"account_number": 12345, "sequence": 0}
         self.client._fetch_account = MagicMock(return_value=fake_account)
-        fake_raw_txn = {
-            "amount": 123,
-            "to_address": "0-from_address-0",
-            "symbol": "BANANA_TOKEN",
-            "memo": "BANANA_MEMO"
-        }
+        fake_raw_txn = {"amount": 123, "to_address": "0-from_address-0", "symbol": "BANANA_TOKEN", "memo": "BANANA_MEMO"}
         inputs = {"address": self.client.address, "coins": [{"amount": 123, "denom": "BANANA_TOKEN"}]}
         outputs = {"address": "0-from_address-0", "coins": [{"amount": 123, "denom": "BANANA_TOKEN"}]}
         built_txn = {
@@ -112,12 +107,7 @@ class TestBinanceMethods(unittest.TestCase):
     def test_sign_transaction(self, mock_encode):
         fake_account = {"account_number": 12345, "sequence": 0}
         self.client._fetch_account = MagicMock(return_value=fake_account)
-        fake_raw_txn = {
-            "amount": 123,
-            "to_address": "random_addy",
-            "symbol": "BANANA_TOKEN",
-            "memo": "BANANA_MEMO"
-        }
+        fake_raw_txn = {"amount": 123, "to_address": "random_addy", "symbol": "BANANA_TOKEN", "memo": "BANANA_MEMO"}
         response = self.client.sign_transaction(fake_raw_txn)
         self.assertEqual(response, "ZmFrZV9lbmNvZGVkX3R4bg==")
         mock_encode.assert_called_once()

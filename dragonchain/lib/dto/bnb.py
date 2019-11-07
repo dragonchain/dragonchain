@@ -343,12 +343,7 @@ class BinanceNetwork(model.InterchainModel):
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
         # cannot send an amount of 0 -- transaction will not be accepted!
         # send funds to yourself, avoid hardcoding a dummy recipient address
-        raw_transaction = {
-            "amount": 1,
-            "to_address": self.address,
-            "symbol": "BNB",
-            "memo": transaction_payload
-        }
+        raw_transaction = {"amount": 1, "to_address": self.address, "symbol": "BNB", "memo": transaction_payload}
         built_transaction = self._build_transaction_msg(raw_transaction)
         signed_tx = self.sign_transaction(built_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
