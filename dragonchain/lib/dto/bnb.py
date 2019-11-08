@@ -298,11 +298,8 @@ class BinanceNetwork(model.InterchainModel):
             "sequence": response["sequence"],
             "from": self.address,
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
+            "memo": raw_transaction["memo"],
         }
-
-        if raw_transaction.get("memo") is not None:
-            transaction_data["memo"] = raw_transaction["memo"]
-
         return transaction_data
 
     def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
