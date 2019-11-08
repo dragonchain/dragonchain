@@ -289,8 +289,8 @@ class BinanceNetwork(model.InterchainModel):
         if amount <= 0:
             raise exceptions.BadRequest("[BINANCE] Amount in transaction cannot be less than or equal to 0.")
 
-        symbol = raw_transaction["symbol"] if raw_transaction.get("symbol") is not None else "BNB"
-        memo = raw_transaction["memo"] if raw_transaction.get("memo") is not None else ""
+        symbol = raw_transaction.get("symbol") or "BNB"
+        memo = raw_transaction.get("memo") or ""
 
         inputs = {"address": self.address, "coins": [{"amount": amount, "denom": symbol}]}
         outputs = {"address": raw_transaction["to_address"], "coins": [{"amount": amount, "denom": symbol}]}
