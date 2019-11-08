@@ -31,6 +31,7 @@ class TestBinanceMethods(unittest.TestCase):
         # private_key = "495bb2a3f229eb0abb2bf71a3dca56b31d60c128dfd81e9e907e5eedb67f19a0"
         b64_private_key = "SVuyo/Ip6wq7K/caPcpWsx1gwSjf2B6ekH5e7bZ/GaA="
         self.client = bnb.BinanceNetwork("banana", True, "b.a.n.a.n.a", 27147, 1169, b64_private_key)
+        self.maxDiff = None  # allows max display of diffs in test logs
 
     def assertRaisesWithMessage(self, exception, msg, func, *args, **kwargs):  # noqa N802
         """
@@ -79,11 +80,11 @@ class TestBinanceMethods(unittest.TestCase):
         self.client.get_current_block.assert_called_once()
 
     def test_build_transaction_msg(self):
-        txn_payload = "BANANA_MEMO"
         fake_account = {"account_number": 12345, "sequence": 0}
         self.client._fetch_account = MagicMock(return_value=fake_account)
-        inputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
-        outputs = {"address": self.client.address, "coins": [{"amount": 1, "denom": "BNB"}]}
+        fake_raw_txn = {"amount": 123, "to_address": "0-from_address-0", "symbol": "BANANA_TOKEN", "memo": "BANANA_MEMO"}
+        inputs = {"address": self.client.address, "coins": [{"amount": 123, "denom": "BANANA_TOKEN"}]}
+        outputs = {"address": "0-from_address-0", "coins": [{"amount": 123, "denom": "BANANA_TOKEN"}]}
         built_txn = {
             "account_number": 12345,
             "sequence": 0,
@@ -91,22 +92,22 @@ class TestBinanceMethods(unittest.TestCase):
             "memo": "BANANA_MEMO",
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
         }
-        test_result = self.client._build_transaction_msg(txn_payload)
+        test_result = self.client._build_transaction_msg(fake_raw_txn)
         self.assertEqual(test_result, built_txn)
         self.client._fetch_account.assert_called_once()
 
+    def test_build_transaction_msg_throws_with_bad_amount(self):
+        msg = "[BINANCE] Amount in transaction cannot be less than or equal to 0."
+        raw_txn = {"amount": 0, "to_address": "addy", "symbol": "BNB", "memo": "for bananas"}
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, self.client._build_transaction_msg, raw_txn)
+        raw_txn["amount"] = -1  # reset
+        self.assertRaisesWithMessage(exceptions.BadRequest, msg, self.client._build_transaction_msg, raw_txn)
+
     @patch("binance_transaction.BnbTransaction.encode", return_value=b"fake_encoded_txn")
     def test_sign_transaction(self, mock_encode):
-        random_addy = "bnb1l09g77u8wslyg9vjza3rfgmq776jy2lt8gtmvm"
-        inputs = {"address": random_addy, "coins": [{"amount": 0, "denom": "BNB"}]}
-        outputs = {"address": random_addy, "coins": [{"amount": 0, "denom": "BNB"}]}
-        fake_raw_txn = {
-            "account_number": 123456,
-            "sequence": 123,
-            "from": random_addy,
-            "memo": "fake_DC_L5_transaction_hash",
-            "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
-        }
+        fake_account = {"account_number": 12345, "sequence": 0}
+        self.client._fetch_account = MagicMock(return_value=fake_account)
+        fake_raw_txn = {"amount": 123, "to_address": "random_addy", "symbol": "BANANA_TOKEN", "memo": "BANANA_MEMO"}
         response = self.client.sign_transaction(fake_raw_txn)
         self.assertEqual(response, "ZmFrZV9lbmNvZGVkX3R4bg==")
         mock_encode.assert_called_once()
@@ -338,7 +339,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.client._call_node_api = MagicMock(return_value=fake_response)
         self.client.ping()  # successful run does NOT throw an exception.
         self.client._call_node_rpc.assert_called_once_with("status", {})
-        self.client._call_node_api.assert_called_once_with("abci_info")
+        self.client._call_node_api.assert_called_once_with("tokens/BNB")
 
     def test_ping_failure(self):
         fake_response = requests.Response()

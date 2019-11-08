@@ -155,7 +155,7 @@ class BinanceNetwork(model.InterchainModel):
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         response_rpc = self._call_node_rpc("status", {}).json()
-        response_api = self._call_node_api("abci_info").json()
+        response_api = self._call_node_api("tokens/BNB").json()
         if response_rpc.get("error") or response_api.get("error"):
             raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
 
@@ -275,36 +275,46 @@ class BinanceNetwork(model.InterchainModel):
             _log.warning("[BINANCE] May have been a 500 Bad Request or a 404 Not Found.")
             raise exceptions.InterchainConnectionError("[BINANCE] Error fetching metadata from 'account' endpoint.")
 
-    def _build_transaction_msg(self, transaction_payload: str) -> Dict:
-        # cannot send an amount of 0; send funds to yourself and avoid hardcoding a dummy recipient address
-        inputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
-        outputs = {"address": self.address, "coins": [{"amount": 1, "denom": "BNB"}]}
-        response = self._fetch_account()
+    def _build_transaction_msg(self, raw_transaction: Dict[str, Any]) -> Dict:
+        """Build a formatted transaction for this network from the base parameters
+        Args:
+            amount (int): amount of token in transaction
+            to_address (str): hex of the address to send to
+            symbol (str, optional): the exchange symbol for the token (defaults to 'BNB')
+            memo (str, optional): string of data to publish in the transaction (defaults to '')
+        Returns:
+            dict of the constructed transaction
+        """
+        amount = raw_transaction["amount"]
+        if amount <= 0:
+            raise exceptions.BadRequest("[BINANCE] Amount in transaction cannot be less than or equal to 0.")
 
+        symbol = raw_transaction.get("symbol") or "BNB"
+        memo = raw_transaction.get("memo") or ""
+
+        inputs = {"address": self.address, "coins": [{"amount": amount, "denom": symbol}]}
+        outputs = {"address": raw_transaction["to_address"], "coins": [{"amount": amount, "denom": symbol}]}
+        response = self._fetch_account()
         transaction_data = {
             "account_number": response["account_number"],
             "sequence": response["sequence"],
             "from": self.address,
-            "memo": transaction_payload,
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
+            "memo": memo,
         }
         return transaction_data
 
-    def sign_transaction(self, built_transaction: Dict[str, Any]) -> str:
+    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
         """Sign a transaction for this network
         Args:
-            built_transaction: The dictionary of the raw transaction containing:
-                account_number (int): fetched from node endpoint
-                sequence (int): fetched from node endpoint
-                from (str, in hex): address tokens are being sent from
-                memo: (str): arbitrary data [optional]
-                msgs: (list): structured as follows:
-                    inputs = {"address": "FROM_ADDRESS", "coins": [{"amount": INT_VALUE, "denom": "TOKEN_SYMBOL"}]}
-                    outputs = {"address": "TO_ADDRESS", "coins": [{"amount": INT_VALUE, "denom": "TOKEN_SYMBOL"}]}
-                    "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}]
+            amount (int): amount of token in transaction
+            to_address (str): hex of the address to send to
+            symbol (str, optional): the exchange symbol for the token (defaults to 'BNB')
+            memo (str, optional): string of data to publish in the transaction (defaults to '')
         Returns:
             String of the signed transaction as base64
         """
+        built_transaction = self._build_transaction_msg(raw_transaction)
         try:
             if self.testnet:
                 tx = TestBnbTransaction.from_obj(built_transaction)
@@ -330,7 +340,10 @@ class BinanceNetwork(model.InterchainModel):
             The string of the published transaction hash
         """
         _log.info(f"[BINANCE] Publishing transaction. payload = {transaction_payload}")
-        built_transaction = self._build_transaction_msg(transaction_payload)
+        # cannot send an amount of 0 -- transaction will not be accepted!
+        # send funds to yourself, avoid hardcoding a dummy recipient address
+        raw_transaction = {"amount": 1, "to_address": self.address, "symbol": "BNB", "memo": transaction_payload}
+        built_transaction = self._build_transaction_msg(raw_transaction)
         signed_tx = self.sign_transaction(built_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
         response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx}).json()
@@ -354,7 +367,7 @@ class BinanceNetwork(model.InterchainModel):
         return response
 
     # endpoints currently hit are:
-    #     "abci_info" (ping check)
+    #     "tokens/BNB" (ping check)
     #     "fees" (transaction fee check)
     #     "balances" (tokens in address check)
     #     "account"  (fetch account metadata)
