@@ -280,8 +280,8 @@ class BinanceNetwork(model.InterchainModel):
         Args:
             amount (int): amount of token in transaction
             to_address (str): hex of the address to send to
-            symbol (str): the exchange symbol for the token
-            memo (str): string of data to publish in the transaction
+            symbol (str, optional): the exchange symbol for the token (defaults to 'BNB')
+            memo (str, optional): string of data to publish in the transaction (defaults to '')
         Returns:
             dict of the constructed transaction
         """
@@ -289,7 +289,9 @@ class BinanceNetwork(model.InterchainModel):
         if amount <= 0:
             raise exceptions.BadRequest("[BINANCE] Amount in transaction cannot be less than or equal to 0.")
 
-        symbol = raw_transaction["symbol"]
+        symbol = raw_transaction["symbol"] if raw_transaction.get("symbol") is not None else "BNB"
+        memo = raw_transaction["memo"] if raw_transaction.get("memo") is not None else ""
+
         inputs = {"address": self.address, "coins": [{"amount": amount, "denom": symbol}]}
         outputs = {"address": raw_transaction["to_address"], "coins": [{"amount": amount, "denom": symbol}]}
         response = self._fetch_account()
@@ -298,7 +300,7 @@ class BinanceNetwork(model.InterchainModel):
             "sequence": response["sequence"],
             "from": self.address,
             "msgs": [{"type": "cosmos-sdk/Send", "inputs": [inputs], "outputs": [outputs]}],
-            "memo": raw_transaction["memo"],
+            "memo": memo,
         }
         return transaction_data
 
@@ -307,8 +309,8 @@ class BinanceNetwork(model.InterchainModel):
         Args:
             amount (int): amount of token in transaction
             to_address (str): hex of the address to send to
-            symbol (str): the exchange symbol for the token
-            memo (str): string of data to publish in the transaction
+            symbol (str, optional): the exchange symbol for the token (defaults to 'BNB')
+            memo (str, optional): string of data to publish in the transaction (defaults to '')
         Returns:
             String of the signed transaction as base64
         """
