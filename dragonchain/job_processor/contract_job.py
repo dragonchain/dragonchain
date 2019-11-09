@@ -40,7 +40,6 @@ from dragonchain import logger
 
 EVENT = os.environ["EVENT"]
 STAGE = os.environ["STAGE"]
-IAM_ROLE = os.environ["IAM_ROLE"]
 FAAS_GATEWAY = os.environ["FAAS_GATEWAY"]
 FAAS_REGISTRY = os.environ["FAAS_REGISTRY"]
 INTERNAL_ID = os.environ["INTERNAL_ID"]

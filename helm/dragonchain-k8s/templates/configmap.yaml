@@ -39,9 +39,6 @@ data:
 {{- if .Values.faas.registry_username }}
   REGISTRY_USERNAME: "{{ .Values.faas.registry_username }}"
 {{- end }}
-{{- if .Values.faas.registry_username }}
-  REGISTRY_PASSWORD: "{{ .Values.faas.registry_password }}"
-{{- end }}
   STORAGE_TYPE: disk
   SECRET_TYPE: env
   SECRET_LOCATION: SECRETSTRING

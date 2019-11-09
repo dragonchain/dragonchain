@@ -125,7 +125,6 @@ faas:
   mountFaasSecret: false
   registry: mycompany.docker.io
   registry_username: MyUsername
-  registry_password: MyPassword
 
 dragonchain:
   verificationNotification: false
