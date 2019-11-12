@@ -87,8 +87,6 @@ spec:
           env:
             - name: SERVICE
               value: webserver
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
@@ -185,8 +183,6 @@ spec:
           env:
             - name: SERVICE
               value: txprocessor
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
@@ -264,8 +260,6 @@ spec:
           env:
             - name: SERVICE
               value: contractInvoker
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
@@ -345,8 +339,6 @@ spec:
           env:
             - name: SERVICE
               value: jobprocessor
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
@@ -424,8 +416,6 @@ spec:
           env:
             - name: SERVICE
               value: bcprocessor
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
@@ -503,8 +493,6 @@ spec:
           env:
             - name: SERVICE
               value: scheduler
-            - name: SECRET_LOCATION
-              value: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
           volumeMounts:
             - name: secrets
               mountPath: {{ .Values.secret.mountPath }}
