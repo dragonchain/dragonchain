@@ -41,9 +41,6 @@ invalid_task_definition_string = '{"txn_type":"test","id":"my-id","image":"test"
 
 
 class TestJobPoller(unittest.TestCase):
-    def test_get_image_name(self):
-        self.assertEqual(job_processor.get_image_name(), "/dragonchain_core:test-")
-
     def test_get_job_name(self):
         self.assertEqual(job_processor.get_job_name("my-id"), "contract-my-id")
 
@@ -202,7 +199,7 @@ class TestJobPoller(unittest.TestCase):
                             containers=[
                                 kubernetes.client.V1Container(
                                     name=job_processor.get_job_name(valid_task_definition["id"]),
-                                    image=job_processor.get_image_name(),
+                                    image=job_processor.DRAGONCHAIN_IMAGE,
                                     security_context=kubernetes.client.V1SecurityContext(privileged=True),
                                     volume_mounts=[
                                         kubernetes.client.V1VolumeMount(name="dockersock", mount_path="/var/run/docker.sock"),
