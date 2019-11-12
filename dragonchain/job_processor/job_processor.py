@@ -32,7 +32,7 @@ DRAGONCHAIN_VERSION = os.environ["DRAGONCHAIN_VERSION"]
 INTERNAL_ID = os.environ["INTERNAL_ID"]
 STAGE = os.environ["STAGE"]
 REGISTRY = os.environ["REGISTRY"]
-IAM_ROLE = os.environ.get("IAM_ROLE") or "N/A"
+IAM_ROLE = os.environ.get("IAM_ROLE")
 NAMESPACE = os.environ["NAMESPACE"]
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"]
@@ -182,6 +182,9 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                     persistent_volume_claim=kubernetes.client.V1PersistentVolumeClaimVolumeSource(claim_name=f"{DEPLOYMENT_NAME}-main-storage"),
                 )
             )
+        annotations = {}
+        if IAM_ROLE:
+            annotations["iam.amazonaws.com/role"] = IAM_ROLE
 
         resp = _kube.create_namespaced_job(
             namespace=NAMESPACE,
@@ -193,7 +196,7 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                     backoff_limit=1,  # This is not respected in k8s v1.11 (https://github.com/kubernetes/kubernetes/issues/54870)
                     active_deadline_seconds=600,
                     template=kubernetes.client.V1PodTemplateSpec(
-                        metadata=kubernetes.client.V1ObjectMeta(annotations={"iam.amazonaws.com/role": IAM_ROLE}, labels=get_job_labels(event)),
+                        metadata=kubernetes.client.V1ObjectMeta(annotations=annotations, labels=get_job_labels(event)),
                         spec=kubernetes.client.V1PodSpec(
                             containers=[
                                 kubernetes.client.V1Container(

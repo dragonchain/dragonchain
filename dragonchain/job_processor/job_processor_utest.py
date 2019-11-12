@@ -197,9 +197,7 @@ class TestJobPoller(unittest.TestCase):
                     backoff_limit=1,
                     active_deadline_seconds=600,
                     template=kubernetes.client.V1PodTemplateSpec(
-                        metadata=kubernetes.client.V1ObjectMeta(
-                            annotations={"iam.amazonaws.com/role": "N/A"}, labels=job_processor.get_job_labels(valid_task_definition)
-                        ),
+                        metadata=kubernetes.client.V1ObjectMeta(annotations={}, labels=job_processor.get_job_labels(valid_task_definition)),
                         spec=kubernetes.client.V1PodSpec(
                             containers=[
                                 kubernetes.client.V1Container(
