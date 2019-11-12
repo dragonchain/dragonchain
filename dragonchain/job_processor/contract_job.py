@@ -265,10 +265,8 @@ class ContractJob(object):
             self.model.set_state(state=self.end_error_state, msg="Docker build error")
             raise exceptions.BadImageError("Docker build error")
 
-        _log.info(f"Pushing to ECR {self.faas_image}")
+        _log.info(f"Pushing to docker registry {self.faas_image}")
         try:
-            # For on prem, the auth will need an abstraction layer so the customer can maintain a private registry for their contracts
-            # For now, we default to using ECR auth. This works in minikube as the localhost:5000 registry is unauthenticated, so auth_config gets ignored.
             self.docker.images.push(f"{FAAS_REGISTRY}/customer-contracts", tag=self.model.id, auth_config=registry_interface.get_login())
             image = self.docker.images.get(self.faas_image)
             _log.debug(f"Built image attrs: {image.attrs}")
