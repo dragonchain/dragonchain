@@ -42,6 +42,7 @@ data:
   STORAGE_TYPE: disk
   SECRET_TYPE: env
   SECRET_LOCATION: SECRETSTRING
+  DRAGONCHAIN_IMAGE: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
 {{ toYaml .Values.global.environment | indent 2 }}
 ---
 # Persistent Redis Config Map

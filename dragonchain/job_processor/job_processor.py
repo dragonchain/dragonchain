@@ -38,6 +38,7 @@ DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"]
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
 SECRET_LOCATION = os.environ["SECRET_LOCATION"]
+DRAGONCHAIN_IMAGE = os.environ["DRAGONCHAIN_IMAGE"]
 
 _log = logger.get_logger()
 _kube: kubernetes.client.BatchV1Api = cast(kubernetes.client.BatchV1Api, None)  # This will always be defined before starting by being set in start()
@@ -56,14 +57,6 @@ def start() -> None:
     _log.debug("Job processor ready!")
     while True:
         start_task()
-
-
-def get_image_name() -> str:
-    """Get the image name of this version of Dragonchain
-    Returns:
-        A string path to the image being used in this Dragonchain.
-    """
-    return f"{REGISTRY}/dragonchain_core:{STAGE}-{DRAGONCHAIN_VERSION}"
 
 
 def get_job_name(contract_id: str) -> str:
@@ -201,7 +194,7 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                             containers=[
                                 kubernetes.client.V1Container(
                                     name=get_job_name(event["id"]),
-                                    image=get_image_name(),
+                                    image=DRAGONCHAIN_IMAGE,
                                     security_context=kubernetes.client.V1SecurityContext(privileged=True),
                                     volume_mounts=volume_mounts,
                                     command=["sh"],
