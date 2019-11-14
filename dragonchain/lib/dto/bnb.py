@@ -174,7 +174,7 @@ class BinanceNetwork(model.InterchainModel):
         transaction_hash = base64.b64encode(bytes.fromhex(transaction_hash)).decode("ascii")
         response = self._call_node_rpc("tx", {"hash": transaction_hash, "prove": True}).json()
         if response.get("error") is not None:  # can't use HTTP status codes, it is a 200
-            if "not found" in response["error"]["data"]:  # txn wasn't found
+            if "not found" in response["error"]["data"]:  # transaction wasn't found!
                 _log.warning(f"[BINANCE] response error: {response['error']['data']}")
                 raise exceptions.TransactionNotFound(f"[BINANCE] Transaction {transaction_hash} not found")
         transaction_block_number = int(response["result"]["height"])
@@ -194,7 +194,8 @@ class BinanceNetwork(model.InterchainModel):
         path = f"balances/{self.address}/{symbol}"  # params expected inside path string
         response = self._call_node_api(path)
         response_json = response.json()
-        if response_json.get("error") is not None:  # can't use HTTP status codes, it is a 200
+        # cannot check HTTP status codes, errors will return 200 :
+        if response_json.get("error") is not None:
             if "interface is nil, not types.NamedAccount" in response_json["error"]["data"] and response.status_code == 500:
                 _log.warning(f"[BINANCE] Non 200 response from Binance node:")
                 _log.warning(f"[BINANCE] response code: {response.status_code}")
@@ -343,12 +344,14 @@ class BinanceNetwork(model.InterchainModel):
         # cannot send an amount of 0 -- transaction will not be accepted!
         # send funds to yourself, avoid hardcoding a dummy recipient address
         raw_transaction = {"amount": 1, "to_address": self.address, "symbol": "BNB", "memo": transaction_payload}
-        built_transaction = self._build_transaction_msg(raw_transaction)
-        signed_tx = self.sign_transaction(built_transaction)
+        signed_tx = self.sign_transaction(raw_transaction)
         _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx}).json()
-        # cannot check HTTP status codes, errors will return 200
-        return response["result"]["hash"]  # transaction hash
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx})
+        response_json = response.json()
+        # cannot check HTTP status codes, errors will return 200 :
+        if response_json.get("error") is not None:
+            _log.warning(f"[BINANCE] Error response from Binance node: {response_json['error']['data']}")
+        return response_json["result"]["hash"]  # transaction hash
 
     # endpoints currently hit are:
     #     "status" (ping check)
