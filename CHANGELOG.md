@@ -15,6 +15,7 @@
 - **Packaging:**
   - Update redisearch, boto3, apscheduler, and gunicorn dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance
+  - Add `binutils` and `musl-dev` alpine dependencies in Docker container temporarily [for gunicorn 20.0.0](https://github.com/benoitc/gunicorn/issues/2160)
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
   - Change the way that transaction 404 stubbing is handled for pending transactions
