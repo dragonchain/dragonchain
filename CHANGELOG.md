@@ -11,8 +11,9 @@
   - Fix a bug where L2+ chains could have the transaction processor go into a failure loop if a block failed to write to storage at some point
   - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
   - Fix a bug where an open-source chain couldn't build smart contracts due to a bad environment variable
+  - Fix a bug where a chain could infinitely retry to connect to dragon net
 - **Packaging:**
-  - Update redisearch, boto3, and apscheduler dependencies
+  - Update redisearch, boto3, apscheduler, and gunicorn dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance
 - **Development:**
   - Revert manual redisearch fixes with dependency fixes
