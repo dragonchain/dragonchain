@@ -70,8 +70,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                         secp256k1.PrivateKey(privkey=base64.b64decode(user_input["private_key"]), raw=True)
                     except Exception:
                         _log.warning("[BINANCE] Key not hex or base64... falling back to generating key from mnemonic.")
-                    # not hex, not base64... at this point, assume key is a mnemonic string
-                    else:
+                        # not hex, not base64... at this point, assume key is a mnemonic string
                         seed = mnemonic.Mnemonic.to_seed(user_input["private_key"])
                         parent_wallet = network.keys.bip32_seed(seed)
                         child_wallet = parent_wallet.subkey_for_path("44'/714'/0'/0/0")
