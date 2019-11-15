@@ -12,6 +12,7 @@
   - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
   - Fix a bug where an open-source chain couldn't build smart contracts due to a bad environment variable
   - Fix a bug where a chain could infinitely retry to connect to dragon net
+  - Fix a bug with storage deletion using the disk storage interface which could cause unexpected failures
 - **Packaging:**
   - Update redisearch, boto3, apscheduler, and gunicorn dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance

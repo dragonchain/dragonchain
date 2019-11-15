@@ -60,7 +60,13 @@ def put(location: str, key: str, value: bytes) -> None:
 
 def delete(location: str, key: str) -> None:
     key = process_key(key)
-    os.remove(os.path.join(location, key))
+    try:
+        os.remove(os.path.join(location, key))
+    except FileNotFoundError:
+        # File is already deleted if it's not found
+        pass
+    except Exception:
+        raise
 
 
 def delete_directory(location: str, directory_key: str) -> None:
