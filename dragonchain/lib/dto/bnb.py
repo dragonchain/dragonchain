@@ -44,7 +44,7 @@ SEND_FEE = 37500  # transfer fee fixed at 0.000375 BNB : https://docs.binance.or
 _log = logger.get_logger()
 
 
-def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
+def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":  # noqa: C901
     """Create a new BinanceNetwork model from user input
     Args:
         user_input: User dictionary input (assumed already passing create_binance_interchain_schema)
