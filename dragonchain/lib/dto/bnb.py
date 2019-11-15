@@ -65,13 +65,19 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":
                     user_input["private_key"] = user_input["private_key"][2:]  # Trim the 0x
                 if len(user_input["private_key"]) == 64:  # private keys in hex are 64 chars
                     user_input["private_key"] = base64.b64encode(bytes.fromhex(user_input["private_key"])).decode("ascii")
-                else:  # assume key is a mnemonic string
-                    seed = mnemonic.Mnemonic.to_seed(user_input["private_key"])
-                    parent_wallet = network.keys.bip32_seed(seed)
-                    child_wallet = parent_wallet.subkey_for_path("44'/714'/0'/0/0")
-                    # convert secret exponent (private key) int to hex
-                    key_hex = format(child_wallet.secret_exponent(), "x")
-                    user_input["private_key"] = base64.b64encode(bytes.fromhex(key_hex)).decode("ascii")
+                else:
+                    try:  # is it a base64 key?  check!
+                        secp256k1.PrivateKey(privkey=base64.b64decode(user_input["private_key"]), raw=True)
+                    except Exception:
+                        _log.warning("[BINANCE] Key not hex or base64... falling back to generating key from mnemonic.")
+                    # not hex, not base64... at this point, assume key is a mnemonic string
+                    else:
+                        seed = mnemonic.Mnemonic.to_seed(user_input["private_key"])
+                        parent_wallet = network.keys.bip32_seed(seed)
+                        child_wallet = parent_wallet.subkey_for_path("44'/714'/0'/0/0")
+                        # convert secret exponent (private key) int to hex
+                        key_hex = format(child_wallet.secret_exponent(), "x")
+                        user_input["private_key"] = base64.b64encode(bytes.fromhex(key_hex)).decode("ascii")
             except Exception:
                 _log.exception(f"[BINANCE] Exception thrown during key handling.  Bad key: {user_input['private_key']}")
                 raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key.")
