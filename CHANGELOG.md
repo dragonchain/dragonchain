@@ -15,7 +15,7 @@
   - Fix a bug with storage deletion using the disk storage interface which could cause unexpected failures
   - Fix a bug with private docker registry delete when deleting smart contracts
 - **Packaging:**
-  - Update redisearch, boto3, apscheduler, and gunicorn dependencies
+  - Update redisearch, boto3, apscheduler, web3, and gunicorn dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance
   - Add `binutils` and `musl-dev` alpine dependencies in Docker container temporarily [for gunicorn 20.0.0](https://github.com/benoitc/gunicorn/issues/2160)
 - **Development:**
