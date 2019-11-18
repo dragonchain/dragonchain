@@ -26,19 +26,22 @@ if TYPE_CHECKING:
 ecr = boto3.client("ecr")
 
 
-def get_login(as_token: bool = False) -> "DockerLogin":
+def get_login() -> "DockerLogin":
     """
     Gets the docker login for ECR
 
     Params:
         auth_config: If true, will return in format for use with docker-py. Otherwise returns b64 token
     """
-    token = ecr.get_authorization_token(registryIds=["381978683274"])
-    if as_token:
-        return token["authorizationData"][0]["authorizationToken"]
-
-    username, password = base64.b64decode(token["authorizationData"][0]["authorizationToken"]).decode("utf-8").split(":")
+    username, password = base64.b64decode(get_login_token()).decode("utf-8").split(":")
     return {"username": username, "password": password}
+
+
+def get_login_token() -> str:
+    """
+    returns auth from container registry service as token
+    """
+    return ecr.get_authorization_token(registryIds=["381978683274"])["authorizationData"][0]["authorizationToken"]
 
 
 def delete_image(repository: str, image_digest: str) -> None:

@@ -75,11 +75,19 @@ def delete_directory(location: str, directory_key: str) -> None:
     Will ONLY delete a directory if it's empty (or only comtains empty folders)
     Will raise an exception if deleting a directory containing any files
     """
-    directory_key = process_key(directory_key)
-    for root, dirnames, _ in os.walk(directory_key, topdown=False):
+    directory_key = os.path.join(location, process_key(directory_key))
+    # Walk and delete an sub-folders/directories (does not fail with non-existent folder)
+    for root, dirnames, _ in os.walk(os.path.join(location, directory_key), topdown=False):
         for dirname in dirnames:
             os.rmdir(os.path.join(root, dirname))
-    os.rmdir(directory_key)
+    # Remove the empty directory
+    try:
+        os.rmdir(directory_key)
+    except FileNotFoundError:
+        # Folder is already deleted if it's not found
+        pass
+    except Exception:
+        raise
 
 
 def select_transaction(location: str, block_id: str, txn_id: str) -> dict:

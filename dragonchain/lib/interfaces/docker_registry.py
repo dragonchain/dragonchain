@@ -16,9 +16,10 @@
 # language governing permissions and limitations under the Apache License.
 
 import os
+import base64
 from typing import Any, TYPE_CHECKING
 
-import docker
+import requests
 
 from dragonchain.lib.interfaces import secrets
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from dragonchain.lib.types import DockerLogin
 
 REGISTRY_USERNAME = os.environ["REGISTRY_USERNAME"]
+FAAS_REGISTRY = os.environ["FAAS_REGISTRY"]
 
 
 def get_login(as_token: bool = False) -> "DockerLogin":
@@ -35,8 +37,20 @@ def get_login(as_token: bool = False) -> "DockerLogin":
     return {"username": REGISTRY_USERNAME, "password": secrets.get_dc_secret("registry-password")}
 
 
+def get_login_token() -> str:
+    """
+    returns auth from container registry service as token
+    """
+    return base64.b64encode(f"{REGISTRY_USERNAME}:{secrets.get_dc_secret('registry-password')}".encode("utf-8")).decode("ascii")
+
+
 def delete_image(repository: Any, image_digest: str) -> None:
     """
     Remove image from Docker registry
     """
-    docker.remove_image(image_digest)
+    try:
+        requests.delete(
+            f"https://{FAAS_REGISTRY}/v2/{repository}/manifests/{image_digest}", headers={"Authorization": f"Basic {get_login_token()}"}, timeout=30
+        )
+    except requests.exceptions.SSLError:  # Registry SSL is not configured properly, try http instead (don't allow auth for insecure connections)
+        requests.delete(f"http://{FAAS_REGISTRY}/v2/{repository}/manifests/{image_digest}", timeout=30)
