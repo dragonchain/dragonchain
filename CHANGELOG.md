@@ -12,8 +12,14 @@
   - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
   - Fix a bug where an open-source chain couldn't build smart contracts due to a bad environment variable
   - Fix a bug where a chain could infinitely retry to connect to dragon net
+  - Fix a bug with storage deletion using the disk storage interface which could cause unexpected failures
+  - Fix a bug with private docker registry delete when deleting smart contracts
+  - Fix a bug with smart contract heap get where pre-pending an extra '/' could give bad results
+  - Fix a bug where a smart contract key wouldn't get properly cleaned up on smart contract delete
+  - Fix a bug when updating/deleting a smart contract where Dragonchain could remove a docker image still being used by other contracts
+  - Fix a bug where updating a smart contract with the same image tag wouldn't always pull the latest version
 - **Packaging:**
-  - Update redisearch, boto3, apscheduler, and gunicorn dependencies
+  - Update redisearch, boto3, apscheduler, web3, and gunicorn dependencies
   - Add bnb-tx, pycoin, and mnemonic dependencies for binance
   - Add `binutils` and `musl-dev` alpine dependencies in Docker container temporarily [for gunicorn 20.0.0](https://github.com/benoitc/gunicorn/issues/2160)
 - **Development:**
