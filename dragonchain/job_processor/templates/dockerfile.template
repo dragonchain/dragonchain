@@ -16,3 +16,6 @@ ENTRYPOINT []
 EXPOSE 8080
 HEALTHCHECK --interval=3s CMD [ -e /tmp/.lock ] || exit 1
 CMD [ "/usr/bin/fwatchdog" ]
+
+# Add random entropy to container to gaurentee that it has a unique digest hash
+ENV {entropy}=""

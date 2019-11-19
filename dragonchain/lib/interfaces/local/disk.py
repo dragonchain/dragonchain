@@ -77,7 +77,7 @@ def delete_directory(location: str, directory_key: str) -> None:
     """
     directory_key = os.path.join(location, process_key(directory_key))
     # Walk and delete an sub-folders/directories (does not fail with non-existent folder)
-    for root, dirnames, _ in os.walk(os.path.join(location, directory_key), topdown=False):
+    for root, dirnames, _ in os.walk(directory_key, topdown=False):
         for dirname in dirnames:
             os.rmdir(os.path.join(root, dirname))
     # Remove the empty directory
