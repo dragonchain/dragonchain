@@ -22,11 +22,10 @@ from unittest.mock import patch, MagicMock
 from dragonchain.lib.database import redis
 
 
-def async_test(function):
+def async_test(coro):
     def wrapper(*args, **kwargs):
-        coro = asyncio.coroutine(function)
-        future = coro(*args, **kwargs)
-        asyncio.get_event_loop().run_until_complete(future)
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro(*args, **kwargs))
 
     return wrapper
 
@@ -219,6 +218,10 @@ class TestRedisAccess(unittest.TestCase):
     def test_sadd(self):
         redis.sadd_sync("banana", "banana", "banana")
         redis.redis_client.sadd.assert_called_once_with("banana", "banana", "banana")
+
+    def test_sismember(self):
+        redis.sismember_sync("banana", "banana")
+        redis.redis_client.sismember.assert_called_once_with("banana", "banana")
 
     def test_smembers(self):
         redis.smembers_sync("banana")

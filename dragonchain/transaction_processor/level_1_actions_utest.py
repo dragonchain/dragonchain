@@ -164,11 +164,14 @@ class TestLevelOneActions(unittest.TestCase):
         self.assertEqual(mock_block.proof, "proof")
         self.assertEqual(mock_block.scheme, "trust")
 
+    @patch("dragonchain.transaction_processor.level_1_actions.queue.remove_transaction_stubs")
     @patch("dragonchain.transaction_processor.level_1_actions.block_dao.insert_block")
     @patch("dragonchain.transaction_processor.level_1_actions.broadcast_functions.set_current_block_level_sync")
     @patch("dragonchain.transaction_processor.level_1_actions.broadcast_functions.schedule_block_for_broadcast_sync")
     @patch("dragonchain.transaction_processor.level_1_actions.transaction_dao.store_full_txns")
-    def test_store_data_does_correct_things(self, mock_store, mock_broadcast_schedule_block, mock_broadcast_set_block_level, mock_insert_block):
+    def test_store_data_does_correct_things(
+        self, mock_store, mock_broadcast_schedule_block, mock_broadcast_set_block_level, mock_insert_block, mock_remove_stubs
+    ):
         mock_block = MagicMock()
         level_1_actions.store_data(mock_block)
 
@@ -176,6 +179,7 @@ class TestLevelOneActions(unittest.TestCase):
         mock_broadcast_set_block_level.assert_called_once_with(mock_block.block_id, 2)
         mock_broadcast_schedule_block.assert_called_once_with(mock_block.block_id)
         mock_store.assert_called_once_with(mock_block)
+        mock_remove_stubs.assert_called_once_with(mock_block.transactions)
 
     @patch("dragonchain.transaction_processor.level_1_actions.activate_pending_indexes_if_necessary")
     def test_activate_pending_indexes_if_necessary(self, mock_activate):

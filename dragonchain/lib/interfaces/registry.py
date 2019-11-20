@@ -28,12 +28,19 @@ else:
     import dragonchain.lib.interfaces.docker_registry as registry  # noqa: T484 this is intentional
 
 
-def get_login(as_token: bool = False) -> "DockerLogin":
+def get_login() -> "DockerLogin":
     """
     Returns login username and password from
     either aws or docker registry for on prem
     """
-    return registry.get_login(as_token)
+    return registry.get_login()
+
+
+def get_login_token() -> str:
+    """
+    returns auth from container registry service as token
+    """
+    return registry.get_login_token()
 
 
 def delete_image(repository: str, image_digest: str) -> None:

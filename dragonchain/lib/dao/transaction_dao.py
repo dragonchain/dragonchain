@@ -17,7 +17,7 @@
 
 import uuid
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Any
 
 import redis
 
@@ -63,14 +63,22 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     """
     _log.info("[TRANSACTION DAO] Putting transaction to storage")
     storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
+    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
+    txn_dict[redisearch.Indexes.transaction.value] = {}
+    # O(N) loop where N = # of txn
     # Could optimize by grouping indexing of transactions in the block with matchking txn_types using redisearch.put_many_documents
     for txn in block_model.transactions:
-        redisearch.put_document(redisearch.Indexes.transaction.value, f"txn-{txn.txn_id}", {"block_id": txn.block_id}, upsert=True)
+        txn_dict[redisearch.Indexes.transaction.value][f"txn-{txn.txn_id}"] = {"block_id": txn.block_id}
         try:
-            redisearch.put_document(txn.txn_type, txn.txn_id, txn.export_as_search_index(), upsert=True)
+            if not txn_dict.get(txn.txn_type):
+                txn_dict[txn.txn_type] = {}
+            txn_dict[txn.txn_type][txn.txn_id] = txn.export_as_search_index()
         except redis.exceptions.ResponseError as e:
             # If the index doesn't exist, we don't care that we couldn't place the index (transaction type is probably deleted)
             if str(e) != "Unknown index name":
                 raise
             else:
                 _log.warning(f"Txn type {txn.txn_type} for txn {txn.txn_id} failed to index. (Transaction type may simply be deleted?) Ignoring")
+    # O(N) loop where N = # of txn types + 1
+    for key, value in txn_dict.items():  # key = index, value = document
+        redisearch.put_many_documents(key, value, upsert=True)

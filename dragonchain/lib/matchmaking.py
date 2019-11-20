@@ -122,12 +122,15 @@ def get_overwrite_no_response_dto(claim: dict, higher_level_node: str, higher_le
     return {"claim": claim, "dc_id": higher_level_node, "level": higher_level}
 
 
-def register() -> None:
-    """Register self with matchmaking"""
+def register(retry: bool = True) -> None:
+    """Register self with matchmaking
+    Args:
+        retry: Whether or not to retry this request if it fails
+    """
     path = "/registration"
     body = get_matchmaking_config()
     body["token"] = os.environ.get("REGISTRATION_TOKEN")
-    make_matchmaking_request("POST", path, body)
+    make_matchmaking_request("POST", path, body, retry)
     redis.set_sync(REREGISTER_TIMING_KEY, "a", ex=REREGISTER_TIME_AMOUNT)  # Value doesn't matter
 
 
@@ -325,8 +328,10 @@ def make_matchmaking_request(
             authorization.register_new_key_with_matchmaking()
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif retry and response.status_code == 403 and authenticated:
-            _log.warning("[MATCHMAKING] received 403 from matchmaking. Registration is probably expired. Re-registering and trying again")
-            register()
+            _log.warning(
+                "[MATCHMAKING] received 403 from matchmaking. Registration is expired or dragon net config is invalid. Re-registering and trying again"
+            )
+            register(retry=False)
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif response.status_code == 402:
             raise exceptions.InsufficientFunds("received insufficient funds (402) from matchmaking")

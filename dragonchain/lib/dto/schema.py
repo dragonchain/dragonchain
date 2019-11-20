@@ -624,6 +624,7 @@ btc_transaction_schema_v1 = {
         "change": {"type": "string"},
     },
     "additionalProperties": False,
+    "required": ["version"],
 }
 
 # ETHEREUM INTERCHAIN #
@@ -666,6 +667,51 @@ eth_transaction_schema_v1 = {
         "gas": {"type": "string"},
         "nonce": {"type": "string"},
     },
-    "required": ["to", "value"],
+    "required": ["version", "to", "value"],
+    "additionalProperties": False,
+}
+
+# BINANCE INTERCHAIN #
+
+create_binance_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "testnet": {"type": "boolean"},
+        "node_url": {"type": "string"},
+        "rpc_port": {"type": "integer"},
+        "api_port": {"type": "integer"},
+        "private_key": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"],
+}
+
+# Same as create without required name field
+update_binance_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "testnet": {"type": "boolean"},
+        "node_url": {"type": "string"},
+        "rpc_port": {"type": "integer"},
+        "api_port": {"type": "integer"},
+        "private_key": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["version"],
+}
+
+bnb_transaction_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "symbol": {"type": "string"},
+        "amount": {"type": "number"},
+        "to_address": {"type": "string"},
+        "memo": {"type": "string"},
+    },
+    "required": ["version", "amount", "to_address"],
     "additionalProperties": False,
 }

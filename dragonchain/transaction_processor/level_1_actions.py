@@ -29,6 +29,7 @@ from dragonchain.lib import matchmaking
 from dragonchain.lib import queue
 from dragonchain.lib import callback
 from dragonchain import logger
+from dragonchain import exceptions
 
 if TYPE_CHECKING:
     from dragonchain.lib.dto import transaction_model
@@ -43,7 +44,10 @@ _log = logger.get_logger()
 def execute() -> None:
     """Pops transactions off the queue, fixates them into a block and adds it to the chain"""
     if BROADCAST:
-        matchmaking.renew_registration_if_necessary()
+        try:
+            matchmaking.renew_registration_if_necessary()
+        except exceptions.MatchmakingError:
+            _log.warning("Could not register with matchmaking! Is your dragon net configuration valid?")
     t0 = time.time()
 
     # Pop off of queue
@@ -169,6 +173,8 @@ def store_data(block: l1_block_model.L1BlockModel) -> None:
     transaction_dao.store_full_txns(block)
     _log.info("[L1] Uploading stripped block")
     block_dao.insert_block(block)
+    _log.info("[L1] Removing transaction stubs")
+    queue.remove_transaction_stubs(block.transactions)
     _log.info("[L1] Adding record in block broadcast service")
     if not BROADCAST:
         return

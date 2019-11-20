@@ -67,7 +67,7 @@ def delete(location: str, key: str) -> None:
         raise RuntimeError("S3 delete failed to give 204 response")
 
 
-def delete_directory(location: str, directory_key: str) -> str:
+def delete_directory(location: str, directory_key: str) -> None:
     """
     This method isn't relevant in S3 because directories are deleted
     once all keys under a 'directory' are gone. You don't have to delete

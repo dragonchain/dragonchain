@@ -1,4 +1,4 @@
-# Change FROM to python:3.7-alpine to test without the dependencies container
+# Change FROM to python:3.8-alpine to test without the dependencies container
 FROM dragonchain/dragonchain_core_dependencies:latest as base
 
 # Install Helm for chart linting and/or yq for doc builds if it doesn't exist
@@ -13,7 +13,8 @@ RUN if ! command -v helm; then \
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
-RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone
+RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone && apk --no-cache add binutils musl-dev
+# apk --no-cache add binutils musl-dev is required for gunicorn 20.0.0 until https://github.com/benoitc/gunicorn/issues/2160 is fixed
 
 FROM base AS builder
 # Install dev build dependencies
@@ -28,7 +29,7 @@ RUN python3 -m pip install --upgrade -r dev_requirements.txt
 
 FROM base AS release
 # Copy the installed python dependencies from the builder
-COPY --from=builder /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
+COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
 # Sphinx is needed to build the docs
 COPY --from=builder /usr/local/bin/sphinx-build /usr/local/bin/sphinx-build
 # Copy our actual application

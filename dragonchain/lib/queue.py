@@ -40,6 +40,7 @@ REDIS_ENDPOINT = os.environ["REDIS_ENDPOINT"]
 REDIS_PORT = os.environ["REDIS_PORT"]
 INCOMING_TX_KEY = "dc:tx:incoming"
 PROCESSING_TX_KEY = "dc:tx:processing"
+TEMPORARY_TX_KEY = "dc:tx:temporary"
 CONTRACT_INVOKE_MQ_KEY = "mq:contract-invoke"
 
 _log = logger.get_logger()
@@ -74,6 +75,13 @@ def enqueue_item(item: dict, deadline: int = 0) -> None:
         raise RuntimeError(f"Invalid level {LEVEL}")
 
 
+def remove_transaction_stubs(transactions: List[transaction_model.TransactionModel]) -> None:
+    srem_list = []
+    for txn in transactions:
+        srem_list.append(txn.txn_id)
+    redis.srem_sync(TEMPORARY_TX_KEY, *srem_list)
+
+
 def enqueue_l1(transaction: dict) -> None:
     txn_type_string = transaction["header"]["txn_type"]
     invocation_attempt = not transaction["header"].get("invoker")  # This transaction is an invocation attempt if there is no invoker
@@ -84,8 +92,9 @@ def enqueue_l1(transaction: dict) -> None:
         _log.error("Invalid transaction type")
         raise exceptions.InvalidTransactionType(f"Transaction of type {txn_type_string} does not exist")
 
-    # Enqueue to transaction queue
-    enqueue_generic(transaction, queue=INCOMING_TX_KEY, deadline=0)
+    p = redis.pipeline_sync()
+    p.lpush(INCOMING_TX_KEY, json.dumps(transaction, separators=(",", ":")))
+    p.sadd(TEMPORARY_TX_KEY, transaction["header"]["txn_id"])
 
     # Attempt contract invocation if necessary
     if transaction_type.contract_id and invocation_attempt:
@@ -97,7 +106,12 @@ def enqueue_l1(transaction: dict) -> None:
         if contract_active:
             transaction["payload"] = json.loads(transaction["payload"])  # We must parse the stringied payload of the SC invocation before sending
             invocation_request = contract.export_as_invoke_request(transaction)
-            enqueue_generic(invocation_request, queue=CONTRACT_INVOKE_MQ_KEY, deadline=0)
+            p.lpush(CONTRACT_INVOKE_MQ_KEY, json.dumps(invocation_request, separators=(",", ":")))
+
+    # Execute redis pipeline
+    for result in p.execute():
+        if not result:
+            raise RuntimeError("Failed to enqueue")
 
 
 def enqueue_generic(content: dict, queue: str, deadline: int) -> None:
@@ -153,10 +167,12 @@ def get_new_transactions() -> List[transaction_model.TransactionModel]:
 
     transactions = []
     # Only allow up to 1000 transactions to process at a time
-    length = min(redis.llen_sync(INCOMING_TX_KEY), 1000)
+    length = min(redis.llen_sync(INCOMING_TX_KEY), 10000)
+    p = redis.pipeline_sync()
     for _ in range(0, length):
-        string = cast(bytes, redis.rpoplpush_sync(INCOMING_TX_KEY, PROCESSING_TX_KEY, decode=False))
-        dictionary = json.loads(string)
+        p.rpoplpush(INCOMING_TX_KEY, PROCESSING_TX_KEY)
+    for value in p.execute():
+        dictionary = json.loads(value)
         txn_model = transaction_model.new_from_queue_input(dictionary)
         transactions.append(txn_model)
     return transactions

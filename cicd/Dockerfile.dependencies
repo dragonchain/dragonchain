@@ -1,5 +1,5 @@
 # This container is used as a base by Dockerfile.test in order to speed up dependency install for testing purposes only
-FROM python:3.7-alpine
+FROM python:3.8-alpine
 
 # Install helm for linting chart, and yq for building docs
 RUN wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
@@ -9,7 +9,8 @@ RUN wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-li
     chmod +x yq && mv yq /usr/local/bin/
 
 # Install dev build dependencies
-RUN apk upgrade && apk add g++ make gmp-dev libffi-dev automake autoconf libtool && echo "UTC" > /etc/timezone
+RUN apk --no-cache upgrade && apk --no-cache add g++ make gmp-dev libffi-dev automake autoconf libtool && echo "UTC" > /etc/timezone && apk --no-cache add binutils musl-dev
+# apk --no-cache add binutils musl-dev is required for gunicorn 20.0.0 until https://github.com/benoitc/gunicorn/issues/2160 is fixed
 # Install python dev dependencies
 ENV SECP_BUNDLED_EXPERIMENTAL 1
 ENV SECP_BUNDLED_WITH_BIGNUM 1

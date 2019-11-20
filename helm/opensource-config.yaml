@@ -47,11 +47,11 @@ faas:
   mountFaasSecret: false
 
   # -- faas.registry --
-  #   This value should be the docker registry address at which your custom smart contract images will be stored.
-  #   Library smart contracts will still use the dragonchain inc public smart contract registry regardless of this value.
+  #   This value should be the docker registry address at which your custom smart contract images will be stored and used by openfaas
   registry: mycompany.docker.io
+  # -- faas.registry_username --
+  #   This is the value of the username for the above docker registry. Please note the password for this username is defined in the secret created for the chain, not directly in the helm chart values
   registry_username: MyUsername
-  registry_password: MyPassword
 
 # -- dragonchain --
 # Dragonchain specific congifuration options live here.
@@ -71,7 +71,7 @@ dragonchain:
     # -- dragonchain.image.version --
     # The tag to use with the dragonchain image
     # Check here for available values: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
-    version: 4.1.0
+    version: 4.2.0
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.

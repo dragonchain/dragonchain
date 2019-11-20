@@ -31,6 +31,7 @@ from dragonchain.lib import callback
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import redis as dc_redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import RSearch
@@ -81,13 +82,10 @@ def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearc
         for doc in query_result.docs:
             block_id = doc.block_id
             transaction_id = doc.id
-            if block_id == "0":  # Check for stubbed result
-                transactions.append(_get_transaction_stub(transaction_id))
-            else:
-                retrieved_txn = storage.select_transaction(block_id, transaction_id)
-                if parse:
-                    retrieved_txn["payload"] = json.loads(retrieved_txn["payload"])
-                transactions.append(retrieved_txn)
+            retrieved_txn = storage.select_transaction(block_id, transaction_id)
+            if parse:
+                retrieved_txn["payload"] = json.loads(retrieved_txn["payload"])
+            transactions.append(retrieved_txn)
         result["results"] = transactions
     return result
 
@@ -97,18 +95,17 @@ def get_transaction_v1(transaction_id: str, parse: bool = True) -> Dict[str, Any
     get_transaction_by_id
     Searches for a transaction by a specific transaction ID
     """
+    if dc_redis.sismember_sync(queue.TEMPORARY_TX_KEY, transaction_id):
+        return _get_transaction_stub(transaction_id)
     doc = redisearch.get_document(redisearch.Indexes.transaction.value, f"txn-{transaction_id}")
     try:
         block_id = doc.block_id
     except AttributeError:
         raise exceptions.NotFound(f"Transaction {transaction_id} could not be found.")
-    if block_id == "0":  # Check for stubbed result
-        return _get_transaction_stub(transaction_id)
-    else:
-        txn = storage.select_transaction(block_id, transaction_id)
-        if parse:
-            txn["payload"] = json.loads(txn["payload"])
-        return txn
+    txn = storage.select_transaction(block_id, transaction_id)
+    if parse:
+        txn["payload"] = json.loads(txn["payload"])
+    return txn
 
 
 def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[str] = None) -> Dict[str, str]:
@@ -121,9 +118,6 @@ def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[st
 
     _log.info("[TRANSACTION] Txn valid. Queueing txn object")
     queue.enqueue_item(txn_model.export_as_queue_task())
-
-    _log.info("[TRANSACTION] insert transaction stub for pending transaction")
-    _add_transaction_stub(txn_model)
 
     if callback_url:
         _log.info("[TRANSACTION] Registering callback for queued txn")
@@ -148,8 +142,6 @@ def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]]) -> Di
 
             _log.info("[TRANSACTION] Txn valid. Queueing txn object")
             queue.enqueue_item(txn_model.export_as_queue_task())
-            _log.info("[TRANSACTION] insert transaction stub for pending transaction")
-            _add_transaction_stub(txn_model)
             success.append(txn_model.txn_id)
         except Exception:
             _log.exception("Processing transaction failed")
@@ -167,12 +159,3 @@ def _generate_transaction_model(transaction: Dict[str, Any]) -> transaction_mode
     txn_model.txn_id = str(uuid.uuid4())
     txn_model.timestamp = str(math.floor(time.time()))
     return txn_model
-
-
-def _add_transaction_stub(txn_model: transaction_model.TransactionModel) -> None:
-    """store a stub for a transaction in the index to prevent 404s from getting immediately after posting
-    Args:
-        txn_model: txn model to stub in the index
-    """
-    redisearch.put_document(txn_model.txn_type, txn_model.txn_id, txn_model.export_as_search_index(stub=True))
-    redisearch.put_document(redisearch.Indexes.transaction.value, f"txn-{txn_model.txn_id}", {"block_id": "0"})

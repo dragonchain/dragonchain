@@ -127,7 +127,7 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
             b64_private_key=ethereum_network_at_rest["private_key"],
         )
     else:
-        raise NotImplementedError(f"DTO version {dto_version} not supported for bitcoin network")
+        raise NotImplementedError(f"DTO version {dto_version} not supported for ethereum network")
 
 
 class EthereumNetwork(model.InterchainModel):
@@ -179,15 +179,15 @@ class EthereumNetwork(model.InterchainModel):
         Args:
             transaction_hash: The hash of the transaction to check
         Returns:
-            Boolean if the transaction has receieved enough confirmations to be considered confirmed
+            Boolean if the transaction has received enough confirmations to be considered confirmed
         Raises:
-            exceptions.RPCTransactionNotFound: When the transaction could not be found (may have been dropped)
+            exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
         """
         _log.info(f"[ETHEREUM] Getting confirmations for {transaction_hash}")
         try:
             transaction_block_number = self.w3.eth.getTransaction(transaction_hash)["blockNumber"]
         except web3.exceptions.TransactionNotFound:
-            raise exceptions.RPCTransactionNotFound(f"Transaction {transaction_hash} not found")
+            raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
         latest_block_number = self.get_current_block()
         _log.info(f"[ETHEREUM] Latest ethereum block number: {latest_block_number} | Block number of transaction: {transaction_block_number}")
         return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
@@ -263,7 +263,7 @@ class EthereumNetwork(model.InterchainModel):
             Gas price estimate in wei
         """
         _log.debug(f"[ETHEREUM] Getting estimated gas price")
-        gas_price = int(self.w3.eth.generateGasPrice())
+        gas_price = max(int(self.w3.eth.generateGasPrice()), 100000000)  # Calculate gas price, but set minimum to 0.1 gwei for safety
         _log.info(f"[ETHEREUM] Current estimated gas price: {gas_price}")
         return gas_price
 

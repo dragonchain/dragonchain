@@ -32,12 +32,13 @@ DRAGONCHAIN_VERSION = os.environ["DRAGONCHAIN_VERSION"]
 INTERNAL_ID = os.environ["INTERNAL_ID"]
 STAGE = os.environ["STAGE"]
 REGISTRY = os.environ["REGISTRY"]
-IAM_ROLE = os.environ["IAM_ROLE"]
+IAM_ROLE = os.environ.get("IAM_ROLE")
 NAMESPACE = os.environ["NAMESPACE"]
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 STORAGE_TYPE = os.environ["STORAGE_TYPE"]
 STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
 SECRET_LOCATION = os.environ["SECRET_LOCATION"]
+DRAGONCHAIN_IMAGE = os.environ["DRAGONCHAIN_IMAGE"]
 
 _log = logger.get_logger()
 _kube: kubernetes.client.BatchV1Api = cast(kubernetes.client.BatchV1Api, None)  # This will always be defined before starting by being set in start()
@@ -56,14 +57,6 @@ def start() -> None:
     _log.debug("Job processor ready!")
     while True:
         start_task()
-
-
-def get_image_name() -> str:
-    """Get the image name of this version of Dragonchain
-    Returns:
-        A string path to the image being used in this Dragonchain.
-    """
-    return f"{REGISTRY}/dragonchain_core:{STAGE}-{DRAGONCHAIN_VERSION}"
 
 
 def get_job_name(contract_id: str) -> str:
@@ -182,6 +175,9 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                     persistent_volume_claim=kubernetes.client.V1PersistentVolumeClaimVolumeSource(claim_name=f"{DEPLOYMENT_NAME}-main-storage"),
                 )
             )
+        annotations = {}
+        if IAM_ROLE:
+            annotations["iam.amazonaws.com/role"] = IAM_ROLE
 
         resp = _kube.create_namespaced_job(
             namespace=NAMESPACE,
@@ -193,12 +189,12 @@ def attempt_job_launch(event: dict, retry: int = 0) -> None:
                     backoff_limit=1,  # This is not respected in k8s v1.11 (https://github.com/kubernetes/kubernetes/issues/54870)
                     active_deadline_seconds=600,
                     template=kubernetes.client.V1PodTemplateSpec(
-                        metadata=kubernetes.client.V1ObjectMeta(annotations={"iam.amazonaws.com/role": IAM_ROLE}, labels=get_job_labels(event)),
+                        metadata=kubernetes.client.V1ObjectMeta(annotations=annotations, labels=get_job_labels(event)),
                         spec=kubernetes.client.V1PodSpec(
                             containers=[
                                 kubernetes.client.V1Container(
                                     name=get_job_name(event["id"]),
-                                    image=get_image_name(),
+                                    image=DRAGONCHAIN_IMAGE,
                                     security_context=kubernetes.client.V1SecurityContext(privileged=True),
                                     volume_mounts=volume_mounts,
                                     command=["sh"],

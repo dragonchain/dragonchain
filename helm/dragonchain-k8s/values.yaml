@@ -125,7 +125,6 @@ faas:
   mountFaasSecret: false
   registry: mycompany.docker.io
   registry_username: MyUsername
-  registry_password: MyPassword
 
 dragonchain:
   verificationNotification: false
@@ -133,7 +132,7 @@ dragonchain:
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core
-    version: 4.1.0
+    version: 4.2.0
   storage:
     spec:
       storageClassName: standard

@@ -1,5 +1,5 @@
 <div align="center">
-<img width=300px height=300px src="https://dragonchain.com/static/media/dragonchain-logo-treasure.png" alt="Dragonchain Logo">
+<img width=300px height=300px src="https://dragonchain-assets.s3.amazonaws.com/jojo.png" alt="Dragonchain Logo">
 
 # Dragonchain
 
@@ -56,7 +56,7 @@ can do.
 
 In order to develop locally you should be able to run `./tools.sh full-test` and have all checks pass. For this, a few requirements should be met:
 
-1. Ensure that you have python 3.7 installed locally
+1. Ensure that you have python 3.8 installed locally
 1. Install OS dependencies for building various python package dependencies:
    - On an arch linux system (with pacman): `./tools.sh arch-install`
    - On a debian-based linux system (with apt): `./tools.sh deb-install` (Note on newer Ubuntu installations
@@ -76,7 +76,7 @@ to be separated from the rest of the (potentially conflicting) packages from the
 
 In order to do this, instead of step 3 above, perform the following steps:
 
-1. Ensure you have python venv installed, and run `python3.7 -m venv .venv`
+1. Ensure you have python venv installed, and run `python3.8 -m venv .venv`
 1. Activate the virtual environment in your shell by running `source .venv/bin/activate`
 1. Upgrade the setup dependencies for the virtual environment: `pip install -U pip setuptools`
 1. Install the core dependencies: `pip install -r requirements.txt`

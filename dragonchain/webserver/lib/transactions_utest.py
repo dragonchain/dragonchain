@@ -40,3 +40,19 @@ class TestQueryTransactions(unittest.TestCase):
 
         mock_search.assert_called_once()
         mock_select.assert_called_once()
+
+
+class TestGetTransactions(unittest.TestCase):
+    @patch("dragonchain.lib.database.redis.sismember_sync", return_value=True)
+    def test_get_transaction_v1_returns_stub(self, mock_sismember):
+        result = transactions.get_transaction_v1("banana", True)
+        self.assertEqual(
+            result, {"header": {"txn_id": "banana"}, "status": "pending", "message": "This transaction is waiting to be included in a block"}
+        )
+
+    @patch("dragonchain.lib.database.redis.sismember_sync", return_value=False)
+    @patch("dragonchain.lib.database.redisearch.search", return_value=MagicMock(block_id="banana"))
+    @patch("dragonchain.lib.interfaces.storage.select_transaction", return_value={"payload": '{"banana":4}'})
+    def test_get_transaction_v1_returns_parsed(self, mock_sismember, mock_search, mock_select_txn):
+        result = transactions.get_transaction_v1("banana", True)
+        self.assertEqual(result["payload"], {"banana": 4})

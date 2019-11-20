@@ -161,5 +161,8 @@ def heap_list_v1(contract_id: str, path: str) -> List[str]:
 
 
 def heap_get_v1(contract_id: str, path: str) -> str:
-    storage_key = f"{smart_contract_dao.FOLDER}/{contract_id}/HEAP{path}"
+    # Remove any potential extra '/' characters at the beginning of the string
+    while path.startswith("/"):
+        path = path[1:]
+    storage_key = f"{smart_contract_dao.FOLDER}/{contract_id}/HEAP/{path}"
     return storage.get(key=storage_key).decode("utf-8")

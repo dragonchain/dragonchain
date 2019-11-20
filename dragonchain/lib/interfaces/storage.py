@@ -75,8 +75,8 @@ def get(key: str, cache_expire: Optional[int] = None, should_cache: bool = True)
 def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache: bool = True) -> None:
     """Puts an object into storage with optional cache write-thru
     Args:
-        key: The key of the object being written in S3
-        value: The value of the bytes object being written in S3
+        key: The key of the object being written in storage
+        value: The value of the bytes object being written in storage
         cache_expire: The amount of time (in seconds) until the key expires in the cache
     Raises:
         exceptions.StorageError on any unexpected error interacting with storage
@@ -91,9 +91,9 @@ def put(key: str, value: bytes, cache_expire: Optional[int] = None, should_cache
 
 
 def delete(key: str) -> None:
-    """Deletes an object in S3 with cache write-thru
+    """Deletes an object in storage with cache write-thru
     Args:
-        key: The key of the object being deleted in S3
+        key: The key of the object being deleted in storage
     Raises:
         exceptions.StorageError on any unexpected error interacting with storage
     """
@@ -124,7 +124,7 @@ def delete_directory(directory_key: str) -> None:
 
 
 def select_transaction(block_id: str, txn_id: str, cache_expire: Optional[int] = None) -> dict:
-    """Returns an transaction in a block from S3 through the LRU cache
+    """Returns an transaction in a block from storage through the LRU cache
         block_id: The ID of the block being queried
         txn_id: The ID of the transaction in the block
         cache_expire: The amount of time (in seconds) until the key expires if cache miss

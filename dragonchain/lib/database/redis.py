@@ -263,6 +263,11 @@ def sadd_sync(name: str, *values: str) -> int:
     return redis_client.sadd(name, *values)
 
 
+def sismember_sync(name: str, value: str) -> bool:
+    _set_redis_client_if_necessary()
+    return redis_client.sismember(name, value)
+
+
 def rpush_sync(name: str, *values: str) -> int:
     _set_redis_client_if_necessary()
     return redis_client.rpush(name, *values)

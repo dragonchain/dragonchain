@@ -26,7 +26,6 @@ data:
   FAAS_GATEWAY: "{{ .Values.faas.gateway }}"
   FAAS_REGISTRY: "{{ .Values.faas.registry }}"
   NAMESPACE: "{{ .Release.Namespace }}"
-  STACK_NAME: "d-{{ .Values.global.environment.INTERNAL_ID }}-{{ .Values.global.environment.STAGE }}"
   DEPLOYMENT_NAME: "{{ .Release.Name }}"
   ERROR_REPORTING_TYPE: "{{ .Values.dragonchain.reporting_type }}"
   DRAGONCHAIN_NAME: "{{ .Values.global.environment.DRAGONCHAIN_NAME }}"
@@ -39,12 +38,9 @@ data:
 {{- if .Values.faas.registry_username }}
   REGISTRY_USERNAME: "{{ .Values.faas.registry_username }}"
 {{- end }}
-{{- if .Values.faas.registry_username }}
-  REGISTRY_PASSWORD: "{{ .Values.faas.registry_password }}"
-{{- end }}
   STORAGE_TYPE: disk
-  SECRET_TYPE: env
-  SECRET_LOCATION: SECRETSTRING
+  SECRET_LOCATION: "{{ .Values.secret.mountPath }}/{{ .Values.secret.name }}"
+  DRAGONCHAIN_IMAGE: "{{ .Values.dragonchain.image.value }}:{{ .Values.dragonchain.image.version }}"
 {{ toYaml .Values.global.environment | indent 2 }}
 ---
 # Persistent Redis Config Map

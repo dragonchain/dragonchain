@@ -137,7 +137,7 @@ class TestEthereumMethods(unittest.TestCase):
 
     def test_is_transaction_confirmed_dropped(self):
         self.client.w3.eth.getTransaction = MagicMock(side_effect=web3.exceptions.TransactionNotFound)
-        self.assertRaises(exceptions.RPCTransactionNotFound, self.client.is_transaction_confirmed, "0xBanana")
+        self.assertRaises(exceptions.TransactionNotFound, self.client.is_transaction_confirmed, "0xBanana")
         self.client.w3.eth.getTransaction.assert_called_once_with("0xBanana")
 
     def test_export_as_at_rest(self):

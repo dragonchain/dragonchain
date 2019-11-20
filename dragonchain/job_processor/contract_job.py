@@ -19,6 +19,8 @@ import json
 import os
 import base64
 import copy
+import string
+import secrets
 from typing import cast
 
 import requests
@@ -40,7 +42,6 @@ from dragonchain import logger
 
 EVENT = os.environ["EVENT"]
 STAGE = os.environ["STAGE"]
-IAM_ROLE = os.environ["IAM_ROLE"]
 FAAS_GATEWAY = os.environ["FAAS_GATEWAY"]
 FAAS_REGISTRY = os.environ["FAAS_REGISTRY"]
 INTERNAL_ID = os.environ["INTERNAL_ID"]
@@ -142,11 +143,12 @@ class ContractJob(object):
         with open(template_path) as file:
             template = file.read()
 
-        # Interpolate with base image name
+        entropy = "".join(secrets.choice(string.ascii_letters) for _ in range(43))
+        # Interpolate with base image name and random entropy
         if self.update_model:
-            dockerfile = template.format(customerBaseImage=self.update_model.image)
+            dockerfile = template.format(customerBaseImage=self.update_model.image, entropy=entropy)
         else:
-            dockerfile = template.format(customerBaseImage=self.model.image)
+            dockerfile = template.format(customerBaseImage=self.model.image, entropy=entropy)
 
         # Save as Dockerfile and return context directory
         with open(dockerfile_path, "w") as file:
@@ -224,7 +226,7 @@ class ContractJob(object):
         return image
 
     def delete_contract_image(self, image_digest: str) -> None:
-        _log.info("Deleting contract image")
+        _log.info(f"Deleting contract image {image_digest}")
         try:
             registry_interface.delete_image(repository="customer-contracts", image_digest=image_digest)
         except Exception:
@@ -260,16 +262,14 @@ class ContractJob(object):
         try:
             dockerfile_path = self.create_dockerfile()
             _log.info(f"Building OpenFaaS image {self.faas_image}")
-            self.docker.images.build(path=dockerfile_path, tag=self.faas_image, rm=True, timeout=30)
+            self.docker.images.build(path=dockerfile_path, tag=self.faas_image, rm=True, timeout=45, pull=True)
         except (docker.errors.APIError, docker.errors.BuildError):
             _log.exception("Docker error")
             self.model.set_state(state=self.end_error_state, msg="Docker build error")
             raise exceptions.BadImageError("Docker build error")
 
-        _log.info(f"Pushing to ECR {self.faas_image}")
+        _log.info(f"Pushing to docker registry {self.faas_image}")
         try:
-            # For on prem, the auth will need an abstraction layer so the customer can maintain a private registry for their contracts
-            # For now, we default to using ECR auth. This works in minikube as the localhost:5000 registry is unauthenticated, so auth_config gets ignored.
             self.docker.images.push(f"{FAAS_REGISTRY}/customer-contracts", tag=self.model.id, auth_config=registry_interface.get_login())
             image = self.docker.images.get(self.faas_image)
             _log.debug(f"Built image attrs: {image.attrs}")
@@ -368,17 +368,13 @@ class ContractJob(object):
             _log.info("OpenFaaS delete failure")
 
     def delete_contract_data(self) -> None:
-        """Remove all stored information on this smart contract
-
-            Returns:
-                None
-        """
-        _log.info("Deleting contract data")
+        """Remove all stored information on this smart contract"""
         try:
+            _log.info(f"Deleting contract data for contract {self.model.id}")
             storage.delete_directory(f"SMARTCONTRACT/{self.model.id}")
             _log.info("Removing index")
             smart_contract_dao.remove_smart_contract_index(self.model.id)
-            _log.info("Deleting txn type")
+            _log.info(f"Deleting txn type {self.model.txn_type}")
             transaction_type_dao.remove_existing_transaction_type(self.model.txn_type)
             key = f"KEYS/{self.model.auth_key_id}"
             _log.info(f"Deleting HMAC key {key}")
