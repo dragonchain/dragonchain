@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.1
+
+- **Packaging:**
+  - Update boto3 dependencies
+  - Update redisearch in helm chart to 1.4.18
+
 ## 4.2.0
 
 - **Feature:**
