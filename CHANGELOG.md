@@ -2,9 +2,12 @@
 
 ## 4.2.1
 
+- **Documentation:**
+  - Update documentation links to add the [getting started guide](https://docs.dragonchain.com/)
 - **Packaging:**
   - Update boto3 dependencies
   - Update redisearch in helm chart to 1.4.18
+  - Update redis in helm chart to 5.0.7
 
 ## 4.2.0
 
