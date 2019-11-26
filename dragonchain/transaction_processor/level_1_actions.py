@@ -46,7 +46,7 @@ def execute() -> None:
     if BROADCAST:
         try:
             matchmaking.renew_registration_if_necessary()
-        except exceptions.MatchmakingError:
+        except (exceptions.MatchmakingError, exceptions.MatchmakingRetryableError):
             _log.warning("Could not register with matchmaking! Is your dragon net configuration valid?")
     t0 = time.time()
 

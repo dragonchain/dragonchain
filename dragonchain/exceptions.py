@@ -167,5 +167,9 @@ class MatchmakingError(DragonchainException):
     """Exception raised by matchmaking client when a problem has occurred"""
 
 
+class MatchmakingRetryableError(DragonchainException):
+    """Exception raised by matchmaking when there is a server error"""
+
+
 class PartyError(DragonchainException):
     """Exception raised by party client when a problem has occurred"""
