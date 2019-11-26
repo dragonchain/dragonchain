@@ -37,6 +37,9 @@ from dragonchain.lib.dao import interchain_dao
 from dragonchain.lib import queue
 from dragonchain.transaction_processor import shared_functions
 from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import redis
+
+FAILED_CLAIMS_KEY = "mq:failed-claims"
 
 if TYPE_CHECKING:
     from dragonchain.lib.dto import model  # noqa: F401
@@ -78,6 +81,7 @@ def execute() -> None:
     * Publishes to public nodes when required
     * Locates confirmations from public nodes when required
     * Sends receipts to all L1 blocks represented in public broadcast
+    * Finalizes any previously failed claims present in backlog
     """
     matchmaking.renew_registration_if_necessary()
     # Check if there are any funds
@@ -106,6 +110,22 @@ def execute() -> None:
 
     # Only check confirmations if there are any pending
     check_confirmations()
+
+    # go through the failed claims backlog
+    _log.info("Trying to finalize any previously failed claims...")
+    process_claims_backlog()
+
+
+def process_claims_backlog() -> None:
+    claims_set = redis.smembers_sync(FAILED_CLAIMS_KEY)  # used sadd to make a set
+    _log.info(f"Claim backlog count: {len(claims_set)}")
+    for claim_check_id in claims_set:
+        try:
+            matchmaking.resolve_claim_check(claim_check_id)
+        except Exception:
+            _log.exception("Failure to finalize claim in matchmaking.  Skipping the rest of the retry queue.")
+            return  # short-circuit and exit early, matchmaking still unreachable
+        redis.srem_sync(FAILED_CLAIMS_KEY, claim_check_id)  # claim successfully finalized, remove from backlog
 
 
 def broadcast_clean_up(l5_block: l5_block_model.L5BlockModel) -> None:

@@ -63,13 +63,14 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_get_config.assert_called_once()
 
     @patch("dragonchain.transaction_processor.level_5_actions.matchmaking")
+    @patch("dragonchain.transaction_processor.level_5_actions.process_claims_backlog")
     @patch("dragonchain.transaction_processor.level_5_actions.check_confirmations")
     @patch("dragonchain.transaction_processor.level_5_actions.should_broadcast", return_value=False)
     @patch("dragonchain.transaction_processor.level_5_actions.store_l4_blocks")
     @patch("dragonchain.transaction_processor.level_5_actions.get_last_block_number", return_value="123")
     @patch("dragonchain.transaction_processor.level_5_actions.has_funds_for_transactions", return_value=True)
     def test_execute_calls_correct_functions_when_funded_but_not_time_to_broadcast(
-        self, mock_has_funds, mock_get_last_block, mock_store, mock_should_broadcast, mock_confirmations, mock_matchmaking
+        self, mock_has_funds, mock_get_last_block, mock_store, mock_should_broadcast, mock_confirmations, mock_backlog, mock_matchmaking
     ):
         level_5_actions.execute()
 
@@ -78,8 +79,10 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_store.assert_called_once()
         mock_should_broadcast.assert_called_once()
         mock_confirmations.assert_called_once()
+        mock_backlog.assert_called_once()
 
     @patch("dragonchain.transaction_processor.level_5_actions.matchmaking")
+    @patch("dragonchain.transaction_processor.level_5_actions.process_claims_backlog")
     @patch("dragonchain.transaction_processor.level_5_actions.check_confirmations")
     @patch("dragonchain.transaction_processor.level_5_actions.watch_for_funds")
     @patch("dragonchain.transaction_processor.level_5_actions.broadcast_clean_up")
@@ -100,6 +103,7 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_broadcast_cleanup,
         mock_watch_for_funds,
         mock_confirmations,
+        mock_backlog,
         mock_matchmaking,
     ):
         level_5_actions.execute()
@@ -113,14 +117,16 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_broadcast_cleanup.assert_called_once()
         mock_watch_for_funds.assert_called_once()
         mock_confirmations.assert_called_once()
+        mock_backlog.assert_called_once()
 
     @patch("dragonchain.transaction_processor.level_5_actions.matchmaking")
+    @patch("dragonchain.transaction_processor.level_5_actions.process_claims_backlog")
     @patch("dragonchain.transaction_processor.level_5_actions.check_confirmations")
     @patch("dragonchain.transaction_processor.level_5_actions.watch_for_funds")
     @patch("dragonchain.transaction_processor.level_5_actions.is_time_to_watch", return_value=True)
     @patch("dragonchain.transaction_processor.level_5_actions.has_funds_for_transactions", return_value=False)
     def test_execute_calls_correct_functions_when_out_of_funds(
-        self, mock_has_funds, mock_is_time_to_watch, mock_watch, mock_confirmations, mock_matchmaking
+        self, mock_has_funds, mock_is_time_to_watch, mock_watch, mock_confirmations, mock_backlog, mock_matchmaking
     ):
         level_5_actions.execute()
 
@@ -128,6 +134,31 @@ class TestLevelFiveActions(unittest.TestCase):
         mock_is_time_to_watch.assert_called_once()
         mock_watch.assert_called_once()
         mock_confirmations.assert_called_once()
+        mock_backlog.assert_called_once()
+
+    @patch("dragonchain.lib.database.redis.smembers_sync", return_value={"CLAIMID_1", "CLAIMID_2", "CLAIMID_3"})
+    @patch("dragonchain.lib.database.redis.srem_sync", return_value=1)  # successful removal of member from set
+    @patch("dragonchain.lib.matchmaking.resolve_claim_check")
+    def test_process_claims_backlog(self, mock_resolve_claim_check, mock_srem_sync, mock_smembers_sync):
+        level_5_actions.process_claims_backlog()
+        self.assertEqual(mock_resolve_claim_check.call_count, 3)
+        self.assertEqual(mock_srem_sync.call_count, 3)
+
+    @patch("dragonchain.lib.database.redis.smembers_sync", return_value={})
+    @patch("dragonchain.lib.database.redis.srem_sync", return_value=1)  # successful removal of member from set
+    @patch("dragonchain.lib.matchmaking.resolve_claim_check")
+    def test_process_claims_backlog_with_empty_backlog(self, mock_resolve_claim_check, mock_srem_sync, mock_smembers_sync):
+        level_5_actions.process_claims_backlog()
+        mock_resolve_claim_check.assert_not_called()
+        mock_srem_sync.assert_not_called()
+
+    @patch("dragonchain.lib.database.redis.smembers_sync", return_value={"CLAIMID_1", "CLAIMID_2", "CLAIMID_3"})
+    @patch("dragonchain.lib.database.redis.srem_sync", return_value=1)  # successful removal of member from set
+    @patch("dragonchain.lib.matchmaking.resolve_claim_check", side_effect=exceptions.MatchmakingRetryableError)
+    def test_process_claims_backlog_with_matchmaking_still_failing(self, mock_resolve_claim_check, mock_srem_sync, mock_smembers_sync):
+        level_5_actions.process_claims_backlog()
+        mock_resolve_claim_check.assert_called_once()
+        mock_srem_sync.assert_not_called()
 
     @patch("dragonchain.transaction_processor.level_5_actions.storage.delete_directory")
     @patch("dragonchain.transaction_processor.level_5_actions.set_last_block_number")

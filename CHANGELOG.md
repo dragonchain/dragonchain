@@ -2,6 +2,8 @@
 
 ## 4.2.1
 
+- **Bugs:**
+  - Fix a bug where a failure in matchmaking would result in claims not being finalized
 - **Documentation:**
   - Update documentation links to add the [getting started guide](https://docs.dragonchain.com/)
 - **Packaging:**
@@ -50,7 +52,7 @@ field where necessary.
 - **Feature:**
   - Default error reporting to save to disk, so that crash logs/tracebacks can be automatically saved
   - Provide better error message when bad input to api doesn't match required schemas
-  - Adds verification-notification callback in the reciept endpoint
+  - Adds verification-notification callback in the receipt endpoint
   - Add indexed redisearch tag field "invoker" by default when indexing smart contract transactions
   - Remove max limit for custom indexes on a transaction type/smart contract
 - **Bugs:**
