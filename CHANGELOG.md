@@ -5,7 +5,8 @@
 - **Documentation:**
   - Update documentation links to add the [getting started guide](https://docs.dragonchain.com/)
 - **Packaging:**
-  - Update boto3 dependencies
+  - Update boto3, and gunicorn dependencies
+  - Remove now unnnecessary `binutils` and `musl-dev` packages from docker build since gunicorn update
   - Update redisearch in helm chart to 1.4.18
   - Update redis in helm chart to 5.0.7
 

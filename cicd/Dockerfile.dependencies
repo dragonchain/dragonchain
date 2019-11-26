@@ -9,8 +9,7 @@ RUN wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-li
     chmod +x yq && mv yq /usr/local/bin/
 
 # Install dev build dependencies
-RUN apk --no-cache upgrade && apk --no-cache add g++ make gmp-dev libffi-dev automake autoconf libtool && echo "UTC" > /etc/timezone && apk --no-cache add binutils musl-dev
-# apk --no-cache add binutils musl-dev is required for gunicorn 20.0.0 until https://github.com/benoitc/gunicorn/issues/2160 is fixed
+RUN apk --no-cache upgrade && apk --no-cache add g++ make gmp-dev libffi-dev automake autoconf libtool && echo "UTC" > /etc/timezone
 # Install python dev dependencies
 ENV SECP_BUNDLED_EXPERIMENTAL 1
 ENV SECP_BUNDLED_WITH_BIGNUM 1
