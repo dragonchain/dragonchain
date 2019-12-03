@@ -135,17 +135,17 @@ def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]]) -> Di
     _log.info(f"[TRANSACTION_BULK] Attempting to enqueue {len(bulk_transaction)} transactions")
     success = []
     fail = []
+    bulk = []
     for transaction in bulk_transaction:
         try:
-            _log.info("[TRANSACTION] Parsing and loading user input")
             txn_model = _generate_transaction_model(transaction)
-
-            _log.info("[TRANSACTION] Txn valid. Queueing txn object")
-            queue.enqueue_item(txn_model.export_as_queue_task())
+            bulk.append(txn_model.export_as_queue_task())
             success.append(txn_model.txn_id)
         except Exception:
             _log.exception("Processing transaction failed")
             fail.append(transaction)
+    _log.info("[BULK TRANSACTION] Adding transactions to queue")
+    queue.enqueue_bulk_l1(bulk)
     return {"201": success, "400": fail}
 
 

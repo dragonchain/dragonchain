@@ -18,7 +18,7 @@
 import os
 import json
 import base64
-from typing import List, Tuple, Union, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Union, Optional, Any, cast, TYPE_CHECKING, Sequence, Dict
 
 from dragonchain.lib import crypto
 from dragonchain.lib.database import redis
@@ -107,6 +107,40 @@ def enqueue_l1(transaction: dict) -> None:
             transaction["payload"] = json.loads(transaction["payload"])  # We must parse the stringied payload of the SC invocation before sending
             invocation_request = contract.export_as_invoke_request(transaction)
             p.lpush(CONTRACT_INVOKE_MQ_KEY, json.dumps(invocation_request, separators=(",", ":")))
+
+    # Execute redis pipeline
+    for result in p.execute():
+        if not result:
+            raise RuntimeError("Failed to enqueue")
+
+
+# Acts the same as enqueue_l1 except it handles bulking
+def enqueue_bulk_l1(bulk_transaction: Sequence[Dict[str, Any]]) -> None:
+    p = redis.pipeline_sync()
+    for transaction in bulk_transaction:
+        txn_type_string = transaction["header"]["txn_type"]
+        invocation_attempt = not transaction["header"].get("invoker")  # This transaction is an invocation attempt if there is no invoker
+
+        try:
+            transaction_type = transaction_type_dao.get_registered_transaction_type(txn_type_string)
+        except exceptions.NotFound:
+            _log.error("Invalid transaction type")
+            raise exceptions.InvalidTransactionType(f"Transaction of type {txn_type_string} does not exist")
+
+        p.lpush(INCOMING_TX_KEY, json.dumps(transaction, separators=(",", ":")))
+        p.sadd(TEMPORARY_TX_KEY, transaction["header"]["txn_id"])
+
+        # Attempt contract invocation if necessary
+        if transaction_type.contract_id and invocation_attempt:
+            _log.info("Checking if smart contract is associated with this txn_type")
+            contract = smart_contract_dao.get_contract_by_id(transaction_type.contract_id)  # Explicitly checked for existence above
+            contract_active = contract.status["state"] in ["active", "updating"]
+            _log.info(f"Contract found: {contract}")
+
+            if contract_active:
+                transaction["payload"] = json.loads(transaction["payload"])  # We must parse the stringied payload of the SC invocation before sending
+                invocation_request = contract.export_as_invoke_request(transaction)
+                p.lpush(CONTRACT_INVOKE_MQ_KEY, json.dumps(invocation_request, separators=(",", ":")))
 
     # Execute redis pipeline
     for result in p.execute():
