@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.2
+
+- **Development:**
+ - Added hard limit to the number of L4 blocks included in an L5 block
+
 ## 4.2.1
 
 - **Bugs:**
