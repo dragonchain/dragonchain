@@ -42,6 +42,7 @@ INCOMING_TX_KEY = "dc:tx:incoming"
 PROCESSING_TX_KEY = "dc:tx:processing"
 TEMPORARY_TX_KEY = "dc:tx:temporary"
 CONTRACT_INVOKE_MQ_KEY = "mq:contract-invoke"
+MAX_L4_BLOCKS = 10000  # sanity check on the number of L4 blocks that can go into a single L5 block
 
 _log = logger.get_logger()
 
@@ -242,7 +243,8 @@ def get_new_l4_blocks() -> List[bytes]:
     if LEVEL != "5":
         raise RuntimeError("Getting l4_blocks is a level 5 action")
     l4_blocks = []
-    for _ in range(0, redis.llen_sync(INCOMING_TX_KEY)):
+    l4_blocks_count = min(redis.llen_sync(INCOMING_TX_KEY), MAX_L4_BLOCKS)  # whichever is less
+    for _ in range(0, l4_blocks_count):
         # These are in lists because enterprise will be able to specify more than one l4.
         l4_blocks_list = cast(bytes, redis.rpoplpush_sync(INCOMING_TX_KEY, PROCESSING_TX_KEY, decode=False))
         l4_blocks.append(l4_blocks_list)
