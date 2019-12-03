@@ -1,16 +1,13 @@
 # Changelog
 
-## 4.2.2
-
-- **Development:**
- - Added hard limit to the number of L4 blocks included in an L5 block
-
 ## 4.2.1
 
 - **Bugs:**
   - Fix a bug where a failure in matchmaking would result in claims not being finalized
 - **Documentation:**
   - Update documentation links to add the [getting started guide](https://docs.dragonchain.com/)
+- **Development:**
+ - Added hard limit to the number of L4 blocks included in an L5 block  
 - **Packaging:**
   - Update boto3, and gunicorn dependencies
   - Remove now unnnecessary `binutils` and `musl-dev` packages from docker build since gunicorn update
