@@ -11,6 +11,8 @@
   - Remove now unnnecessary `binutils` and `musl-dev` packages from docker build since gunicorn update
   - Update redisearch in helm chart to 1.4.18
   - Update redis in helm chart to 5.0.7
+- **Development**
+  - Speed up bulk transaction intake with redis pipelines
 
 ## 4.2.0
 
