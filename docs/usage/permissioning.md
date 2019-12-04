@@ -64,7 +64,7 @@ action, it is important to explicitly deny api key operations if
 create/update/delete permissions were implicitly given elsewhere.
 
 Failure to do so can result in creating an api key, which itself can create a
-more-permissioned key, thus leading to privelege escalation.
+more-permissioned key, thus leading to privilege escalation.
 
 See the examples at the bottom of this page for more details/examples.
 
