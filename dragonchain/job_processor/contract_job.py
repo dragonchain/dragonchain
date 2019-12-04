@@ -27,11 +27,12 @@ import requests
 import docker
 
 from dragonchain.scheduler import scheduler
+from dragonchain.lib.dto import api_key_model
+from dragonchain.lib.dao import api_key_dao
 from dragonchain.lib.dao import transaction_dao
 from dragonchain.lib.dao import transaction_type_dao
 from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.dto import smart_contract_model
-from dragonchain.lib import authorization
 from dragonchain.lib import error_reporter
 from dragonchain.lib import keys
 from dragonchain.lib.interfaces import storage
@@ -115,10 +116,11 @@ class ContractJob(object):
             self.end_error_state = smart_contract_model.ContractState.DELETE_FAILED.value
 
     def populate_api_keys(self) -> None:
-        key = authorization.register_new_auth_key(smart_contract=True)
-        self.model.secrets["secret-key"] = key["key"]
-        self.model.secrets["auth-key-id"] = key["id"]
-        self.model.auth_key_id = key["id"]
+        key = api_key_model.new_from_scratch(smart_contract=True)
+        api_key_dao.save_api_key(key)
+        self.model.secrets["secret-key"] = key.key
+        self.model.secrets["auth-key-id"] = key.key_id
+        self.model.auth_key_id = key.key_id
 
     def populate_env(self) -> None:
         """Populate environment variables for the job"""
@@ -208,7 +210,7 @@ class ContractJob(object):
                 "com.openfaas.scale.max": "20",
                 "com.openfaas.scale.factor": "20",
                 "com.dragonchain.id": INTERNAL_ID,
-                "com.openfaas.fwatchdog.version": "0.18.2",  # Update this as the fwatchdog executable in bin is updates
+                "com.openfaas.fwatchdog.version": "0.18.4",  # Update this as the fwatchdog executable in bin is updates
             },
             "limits": {"cpu": "0.50", "memory": "600M"},
             "requests": {"cpu": "0.25", "memory": "600M"},

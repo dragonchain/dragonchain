@@ -25,10 +25,11 @@ from dragonchain.lib.dto import l2_block_model
 from dragonchain.lib.dto import l3_block_model
 from dragonchain.lib.dto import l4_block_model
 from dragonchain.lib.dto import l5_block_model
+from dragonchain.lib.dto import api_key_model
+from dragonchain.lib.dao import api_key_dao
 from dragonchain.lib import matchmaking
 from dragonchain.lib import keys
 from dragonchain.lib import queue
-from dragonchain.lib import authorization
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -60,7 +61,7 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
     else:
         raise exceptions.InvalidNodeLevel("Unsupported level receipt")
 
-    _log.info(f"Block model {block_model.__dict__}")
+    _log.debug(f"Block model {block_model.__dict__}")
     l1_block_id_set = block_model.get_associated_l1_block_id()
 
     _log.info(f"Processing receipt for blocks {l1_block_id_set} from L{level_received_from}")
@@ -109,8 +110,12 @@ def register_interchain_auth_v1(chain_registration_body: Dict[str, str]) -> None
         raise exceptions.UnauthorizedException("Invalid signature authorization")
 
     # Authorization successful, now register actual key
-    if not authorization.save_interchain_auth_key(dcid, key):
-        # If registering interchain auth key wasn't successful, something has gone wrong
+    auth_key = api_key_model.new_from_scratch(interchain_dcid=dcid)
+    auth_key.key = key
+    try:
+        api_key_dao.save_api_key(auth_key)
+    except Exception:
+        _log.exception("Error saving interchain auth key")
         raise RuntimeError("Authorization registration failure")
 
     _log.info(f"successfully registered interchain auth key with {dcid}")

@@ -15,44 +15,56 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, TYPE_CHECKING
 
 from dragonchain import logger
 from dragonchain import exceptions
-from dragonchain.lib import authorization
 from dragonchain.lib.interfaces import secrets
-from dragonchain.lib.interfaces import storage
+from dragonchain.lib.dao import api_key_dao
+from dragonchain.lib.dto import api_key_model
 
-FOLDER = "KEYS"
+if TYPE_CHECKING:
+    from dragonchain.lib.types import permissions_doc  # noqa: F401 used by typing
 
 _log = logger.get_logger()
 
 
+def _api_key_model_to_user_dto(api_key: api_key_model.APIKeyModel, with_key: bool = False) -> Dict[str, Any]:
+    user_dto = {
+        "id": api_key.key_id,
+        "registration_time": api_key.registration_time,
+        "nickname": api_key.nickname,
+        "root": api_key.root,
+        "permissions_document": api_key.permissions_document,
+    }
+    if with_key:
+        user_dto["key"] = api_key.key
+    return user_dto
+
+
 def get_api_key_list_v1() -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Gets the list of api key IDs
+    """Gets the list of api key IDs
     Returns:
         List of API keys
     """
-    keys = storage.list_objects(prefix=FOLDER)
-    valid_keys = list(filter(lambda x: not x.startswith("KEYS/WEB_") and not x.startswith("KEYS/SC_") and not x.startswith("KEYS/INTERCHAIN"), keys))
+    keys = api_key_dao.list_api_keys(include_interchain=False, include_system=False)
     returned_keys = []
-    for key in valid_keys:
-        resp = storage.get_json_from_object(key)
-        returned_keys.append(
-            {"id": str(resp["id"]), "registration_time": int(resp["registration_time"]), "nickname": str(resp.get("nickname") or "")}
-        )
+    for key in keys:
+        returned_keys.append(_api_key_model_to_user_dto(key))
     return {"keys": returned_keys}
 
 
-def create_api_key_v1(nickname: str = "") -> Dict[str, Any]:
-    """
-    Create a new api key
+def create_api_key_v1(nickname: str = "", permissions_document: Optional["permissions_doc"] = None) -> Dict[str, Any]:
+    """Create a new api key
     Returns:
         newly created API keys
     """
-    key = authorization.register_new_auth_key(nickname=nickname)
-    return {"key": str(key["key"]), "id": str(key["id"]), "registration_time": int(key["registration_time"]), "nickname": str(key.get("nickname"))}
+    key = api_key_model.new_from_scratch(smart_contract=False, nickname=(nickname or ""))
+    if permissions_document:
+        # This permissions doc that was passed in should have had the schema validated by the webserver route
+        key.permissions_document = permissions_document
+    api_key_dao.save_api_key(key)
+    return _api_key_model_to_user_dto(key, with_key=True)
 
 
 def delete_api_key_v1(key_id: str) -> None:
@@ -64,12 +76,10 @@ def delete_api_key_v1(key_id: str) -> None:
     if key_id.startswith("SC_") or key_id.startswith("INTERCHAIN") or key_id.startswith("WEB_"):
         raise exceptions.ActionForbidden("cannot delete reserved API keys")
     # Don't allow removal of root keys
-    root_key_id = secrets.get_dc_secret("hmac-id")
-    if root_key_id == key_id:
+    if secrets.get_dc_secret("hmac-id") == key_id:
         raise exceptions.ActionForbidden("Cannot remove root API key")
     # Delete the actual key after previous checks pass
-    if not authorization.remove_auth_key(auth_key_id=key_id, interchain=False):
-        raise RuntimeError("Unkown error deleting key from storage")
+    api_key_dao.delete_api_key(key_id=key_id, interchain=False)
 
 
 def get_api_key_v1(key_id: str) -> Dict[str, Any]:
@@ -81,17 +91,23 @@ def get_api_key_v1(key_id: str) -> Dict[str, Any]:
         API key ID and registration timestamp (if any)
     """
     if key_id.startswith("SC_") or key_id.startswith("WEB_") or key_id.startswith("INTERCHAIN"):
-        raise exceptions.NotFound(f"api key with ID {key_id} not found")
-    key = storage.get_json_from_object(f"KEYS/{key_id}")
-    return {"id": str(key["id"]), "registration_time": int(key["registration_time"]), "nickname": str(key.get("nickname") or "")}
+        raise exceptions.NotFound("Cannot get reserved api key")
+    return _api_key_model_to_user_dto(api_key_dao.get_api_key(key_id, interchain=False))
 
 
-def update_api_key_v1(key_id: str, nickname: str) -> None:
+def update_api_key_v1(key_id: str, nickname: Optional[str] = None, permissions_document: Optional["permissions_doc"] = None) -> Dict[str, Any]:
     """Updates the nickname for an existing key
     Args:
         key_id: ID of api key to update
         nickname: new nickname for the given key
     """
-    key = storage.get_json_from_object(f"KEYS/{key_id}")
-    key["nickname"] = nickname
-    storage.put_object_as_json(f"KEYS/{key_id}", key)
+    if key_id.startswith("SC_") or key_id.startswith("WEB_") or key_id.startswith("INTERCHAIN"):
+        raise exceptions.ActionForbidden("Cannot modify reserved keys")
+    key = api_key_dao.get_api_key(key_id, interchain=False)
+    if nickname:
+        key.nickname = nickname
+    if permissions_document:
+        # This permissions doc that was passed in should have had the schema validated by the webserver route
+        key.permissions_document = permissions_document
+    api_key_dao.save_api_key(key)
+    return _api_key_model_to_user_dto(key)

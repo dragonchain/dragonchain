@@ -35,6 +35,7 @@ from dragonchain.lib.database import redis as dc_redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import RSearch
+    from dragonchain.lib.dto import api_key_model
 
 _log = logger.get_logger()
 
@@ -108,13 +109,17 @@ def get_transaction_v1(transaction_id: str, parse: bool = True) -> Dict[str, Any
     return txn
 
 
-def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[str] = None) -> Dict[str, str]:
+def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[str], api_key: "api_key_model.APIKeyModel") -> Dict[str, str]:
     """Formats and enqueues individual transaction (from user input) to the webserver queue
     Returns:
         String of the submitted transaction id
     """
     _log.info("[TRANSACTION] Parsing and loading user input")
     txn_model = _generate_transaction_model(transaction)
+
+    # Check if allowed to create transaction of this type
+    if not api_key.is_key_allowed("transactions", "create", "create_transaction", False, extra_data={"requested_types": {txn_model.txn_type}}):
+        raise exceptions.ActionForbidden(f"API Key is not allowed to create transaction of type {txn_model.txn_type}")
 
     _log.info("[TRANSACTION] Txn valid. Queueing txn object")
     queue.enqueue_item(txn_model.export_as_queue_task())
@@ -126,7 +131,7 @@ def submit_transaction_v1(transaction: Dict[str, Any], callback_url: Optional[st
     return {"transaction_id": txn_model.txn_id}
 
 
-def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]]) -> Dict[str, List[Any]]:
+def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]], api_key: "api_key_model.APIKeyModel") -> Dict[str, List[Any]]:
     """
     Formats, validates and enqueues the transactions in
     the payload of bulk_transaction
@@ -135,17 +140,26 @@ def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]]) -> Di
     _log.info(f"[TRANSACTION_BULK] Attempting to enqueue {len(bulk_transaction)} transactions")
     success = []
     fail = []
+    requested_types = set()
+    interim_transaction_models = []
     for transaction in bulk_transaction:
         try:
             _log.info("[TRANSACTION] Parsing and loading user input")
             txn_model = _generate_transaction_model(transaction)
-
-            _log.info("[TRANSACTION] Txn valid. Queueing txn object")
-            queue.enqueue_item(txn_model.export_as_queue_task())
+            interim_transaction_models.append(txn_model)
+            requested_types.add(txn_model.txn_type)
             success.append(txn_model.txn_id)
         except Exception:
             _log.exception("Processing transaction failed")
             fail.append(transaction)
+
+    # Check if allowed to create all these transactions of (potentially) various types
+    if not api_key.is_key_allowed("transactions", "create", "create_transaction", False, extra_data={"requested_types": requested_types}):
+        raise exceptions.ActionForbidden("API Key is not allowed to create all of the provided transaction types")
+
+    _log.info("[TRANSACTION] Some (or all) txns are valid. Queueing txns now")
+    queue.enqueue_l1([x.export_as_queue_task() for x in interim_transaction_models])
+
     return {"201": success, "400": fail}
 
 

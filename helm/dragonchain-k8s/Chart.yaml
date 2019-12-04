@@ -3,7 +3,7 @@ name: dragonchain-k8s
 version: 1.0.4
 icon: https://dragonchain-assets.s3.amazonaws.com/jojo.png
 description: Dragonchain on kubernetes
-appVersion: 4.2.1
+appVersion: 4.3.0
 keywords:
   - dragonchain
   - blockchain

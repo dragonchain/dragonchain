@@ -1,18 +1,26 @@
 # Changelog
 
-## 4.2.1
+## 4.3.0
 
+- **Feature:**
+  - Add api key permissioning (check their [docs](https://dragonchain-core-docs.dragonchain.com/latest/usage/permissioning.html) for more info)
+  - Add root and permissions document api key information in response when creating/getting/listing/updating api keys
+  - Speed up bulk transaction intake with redis pipelines
 - **Bugs:**
   - Fix a bug where a failure in matchmaking would result in claims not being finalized
 - **Documentation:**
   - Update documentation links to add the [getting started guide](https://docs.dragonchain.com/)
-- **Development:**
- - Added hard limit to the number of L4 blocks included in an L5 block  
+  - Add top-level section for usage documentation
+  - Add pages for authentication and permissioning in usage documentation
 - **Packaging:**
-  - Update boto3, and gunicorn dependencies
+  - Update boto3, aioredis, and gunicorn dependencies
   - Remove now unnnecessary `binutils` and `musl-dev` packages from docker build since gunicorn update
   - Update redisearch in helm chart to 1.4.18
   - Update redis in helm chart to 5.0.7
+  - Update fwatchdog to 0.18.4 for OpenFaaS smart contracts
+- **Development:**
+  - Added hard limit to the number of L4 blocks included in an L5 block
+  - Use independent model and dao for api keys
 
 ## 4.2.0
 
@@ -25,7 +33,7 @@
   - Fix a bug where L2+ chains could have the transaction processor go into a failure loop if a block failed to write to storage at some point
   - Fix a bug where Ethereum L5 nodes could estimate a gas price of 0 for low-activity networks
   - Fix a bug where an open-source chain couldn't build smart contracts due to a bad environment variable
-  - Fix a bug where a chain could infinitely retry to connect to dragon net
+  - Fix a bug where a chain could infinitely retry to connect to Dragon Net
   - Fix a bug with storage deletion using the disk storage interface which could cause unexpected failures
   - Fix a bug with private docker registry delete when deleting smart contracts
   - Fix a bug with smart contract heap get where pre-pending an extra '/' could give bad results

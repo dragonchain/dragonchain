@@ -43,6 +43,13 @@ All of the source code, as well as issue tracker can be viewed `on github <https
    deployment/migrating_v4
 
 .. toctree::
+   :caption: Usage
+   :maxdepth: 2
+
+   usage/authentication
+   usage/permissioning
+
+.. toctree::
    :caption: Components
    :maxdepth: 2
 

@@ -19,6 +19,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from dragonchain import test_env  # noqa: F401
+from dragonchain import exceptions
 from dragonchain.webserver.lib import transactions
 
 
@@ -56,3 +57,25 @@ class TestGetTransactions(unittest.TestCase):
     def test_get_transaction_v1_returns_parsed(self, mock_sismember, mock_search, mock_select_txn):
         result = transactions.get_transaction_v1("banana", True)
         self.assertEqual(result["payload"], {"banana": 4})
+
+
+class TestSubmitTransactions(unittest.TestCase):
+    @patch("dragonchain.webserver.lib.transactions._generate_transaction_model")
+    @patch("dragonchain.webserver.lib.transactions.queue")
+    def test_submit_transaction_checks_if_key_is_allowed(self, mock_queue, mock_gen_model):
+        mock_key = MagicMock()
+        mock_key.is_key_allowed.return_value = True
+        transactions.submit_transaction_v1({}, None, api_key=mock_key)
+        mock_key.is_key_allowed.assert_called_once()
+        mock_key.is_key_allowed.return_value = False
+        self.assertRaises(exceptions.ActionForbidden, transactions.submit_transaction_v1, {}, None, api_key=mock_key)
+
+    @patch("dragonchain.webserver.lib.transactions._generate_transaction_model")
+    @patch("dragonchain.webserver.lib.transactions.queue")
+    def test_submit_transaction_bulk_checks_if_key_is_allowed(self, mock_queue, mock_gen_model):
+        mock_key = MagicMock()
+        mock_key.is_key_allowed.return_value = True
+        transactions.submit_bulk_transaction_v1([{}], api_key=mock_key)
+        mock_key.is_key_allowed.assert_called_once()
+        mock_key.is_key_allowed.return_value = False
+        self.assertRaises(exceptions.ActionForbidden, transactions.submit_bulk_transaction_v1, [{}], api_key=mock_key)

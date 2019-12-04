@@ -77,8 +77,8 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/public-blockchain-transaction", "public_blockchain_transaction_v1", public_blockchain_transaction_v1, methods=["POST"])
 
 
-@request_authorizer.Authenticated()
-def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain")
+def create_bitcoin_interchain_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -90,8 +90,8 @@ def create_bitcoin_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(201, interchain.create_bitcoin_interchain_v1(data))
 
 
-@request_authorizer.Authenticated()
-def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain")
+def create_ethereum_interchain_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -103,8 +103,8 @@ def create_ethereum_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(201, interchain.create_ethereum_interchain_v1(data))
 
 
-@request_authorizer.Authenticated()
-def create_binance_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain")
+def create_binance_interchain_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -116,8 +116,8 @@ def create_binance_interchain_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(201, interchain.create_binance_interchain_v1(data))
 
 
-@request_authorizer.Authenticated()
-def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="update", api_name="update_interchain")
+def update_bitcoin_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -129,8 +129,8 @@ def update_bitcoin_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.update_bitcoin_interchain_v1(name, data))
 
 
-@request_authorizer.Authenticated()
-def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="update", api_name="update_interchain")
+def update_ethereum_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -142,8 +142,8 @@ def update_ethereum_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.update_ethereum_interchain_v1(name, data))
 
 
-@request_authorizer.Authenticated()
-def update_binance_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="update", api_name="update_interchain")
+def update_binance_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -155,8 +155,8 @@ def update_binance_interchain_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.update_binance_interchain_v1(name, data))
 
 
-@request_authorizer.Authenticated()
-def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction")
+def create_bitcoin_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -168,8 +168,8 @@ def create_bitcoin_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("bitcoin", name, data))
 
 
-@request_authorizer.Authenticated()
-def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction")
+def create_ethereum_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -181,8 +181,8 @@ def create_ethereum_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("ethereum", name, data))
 
 
-@request_authorizer.Authenticated()
-def create_binance_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction")
+def create_binance_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -194,24 +194,24 @@ def create_binance_transaction_v1(name: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("binance", name, data))
 
 
-@request_authorizer.Authenticated()
-def list_interchains_v1(blockchain: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="read", api_name="list_interchains")
+def list_interchains_v1(blockchain: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.list_interchain_v1(blockchain))
 
 
-@request_authorizer.Authenticated()
-def get_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="read", api_name="get_interchain")
+def get_interchain_v1(blockchain: str, name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.get_interchain_v1(blockchain, name))
 
 
-@request_authorizer.Authenticated()
-def delete_interchain_v1(blockchain: str, name: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="delete", api_name="delete_interchain")
+def delete_interchain_v1(blockchain: str, name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     interchain.delete_interchain_v1(blockchain, name)
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated()
-def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="set_default_interchain")
+def set_default_network_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
     data = flask.request.json
@@ -223,21 +223,21 @@ def set_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.set_default_interchain_v1(data["blockchain"], data["name"]))
 
 
-@request_authorizer.Authenticated()
-def get_default_network_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="read", api_name="get_default_interchain")
+def get_default_network_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.get_default_interchain_v1())
 
 
 # Backwards compatibility routes. Will only work on old chains, not newly created ones
 
 
-@request_authorizer.Authenticated()
-def public_blockchain_address_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="read", api_name="get_interchain_legacy")
+def public_blockchain_address_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, interchain.legacy_get_blockchain_addresses_v1())
 
 
-@request_authorizer.Authenticated()
-def public_blockchain_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction_legacy")
+def public_blockchain_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
 

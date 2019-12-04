@@ -16,9 +16,10 @@
 # language governing permissions and limitations under the Apache License.
 
 from dragonchain.lib.interfaces import secrets
-from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
 from dragonchain.lib.database import redisearch
+from dragonchain.lib.dao import api_key_dao
+from dragonchain.lib.dto import api_key_model
 from dragonchain.lib import error_reporter
 from dragonchain import logger
 from dragonchain import exceptions
@@ -30,13 +31,23 @@ def start() -> None:
     """
     Ran by the webserver before it boots
     """
+    _log.info("Checking if api key migrations need to be performed")
+    api_key_dao.perform_api_key_migration_v1_if_necessary()
+
     try:
-        # Chains are given HMAC keys when created. If found, we write them to storage.
+        # Chains are given HMAC keys when created. If found and root key doesn't already exist, we write them to storage.
         key_id = secrets.get_dc_secret("hmac-id")
-        _log.info("HMAC keys were given to this chain on-boot. Writing them to storage.")
-        storage.put_object_as_json(f"KEYS/{key_id}", {"id": key_id, "key": secrets.get_dc_secret("hmac-key"), "root": True, "registration_time": 0})
     except exceptions.NotFound:
         _log.info("No HMAC keys were given to this chain on-boot. Skipping credential storage write.")
+    else:
+        try:
+            api_key_dao.get_api_key(key_id, interchain=False)
+        except exceptions.NotFound:
+            _log.info("HMAC keys were given to this chain on-boot. Writing them to storage.")
+            api_key = api_key_model.new_root_key(key_id, secrets.get_dc_secret("hmac-key"))
+            api_key_dao.save_api_key(api_key)
+        else:
+            _log.info("HMAC key secret already exists. Skipping credential storage write.")
 
     _log.info("Checking if redisearch indexes need to be regenerated")
     redisearch.generate_indexes_if_necessary()
