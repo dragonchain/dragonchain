@@ -337,6 +337,8 @@ def make_matchmaking_request(
             raise exceptions.InsufficientFunds("received insufficient funds (402) from matchmaking")
         elif response.status_code == 404:
             raise exceptions.NotFound("Not found (404) from matchmaking")
+        elif response.status_code == 409:
+            raise exceptions.UnableToUpdate("Matchmaking could not find enough nodes to verify this block")
         elif response.status_code >= 500:
             raise exceptions.MatchmakingRetryableError(f"[MATCHMAKING] Server error {response.status_code} from matchmaking")
         raise exceptions.MatchmakingError(
