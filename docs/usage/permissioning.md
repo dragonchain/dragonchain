@@ -57,6 +57,17 @@ used to determine if the api key is allowed to perform an operation on that
 endpoint. This happens because an endpoint permission object is the most deeply
 nested item in a permissions document.
 
+### Important Privilege Escalation Note
+
+Since creating/modifying/deleting permissions via an api keys is a permissioned
+action, it is important to explicitly deny api key operations if
+create/update/delete permissions were implicitly given elsewhere.
+
+Failure to do so can result in creating an api key, which itself can create a
+more-permissioned key, thus leading to privelege escalation.
+
+See the examples at the bottom of this page for more details/examples.
+
 ### API Endpoint Schemas
 
 Each api endpoint can be individually turned on or off with an endpoint
@@ -69,8 +80,8 @@ on a per-endpoint basis.
 
 ### API Resources and Permission Names
 
-The following are the available api resources exposed via Dragonchain RESTful
-API:
+The following are the available api resources exposed via the Dragonchain
+RESTful API:
 
 - `api_keys` : Operations related to dragonchain api keys
 - `blocks` : Operations related to blocks on the chain
