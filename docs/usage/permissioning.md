@@ -13,7 +13,7 @@ In order to set permissions, create or update an api key with a permissions
 document (schema explained below).
 
 By default, an api key with no explicitly set permissions will have access to
-every endpoint, except create/update/delete api keys.
+every endpoint, except the ability to create/update/delete api keys.
 
 Keep in mind that the ability to create or update api keys is effectively a
 root-level permission, because keys can be created or modified with elevated
@@ -30,7 +30,7 @@ The root api key cannot be deleted.
 
 ## Permissions Document
 
-The permissions document is how permissions are defined per api key.
+The permissions document codifies all permissions explicitly allowed or denied on a given api-key.
 
 It is a JSON object containing the document version (currently only `"1"`), a
 `"default_allow"` boolean, which determines if the permissions should be
@@ -221,7 +221,7 @@ Regardless, this is still a valid schema.
 ---
 
 This is a permissions document which disables all endpoints by default, but
-globally allows any `read` abilities. Additionally it allows the creation of
+globally allows any `read` operations. Additionally, it allows the creation of
 transaction types, and explicitly denies reading any smart contract logs.
 
 ```json

@@ -13,7 +13,7 @@ only supported version at this time.
 In order to create an authenticated HTTP request to Dragonchain, the following
 elements are needed:
 
-- HTTP Verb of the request (i.e. `GET, POST, etc`)
+- Capitalized HTTP verb of the request (i.e. `GET, POST, PUT, DELETE, PATCH`)
 - Full path of the request, including query parameters (i.e.
   `/v1/path?some=value`)
 - Public dragonchain id of the request (to be provided in an HTTP header:
@@ -110,4 +110,4 @@ will not work because the HMAC will not match.
 Ensure that the path of your http request (everything _after_ the fully
 qualified domain name and protocol) **including** any query parameters is
 exactly what was used when creating the HMAC signature. If there is a
-mis-match, authorization will not work because the HMAC will not match.
+mis-match, the request cannot be authenticated.
