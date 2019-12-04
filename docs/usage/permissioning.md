@@ -23,7 +23,7 @@ permissions via those endpoints.
 
 The root api key (in the kubernetes secret when deploying the chain) will
 always have permission to use any Dragonchain api endpoint (aside from
-endpoints for Dragon Net interchain operations, which are reserved for
+endpoints for Dragon Net operations, which are reserved for
 dragonchain-to-dragonchain communication).
 
 The root api key cannot be deleted.
@@ -69,7 +69,8 @@ on a per-endpoint basis.
 
 ### API Resources and Permission Names
 
-The following are the available api resources:
+The following are the available api resources exposed via Dragonchain RESTful
+API:
 
 - `api_keys` : Operations related to dragonchain api keys
 - `blocks` : Operations related to blocks on the chain
@@ -78,8 +79,9 @@ The following are the available api resources:
 - `misc` : Miscellaneous Operations (currently only getting status)
 - `contracts` : Operations related to dragonchain smart contracts (L1 Only)
 - `transaction_types` : Operations related to transaction types (L1 Only)
-- `transactions` : Operations related to individual chain transactions (L1 Only)
-- `verifications` : Operations related to dragon net verifications (L1 Only)
+- `transactions` : Operations related to individual chain transactions (L1
+  Only)
+- `verifications` : Operations related to Dragon Net verifications (L1 Only)
 
 The following are all the available api endpoints for permissioning, along with
 their operation type, and whether or not their endpoint permission object has a
@@ -154,7 +156,7 @@ transactions with the transaction type `honey`. Note that the `"butter": true`
 is technically redundant since it implicitly already has permissions to create
 any other transaction due to the `"allowed": true`
 
-```json
+```text
 ...
 {
   "allowed": true,
@@ -169,7 +171,7 @@ any other transaction due to the `"allowed": true`
 The following example allows _only_ transactions with the type `banana` to be
 created.
 
-```json
+```text
 ...
 {
   "allowed": false,
@@ -193,7 +195,7 @@ explaining what the permissions document is allowing/denying.
 
 This is a permissions document that allows all operations on all actions by
 default, but globally disables any `delete` abilities, while explicitly
-allowing `delete` on interchain operations, and explicitly denying creating an
+allowing `delete` on interchain operations and explicitly denying creating any
 interchain transaction. Additionally, because `"default_allow": true` was set,
 it also ensures that creating or updating api keys is not allowed (as to avoid
 privilege escalation)

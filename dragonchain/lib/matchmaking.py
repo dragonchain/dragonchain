@@ -329,7 +329,7 @@ def make_matchmaking_request(
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif retry and response.status_code == 403 and authenticated:
             _log.warning(
-                "[MATCHMAKING] received 403 from matchmaking. Registration is expired or dragon net config is invalid. Re-registering and trying again"
+                "[MATCHMAKING] received 403 from matchmaking. Registration is expired or Dragon Net config is invalid. Re-registering and trying again"
             )
             register(retry=False)
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)

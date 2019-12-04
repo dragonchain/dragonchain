@@ -161,7 +161,7 @@ def new_from_scratch(smart_contract: bool = False, nickname: str = "", interchai
         permissions_document = DEFAULT_PERMISSIONS_DOCUMENT
     else:
         key_id = interchain_dcid
-        # Default interchain keys aren't allowed any permissions (can still call dragon net reserved interchain endpoints)
+        # Default interchain keys aren't allowed any permissions (can still call Dragon Net reserved interchain endpoints)
         permissions_document = {"version": "1", "default_allow": False, "permissions": {}}
     return APIKeyModel(
         key_id=key_id,
@@ -177,7 +177,6 @@ def new_from_scratch(smart_contract: bool = False, nickname: str = "", interchai
 def new_from_at_rest(api_key_data: Dict[str, Any]) -> "APIKeyModel":
     """Construct an api key model from at rest (cached storage)"""
     if api_key_data.get("version") == "1":
-        # V1 custom indexes are not supported, and are simply thrown away, and assumed active since initial block
         return APIKeyModel(
             key_id=api_key_data["key_id"],
             key=api_key_data["key"],
@@ -237,7 +236,7 @@ class APIKeyModel(model.Model):
         Returns:
             boolean whether or not this key is allowed to perform the action
         """
-        # Ensure that if this is a reserved dragon net interchain action, only interchain keys can invoke it
+        # Ensure that if this is a reserved Dragon Net action, only interchain keys can invoke it
         if interchain:
             return self.interchain
         # Interchain keys are not allowed to invoke any other endpoint
