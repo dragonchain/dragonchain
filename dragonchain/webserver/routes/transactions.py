@@ -41,8 +41,8 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/transaction/<transaction_id>", "get_transaction_v1", get_transaction_v1, methods=["GET"])
 
 
-@request_authorizer.Authenticated()
-def post_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_group="transactions", api_action="create", api_name="create_transaction")
+def post_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
 
@@ -53,11 +53,13 @@ def post_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException as e:
         raise exceptions.ValidationException(str(e))
 
-    return helpers.flask_http_response(201, transactions.submit_transaction_v1(txn, flask.request.headers.get("X-Callback-URL")))
+    return helpers.flask_http_response(
+        201, transactions.submit_transaction_v1(txn, flask.request.headers.get("X-Callback-URL"), api_key=kwargs["used_auth_key"])
+    )
 
 
-@request_authorizer.Authenticated()
-def post_transaction_bulk_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_group="transactions", api_action="create", api_name="create_transaction")
+def post_transaction_bulk_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     """
     Enqueue bulk transactions to be processed
     """
@@ -71,14 +73,14 @@ def post_transaction_bulk_v1() -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException as e:
         raise exceptions.ValidationException(str(e))
 
-    response = transactions.submit_bulk_transaction_v1(content)
+    response = transactions.submit_bulk_transaction_v1(content, api_key=kwargs["used_auth_key"])
     if not response["201"]:
         return helpers.flask_http_response(400, response)
     return helpers.flask_http_response(207, response)
 
 
-@request_authorizer.Authenticated()
-def query_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_group="transactions", api_action="read", api_name="query_transactions")
+def query_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     params = helpers.parse_query_parameters(flask.request.args.to_dict())
     if params.get("transaction_type"):
         should_parse = flask.request.headers.get("Parse-Payload") != "false"
@@ -86,8 +88,8 @@ def query_transaction_v1() -> Tuple[str, int, Dict[str, str]]:
     raise exceptions.ValidationException("User input must specify transaction type to query")
 
 
-@request_authorizer.Authenticated()
-def get_transaction_v1(transaction_id: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated(api_group="transactions", api_action="read", api_name="get_transaction")
+def get_transaction_v1(transaction_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not transaction_id:
         raise exceptions.BadRequest("Parameter 'transaction_id' is required")
     should_parse = flask.request.headers.get("Parse-Payload") != "false"

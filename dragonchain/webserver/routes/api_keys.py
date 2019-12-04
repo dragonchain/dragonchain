@@ -44,10 +44,11 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/api-key/<key_id>", "update_api_key_v1", update_api_key_v1, methods=["PUT"])
 
 
-@request_authorizer.Authenticated(root_only=True)
+@request_authorizer.Authenticated(api_group="api_keys", api_action="create", api_name="create_api_key")
 @helpers.DisabledForLab
-def create_api_key_v1() -> Tuple[str, int, Dict[str, str]]:
+def create_api_key_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     nickname = ""
+    permissions_document = None
     if flask.request.is_json:
         body = flask.request.json
         try:
@@ -55,28 +56,29 @@ def create_api_key_v1() -> Tuple[str, int, Dict[str, str]]:
         except fastjsonschema.JsonSchemaException as e:
             raise exceptions.ValidationException(str(e))
         nickname = body.get("nickname") or ""
+        permissions_document = body.get("permissions_document")
 
-    return helpers.flask_http_response(201, api_keys.create_api_key_v1(nickname))
+    return helpers.flask_http_response(201, api_keys.create_api_key_v1(nickname, permissions_document))
 
 
-@request_authorizer.Authenticated()
+@request_authorizer.Authenticated(api_group="api_keys", api_action="read", api_name="get_api_key")
 @helpers.DisabledForLab
-def get_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
+def get_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
 
     return helpers.flask_http_response(200, api_keys.get_api_key_v1(key_id))
 
 
-@request_authorizer.Authenticated()
+@request_authorizer.Authenticated(api_group="api_keys", api_action="read", api_name="list_api_keys")
 @helpers.DisabledForLab
-def list_api_keys_v1() -> Tuple[str, int, Dict[str, str]]:
+def list_api_keys_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, api_keys.get_api_key_list_v1())
 
 
-@request_authorizer.Authenticated(root_only=True)
+@request_authorizer.Authenticated(api_group="api_keys", api_action="delete", api_name="delete_api_key")
 @helpers.DisabledForLab
-def delete_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
+def delete_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
 
@@ -84,9 +86,9 @@ def delete_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(root_only=True)
+@request_authorizer.Authenticated(api_group="api_keys", api_action="update", api_name="update_api_key")
 @helpers.DisabledForLab
-def update_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
+def update_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
 
@@ -100,5 +102,4 @@ def update_api_key_v1(key_id: str) -> Tuple[str, int, Dict[str, str]]:
     except fastjsonschema.JsonSchemaException as e:
         raise exceptions.ValidationException(str(e))
 
-    api_keys.update_api_key_v1(key_id, body["nickname"])
-    return helpers.flask_http_response(200, helpers.format_success(True))
+    return helpers.flask_http_response(200, api_keys.update_api_key_v1(key_id, body.get("nickname"), body.get("permissions_document")))

@@ -127,12 +127,15 @@ class ContractJobTest(unittest.TestCase):
         self.assertIsNone(test_job.update_model)
         self.assertEqual(test_job.model.task_type, "delete")
 
-    @patch("dragonchain.job_processor.contract_job.authorization.register_new_auth_key", return_value={"key": "ban", "id": "ana"})
-    def test_populate_api_keys(self, mock_register_auth):
+    @patch("dragonchain.job_processor.contract_job.api_key_model.new_from_scratch", return_value=MagicMock(key="banana", key_id="fish"))
+    @patch("dragonchain.job_processor.contract_job.api_key_dao.save_api_key")
+    def test_populate_api_keys(self, mock_save_key, mock_new_key):
         self.test_job.populate_api_keys()
-        self.assertEqual(self.test_job.model.secrets["secret-key"], "ban")
-        self.assertEqual(self.test_job.model.secrets["auth-key-id"], "ana")
-        self.assertEqual(self.test_job.model.auth_key_id, "ana")
+        mock_save_key.assert_called_once_with(mock_new_key.return_value)
+        mock_new_key.assert_called_once_with(smart_contract=True)
+        self.assertEqual(self.test_job.model.secrets["secret-key"], "banana")
+        self.assertEqual(self.test_job.model.secrets["auth-key-id"], "fish")
+        self.assertEqual(self.test_job.model.auth_key_id, "fish")
 
     @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     def test_populate_env(self, mock_get_id):

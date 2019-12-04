@@ -16,30 +16,41 @@
 # language governing permissions and limitations under the Apache License.
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain import exceptions
 from dragonchain.webserver.lib import api_keys
 
 
-class TestApiKeyDAO(unittest.TestCase):
+class TestApiKeyLib(unittest.TestCase):
     @patch(
-        "dragonchain.webserver.lib.api_keys.storage.get_json_from_object",
-        return_value={"id": "blah", "registration_time": 1234, "key": "my_auth_key"},
+        "dragonchain.webserver.lib.api_keys.api_key_dao.list_api_keys", return_value=[MagicMock(key_id="blah", registration_time=1234, nickname="")]
     )
-    @patch("dragonchain.webserver.lib.api_keys.storage.list_objects", return_value=["KEYS/SC_blah", "KEYS/INTERCHAIN/interchain-key", "KEYS/blah"])
-    def test_get_api_key_list_removes_sc_keys(self, mock_list_objects, mock_get_object):
+    def test_get_api_key_list_calls_dao_correctly(self, mock_list_keys):
         response = api_keys.get_api_key_list_v1()["keys"]
         self.assertEqual(len(response), 1)
         self.assertEqual(response[0]["id"], "blah")
         self.assertEqual(response[0]["registration_time"], 1234)
-        mock_get_object.assert_called_once()
+        mock_list_keys.assert_called_once_with(include_interchain=False, include_system=False)
 
-    @patch("dragonchain.webserver.lib.api_keys.authorization.register_new_auth_key")
-    def test_generate_api_key_calls_register_with_correct_params(self, mock_register_new_key):
-        api_keys.create_api_key_v1(nickname="banana")
-        mock_register_new_key.assert_called_once()
+    @patch("dragonchain.webserver.lib.api_keys.api_key_model.new_from_scratch")
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.save_api_key")
+    def test_create_api_key_calls_register_with_default_params(self, mock_save_key, mock_new_from_scratch):
+        response = api_keys.create_api_key_v1()
+        mock_new_from_scratch.assert_called_once_with(smart_contract=False, nickname="")
+        mock_save_key.assert_called_once_with(mock_new_from_scratch.return_value)
+        self.assertEqual(response["id"], mock_new_from_scratch.return_value.key_id)
+
+    @patch("dragonchain.webserver.lib.api_keys.api_key_model.new_from_scratch")
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.save_api_key")
+    def test_create_api_key_calls_register_with_correct_params(self, mock_save_key, mock_new_from_scratch):
+        response = api_keys.create_api_key_v1(nickname="banana", permissions_document={"wind": "gone"})
+        mock_new_from_scratch.assert_called_once_with(smart_contract=False, nickname="banana")
+        mock_model = mock_new_from_scratch.return_value
+        self.assertEqual(mock_model.permissions_document, {"wind": "gone"})
+        mock_save_key.assert_called_once_with(mock_model)
+        self.assertEqual(response["id"], mock_new_from_scratch.return_value.key_id)
 
     def test_delete_api_key_does_not_delete_sc_keys(self):
         self.assertRaises(exceptions.ActionForbidden, api_keys.delete_api_key_v1, "SC_key")
@@ -48,16 +59,11 @@ class TestApiKeyDAO(unittest.TestCase):
     def test_delete_api_key_does_not_delete_root_key(self, mock_get_secret):
         self.assertRaises(exceptions.ActionForbidden, api_keys.delete_api_key_v1, "root_id")
 
-    @patch("dragonchain.webserver.lib.api_keys.secrets.get_dc_secret", return_value="thing")
-    @patch("dragonchain.webserver.lib.api_keys.authorization.remove_auth_key", return_value=False)
-    def test_delete_api_raises_runtime_on_delete_failure(self, mock_remove_key, mock_get_secret):
-        self.assertRaises(RuntimeError, api_keys.delete_api_key_v1, "whatever")
-
-    @patch("dragonchain.webserver.lib.api_keys.secrets.get_dc_secret", return_value="thing")
-    @patch("dragonchain.webserver.lib.api_keys.authorization.remove_auth_key", return_value=True)
-    def test_calls_remove_auth_key_upon_key_removal(self, mock_remove_auth_key, mock_get_secret):
+    @patch("dragonchain.webserver.lib.api_keys.secrets.get_dc_secret", return_value="root_id")
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.delete_api_key")
+    def test_delete_api_key_calls_appropriately(self, mock_delete_api_key, mock_get_secret):
         api_keys.delete_api_key_v1("1")
-        mock_remove_auth_key.assert_called_once_with(auth_key_id="1", interchain=False)
+        mock_delete_api_key.assert_called_once_with(key_id="1", interchain=False)
 
     def test_get_api_key_raises_not_found_when_sc_key(self):
         self.assertRaises(exceptions.NotFound, api_keys.get_api_key_v1, "SC_key")
@@ -68,12 +74,31 @@ class TestApiKeyDAO(unittest.TestCase):
     def test_get_api_key_raises_not_found_when_web_key(self):
         self.assertRaises(exceptions.NotFound, api_keys.get_api_key_v1, "WEB_key")
 
-    @patch(
-        "dragonchain.webserver.lib.api_keys.storage.get_json_from_object",
-        return_value={"id": "id", "key": "privateApiKey", "registration_time": 1100000},
-    )
-    def test_get_api_key_returns_registration_time(self, mock_get_object):
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.get_api_key")
+    def test_get_api_key_calls_appropriately(self, mock_get_key):
         response = api_keys.get_api_key_v1("id")
-        mock_get_object.assert_called_once_with("KEYS/id")
-        self.assertEqual(response["id"], "id")
-        self.assertEqual(response["registration_time"], 1100000)
+        mock_get_key.assert_called_once_with("id", interchain=False)
+        self.assertEqual(response["id"], mock_get_key.return_value.key_id)
+        self.assertEqual(response["registration_time"], mock_get_key.return_value.registration_time)
+
+    def test_update_api_key_raises_forbidden_when_key_id_starts_with_reserved_sequence(self):
+        self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "SC_thing")
+        self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "WEB_thing")
+        self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "INTERCHAIN/whatever")
+
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.get_api_key")
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.save_api_key")
+    def test_update_api_key_saves_with_defaults(self, mock_save_key, mock_get_key):
+        api_keys.update_api_key_v1("some_id")
+        mock_get_key.assert_called_once_with("some_id", interchain=False)
+        mock_save_key.assert_called_once_with(mock_get_key.return_value)
+
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.get_api_key")
+    @patch("dragonchain.webserver.lib.api_keys.api_key_dao.save_api_key")
+    def test_update_api_key_saves_with_parameters(self, mock_save_key, mock_get_key):
+        api_keys.update_api_key_v1("some_id", "nickname", {"definitely": "a permissions doc"})
+        mock_get_key.assert_called_once_with("some_id", interchain=False)
+        mock_retrieved_key = mock_get_key.return_value
+        self.assertEqual(mock_retrieved_key.nickname, "nickname")
+        self.assertEqual(mock_retrieved_key.permissions_document, {"definitely": "a permissions doc"})
+        mock_save_key.assert_called_once_with(mock_retrieved_key)

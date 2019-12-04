@@ -163,7 +163,7 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
         status_code = 409
         surface_error = INTERCHAIN_CONFLICT
     elif isinstance(exception, exceptions.InvalidTransactionType):
-        status_code = 403
+        status_code = 400
         surface_error = INVALID_TRANSACTION_TYPE
     elif isinstance(exception, exceptions.ContractLimitExceeded):
         status_code = 403

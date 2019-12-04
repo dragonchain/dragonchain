@@ -39,15 +39,19 @@ class TestAuthorization(unittest.TestCase):
     def test_datetime(self):
         self.assertIsInstance(authorization.get_now_datetime(), datetime.datetime)
 
-    def test_gen_auth_key(self):
-        auth_key = authorization.gen_auth_key()
-        self.assertRegex(auth_key, r"[a-zA-Z0-9]{43}")
+    @patch("dragonchain.lib.authorization.redis.set_sync")
+    def test_save_matchmaking_auth_key_calls_redis(self, mock_redis_set):
+        self.assertTrue(authorization.save_matchmaking_auth_key("key"))
+        mock_redis_set.assert_called_once_with("authorization:matchmaking", "key")
 
-    def test_gen_auth_key_id(self):
-        auth_key_id = authorization.gen_auth_key_id()
-        self.assertRegex(auth_key_id, r"[A-Z]{12}")
-        auth_key_id = authorization.gen_auth_key_id(True)
-        self.assertRegex(auth_key_id, r"SC_[A-Z]{12}")
+    @patch("dragonchain.lib.authorization.redis.set_sync", side_effect=Exception)
+    def test_save_matchmaking_auth_returns_false_on_redis_error(self, mock_redis_set):
+        self.assertFalse(authorization.save_matchmaking_auth_key("key"))
+
+    @patch("dragonchain.lib.authorization.redis.get_sync", return_value="banana")
+    def test_get_matchmaking_key_returns_from_redis(self, mock_redis_get):
+        self.assertEqual(authorization.get_matchmaking_key(), "banana")
+        mock_redis_get.assert_called_once_with("authorization:matchmaking")
 
     def test_get_hmac_string(self):
         http_verb = "TEST"
@@ -69,103 +73,72 @@ class TestAuthorization(unittest.TestCase):
             "DC1-HMAC-SHA256 id:G0ufeozs9/jOZCvIAkEfWhwCxx0NBDrvapnqdqShxWA=",
         )
 
-    @patch("dragonchain.lib.authorization.storage.get_json_from_object", return_value={"key": "thing"})
-    def test_get_auth_key(self, mock_storage):
-        self.assertEqual(authorization.get_auth_key("test", False), "thing")
-        mock_storage.assert_called_with("KEYS/test")
-
-    @patch("dragonchain.lib.authorization.storage.get_json_from_object", return_value={"key": "thing"})
-    def test_get_auth_key_interchain(self, mock_storage):
-        self.assertEqual(authorization.get_auth_key("test", True), "thing")
-        mock_storage.assert_called_with("KEYS/INTERCHAIN/test")
-
-    @patch("dragonchain.lib.authorization.storage.get_json_from_object", side_effect=exceptions.NotFound)
-    def test_get_auth_key_returns_none_on_not_found(self, mock_storage):
-        self.assertIsNone(authorization.get_auth_key("test", False))
-
-    @patch("dragonchain.lib.authorization.storage.get_json_from_object", return_value=None)
-    def test_get_auth_key_returns_none_on_empty_storage_get(self, mock_storage):
-        self.assertIsNone(authorization.get_auth_key("test", False))
-
-    @patch("dragonchain.lib.authorization.storage.delete", return_value=True)
-    def test_remove_auth_key(self, mock_storage):
-        self.assertTrue(authorization.remove_auth_key("test"))
-        mock_storage.assert_called_with("KEYS/test")
-
-    @patch("dragonchain.lib.authorization.storage.delete", return_value=True)
-    def test_remove_auth_key_interchain(self, mock_storage):
-        self.assertTrue(authorization.remove_auth_key("test", True))
-        mock_storage.assert_called_with("KEYS/INTERCHAIN/test")
-
-    @patch("dragonchain.lib.authorization.storage.delete", return_value=True)
-    def test_remove_auth_key_returns_false_on_error(self, mock_storage):
-        mock_storage.side_effect = RuntimeError
-        self.assertFalse(authorization.remove_auth_key("test"))
-
-    @patch("dragonchain.lib.authorization.gen_auth_key", return_value="test_key")
-    @patch("dragonchain.lib.authorization.gen_auth_key_id", return_value="test_key_id")
-    @patch("dragonchain.lib.authorization.storage.put_object_as_json")
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value=False)
-    def test_register_new_auth_key_with_valid_data(self, mock_get_auth_key, mock_storage, mock_gen_key_id, mock_gen_key):
-        self.assertRaises(ValueError, authorization.register_new_auth_key, False, None, "id")
-        result = authorization.register_new_auth_key()
-        mock_storage.assert_called_with("KEYS/test_key_id", result)
-        self.assertEqual(result["key"], "test_key")
-        self.assertEqual(result["id"], "test_key_id")
-
-    @patch("dragonchain.lib.authorization.storage.put_object_as_json")
-    def test_register_new_auth_key_supplying_both_key_and_id(self, mock_storage):
-        result = authorization.register_new_auth_key(auth_key="test", auth_key_id="yes")
-        mock_storage.assert_called_with("KEYS/yes", result)
-        self.assertEqual(result["key"], "test")
-        self.assertEqual(result["id"], "yes")
-
-    @patch("dragonchain.lib.authorization.storage.put_object_as_json")
-    def test_register_new_interchain_key_returns_true_on_success(self, mock_storage):
-        self.assertTrue(authorization.save_interchain_auth_key("test", "key"))
-        mock_storage.assert_called_once()
-
-    @patch("dragonchain.lib.authorization.storage.put_object_as_json", side_effect=Exception)
-    def test_register_new_interchain_key_returns_false_on_error(self, mock_storage):
-        self.assertFalse(authorization.save_interchain_auth_key("test", "key"))
-
+    @patch("dragonchain.lib.authorization.api_key_dao.save_api_key")
+    @patch("dragonchain.lib.authorization.api_key_model.new_from_scratch")
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.keys.get_my_keys", return_value=MagicMock(make_signature=MagicMock(return_value="sig")))
-    @patch("dragonchain.lib.authorization.save_interchain_auth_key", return_value=True)
     @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=201))
-    @patch("dragonchain.lib.authorization.gen_auth_key", return_value="key")
     @patch("dragonchain.lib.authorization.matchmaking.get_dragonchain_address", return_value="https://someurl")
-    def test_register_interchain_key_with_remote_returns_valid(self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys, mock_dcid):
+    def test_register_interchain_key_with_remote_returns_valid(self, mock_get_address, mock_post, mock_keys, mock_dcid, mock_new_key, mock_save):
         remote_dcid = "remote"
         url = "https://someurl/v1/interchain-auth-register"
-        expected_key = {"dcid": "test_dcid", "key": "key", "signature": "sig"}
-        self.assertEqual(authorization.register_new_interchain_key_with_remote(remote_dcid), "key")
+        expected_key = {"dcid": "test_dcid", "key": mock_new_key.return_value.key, "signature": "sig"}
+        self.assertEqual(authorization.register_new_interchain_key_with_remote(remote_dcid), mock_new_key.return_value)
         mock_post.assert_called_with(url, json=expected_key, timeout=30)
+        mock_save.assert_called_once_with(mock_new_key.return_value)
 
+    @patch("dragonchain.lib.authorization.api_key_model.new_from_scratch")
     @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.lib.authorization.keys.get_my_keys")
-    @patch("dragonchain.lib.authorization.save_interchain_auth_key", return_value=True)
     @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=100))
-    @patch("dragonchain.lib.authorization.gen_auth_key", return_value="key")
     @patch("dragonchain.lib.authorization.matchmaking.get_dragonchain_address", return_value="https://someurl")
-    def test_register_interchain_key_raises_with_bad_status_code(self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys, mock_get_id):
+    def test_register_interchain_key_raises_with_bad_status_code(self, mock_get_address, mock_post, mock_keys, mock_get_id, mock_new_key):
         self.assertRaises(RuntimeError, authorization.register_new_interchain_key_with_remote, "thing")
 
+    @patch("dragonchain.lib.authorization.api_key_model.new_from_scratch")
     @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
     @patch("dragonchain.lib.authorization.keys.get_my_keys")
-    @patch("dragonchain.lib.authorization.save_interchain_auth_key", return_value=False)
-    @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=201))
-    @patch("dragonchain.lib.authorization.gen_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.requests.post", side_effect=Exception)
     @patch("dragonchain.lib.authorization.matchmaking.get_dragonchain_address", return_value="https://someurl")
-    def test_register_interchain_key_raises_with_failure_to_register_interchain_key(
-        self, mock_get_address, mock_gen_auth, mock_post, mock_save, mock_keys, mock_get_id
-    ):
+    def test_register_interchain_key_raises_with_bad_request_exception(self, mock_get_address, mock_post, mock_keys, mock_get_id, mock_new_key):
         self.assertRaises(RuntimeError, authorization.register_new_interchain_key_with_remote, "thing")
+
+    @patch("dragonchain.lib.authorization.api_key_model.gen_auth_key", return_value="banana")
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    @patch("dragonchain.lib.authorization.keys.get_my_keys", return_value=MagicMock(make_signature=MagicMock(return_value="signature")))
+    @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=201))
+    @patch("dragonchain.lib.authorization.save_matchmaking_auth_key", return_value=True)
+    def test_register_with_matchmaking_returns_valid(self, mock_save_key, mock_post, mock_get_keys, mock_get_id, mock_gen_key):
+        self.assertEqual(authorization.register_new_key_with_matchmaking(), "banana")
+
+    @patch("dragonchain.lib.authorization.api_key_model.gen_auth_key", return_value="banana")
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    @patch("dragonchain.lib.authorization.keys.get_my_keys", return_value=MagicMock(make_signature=MagicMock(return_value="signature")))
+    @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=100))
+    @patch("dragonchain.lib.authorization.save_matchmaking_auth_key", return_value=True)
+    def test_register_with_matchmaking_raises_with_bad_status_code(self, mock_save_key, mock_post, mock_get_keys, mock_get_id, mock_gen_key):
+        self.assertRaises(RuntimeError, authorization.register_new_key_with_matchmaking)
+
+    @patch("dragonchain.lib.authorization.api_key_model.gen_auth_key", return_value="banana")
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    @patch("dragonchain.lib.authorization.keys.get_my_keys", return_value=MagicMock(make_signature=MagicMock(return_value="signature")))
+    @patch("dragonchain.lib.authorization.requests.post", side_effect=Exception)
+    @patch("dragonchain.lib.authorization.save_matchmaking_auth_key", return_value=True)
+    def test_register_with_matchmaking_raises_with_request_exception(self, mock_save_key, mock_post, mock_get_keys, mock_get_id, mock_gen_key):
+        self.assertRaises(RuntimeError, authorization.register_new_key_with_matchmaking)
+
+    @patch("dragonchain.lib.authorization.api_key_model.gen_auth_key", return_value="banana")
+    @patch("dragonchain.lib.keys.get_public_id", return_value="z7S3WADvnjCyFkUmL48cPGqrSHDrQghNxLFMwBEwwtMa")
+    @patch("dragonchain.lib.authorization.keys.get_my_keys", return_value=MagicMock(make_signature=MagicMock(return_value="signature")))
+    @patch("dragonchain.lib.authorization.requests.post", return_value=MagicMock(status_code=200))
+    @patch("dragonchain.lib.authorization.save_matchmaking_auth_key", return_value=False)
+    def test_register_with_matchmaking_raises_with_bad_key_save(self, mock_save_key, mock_post, mock_get_keys, mock_get_id, mock_gen_key):
+        self.assertRaises(RuntimeError, authorization.register_new_key_with_matchmaking)
 
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
-    @patch("dragonchain.lib.authorization.register_new_interchain_key_with_remote", return_value="key")
+    @patch("dragonchain.lib.authorization.register_new_interchain_key_with_remote", return_value=MagicMock(key="key"))
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=MagicMock(isoformat=MagicMock(return_value="timestamp")))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value=None)
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", side_effect=exceptions.NotFound)
     def test_gen_interchain_request_dcid(self, mock_get_auth_key, date_mock, mock_register, mock_dcid):
         dcid = "adcid"
         full_path = "/path"
@@ -225,7 +198,7 @@ class TestAuthorization(unittest.TestCase):
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_wrong_dc_id(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -243,14 +216,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_unsupported_auth_version(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         http_verb = "GET"
         full_path = "/path"
@@ -268,14 +243,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_unsupported_hmac_hash(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         http_verb = "GET"
         full_path = "/path"
@@ -293,14 +270,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_old_timestamp(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -318,14 +297,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_malformed_authorization(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         http_verb = "GET"
         full_path = "/path"
@@ -343,7 +324,9 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
         self.assertRaisesWithMessage(
             exceptions.UnauthorizedException,
@@ -357,14 +340,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_invalid_hmac(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         http_verb = "GET"
         full_path = "/path"
@@ -382,14 +367,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_passes_when_valid(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -397,7 +384,9 @@ class TestAuthorization(unittest.TestCase):
         dcid = "test_dcid"
         timestamp = "2018-11-14T09:05:25.128176Z"
         # Test valid SHA256
-        authorization.verify_request_authorization(auth_str, http_verb, full_path, dcid, timestamp, "", b"", False, False)
+        authorization.verify_request_authorization(
+            auth_str, http_verb, full_path, dcid, timestamp, "", b"", False, "api_keys", "create", "create_api_key"
+        )
         # Test valid BLAKE2b512
         authorization.verify_request_authorization(
             "DC1-HMAC-BLAKE2b512 id:x1PrKtbs51CR1X6/NTIxyjwOPmZF3rxIXdtJARDialRV+H3FbmUxLmqDuCQvPKEOLN9rNUFhsZa3QZVf8+kXkA==",
@@ -408,18 +397,30 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
         # Test valid SHA3-256
         authorization.verify_request_authorization(
-            "DC1-HMAC-SHA3-256 id:IjPhj3dzTyj0VhcI5oUl5vcFapX8/GpJaO5M82SD3dE=", http_verb, full_path, dcid, timestamp, "", b"", False, False
+            "DC1-HMAC-SHA3-256 id:IjPhj3dzTyj0VhcI5oUl5vcFapX8/GpJaO5M82SD3dE=",
+            http_verb,
+            full_path,
+            dcid,
+            timestamp,
+            "",
+            b"",
+            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=True)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_on_replay(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -438,7 +439,67 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
+            "api_keys",
+            "create",
+            "create_api_key",
+        )
+
+    @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
+    @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
+    @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
+    @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=False)))
+    def test_verify_req_auth_raises_on_key_not_allowed(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
+        auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
+        http_verb = "GET"
+        full_path = "/path"
+        dcid = "test_dcid"
+        timestamp = "2018-11-14T09:05:25.128176Z"
+        self.assertRaisesWithMessage(
+            exceptions.ActionForbidden,
+            "This key is not allowed to perform create_api_key",
+            authorization.verify_request_authorization,
+            auth_str,
+            http_verb,
+            full_path,
+            dcid,
+            timestamp,
+            "",
+            b"",
             False,
+            "api_keys",
+            "create",
+            "create_api_key",
+        )
+
+    @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
+    @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
+    @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
+    @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
+    @patch(
+        "dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(side_effect=Exception))
+    )
+    def test_verify_req_auth_raises_on_key_allowed_exception(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
+        auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
+        http_verb = "GET"
+        full_path = "/path"
+        dcid = "test_dcid"
+        timestamp = "2018-11-14T09:05:25.128176Z"
+        self.assertRaisesWithMessage(
+            exceptions.ActionForbidden,
+            "This key is not allowed to perform create_api_key",
+            authorization.verify_request_authorization,
+            auth_str,
+            http_verb,
+            full_path,
+            dcid,
+            timestamp,
+            "",
+            b"",
+            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
@@ -446,7 +507,7 @@ class TestAuthorization(unittest.TestCase):
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.should_rate_limit", return_value=True)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_verify_req_auth_raises_with_rate_limit(self, mock_get_auth_key, mock_date, mock_should_limit, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -465,14 +526,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value=None)
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", side_effect=exceptions.NotFound)
     def test_verify_req_auth_raises_with_no_key(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -491,14 +554,16 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", side_effect=Exception)
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", side_effect=Exception)
     def test_verify_req_auth_raises_on_get_key_error(self, mock_get_auth_key, mock_date, mock_is_replay, mock_dcid):
         auth_str = "DC1-HMAC-SHA256 id:gr1FvIvTe1oOmFZqHgRQUhi6s/EyBvZmJWqH1oWV+UQ="
         http_verb = "GET"
@@ -517,13 +582,15 @@ class TestAuthorization(unittest.TestCase):
             "",
             b"",
             False,
-            False,
+            "api_keys",
+            "create",
+            "create_api_key",
         )
 
     @patch("dragonchain.lib.authorization.keys.get_public_id", return_value="test_dcid")
     @patch("dragonchain.lib.authorization.signature_is_replay", return_value=False)
     @patch("dragonchain.lib.authorization.get_now_datetime", return_value=datetime.datetime(2018, 11, 14, 9, 5, 25, 128176))
-    @patch("dragonchain.lib.authorization.get_auth_key", return_value="key")
+    @patch("dragonchain.lib.authorization.api_key_dao.get_api_key", return_value=MagicMock(key="key", is_key_allowed=MagicMock(return_value=True)))
     def test_generated_authenticated_request_with_verifier(self, mock_get_auth_key, mock_date, mock_is_replay, mock_get_id):
         """
         This is more of psuedo integration test, ensuring that
@@ -540,15 +607,21 @@ class TestAuthorization(unittest.TestCase):
         headers, content = authorization.generate_authenticated_request("POST", dcid, full_path, json_content, "SHA256")
         auth_str = headers["Authorization"]
         # Test with SHA256 HMAC Auth
-        authorization.verify_request_authorization(auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, False)
+        authorization.verify_request_authorization(
+            auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, "api_keys", "create", "create_api_key"
+        )
         headers, content = authorization.generate_authenticated_request("POST", dcid, full_path, json_content, "BLAKE2b512")
         auth_str = headers["Authorization"]
         # Test with BLAKE2b512 HMAC Auth
-        authorization.verify_request_authorization(auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, False)
+        authorization.verify_request_authorization(
+            auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, "api_keys", "create", "create_api_key"
+        )
         headers, content = authorization.generate_authenticated_request("POST", dcid, full_path, json_content, "SHA3-256")
         auth_str = headers["Authorization"]
         # Test with SHA3-256 HMAC Auth
-        authorization.verify_request_authorization(auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, False)
+        authorization.verify_request_authorization(
+            auth_str, "POST", full_path, dcid, timestamp, "application/json", content, False, "api_keys", "create", "create_api_key"
+        )
 
     @patch("dragonchain.lib.authorization.RATE_LIMIT", 0)
     @patch("dragonchain.lib.authorization.redis.lindex_sync")

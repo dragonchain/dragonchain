@@ -20,16 +20,14 @@ import re
 import time
 import json
 import datetime
-import string
 import random
-import secrets
 import base64
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple
 
 import requests
 
-from dragonchain.lib.interfaces import storage
-from dragonchain.lib.interfaces import secrets as dc_secrets
+from dragonchain.lib.dto import api_key_model
+from dragonchain.lib.dao import api_key_dao
 from dragonchain.lib import matchmaking
 from dragonchain.lib import crypto
 from dragonchain.lib import keys
@@ -70,29 +68,6 @@ def get_supported_hmac_hash(hash_type_str: str) -> crypto.SupportedHashes:
         return crypto.SupportedHashes.sha3_256
     else:
         raise ValueError(f"{hash_type_str} is an unsupported HMAC hash type")
-
-
-def gen_auth_key() -> str:
-    """Generate an auth key string
-    Returns:
-        String of the newly generated auth key
-    """
-    # Note a 43 character key with this keyset gives us ~256 bits of entropy for these auth_keys
-    return "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(43))
-
-
-def gen_auth_key_id(smart_contract: bool = False) -> str:
-    """Generate an auth key ID string
-    Args:
-        smart_contract: if the key id should be generated for a smart contract
-    Returns:
-        String of the newly generated auth key ID
-    """
-    # Generate key ID consisting of 12 characters, all uppercase characters
-    key_id = "".join(secrets.choice(string.ascii_uppercase) for _ in range(12))
-    if smart_contract:
-        key_id = "SC_" + key_id
-    return key_id
 
 
 def get_hmac_message_string(
@@ -139,92 +114,6 @@ def get_authorization(
     return f"DC{version}-HMAC-{hmac_hash_type} {auth_key_id}:{hmac}"
 
 
-def get_auth_key(auth_key_id: str, interchain: bool) -> Optional[str]:
-    """Retrieve the auth key corresponding to a key id
-    Args:
-        auth_key_id: The key id to grab (if interchain, this is the interchain dcid)
-        interchain: boolean whether the key to get is an interchain key or not
-    Returns:
-        The base64 encoded auth key string corresponding to the id (None if not found)
-    """
-    response = None
-    try:
-        if interchain:
-            response = storage.get_json_from_object(f"KEYS/INTERCHAIN/{auth_key_id}")
-        else:
-            response = storage.get_json_from_object(f"KEYS/{auth_key_id}")
-    except exceptions.NotFound:
-        pass
-    if response:
-        return response.get("key")
-    return None
-
-
-def register_new_auth_key(smart_contract: bool = False, auth_key: str = "", auth_key_id: str = "", nickname: str = "") -> Dict[str, Any]:
-    """Register a new auth key for use with the chain
-    Args:
-        smart_contract: whether it should generate a key for a smart contract
-        auth_key: (optional) specify an auth_key to use (must be in conjunction with auth_key_id)
-        auth_key_id: (optional) specify an auth_key_id to use (must be in conjunction with auth_key_id)
-    Returns:
-        Dictionary where 'id' is the new auth_key_id and 'key' is the new auth_key
-    Raises:
-        ValueError when only one of auth_key or auth_key_id are defined, but not both
-    """
-    if (not auth_key) or (not auth_key_id):
-        # Check that both are not specified (don't allow only auth_key or auth_key_id to be individually provided)
-        if auth_key or auth_key_id:
-            raise ValueError("auth_key and auth_key_id must both be specified together if provided")
-        # Python do-while
-        while True:
-            auth_key_id = gen_auth_key_id(smart_contract)
-            # Make sure this randomly generated key id doesn't already exist
-            if not get_auth_key(auth_key_id, False):
-                break
-        auth_key = gen_auth_key()
-    register = {"key": auth_key, "id": auth_key_id, "registration_time": int(time.time()), "nickname": nickname}
-    storage.put_object_as_json(f"KEYS/{auth_key_id}", register)
-    return register
-
-
-def remove_auth_key(auth_key_id: str, interchain: bool = False) -> bool:
-    """Remove a registered auth key from this chain
-    Args:
-        auth_key_id: The key id string associated with the auth_key to delete
-            Note: in case of interchain, this is the interchain dcid
-        interchain: boolean whether this key to remove is an interchain key
-    Returns:
-        False if failed to delete, True otherwise
-    """
-    path = None
-    if interchain:
-        path = f"KEYS/INTERCHAIN/{auth_key_id}"
-    else:
-        path = f"KEYS/{auth_key_id}"
-    try:
-        storage.delete(path)
-        return True
-    except Exception:
-        return False
-
-
-def save_interchain_auth_key(interchain_dcid: str, auth_key: str) -> bool:
-    """Register a new interchain auth key. !This will overwrite any existing interchain key for this dcid!
-    Args:
-        interchain_dcid: chain id of the interchain sharing this key
-        auth_key: auth_key to add
-    Returns:
-        Boolean if successful
-    """
-    try:
-        # Add the new key
-        register = {"key": auth_key, "registration_time": int(time.time())}
-        storage.put_object_as_json(f"KEYS/INTERCHAIN/{interchain_dcid}", register)
-        return True
-    except Exception:
-        return False
-
-
 def save_matchmaking_auth_key(auth_key: str) -> bool:
     """Register a new matchmaking auth key. !This will overwrite the existing matchmaking key for this chain!
     Args:
@@ -247,28 +136,27 @@ def get_matchmaking_key() -> Optional[str]:
     return redis.get_sync(MATCHMAKING_KEY_LOCATION)
 
 
-def register_new_interchain_key_with_remote(interchain_dcid: str) -> str:
+def register_new_interchain_key_with_remote(interchain_dcid: str) -> api_key_model.APIKeyModel:
     """Make a new auth key and register it with a remote dragonchain for inter-level communication
     Args:
         interchain_dcid: chain id of the interchain sharing this key
     Returns:
-        auth key string of the newly shared key
+        API key model for the newly shared key
     Raises:
         RuntimeError when bad response from chain or couldn't save to storage
     """
     # We need to estabilish a shared HMAC key for this chain before we can post
-    auth_key = gen_auth_key()
-    signature = keys.get_my_keys().make_signature(f"{interchain_dcid}_{auth_key}".encode("utf-8"), crypto.SupportedHashes.sha256)
-    new_key = {"dcid": keys.get_public_id(), "key": auth_key, "signature": signature}
+    new_interchain_key = api_key_model.new_from_scratch(interchain_dcid=interchain_dcid)
+    signature = keys.get_my_keys().make_signature(f"{interchain_dcid}_{new_interchain_key.key}".encode("utf-8"), crypto.SupportedHashes.sha256)
+    new_key = {"dcid": keys.get_public_id(), "key": new_interchain_key.key, "signature": signature}
     try:
         r = requests.post(f"{matchmaking.get_dragonchain_address(interchain_dcid)}/v1/interchain-auth-register", json=new_key, timeout=30)
     except Exception as e:
         raise RuntimeError(f"Unable to register shared auth key with dragonchain {interchain_dcid}\nError: {e}")
     if r.status_code < 200 or r.status_code >= 300:
         raise RuntimeError(f"Unable to register shared auth key with dragonchain {interchain_dcid}\nStatus code: {r.status_code}")
-    if not save_interchain_auth_key(interchain_dcid, auth_key):
-        raise RuntimeError("Unable to add new interchain auth key to storage")
-    return auth_key
+    api_key_dao.save_api_key(new_interchain_key)
+    return new_interchain_key
 
 
 def register_new_key_with_matchmaking() -> str:
@@ -278,7 +166,7 @@ def register_new_key_with_matchmaking() -> str:
     Raises:
         RuntimeError when bad response from chain or couldn't save to storage
     """
-    auth_key = gen_auth_key()
+    auth_key = api_key_model.gen_auth_key()
     signature = keys.get_my_keys().make_signature(f"matchmaking_{auth_key}".encode("utf-8"), crypto.SupportedHashes.sha256)
     new_key = {"dcid": keys.get_public_id(), "key": auth_key, "signature": signature}
     try:
@@ -317,10 +205,11 @@ def generate_authenticated_request(
             # We need to estabilish a shared HMAC key with matchmaking before we can make a request
             auth_key = register_new_key_with_matchmaking()
     else:
-        auth_key = get_auth_key(dcid, interchain=True)
-        if auth_key is None:
+        try:
+            auth_key = api_key_dao.get_api_key(dcid, interchain=True).key
+        except exceptions.NotFound:
             # We need to estabilish a shared HMAC key for this chain before we can make a request
-            auth_key = register_new_interchain_key_with_remote(dcid)
+            auth_key = register_new_interchain_key_with_remote(dcid).key
     timestamp = get_now_datetime().isoformat() + "Z"
     content_type = ""
     content = b""
@@ -395,8 +284,10 @@ def verify_request_authorization(  # noqa: C901
     content_type: str,
     content: bytes,
     interchain: bool,
-    root_only: bool,
-) -> None:
+    api_group: str,
+    api_action: str,
+    api_name: str,
+) -> api_key_model.APIKeyModel:
     """Verify an http request to the webserver
     Args:
         authorization: Authorization header of the request
@@ -407,10 +298,15 @@ def verify_request_authorization(  # noqa: C901
         content-type: content-type header of the request (if it exists)
         content: byte object of the body of the request (if it exists)
         interchain: boolean whether to use interchain keys to check or not
-        root_only: boolean whether or not root is required
+        api_group: the api group name of this endpoint
+        api_action: the CRUD api action of this endpoint ("create", "read", "update", "delete")
+        api_name: the api name of this particular endpoint
     Raises:
         exceptions.UnauthorizedException (with message) when the authorization is not valid
+        exceptions.ActionForbidden (with message) when the authorization is valid, but the action is not allowed
         exceptions.APIRateLimitException (with message) when rate limit is currently exceeded for the provided api key id
+    Returns:
+        The api key model used for this request (if successfully authenticated)
     """
     if dcid != keys.get_public_id():
         raise exceptions.UnauthorizedException("Incorrect Dragonchain ID")
@@ -442,24 +338,26 @@ def verify_request_authorization(  # noqa: C901
             message_string = get_hmac_message_string(http_verb, full_path, dcid, timestamp, content_type, content, supported_hash)
             try:
                 auth_key_id = re.search(" (.*):", authorization).group(1)  # noqa: T484
-                if "/" in auth_key_id:
-                    _log.info(f"Authorization failure from potentially malicious key id {auth_key_id}")
-                    raise exceptions.UnauthorizedException("Invalid HMAC Authentication")
-                if root_only and auth_key_id != dc_secrets.get_dc_secret("hmac-id"):
-                    raise exceptions.ActionForbidden("this action can only be performed with root auth key")
-                auth_key = get_auth_key(auth_key_id, interchain)
-                if not auth_key:
+                try:
+                    auth_key = api_key_dao.get_api_key(auth_key_id, interchain)
+                except exceptions.NotFound:
                     _log.info(f"Authorization failure from key that does not exist {auth_key_id}")
                     raise exceptions.UnauthorizedException("Invalid HMAC Authentication")
                 # Check if this key should be rate limited (does not apply to interchain keys)
                 if not interchain and should_rate_limit(auth_key_id):
                     raise exceptions.APIRateLimitException(f"API Rate Limit Exceeded. {RATE_LIMIT} requests allowed per minute.")
-                if crypto.compare_hmac(supported_hash, hmac, auth_key, message_string):
+                if crypto.compare_hmac(supported_hash, hmac, auth_key.key, message_string):
                     # Check if this signature has already been used for replay protection
                     if signature_is_replay(f"{auth_key_id}:{base64.b64encode(hmac).decode('ascii')}"):
                         raise exceptions.UnauthorizedException("Previous matching request found (no replays allowed)")
-                    # Signature is valid; Return nothing on success
-                    return
+                    # Check that this key is allowed to perform this action
+                    try:
+                        if auth_key.is_key_allowed(api_group, api_action, api_name, interchain):
+                            # Signature is valid and key is allowed; Return the api key used on success
+                            return auth_key
+                    except Exception:
+                        _log.exception(f"Uncaught exception checking if api key is allowed")
+                    raise exceptions.ActionForbidden(f"This key is not allowed to perform {api_name}")
                 else:
                     # HMAC doesn't match
                     raise exceptions.UnauthorizedException("Invalid HMAC Authentication")

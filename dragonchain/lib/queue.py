@@ -18,7 +18,7 @@
 import os
 import json
 import base64
-from typing import List, Tuple, Union, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Union, Optional, Iterable, Dict, Any, cast, TYPE_CHECKING
 
 from dragonchain.lib import crypto
 from dragonchain.lib.database import redis
@@ -33,6 +33,7 @@ from dragonchain import exceptions
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import L1Headers
+    from redis.client import Pipeline
 
 
 LEVEL = os.environ["LEVEL"]
@@ -67,7 +68,7 @@ def check_and_recover_processing_if_necessary() -> None:
 def enqueue_item(item: dict, deadline: int = 0) -> None:
     """Enqueues to the chain's block / transaction queue"""
     if LEVEL == "1":
-        return enqueue_l1(item)
+        return enqueue_l1([item])
     elif LEVEL == "2" or LEVEL == "3" or LEVEL == "4":
         return enqueue_generic(item["payload"], queue=INCOMING_TX_KEY, deadline=deadline)
     elif LEVEL == "5":
@@ -83,7 +84,17 @@ def remove_transaction_stubs(transactions: List[transaction_model.TransactionMod
     redis.srem_sync(TEMPORARY_TX_KEY, *srem_list)
 
 
-def enqueue_l1(transaction: dict) -> None:
+def enqueue_l1(transactions: Iterable[Dict[str, Any]]) -> None:
+    p = redis.pipeline_sync()
+    for txn in transactions:
+        _enqueue_l1_helper(p, txn)
+    # Execute redis pipeline
+    for result in p.execute():
+        if not result:
+            raise RuntimeError("Failed to enqueue")
+
+
+def _enqueue_l1_helper(pipeline: "Pipeline", transaction: Dict[str, Any]) -> "Pipeline":
     txn_type_string = transaction["header"]["txn_type"]
     invocation_attempt = not transaction["header"].get("invoker")  # This transaction is an invocation attempt if there is no invoker
 
@@ -93,9 +104,8 @@ def enqueue_l1(transaction: dict) -> None:
         _log.error("Invalid transaction type")
         raise exceptions.InvalidTransactionType(f"Transaction of type {txn_type_string} does not exist")
 
-    p = redis.pipeline_sync()
-    p.lpush(INCOMING_TX_KEY, json.dumps(transaction, separators=(",", ":")))
-    p.sadd(TEMPORARY_TX_KEY, transaction["header"]["txn_id"])
+    pipeline.lpush(INCOMING_TX_KEY, json.dumps(transaction, separators=(",", ":")))
+    pipeline.sadd(TEMPORARY_TX_KEY, transaction["header"]["txn_id"])
 
     # Attempt contract invocation if necessary
     if transaction_type.contract_id and invocation_attempt:
@@ -107,12 +117,9 @@ def enqueue_l1(transaction: dict) -> None:
         if contract_active:
             transaction["payload"] = json.loads(transaction["payload"])  # We must parse the stringied payload of the SC invocation before sending
             invocation_request = contract.export_as_invoke_request(transaction)
-            p.lpush(CONTRACT_INVOKE_MQ_KEY, json.dumps(invocation_request, separators=(",", ":")))
+            pipeline.lpush(CONTRACT_INVOKE_MQ_KEY, json.dumps(invocation_request, separators=(",", ":")))
 
-    # Execute redis pipeline
-    for result in p.execute():
-        if not result:
-            raise RuntimeError("Failed to enqueue")
+    return pipeline
 
 
 def enqueue_generic(content: dict, queue: str, deadline: int) -> None:

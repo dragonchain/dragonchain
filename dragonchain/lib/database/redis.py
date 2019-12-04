@@ -141,7 +141,7 @@ async def _initialize_async_redis(host: str, port: int, wait_time: int = 30) -> 
     sleep_time = 1  # Number of seconds to wait after a failure to connect before retrying
     while time.time() < expire_time:
         try:
-            client = await aioredis.create_redis_pool((host, port), loop=asyncio.get_running_loop())
+            client = await aioredis.create_redis_pool((host, port))
             if await client.ping():
                 _log.debug(f"Successfully connected with redis at {host}:{port}")
                 return client  # Connected to a working redis, return now

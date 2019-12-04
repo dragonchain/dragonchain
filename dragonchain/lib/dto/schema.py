@@ -47,12 +47,6 @@ class DCRN(enum.Enum):
     Error_InTransit_Template = "Error::L{}::InTransit"
 
 
-api_key_create_schema_v1 = {"type": "object", "properties": {"nickname": {"type": "string"}}, "additionalProperties": False}
-
-
-api_key_update_schema_v1 = {"type": "object", "properties": {"nickname": {"type": "string"}}, "required": ["nickname"], "additionalProperties": False}
-
-
 interchain_auth_registration_schema_v1 = {
     "type": "object",
     "properties": {"dcid": {"type": "string"}, "key": {"type": "string"}, "signature": {"type": "string"}},
@@ -713,5 +707,148 @@ bnb_transaction_schema_v1 = {
         "memo": {"type": "string"},
     },
     "required": ["version", "amount", "to_address"],
+    "additionalProperties": False,
+}
+
+
+def add_crud_default_properties(other_properties: Dict[str, Any]):
+    other_properties["allow_create"] = {"type": "boolean"}
+    other_properties["allow_read"] = {"type": "boolean"}
+    other_properties["allow_update"] = {"type": "boolean"}
+    other_properties["allow_delete"] = {"type": "boolean"}
+    return other_properties
+
+
+default_endpoint_property_schema = {
+    "type": "object",
+    "properties": {"allowed": {"type": "boolean"}},
+    "additionalProperties": False,
+    "required": ["allowed"],
+}
+
+create_transaction_endpoint_property_schema = {
+    "type": "object",
+    "properties": {"allowed": {"type": "boolean"}, "transaction_types": {"type": "object", "patternProperties": {".*": {"type": "boolean"}}}},
+    "additionalProperties": False,
+}
+
+permission_document_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "default_allow": {"type": "boolean"},
+        "permissions": {
+            "type": "object",
+            "properties": add_crud_default_properties(
+                {
+                    "api_keys": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {
+                                "create_api_key": default_endpoint_property_schema,
+                                "get_api_key": default_endpoint_property_schema,
+                                "list_api_keys": default_endpoint_property_schema,
+                                "delete_api_key": default_endpoint_property_schema,
+                                "update_api_key": default_endpoint_property_schema,
+                            }
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "blocks": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {"get_block": default_endpoint_property_schema, "query_blocks": default_endpoint_property_schema}
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "interchains": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {
+                                "create_interchain": default_endpoint_property_schema,
+                                "update_interchain": default_endpoint_property_schema,
+                                "create_interchain_transaction": default_endpoint_property_schema,
+                                "list_interchains": default_endpoint_property_schema,
+                                "get_interchain": default_endpoint_property_schema,
+                                "delete_interchain": default_endpoint_property_schema,
+                                "get_default_interchain": default_endpoint_property_schema,
+                                "set_default_interchain": default_endpoint_property_schema,
+                                "get_interchain_legacy": default_endpoint_property_schema,
+                                "create_interchain_transaction_legacy": default_endpoint_property_schema,
+                            }
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "misc": {
+                        "type": "object",
+                        "properties": add_crud_default_properties({"get_status": default_endpoint_property_schema}),
+                        "additionalProperties": False,
+                    },
+                    "contracts": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {
+                                "get_contract": default_endpoint_property_schema,
+                                "get_contract_logs": default_endpoint_property_schema,
+                                "list_contracts": default_endpoint_property_schema,
+                                "create_contract": default_endpoint_property_schema,
+                                "update_contract": default_endpoint_property_schema,
+                                "delete_contract": default_endpoint_property_schema,
+                                "get_contract_object": default_endpoint_property_schema,
+                                "list_contract_objects": default_endpoint_property_schema,
+                            }
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "transaction_types": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {
+                                "create_transaction_type": default_endpoint_property_schema,
+                                "delete_transaction_type": default_endpoint_property_schema,
+                                "list_transaction_types": default_endpoint_property_schema,
+                                "get_transaction_type": default_endpoint_property_schema,
+                            }
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "transactions": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {
+                                "create_transaction": create_transaction_endpoint_property_schema,
+                                "query_transactions": default_endpoint_property_schema,
+                                "get_transaction": default_endpoint_property_schema,
+                            }
+                        ),
+                        "additionalProperties": False,
+                    },
+                    "verifications": {
+                        "type": "object",
+                        "properties": add_crud_default_properties(
+                            {"get_verifications": default_endpoint_property_schema, "get_pending_verifications": default_endpoint_property_schema}
+                        ),
+                        "additionalProperties": False,
+                    },
+                }
+            ),
+            "additionalProperties": False,
+        },
+    },
+    "required": ["version", "default_allow", "permissions"],
+    "additionalProperties": False,
+}
+
+
+api_key_create_schema_v1 = {
+    "type": "object",
+    "properties": {"nickname": {"type": "string"}, "permissions_document": permission_document_schema_v1},
+    "additionalProperties": False,
+}
+
+
+api_key_update_schema_v1 = {
+    "type": "object",
+    "properties": {"nickname": {"type": "string"}, "permissions_document": permission_document_schema_v1},
     "additionalProperties": False,
 }
