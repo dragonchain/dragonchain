@@ -219,7 +219,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None:
             _log.warning("[BROADCAST PROCESSOR] Out of funds! Will not broadcast anything for 30 minutes")
             await asyncio.sleep(1800)  # Sleep for 30 minutes if insufficient funds
             break
-        except exceptions.NotFound:
+        except exceptions.UnableToUpdate:
             _log.warning("Matchmaking does not have enough matches to create a claim check")
             # Schedule this block for 5 minutes later, so we don't spam matchmaking every second if there aren't matches available
             await broadcast_functions.schedule_block_for_broadcast_async(block_id, int(time.time()) + 300)
@@ -247,7 +247,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None:
                     _log.info(f"[BROADCAST PROCESSOR] Chain {chain} didn't respond to broadcast in time. Fetching new chain")
                     try:
                         claim = matchmaking.overwrite_no_response_node(block_id, current_level, chain)
-                    except exceptions.NotFound:
+                    except exceptions.UnableToUpdate:
                         _log.warning(f"Matchmaking does not have enough matches to update this claim check with new chains for level {current_level}")
                         claim = None
                         break

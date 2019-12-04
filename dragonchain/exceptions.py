@@ -65,6 +65,10 @@ class NotFound(DragonchainException):
     """Exception raised when object is not found"""
 
 
+class UnableToUpdate(DragonchainException):
+    """Exception raised by matchmaking client when it cannot find enough nodes to replace non responsive"""
+
+
 class BadRequest(DragonchainException):
     """Exception raised on bad request"""
 
