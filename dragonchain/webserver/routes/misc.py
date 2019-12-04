@@ -37,7 +37,7 @@ def health_check() -> Tuple[str, int]:
     return "OK\n", 200  # Explicitly not HTTP response because this isn't JSON
 
 
-@request_authorizer.Authenticated(api_group="misc", api_action="read", api_name="get_status")
+@request_authorizer.Authenticated(api_resource="misc", api_operation="read", api_name="get_status")
 def get_status_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     """
     Return status data about a chain

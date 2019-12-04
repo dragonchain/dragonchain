@@ -30,12 +30,12 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/verifications/pending/<block_id>", "get_pending_verifications_v1", get_pending_verifications_v1, methods=["GET"])
 
 
-@request_authorizer.Authenticated(api_group="verifications", api_action="read", api_name="get_verifications")
+@request_authorizer.Authenticated(api_resource="verifications", api_operation="read", api_name="get_verifications")
 def get_verification_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     params = flask.request.args.to_dict()
     return helpers.flask_http_response(200, verifications.query_verifications_v1(block_id, params))
 
 
-@request_authorizer.Authenticated(api_group="verifications", api_action="read", api_name="get_pending_verifications")
+@request_authorizer.Authenticated(api_resource="verifications", api_operation="read", api_name="get_pending_verifications")
 def get_pending_verifications_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, verifications.get_pending_verifications_v1(block_id))

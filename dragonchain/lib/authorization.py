@@ -284,8 +284,8 @@ def verify_request_authorization(  # noqa: C901
     content_type: str,
     content: bytes,
     interchain: bool,
-    api_group: str,
-    api_action: str,
+    api_resource: str,
+    api_operation: str,
     api_name: str,
 ) -> api_key_model.APIKeyModel:
     """Verify an http request to the webserver
@@ -298,8 +298,8 @@ def verify_request_authorization(  # noqa: C901
         content-type: content-type header of the request (if it exists)
         content: byte object of the body of the request (if it exists)
         interchain: boolean whether to use interchain keys to check or not
-        api_group: the api group name of this endpoint
-        api_action: the CRUD api action of this endpoint ("create", "read", "update", "delete")
+        api_resource: the api resource name of this endpoint
+        api_operation: the CRUD api operation of this endpoint ("create", "read", "update", "delete")
         api_name: the api name of this particular endpoint
     Raises:
         exceptions.UnauthorizedException (with message) when the authorization is not valid
@@ -352,7 +352,7 @@ def verify_request_authorization(  # noqa: C901
                         raise exceptions.UnauthorizedException("Previous matching request found (no replays allowed)")
                     # Check that this key is allowed to perform this action
                     try:
-                        if auth_key.is_key_allowed(api_group, api_action, api_name, interchain):
+                        if auth_key.is_key_allowed(api_resource, api_operation, api_name, interchain):
                             # Signature is valid and key is allowed; Return the api key used on success
                             return auth_key
                     except Exception:

@@ -1,11 +1,11 @@
 # Permissioning
 
 Dragonchain has a built-in permissioning system, allowing specific api keys to
-be either allowed or denied for certain dragonchain actions via the Dragonchain
-api.
+be either allowed or denied for certain dragonchain operations via the
+Dragonchain api.
 
 In order to use these permissions, policy documents are given to api keys which
-determine which actions are allowed and forbidden.
+determine which operations are allowed and forbidden.
 
 ## Setting Permissions
 
@@ -23,7 +23,7 @@ permissions via those endpoints.
 
 The root api key (in the kubernetes secret when deploying the chain) will
 always have permission to use any Dragonchain api endpoint (aside from
-endpoints for dragon net interchain actions, which are reserved for
+endpoints for Dragon Net interchain operations, which are reserved for
 dragonchain-to-dragonchain communication).
 
 The root api key cannot be deleted.
@@ -41,17 +41,18 @@ The `"permissions"` object contains 3 parts (in order from most generic to most
 specific):
 
 1. The global object which can contain `"allow_create"`, `"allow_read"`,
-   `"allow_update"`, `"allow_delete"` booleans, as well as api group objects.
-1. API group objects which can contain `"allow_create"`, `"allow_read"`,
+   `"allow_update"`, `"allow_delete"` booleans, as well as api resource
+   objects.
+1. API resource objects which can contain `"allow_create"`, `"allow_read"`,
    `"allow_update"`, `"allow_delete"` booleans, as well as specific api
    endpoint permission objects.
 1. API endpoint permission objects, which can contain a special schema for
-   allowing or denying a particular api action on a per-endpoint basis.
+   allowing or denying a particular api operation on a per-endpoint basis.
 
 In a permissions document, the **_most specific_** (aka most deeply nested)
 defined permission is the permission that is followed. This means that if an
 endpoint permission object is defined, then that _and only that_ permission is
-used to determine if the api key is allowed to perform an action on that
+used to determine if the api key is allowed to perform an operation on that
 endpoint. This happens because an endpoint permission object is the most deeply
 nested item in a permissions document.
 
@@ -65,61 +66,61 @@ off.
 See the table (or custom endpoint list) below to check for custom permissions
 on a per-endpoint basis.
 
-### API Groups and Permission Names
+### API Resources and Permission Names
 
-The following are the available api groups:
+The following are the available api resources:
 
-- `api_keys` : Actions related to dragonchain api keys
-- `blocks` : Actions related to blocks on the chain
-- `interchains` : Actions related to interchain (eth, btc, etc) actions
+- `api_keys` : Operations related to dragonchain api keys
+- `blocks` : Operations related to blocks on the chain
+- `interchains` : Operations related to interchain (eth, btc, etc) operations
   (L1/5 Only)
-- `misc` : Miscellaneous Actions (currently only getting status)
-- `contracts` : Actions related to dragonchain smart contracts (L1 Only)
-- `transaction_types` : Actions related to transaction types (L1 Only)
-- `transactions` : Actions related to individual chain transactions (L1 Only)
-- `verifications` : Actions related to dragon net verifications (L1 Only)
+- `misc` : Miscellaneous Operations (currently only getting status)
+- `contracts` : Operations related to dragonchain smart contracts (L1 Only)
+- `transaction_types` : Operations related to transaction types (L1 Only)
+- `transactions` : Operations related to individual chain transactions (L1 Only)
+- `verifications` : Operations related to dragon net verifications (L1 Only)
 
 The following are all the available api endpoints for permissioning, along with
-their action type, and whether or not their endpoint permission object has a
+their operation type, and whether or not their endpoint permission object has a
 custom schema:
 
-| API Group           | Endpoint Name                          | Action Type | Endpoint Schema |
-| ------------------- | -------------------------------------- | ----------- | --------------- |
-| `api_keys`          | `create_api_key`                       | `create`    | default         |
-| `api_keys`          | `get_api_key`                          | `read`      | default         |
-| `api_keys`          | `list_api_keys`                        | `read`      | default         |
-| `api_keys`          | `delete_api_key`                       | `delete`    | default         |
-| `api_keys`          | `update_api_key`                       | `update`    | default         |
-| `blocks`            | `get_block`                            | `read`      | default         |
-| `blocks`            | `query_blocks`                         | `read`      | default         |
-| `interchains`       | `create_interchain`                    | `create`    | default         |
-| `interchains`       | `update_interchain`                    | `update`    | default         |
-| `interchains`       | `create_interchain_transaction`        | `create`    | default         |
-| `interchains`       | `list_interchains`                     | `read`      | default         |
-| `interchains`       | `get_interchain`                       | `read`      | default         |
-| `interchains`       | `delete_interchain`                    | `delete`    | default         |
-| `interchains`       | `get_default_interchain`               | `read`      | default         |
-| `interchains`       | `set_default_interchain`               | `create`    | default         |
-| `interchains`       | `get_interchain_legacy`                | `read`      | default         |
-| `interchains`       | `create_interchain_transaction_legacy` | `create`    | default         |
-| `misc`              | `get_status`                           | `read`      | default         |
-| `contracts`         | `get_contract`                         | `read`      | default         |
-| `contracts`         | `get_contract_logs`                    | `read`      | default         |
-| `contracts`         | `list_contracts`                       | `read`      | default         |
-| `contracts`         | `create_contract`                      | `create`    | default         |
-| `contracts`         | `update_contract`                      | `update`    | default         |
-| `contracts`         | `delete_contract`                      | `delete`    | default         |
-| `contracts`         | `get_contract_object`                  | `read`      | default         |
-| `contracts`         | `list_contract_objects`                | `read`      | default         |
-| `transaction_types` | `create_transaction_type`              | `create`    | default         |
-| `transaction_types` | `delete_transaction_type`              | `delete`    | default         |
-| `transaction_types` | `list_transaction_types`               | `read`      | default         |
-| `transaction_types` | `get_transaction_type`                 | `read`      | default         |
-| `transactions`      | `create_transaction`                   | `create`    | custom          |
-| `transactions`      | `query_transactions`                   | `read`      | default         |
-| `transactions`      | `get_transaction`                      | `read`      | default         |
-| `verifications`     | `get_verifications`                    | `read`      | default         |
-| `verifications`     | `get_pending_verifications`            | `read`      | default         |
+| API Resource        | Endpoint Name                          | Operation Type | Endpoint Schema |
+| ------------------- | -------------------------------------- | -------------- | --------------- |
+| `api_keys`          | `create_api_key`                       | `create`       | default         |
+| `api_keys`          | `get_api_key`                          | `read`         | default         |
+| `api_keys`          | `list_api_keys`                        | `read`         | default         |
+| `api_keys`          | `delete_api_key`                       | `delete`       | default         |
+| `api_keys`          | `update_api_key`                       | `update`       | default         |
+| `blocks`            | `get_block`                            | `read`         | default         |
+| `blocks`            | `query_blocks`                         | `read`         | default         |
+| `interchains`       | `create_interchain`                    | `create`       | default         |
+| `interchains`       | `update_interchain`                    | `update`       | default         |
+| `interchains`       | `create_interchain_transaction`        | `create`       | default         |
+| `interchains`       | `list_interchains`                     | `read`         | default         |
+| `interchains`       | `get_interchain`                       | `read`         | default         |
+| `interchains`       | `delete_interchain`                    | `delete`       | default         |
+| `interchains`       | `get_default_interchain`               | `read`         | default         |
+| `interchains`       | `set_default_interchain`               | `create`       | default         |
+| `interchains`       | `get_interchain_legacy`                | `read`         | default         |
+| `interchains`       | `create_interchain_transaction_legacy` | `create`       | default         |
+| `misc`              | `get_status`                           | `read`         | default         |
+| `contracts`         | `get_contract`                         | `read`         | default         |
+| `contracts`         | `get_contract_logs`                    | `read`         | default         |
+| `contracts`         | `list_contracts`                       | `read`         | default         |
+| `contracts`         | `create_contract`                      | `create`       | default         |
+| `contracts`         | `update_contract`                      | `update`       | default         |
+| `contracts`         | `delete_contract`                      | `delete`       | default         |
+| `contracts`         | `get_contract_object`                  | `read`         | default         |
+| `contracts`         | `list_contract_objects`                | `read`         | default         |
+| `transaction_types` | `create_transaction_type`              | `create`       | default         |
+| `transaction_types` | `delete_transaction_type`              | `delete`       | default         |
+| `transaction_types` | `list_transaction_types`               | `read`         | default         |
+| `transaction_types` | `get_transaction_type`                 | `read`         | default         |
+| `transactions`      | `create_transaction`                   | `create`       | custom          |
+| `transactions`      | `query_transactions`                   | `read`         | default         |
+| `transactions`      | `get_transaction`                      | `read`         | default         |
+| `verifications`     | `get_verifications`                    | `read`         | default         |
+| `verifications`     | `get_pending_verifications`            | `read`         | default         |
 
 ### Custom Endpoint Permissions
 
@@ -175,8 +176,8 @@ created.
 ```
 
 If `"allowed"` is not defined, then its value is derived from its parent, which
-is whether or not it is allowed to perform a `create` action on the
-`transaction` group.
+is whether or not it is allowed to perform a `create` operation on the
+`transaction` resource.
 
 ### Examples
 
@@ -187,11 +188,12 @@ explaining what the permissions document is allowing/denying.
 
 This is a permissions document which allows all endpoints by default, but
 globally disables any `delete` abilities, while explicitly allowing `delete` on
-interchain actions, and explicitly denying creating an interchain transaction.
-Additionally, because `"default_allow": true` was set, it also ensures that
-creating or updating api keys is not allowed (as to avoid privilege escalation)
+interchain operations, and explicitly denying creating an interchain
+transaction. Additionally, because `"default_allow": true` was set, it also
+ensures that creating or updating api keys is not allowed (as to avoid
+privilege escalation)
 
-Note that the `"allow_delete": false` in the `api_keys` group is technically
+Note that the `"allow_delete": false` in the `api_keys` resource is technically
 redundant, because deletions were already denied at the global level.
 Regardless, this is still a valid schema.
 

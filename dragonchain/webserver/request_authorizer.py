@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 
 
 class Authenticated(object):
-    def __init__(self, api_group: str, api_action: str, api_name: str, interchain: bool = False):
-        self.api_group = api_group
-        self.api_action = api_action
+    def __init__(self, api_resource: str, api_operation: str, api_name: str, interchain: bool = False):
+        self.api_resource = api_resource
+        self.api_operation = api_operation
         self.api_name = api_name
         self.interchain = interchain
 
@@ -75,7 +75,7 @@ class Authenticated(object):
             content_type=content_type,
             content=content,
             interchain=self.interchain,
-            api_group=self.api_group,
-            api_action=self.api_action,
+            api_resource=self.api_resource,
+            api_operation=self.api_operation,
             api_name=self.api_name,
         )

@@ -50,22 +50,22 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/list/<path:prefix_key>", "list_sc_heap_v1", list_sc_heap_v1, methods=["GET"])  # :path allows / in key variable
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="get_contract")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="get_contract")
 def get_contract_by_id_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, smart_contracts.get_by_id_v1(contract_id))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="get_contract")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="get_contract")
 def get_contract_by_txn_type_v1(txn_type: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, smart_contracts.get_by_txn_type_v1(txn_type))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="list_contracts")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="list_contracts")
 def list_contract_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, smart_contracts.list_contracts_v1())
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="get_contract_logs")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="get_contract_logs")
 def get_smart_contract_logs_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     since = flask.request.args.get("since") or None
     tail = cast(Any, flask.request.args.get("tail") or None)
@@ -78,7 +78,7 @@ def get_smart_contract_logs_v1(contract_id: str, **kwargs) -> Tuple[str, int, Di
     return helpers.flask_http_response(200, smart_contracts.get_logs_v1(contract_id, since, tail))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="create", api_name="create_contract")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="create", api_name="create_contract")
 @helpers.DisabledForLab
 def post_contract_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
@@ -96,7 +96,7 @@ def post_contract_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(202, smart_contracts.create_contract_v1(contract))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="update", api_name="update_contract")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="update", api_name="update_contract")
 @helpers.DisabledForLab
 def update_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
@@ -112,14 +112,14 @@ def update_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, 
     return helpers.flask_http_response(202, smart_contracts.update_contract_v1(contract_id, update))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="delete", api_name="delete_contract")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="delete", api_name="delete_contract")
 @helpers.DisabledForLab
 def delete_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     smart_contracts.delete_contract_v1(contract_id)
     return helpers.flask_http_response(202, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="get_contract_object")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="get_contract_object")
 def get_sc_heap_v1(key: str, **kwargs) -> Tuple[str, int]:
     """
     /v1/get/<contract_id>/HEAP/<key>
@@ -139,7 +139,7 @@ def get_sc_heap_v1(key: str, **kwargs) -> Tuple[str, int]:
     )  # Explicitly not using helpers.flask_http_response, because response isn't necessarily JSON
 
 
-@request_authorizer.Authenticated(api_group="contracts", api_action="read", api_name="list_contract_objects")
+@request_authorizer.Authenticated(api_resource="contracts", api_operation="read", api_name="list_contract_objects")
 def list_sc_heap_v1(prefix_key: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     """
     /v1/list/<prefix_key>

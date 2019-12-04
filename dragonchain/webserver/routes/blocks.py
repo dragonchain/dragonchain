@@ -31,13 +31,13 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/block/<block_id>", "get_block_v1", get_block_v1, methods=["GET"])
 
 
-@request_authorizer.Authenticated(api_group="blocks", api_action="read", api_name="get_block")
+@request_authorizer.Authenticated(api_resource="blocks", api_operation="read", api_name="get_block")
 def get_block_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     should_parse = bool(flask.request.headers.get("Parse-Payload"))
     return helpers.flask_http_response(200, blocks.get_block_by_id_v1(block_id, should_parse))
 
 
-@request_authorizer.Authenticated(api_group="blocks", api_action="read", api_name="query_blocks")
+@request_authorizer.Authenticated(api_resource="blocks", api_operation="read", api_name="query_blocks")
 def query_blocks_v1(block_id: Optional[str] = None, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     params = helpers.parse_query_parameters(flask.request.args.to_dict())
     should_parse = bool(flask.request.headers.get("Parse-Payload"))

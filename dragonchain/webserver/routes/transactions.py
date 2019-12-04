@@ -41,7 +41,7 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/transaction/<transaction_id>", "get_transaction_v1", get_transaction_v1, methods=["GET"])
 
 
-@request_authorizer.Authenticated(api_group="transactions", api_action="create", api_name="create_transaction")
+@request_authorizer.Authenticated(api_resource="transactions", api_operation="create", api_name="create_transaction")
 def post_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
@@ -58,7 +58,7 @@ def post_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     )
 
 
-@request_authorizer.Authenticated(api_group="transactions", api_action="create", api_name="create_transaction")
+@request_authorizer.Authenticated(api_resource="transactions", api_operation="create", api_name="create_transaction")
 def post_transaction_bulk_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     """
     Enqueue bulk transactions to be processed
@@ -79,7 +79,7 @@ def post_transaction_bulk_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(207, response)
 
 
-@request_authorizer.Authenticated(api_group="transactions", api_action="read", api_name="query_transactions")
+@request_authorizer.Authenticated(api_resource="transactions", api_operation="read", api_name="query_transactions")
 def query_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     params = helpers.parse_query_parameters(flask.request.args.to_dict())
     if params.get("transaction_type"):
@@ -88,7 +88,7 @@ def query_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     raise exceptions.ValidationException("User input must specify transaction type to query")
 
 
-@request_authorizer.Authenticated(api_group="transactions", api_action="read", api_name="get_transaction")
+@request_authorizer.Authenticated(api_resource="transactions", api_operation="read", api_name="get_transaction")
 def get_transaction_v1(transaction_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not transaction_id:
         raise exceptions.BadRequest("Parameter 'transaction_id' is required")

@@ -225,11 +225,13 @@ class APIKeyModel(model.Model):
         self.interchain = interchain
         self.permissions_document = permissions_document
 
-    def is_key_allowed(self, api_group: str, api_action: str, api_name: str, interchain: bool, extra_data: Optional[Dict[str, Any]] = None) -> bool:
+    def is_key_allowed(
+        self, api_resource: str, api_operation: str, api_name: str, interchain: bool, extra_data: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """Checks if this keys is allowed to perform an action for a given api endpoint
         Args:
-            api_group: The group that the endpoint being checked belongs to. i.e. api_keys, blocks, interchains, etc
-            api_action: The CRUD action that this endpoint is performing. Should be one of: create, read, update, or delete
+            api_resource: The resource that the endpoint being checked belongs to. i.e. api_keys, blocks, interchains, etc
+            api_operation: The CRUD operation that this endpoint is performing. Should be one of: create, read, update, or delete
             api_name: The exact name of this api action used for permissioning. i.e. create_api_key, list_contracts, get_status, etc
             extra_data: Any extra data required for non-default permission endpoints
         Returns:
@@ -245,12 +247,12 @@ class APIKeyModel(model.Model):
         if self.root:
             return True
         if self.permissions_document.get("version") == "1":
-            return self.is_key_allowed_v1(api_group, api_action, api_name, extra_data)
+            return self.is_key_allowed_v1(api_resource, api_operation, api_name, extra_data)
         else:
             _log.error(f"Auth from invalid permissioning on key {self.key_id}\nPermissions: {self.permissions_document}")
             raise RuntimeError(f"Invalid permissions document version: {self.permissions_document.get('version')}")
 
-    def is_key_allowed_v1(self, api_group: str, api_action: str, api_name: str, extra_data: Optional[Dict[str, Any]] = None) -> bool:
+    def is_key_allowed_v1(self, api_resource: str, api_operation: str, api_name: str, extra_data: Optional[Dict[str, Any]] = None) -> bool:
         """Checks if a key is allowed with v1 permissions"""
         allowed = self.permissions_document["default_allow"]
 
@@ -263,19 +265,19 @@ class APIKeyModel(model.Model):
             raise RuntimeError(f"'{api_name}' is not a valid know api_name")
 
         # Check the 'global' CRUD values
-        group_allow = _process_api_group(self.permissions_document["permissions"], api_action)
+        group_allow = _process_api_resource(self.permissions_document["permissions"], api_operation)
         if group_allow is not None:
             allowed = group_allow
 
-        # Check the specific api group CRUD values
-        api_group_permissions = self.permissions_document["permissions"].get(api_group)
-        if api_group_permissions:
-            group_allow = _process_api_group(api_group_permissions, api_action)
+        # Check the specific api resource CRUD values
+        api_resource_permissions = self.permissions_document["permissions"].get(api_resource)
+        if api_resource_permissions:
+            group_allow = _process_api_resource(api_resource_permissions, api_operation)
             if group_allow is not None:
                 allowed = group_allow
 
-            # Check the specific api action permissions itself
-            api_name_permissions = api_group_permissions.get(api_name)
+            # Check the specific api operation permissions itself
+            api_name_permissions = api_resource_permissions.get(api_name)
             if api_name_permissions:
                 # Special permissions on a per-endpoint level are handled here
                 endpoint_allow = validation_function(api_name_permissions, extra_data)
@@ -297,21 +299,21 @@ class APIKeyModel(model.Model):
         }
 
 
-def _process_api_group(permission_group: Dict[str, Any], api_action: str) -> Optional[bool]:
-    """Helper method to check if the api action permission is in this API group
+def _process_api_resource(permission_resource: Dict[str, Any], api_operation: str) -> Optional[bool]:
+    """Helper method to check if the api action permission is in this API resource
     Args:
-        permission_group: The dictionary for this permission group to check
-        api_action: The api_action as defined from is_key_allowed
+        permission_resource: The dictionary for this permission resource to check
+        api_operation: The api_operation as defined from is_key_allowed
     Returns:
-        Value of the group permission if it exists, else None
+        Value of the resource permission if it exists, else None
     """
-    if api_action == "create":
-        return permission_group.get("allow_create")
-    elif api_action == "read":
-        return permission_group.get("allow_read")
-    elif api_action == "update":
-        return permission_group.get("allow_update")
-    elif api_action == "delete":
-        return permission_group.get("allow_delete")
+    if api_operation == "create":
+        return permission_resource.get("allow_create")
+    elif api_operation == "read":
+        return permission_resource.get("allow_read")
+    elif api_operation == "update":
+        return permission_resource.get("allow_update")
+    elif api_operation == "delete":
+        return permission_resource.get("allow_delete")
     else:
-        raise RuntimeError(f"'{api_action}' is not a valid api_action (must be one of create, read, update, delete)")
+        raise RuntimeError(f"'{api_operation}' is not a valid api_operation (must be one of create, read, update, delete)")

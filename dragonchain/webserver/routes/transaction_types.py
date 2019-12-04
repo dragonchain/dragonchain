@@ -45,7 +45,7 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/transaction-types", "list_transaction_types_v1", list_transaction_types_v1, methods=["GET"])
 
 
-@request_authorizer.Authenticated(api_group="transaction_types", api_action="create", api_name="create_transaction_type")
+@request_authorizer.Authenticated(api_resource="transaction_types", api_operation="create", api_name="create_transaction_type")
 @helpers.DisabledForLab
 def register_transaction_type_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
@@ -64,7 +64,7 @@ def register_transaction_type_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(api_group="transaction_types", api_action="delete", api_name="delete_transaction_type")
+@request_authorizer.Authenticated(api_resource="transaction_types", api_operation="delete", api_name="delete_transaction_type")
 @helpers.DisabledForLab
 def delete_transaction_type_v1(txn_type: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not txn_type:
@@ -74,12 +74,12 @@ def delete_transaction_type_v1(txn_type: str, **kwargs) -> Tuple[str, int, Dict[
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(api_group="transaction_types", api_action="read", api_name="list_transaction_types")
+@request_authorizer.Authenticated(api_resource="transaction_types", api_operation="read", api_name="list_transaction_types")
 def list_transaction_types_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, transaction_types.list_registered_transaction_types_v1())
 
 
-@request_authorizer.Authenticated(api_group="transaction_types", api_action="read", api_name="get_transaction_type")
+@request_authorizer.Authenticated(api_resource="transaction_types", api_operation="read", api_name="get_transaction_type")
 def get_transaction_type_v1(txn_type: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not txn_type:
         raise exceptions.ValidationException("Invalid parameter: txn_type")

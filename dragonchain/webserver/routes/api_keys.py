@@ -44,7 +44,7 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/api-key/<key_id>", "update_api_key_v1", update_api_key_v1, methods=["PUT"])
 
 
-@request_authorizer.Authenticated(api_group="api_keys", api_action="create", api_name="create_api_key")
+@request_authorizer.Authenticated(api_resource="api_keys", api_operation="create", api_name="create_api_key")
 @helpers.DisabledForLab
 def create_api_key_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     nickname = ""
@@ -61,7 +61,7 @@ def create_api_key_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(201, api_keys.create_api_key_v1(nickname, permissions_document))
 
 
-@request_authorizer.Authenticated(api_group="api_keys", api_action="read", api_name="get_api_key")
+@request_authorizer.Authenticated(api_resource="api_keys", api_operation="read", api_name="get_api_key")
 @helpers.DisabledForLab
 def get_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
@@ -70,13 +70,13 @@ def get_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, api_keys.get_api_key_v1(key_id))
 
 
-@request_authorizer.Authenticated(api_group="api_keys", api_action="read", api_name="list_api_keys")
+@request_authorizer.Authenticated(api_resource="api_keys", api_operation="read", api_name="list_api_keys")
 @helpers.DisabledForLab
 def list_api_keys_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, api_keys.get_api_key_list_v1())
 
 
-@request_authorizer.Authenticated(api_group="api_keys", api_action="delete", api_name="delete_api_key")
+@request_authorizer.Authenticated(api_resource="api_keys", api_operation="delete", api_name="delete_api_key")
 @helpers.DisabledForLab
 def delete_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
@@ -86,7 +86,7 @@ def delete_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(api_group="api_keys", api_action="update", api_name="update_api_key")
+@request_authorizer.Authenticated(api_resource="api_keys", api_operation="update", api_name="update_api_key")
 @helpers.DisabledForLab
 def update_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
