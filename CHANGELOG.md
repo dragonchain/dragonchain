@@ -17,6 +17,7 @@
   - Remove now unnnecessary `binutils` and `musl-dev` packages from docker build since gunicorn update
   - Update redisearch in helm chart to 1.4.18
   - Update redis in helm chart to 5.0.7
+  - Update fwatchdog to 0.18.4 for OpenFaaS smart contracts
 - **Development:**
   - Added hard limit to the number of L4 blocks included in an L5 block
   - Use independent model and dao for api keys
