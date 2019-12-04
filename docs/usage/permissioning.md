@@ -4,8 +4,8 @@ Dragonchain has a built-in permissioning system, allowing specific api keys to
 be either allowed or denied for certain dragonchain operations via the
 Dragonchain api.
 
-In order to use these permissions, policy documents are given to api keys which
-determine which operations are allowed and forbidden.
+When using these permissions, policy documents on api keys which determine
+which operations are allowed and forbidden.
 
 ## Setting Permissions
 
@@ -30,12 +30,13 @@ The root api key cannot be deleted.
 
 ## Permissions Document
 
-The permissions document codifies all permissions explicitly allowed or denied on a given api-key.
+The permissions document codifies all permissions explicitly allowed or denied
+on a given api-key.
 
-It is a JSON object containing the document version (currently only `"1"`), a
-`"default_allow"` boolean, which determines if the permissions should be
-treated as a whitelist or a blacklist by default, and a `"permissions"` object
-which defines further permissions.
+The document is a JSON object containing the document version (currently only
+`"1"`), a `"default_allow"` boolean, which determines if the permissions should
+be treated as a whitelist or a blacklist by default, and a `"permissions"`
+object which defines further permissions.
 
 The `"permissions"` object contains 3 parts (in order from most generic to most
 specific):
@@ -154,6 +155,7 @@ is technically redundant since it implicitly already has permissions to create
 any other transaction due to the `"allowed": true`
 
 ```json
+...
 {
   "allowed": true,
   "transaction_types": {
@@ -161,18 +163,21 @@ any other transaction due to the `"allowed": true`
     "butter": true
   }
 }
+...
 ```
 
 The following example allows _only_ transactions with the type `banana` to be
 created.
 
 ```json
+...
 {
   "allowed": false,
   "transaction_types": {
     "banana": true
   }
 }
+...
 ```
 
 If `"allowed"` is not defined, then its value is derived from its parent, which
@@ -186,11 +191,11 @@ explaining what the permissions document is allowing/denying.
 
 ---
 
-This is a permissions document which allows all endpoints by default, but
-globally disables any `delete` abilities, while explicitly allowing `delete` on
-interchain operations, and explicitly denying creating an interchain
-transaction. Additionally, because `"default_allow": true` was set, it also
-ensures that creating or updating api keys is not allowed (as to avoid
+This is a permissions document that allows all operations on all actions by
+default, but globally disables any `delete` abilities, while explicitly
+allowing `delete` on interchain operations, and explicitly denying creating an
+interchain transaction. Additionally, because `"default_allow": true` was set,
+it also ensures that creating or updating api keys is not allowed (as to avoid
 privilege escalation)
 
 Note that the `"allow_delete": false` in the `api_keys` resource is technically
@@ -220,7 +225,7 @@ Regardless, this is still a valid schema.
 
 ---
 
-This is a permissions document which disables all endpoints by default, but
+This is a permissions document which disables all actions by default, but
 globally allows any `read` operations. Additionally, it allows the creation of
 transaction types, and explicitly denies reading any smart contract logs.
 
@@ -244,10 +249,10 @@ transaction types, and explicitly denies reading any smart contract logs.
 
 ---
 
-This is a permission document which allows all endpoints by default, but only
-allows creating transactions with the transaction type: `banana`. Additionally,
-it also has disabled creating/updating/deleting api keys in order to avoid
-privilege escalation.
+This is a permissions document that allows all operations on all actions by
+default, but only allows creating transactions with the transaction type:
+`banana`. Additionally, it also has disabled creating/updating/deleting api
+keys in order to avoid privilege escalation.
 
 ```json
 {
@@ -273,9 +278,9 @@ privilege escalation.
 
 ---
 
-This is a permissions document which allows all endpoints with no restrictions.
-The only difference between this and a root key is that a root key cannot be
-deleted.
+This is a permissions document that allows all operations on all actions by
+default. The only difference between this and a root key is that a root key
+cannot be deleted.
 
 Note that `"permissions"` with an empty object is still required, even though
 no further permissions were defined.

@@ -108,6 +108,6 @@ will not work because the HMAC will not match.
 #### Path
 
 Ensure that the path of your http request (everything _after_ the fully
-qualified domain name and protocol) **including** any query parameters is
-exactly what was used when creating the HMAC signature. If there is a
-mis-match, the request cannot be authenticated.
+qualified domain name and protocol) starting from the initial `/`, and
+**including** any query parameters, is exactly what was used when creating the
+HMAC signature. If there is a mis-match, the request cannot be authenticated.
