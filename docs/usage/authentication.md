@@ -50,13 +50,22 @@ without a body).
 Now take the following elements and assemble them into a single string
 delimited with newlines (`/n`) in this order:
 
+1. Uppercase HTTP Verb
+1. Full Request Path
+1. Public Dragonchain ID
+1. ISO 8601 Timestamp
+1. Content-Type header (empty string if it doesn't exist)
+1. Base64-encoded hashed HTTP Body (created as described above)
+
+Full HMAC Message Example String:
+
 ```text
-Uppercase HTTP Verb
-Full Request Path
-Public Dragonchain ID
-ISO 8601 Timestamp
-Content-Type header (empty string if it doesn't exist)
-Base64-encoded hashed HTTP Body (created as described above)
+POST
+/v1/transaction-type
+294sjLHcCc8dMqMUdFzAnqLmiaCMWmoMTspuuYpSeBMvM
+2019-12-04T21:49:49.990Z
+application/json
+REHbyAdHuzqToafZVXvpIKIGYODingumtIuIZXmAia4=
 ```
 
 Now UTF-8 encode this string, and perform an HMAC operation on the resulting
