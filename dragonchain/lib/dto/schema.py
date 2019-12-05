@@ -75,7 +75,7 @@ bulk_transaction_create_schema_v1 = {
     "type": "array",
     "items": transaction_create_schema_v1,
     "minItems": 1,
-    "maxItems": 250,  # Arbitrarily set for now. Feel free to change this if needed
+    "maxItems": 5000,  # Arbitrarily set for now. Feel free to change this if needed
 }
 
 

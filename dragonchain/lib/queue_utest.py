@@ -64,7 +64,7 @@ class TestQueue(unittest.TestCase):
     @patch("dragonchain.lib.queue.transaction_type_dao.get_registered_transaction_type", side_effect=exceptions.NotFound)
     @patch("dragonchain.lib.queue.redis")
     def test_enqueue_l1_raises_invalid_transaction_type_when_not_found(self, mock_redis, mock_get_transaction_type):
-        self.assertRaises(exceptions.InvalidTransactionType, queue.enqueue_l1, [{"header": {"txn_type": "banana"}}])
+        self.assertRaises(exceptions.InvalidTransactionType, queue.enqueue_l1, {"header": {"txn_type": "banana"}})
         mock_get_transaction_type.assert_called_once_with("banana")
 
     @patch("dragonchain.lib.queue.transaction_type_dao.get_registered_transaction_type")
@@ -75,7 +75,7 @@ class TestQueue(unittest.TestCase):
         mock_redis.pipeline_sync.return_value = mock_pipeline
 
         param_value = {"header": {"txn_type": "thing", "txn_id": "some id", "invoker": "banana"}}
-        queue.enqueue_l1([param_value])
+        queue.enqueue_l1(param_value)
         mock_get_transaction_type.assert_called_once_with("thing")
         mock_pipeline.lpush.assert_called_once_with(queue.INCOMING_TX_KEY, json.dumps(param_value, separators=(",", ":")))
         mock_pipeline.sadd.assert_called_once_with(queue.TEMPORARY_TX_KEY, "some id")
@@ -89,7 +89,7 @@ class TestQueue(unittest.TestCase):
         mock_redis.pipeline_sync.return_value = mock_pipeline
 
         param_value = {"header": {"txn_type": "thing", "txn_id": "some id", "invoker": "banana"}}
-        self.assertRaises(RuntimeError, queue.enqueue_l1, [param_value])
+        self.assertRaises(RuntimeError, queue.enqueue_l1, param_value)
 
     @patch(
         "dragonchain.lib.queue.smart_contract_dao.get_contract_by_id",
@@ -103,7 +103,7 @@ class TestQueue(unittest.TestCase):
         mock_redis.pipeline_sync.return_value = mock_pipeline
 
         param_value = {"header": {"txn_type": "thing", "txn_id": "some id"}, "payload": '{"some":"stuff"}'}
-        queue.enqueue_l1([param_value])
+        queue.enqueue_l1(param_value)
         mock_get_contract.assert_called_once_with("banana")
         param_value["payload"] = '{"some":"stuff"}'
         mock_pipeline.lpush.assert_has_calls(
@@ -121,7 +121,7 @@ class TestQueue(unittest.TestCase):
         mock_pipeline.execute.return_value = [1, 1]
         mock_redis.pipeline_sync.return_value = mock_pipeline
 
-        queue.enqueue_l1([{"header": {"txn_type": "thing", "txn_id": "some id"}}])
+        queue.enqueue_l1({"header": {"txn_type": "thing", "txn_id": "some id"}})
         mock_get_contract.assert_called_once_with("banana")
         mock_pipeline.lpush.assert_called_once()
         mock_pipeline.sadd.assert_called_once()

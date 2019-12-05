@@ -135,30 +135,31 @@ def submit_bulk_transaction_v1(bulk_transaction: Sequence[Dict[str, Any]], api_k
     """
     Formats, validates and enqueues the transactions in
     the payload of bulk_transaction
-    Returns tuple of 2 lists, index 0 is successful txn ids and index 1 are transactions that failed to post (entire dto passed in from user)
+    Returns dictionary of 2 lists, key "201" are successfully created txn ids and key "400" are transactions that failed to post (entire dto passed in from user)
     """
-    _log.info(f"[TRANSACTION_BULK] Attempting to enqueue {len(bulk_transaction)} transactions")
-    success = []
-    fail = []
+    _log.info("[TRANSACTION_BULK] Checking if key is allowed to create all given bulk transactions")
     requested_types = set()
-    interim_transaction_models = []
     for transaction in bulk_transaction:
-        try:
-            _log.info("[TRANSACTION] Parsing and loading user input")
-            txn_model = _generate_transaction_model(transaction)
-            interim_transaction_models.append(txn_model)
-            requested_types.add(txn_model.txn_type)
-            success.append(txn_model.txn_id)
-        except Exception:
-            _log.exception("Processing transaction failed")
-            fail.append(transaction)
-
+        requested_types.add(transaction["txn_type"])
     # Check if allowed to create all these transactions of (potentially) various types
     if not api_key.is_key_allowed("transactions", "create", "create_transaction", False, extra_data={"requested_types": requested_types}):
         raise exceptions.ActionForbidden("API Key is not allowed to create all of the provided transaction types")
 
-    _log.info("[TRANSACTION] Some (or all) txns are valid. Queueing txns now")
-    queue.enqueue_l1([x.export_as_queue_task() for x in interim_transaction_models])
+    _log.info(f"[TRANSACTION_BULK] Auth successful. Attempting to enqueue {len(bulk_transaction)} transactions")
+    success = []
+    fail = []
+    pipeline = dc_redis.pipeline_sync()
+    for transaction in bulk_transaction:
+        try:
+            txn_model = _generate_transaction_model(transaction)
+            queue.enqueue_l1_pipeline(pipeline, txn_model.export_as_queue_task())
+            success.append(txn_model.txn_id)
+        except Exception:
+            fail.append(transaction)
+    # Queue the actual transactions in redis now
+    for result in pipeline.execute():
+        if not result:
+            raise RuntimeError("Failed to enqueue")
 
     return {"201": success, "400": fail}
 

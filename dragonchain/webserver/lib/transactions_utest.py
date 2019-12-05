@@ -72,10 +72,11 @@ class TestSubmitTransactions(unittest.TestCase):
 
     @patch("dragonchain.webserver.lib.transactions._generate_transaction_model")
     @patch("dragonchain.webserver.lib.transactions.queue")
-    def test_submit_transaction_bulk_checks_if_key_is_allowed(self, mock_queue, mock_gen_model):
+    @patch("dragonchain.webserver.lib.transactions.dc_redis")
+    def test_submit_transaction_bulk_checks_if_key_is_allowed(self, mock_queue, mock_gen_model, mock_redis):
         mock_key = MagicMock()
         mock_key.is_key_allowed.return_value = True
-        transactions.submit_bulk_transaction_v1([{}], api_key=mock_key)
+        transactions.submit_bulk_transaction_v1([{"txn_type": "whatever"}], api_key=mock_key)
         mock_key.is_key_allowed.assert_called_once()
         mock_key.is_key_allowed.return_value = False
-        self.assertRaises(exceptions.ActionForbidden, transactions.submit_bulk_transaction_v1, [{}], api_key=mock_key)
+        self.assertRaises(exceptions.ActionForbidden, transactions.submit_bulk_transaction_v1, [{"txn_type": "whatever"}], api_key=mock_key)
