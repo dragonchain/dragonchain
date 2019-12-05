@@ -18,7 +18,7 @@
 import os
 import json
 import base64
-from typing import List, Tuple, Union, Optional, Iterable, Dict, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Union, Optional, Dict, Any, cast, TYPE_CHECKING
 
 from dragonchain.lib import crypto
 from dragonchain.lib.database import redis
@@ -68,7 +68,7 @@ def check_and_recover_processing_if_necessary() -> None:
 def enqueue_item(item: dict, deadline: int = 0) -> None:
     """Enqueues to the chain's block / transaction queue"""
     if LEVEL == "1":
-        return enqueue_l1([item])
+        return enqueue_l1(item)
     elif LEVEL == "2" or LEVEL == "3" or LEVEL == "4":
         return enqueue_generic(item["payload"], queue=INCOMING_TX_KEY, deadline=deadline)
     elif LEVEL == "5":
@@ -84,17 +84,16 @@ def remove_transaction_stubs(transactions: List[transaction_model.TransactionMod
     redis.srem_sync(TEMPORARY_TX_KEY, *srem_list)
 
 
-def enqueue_l1(transactions: Iterable[Dict[str, Any]]) -> None:
+def enqueue_l1(transaction: Dict[str, Any]) -> None:
     p = redis.pipeline_sync()
-    for txn in transactions:
-        _enqueue_l1_helper(p, txn)
+    enqueue_l1_pipeline(p, transaction)
     # Execute redis pipeline
     for result in p.execute():
         if not result:
             raise RuntimeError("Failed to enqueue")
 
 
-def _enqueue_l1_helper(pipeline: "Pipeline", transaction: Dict[str, Any]) -> "Pipeline":
+def enqueue_l1_pipeline(pipeline: "Pipeline", transaction: Dict[str, Any]) -> "Pipeline":
     txn_type_string = transaction["header"]["txn_type"]
     invocation_attempt = not transaction["header"].get("invoker")  # This transaction is an invocation attempt if there is no invoker
 
