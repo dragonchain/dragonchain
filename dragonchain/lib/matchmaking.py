@@ -329,7 +329,7 @@ def make_matchmaking_request(
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
         elif retry and response.status_code == 403 and authenticated:
             _log.warning(
-                "[MATCHMAKING] received 403 from matchmaking. Registration is expired or dragon net config is invalid. Re-registering and trying again"
+                "[MATCHMAKING] received 403 from matchmaking. Registration is expired or Dragon Net config is invalid. Re-registering and trying again"
             )
             register(retry=False)
             return make_matchmaking_request(http_verb=http_verb, path=path, json_content=json_content, retry=False, authenticated=authenticated)
@@ -337,6 +337,10 @@ def make_matchmaking_request(
             raise exceptions.InsufficientFunds("received insufficient funds (402) from matchmaking")
         elif response.status_code == 404:
             raise exceptions.NotFound("Not found (404) from matchmaking")
+        elif response.status_code == 409:
+            raise exceptions.UnableToUpdate("Matchmaking could not find enough nodes to verify this block")
+        elif response.status_code >= 500:
+            raise exceptions.MatchmakingRetryableError(f"[MATCHMAKING] Server error {response.status_code} from matchmaking")
         raise exceptions.MatchmakingError(
             f"Received unexpected response code {response.status_code} from matchmaking with response:\n{response.text}"
         )

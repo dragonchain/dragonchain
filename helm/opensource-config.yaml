@@ -71,7 +71,7 @@ dragonchain:
     # -- dragonchain.image.version --
     # The tag to use with the dragonchain image
     # Check here for available values: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
-    version: 4.2.0
+    version: 4.3.0
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.

@@ -91,7 +91,7 @@ class TestWebserverHelpers(unittest.TestCase):
         exception = exceptions.InvalidTransactionType()
         helpers.webserver_error_handler(exception)
         mock_report_exception.assert_not_called()
-        mock_http_response.assert_called_once_with(403, ANY)
+        mock_http_response.assert_called_once_with(400, ANY)
 
     @patch("dragonchain.webserver.helpers.error_reporter.report_exception")
     @patch("dragonchain.webserver.helpers.flask_http_response")

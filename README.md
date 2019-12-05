@@ -17,8 +17,15 @@ and public blockchain interoperability, Dragonchain shines a new and interesting
 
 </div>
 
+## 🏁 Getting Started
+
+For getting started with Dragonchain, we recommend visiting [docs.dragonchain.com](https://docs.dragonchain.com/)
+
+Those docs go over the friendliest overview for understanding, installing, and using Dragonchain.
+
 ## 🔗 Quick Links
 
+- [Getting Started With Dragonchain](https://docs.dragonchain.com/)
 - [Project Documentation](https://dragonchain-core-docs.dragonchain.com/latest/)
 - [Dragonchain Console](https://console.dragonchain.com/)
 - [Dragonchain Inc](https://dragonchain.com/)
@@ -31,15 +38,13 @@ and public blockchain interoperability, Dragonchain shines a new and interesting
 
 ## 📝 Documentation
 
-Please read the [docs](https://dragonchain-core-docs.dragonchain.com/latest/) for further details and documentation.
+Documentation for this specific repository are [available here](https://dragonchain-core-docs.dragonchain.com/latest/).
 
-The documentation is intended for developers wishing to learn about and contribute to the Dragonchain core platform itself.
+This documentation is intended for developers wishing to learn about and contribute to the Dragonchain core platform itself.
 
-For _interaction_ with the Dragonchain, we recommend signing up for a [Dragonchain Console](https://console.dragonchain.com)
-account and testing with our managed service, as it will be easier for getting started with developing _on top of_ dragonchain
-(rather than developing the actual Dragonchain core platform).
+For _interaction_ with the Dragonchain, we recommend using the [Getting Started link](https://docs.dragonchain.com/) instead.
 
-For interaction and using the Dragonchain, check out the SDKs (or CLI) and their relevant documentation instead:
+You can also view one of our SDKs (or their docs) to start interacting with a Dragonchain:
 
 - Python: [SDK](https://pypi.org/project/dragonchain-sdk/) - [Documentation](https://python-sdk-docs.dragonchain.com/latest/)
 - Javascript: [SDK](https://www.npmjs.com/package/dragonchain-sdk) - [Documentation](https://node-sdk-docs.dragonchain.com/latest/)

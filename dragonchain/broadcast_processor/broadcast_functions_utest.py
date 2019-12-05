@@ -18,7 +18,7 @@
 import asyncio
 import importlib
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock, call, ANY
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain.broadcast_processor import broadcast_functions
@@ -291,3 +291,19 @@ class BroadcastFunctionTests(unittest.TestCase):
     def test_verification_storage_location(self):
         result = broadcast_functions.verification_storage_location("l1_block_id", 2, "chain_id")
         self.assertEqual(result, "BLOCK/l1_block_id-l2-chain_id")
+
+    @patch("dragonchain.broadcast_processor.broadcast_functions.storage")
+    @async_test
+    async def test_save_unfinished_claim_writes_to_storage(self, mock_storage):
+        broadcast_functions.remove_block_from_broadcast_system_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.remove_block_from_broadcast_system_async.return_value.set_result(None)
+        await broadcast_functions.save_unfinished_claim("123")
+        mock_storage.put_object_as_json.assert_called_once_with("BROADCASTS/UNFINISHED/123", ANY)
+
+    @patch("dragonchain.broadcast_processor.broadcast_functions.storage")
+    @async_test
+    async def test_save_unfinished_claim_removes_claim_from_system(self, mock_storage):
+        broadcast_functions.remove_block_from_broadcast_system_async = MagicMock(return_value=asyncio.Future())
+        broadcast_functions.remove_block_from_broadcast_system_async.return_value.set_result(None)
+        await broadcast_functions.save_unfinished_claim("123")
+        broadcast_functions.remove_block_from_broadcast_system_async.assert_called_once_with("123")

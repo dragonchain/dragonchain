@@ -31,6 +31,8 @@ BROADCAST_BLOCK_PREFIX = "broadcast:block"
 CLAIM_CHECK_KEY = "broadcast:claimcheck"
 NOTIFICATION_KEY = "broadcast:notifications"
 
+STORAGE_FOLDER = "BROADCASTS"
+
 FAULT_TOLERATION = 10  # Number of times fetching verifications fails before rolling back block verification state
 HAS_VERIFICATION_NOTIFICATIONS = os.environ.get("VERIFICATION_NOTIFICATION") is not None
 
@@ -342,3 +344,14 @@ async def remove_block_from_broadcast_system_async(block_id: str) -> None:
     transaction.hdel(CLAIM_CHECK_KEY, block_id)
 
     await transaction.execute()
+
+
+async def save_unfinished_claim(block_id: str) -> None:
+    """If a claim no longer exists in Dragon Net, but we don't have all the results,
+       save its id for a potentially later date.
+
+    Args:
+        block_id: The block_id to save and remove from the broadcasting system
+    """
+    storage.put_object_as_json(f"{STORAGE_FOLDER}/UNFINISHED/{block_id}", {"time": time.time()})
+    await remove_block_from_broadcast_system_async(block_id)

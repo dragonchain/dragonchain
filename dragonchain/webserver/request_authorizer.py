@@ -16,18 +16,23 @@
 # language governing permissions and limitations under the Apache License.
 
 import functools
-from typing import Callable, Any
+from typing import Callable, Any, TYPE_CHECKING
 
 import flask
 
 from dragonchain import exceptions
 from dragonchain.lib import authorization
 
+if TYPE_CHECKING:
+    from dragonchain.lib.dto import api_key_model
+
 
 class Authenticated(object):
-    def __init__(self, interchain: bool = False, root_only: bool = False):
+    def __init__(self, api_resource: str, api_operation: str, api_name: str, interchain: bool = False):
+        self.api_resource = api_resource
+        self.api_operation = api_operation
+        self.api_name = api_name
         self.interchain = interchain
-        self.root_only = root_only
 
     def __call__(self, authorized_func: Callable) -> Callable:
         """
@@ -37,12 +42,12 @@ class Authenticated(object):
 
         @functools.wraps(authorized_func)
         def decorator(*args: Any, **kwargs: Any) -> Any:
-            self.check_auth()
-            return authorized_func(*args, **kwargs)
+            auth_key = self.check_auth()
+            return authorized_func(*args, **kwargs, used_auth_key=auth_key)
 
         return decorator
 
-    def check_auth(self) -> None:
+    def check_auth(self) -> "api_key_model.APIKeyModel":
         """
         Checks for the validity of an authorization header string
         Raises exceptions.UnauthorizedException when the request is not authorized
@@ -61,7 +66,7 @@ class Authenticated(object):
             content_type = ""
         if not content:
             content = b""
-        authorization.verify_request_authorization(
+        return authorization.verify_request_authorization(
             authorization=auth_header,
             http_verb=flask.request.method,
             full_path=full_path,
@@ -70,5 +75,7 @@ class Authenticated(object):
             content_type=content_type,
             content=content,
             interchain=self.interchain,
-            root_only=self.root_only,
+            api_resource=self.api_resource,
+            api_operation=self.api_operation,
+            api_name=self.api_name,
         )

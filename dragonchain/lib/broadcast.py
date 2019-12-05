@@ -22,8 +22,10 @@ from typing import TYPE_CHECKING, cast
 import requests
 
 from dragonchain import logger
+from dragonchain import exceptions
 from dragonchain.lib import authorization
 from dragonchain.lib import matchmaking
+from dragonchain.lib.database import redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.dto import l5_block_model
@@ -99,8 +101,11 @@ def send_receipts(l5_block: "l5_block_model.L5BlockModel") -> None:
                 try:
                     claim_check_id = f"{chain_id}-{block}"
                     matchmaking.resolve_claim_check(claim_check_id)
+                except exceptions.MatchmakingRetryableError:  # any 500-level server errors
+                    _log.exception(f"Adding claim to failed queue.  Claim ID: {claim_check_id}")
+                    redis.sadd_sync("mq:failed-claims", claim_check_id)  # using a set avoids duplicates
                 except Exception:
-                    _log.exception("Failure to finalize claim in matchmaking. Sending reciepts to lower level nodes.")
+                    _log.exception("Failure to finalize claim in matchmaking. Sending receipts to lower level nodes.")
         except Exception as e:
             _log.exception(f"[BROADCAST] Error while trying to broadcast down for l4 block {l4_block}\n{e}\n!Will ignore this broadcast!")
 

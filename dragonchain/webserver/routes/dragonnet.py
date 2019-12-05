@@ -50,8 +50,8 @@ def apply_routes(app: flask.Flask):
         app.add_url_rule("/v1/enqueue", "enqueue_v1", enqueue_v1, methods=["POST"])
 
 
-@request_authorizer.Authenticated(interchain=True)
-def receipt_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated("", "", "", interchain=True)
+def receipt_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
 
@@ -64,16 +64,16 @@ def receipt_v1() -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, helpers.format_success(True))
 
 
-@request_authorizer.Authenticated(interchain=True)
-def get_claim_v1(block_id: str) -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated("", "", "", interchain=True)
+def get_claim_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not block_id:
         raise exceptions.BadRequest("block_id is required")
 
     return helpers.flask_http_response(200, dragonnet.get_local_claim_v1(block_id))
 
 
-@request_authorizer.Authenticated(interchain=True)
-def enqueue_v1() -> Tuple[str, int, Dict[str, str]]:
+@request_authorizer.Authenticated("", "", "", interchain=True)
+def enqueue_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
 

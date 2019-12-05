@@ -2,8 +2,7 @@ FROM python:3.8-alpine as base
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
-RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone && apk --no-cache add binutils musl-dev
-# apk --no-cache add binutils musl-dev is required for gunicorn 20.0.0 until https://github.com/benoitc/gunicorn/issues/2160 is fixed
+RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone
 
 FROM base AS builder
 # Install build dependencies

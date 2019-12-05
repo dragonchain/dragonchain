@@ -65,6 +65,10 @@ class NotFound(DragonchainException):
     """Exception raised when object is not found"""
 
 
+class UnableToUpdate(DragonchainException):
+    """Exception raised by matchmaking client when it cannot find enough nodes to replace non responsive"""
+
+
 class BadRequest(DragonchainException):
     """Exception raised on bad request"""
 
@@ -165,6 +169,10 @@ class RedisearchFailure(DragonchainException):
 
 class MatchmakingError(DragonchainException):
     """Exception raised by matchmaking client when a problem has occurred"""
+
+
+class MatchmakingRetryableError(DragonchainException):
+    """Exception raised by matchmaking when there is a server error"""
 
 
 class PartyError(DragonchainException):

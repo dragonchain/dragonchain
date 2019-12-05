@@ -2,16 +2,13 @@
 
 [Dragonchain](https://dragonchain.com/) is an enterprise blockchain platform which simplifies the integration of real business applications onto a blockchain.
 
-## Usage
-
-Instructions for using this helm chart are available with the [Dragonchain Docs](https://dragonchain-core-docs.dragonchain.com/latest/deployment/deploying.html#helm-chart).
-
-Please reference those docs for requirements/installation/deployment of this chart.
+We recommend visiting [docs.dragonchain.com](https://docs.dragonchain.com/) to get started with using Dragonchain.
 
 ## Information
 
 Various information about Dragonchain can be found in the following locations:
 
+- [Getting Started With Dragonchain](https://docs.dragonchain.com/)
 - [Project Source Code](https://github.com/dragonchain/dragonchain)
 - [Project Documentation](https://dragonchain-core-docs.dragonchain.com/latest/)
 - [Dragonchain Console](https://console.dragonchain.com/)

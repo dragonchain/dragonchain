@@ -132,7 +132,7 @@ dragonchain:
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core
-    version: 4.2.0
+    version: 4.3.0
   storage:
     spec:
       storageClassName: standard
@@ -145,7 +145,7 @@ dragonchain:
 redis:
   image:
     repository: docker.io/redis
-    tag: 5.0.6-alpine
+    tag: 5.0.7-alpine
   storage:
     spec:
       storageClassName: standard
@@ -158,7 +158,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.17
+    tag: 1.4.18
   resources:
     limits:
       cpu: 500m

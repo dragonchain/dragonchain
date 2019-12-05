@@ -161,7 +161,7 @@ class TestBitcoinMethods(unittest.TestCase):
             "http://whatever",
             json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
             headers={"Authorization": "Basic auth", "Content-Type": "text/plain"},
-            timeout=30,
+            timeout=20,
         )
 
     @patch("requests.post", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"error": "MyResult"})))
@@ -171,7 +171,7 @@ class TestBitcoinMethods(unittest.TestCase):
             "http://whatever",
             json={"method": "myMethod", "params": ["arg1", 2, True], "id": "1", "jsonrpc": "1.0"},
             headers={"Authorization": "Basic auth", "Content-Type": "text/plain"},
-            timeout=30,
+            timeout=20,
         )
 
     @patch("dragonchain.lib.dto.btc.BitcoinNetwork.ping")
