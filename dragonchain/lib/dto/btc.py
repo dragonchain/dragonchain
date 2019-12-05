@@ -308,7 +308,7 @@ class BitcoinNetwork(model.InterchainModel):
             self.rpc_address,
             json={"method": method, "params": list(args), "id": "1", "jsonrpc": "1.0"},
             headers={"Authorization": f"Basic {self.authorization}", "Content-Type": "text/plain"},
-            timeout=30,
+            timeout=20,
         )
         if r.status_code != 200:
             raise exceptions.InterchainConnectionError(f"Error from bitcoin node with http status code {r.status_code} | {r.text}")
