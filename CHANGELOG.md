@@ -1,12 +1,14 @@
 # Changelog
 
+## 4.3.1
+
 ## 4.3.0
 
 - **Feature:**
   - Add api key permissioning (check their [docs](https://dragonchain-core-docs.dragonchain.com/latest/usage/permissioning.html) for more info)
   - Add root and permissions document api key information in response when creating/getting/listing/updating api keys
   - Speed up bulk transaction intake with redis pipelines, and increase max transactions in a bulk request to 5000 (from 250)
-  - Change error codes expected from matchmaking to support new error code for not enough validating nodes and propely handle claim not found
+  - Change error codes expected from matchmaking to support new error code for not enough validating nodes and properly handle claim not found
 - **Bugs:**
   - Fix a bug where a failure in matchmaking would result in claims not being finalized
 - **Documentation:**
