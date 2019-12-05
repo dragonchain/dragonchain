@@ -213,14 +213,14 @@ class TestBinanceMethods(unittest.TestCase):
         response = self.client._call_node_rpc("MyMethod", {"symbol": "BANANA"})
         self.assertEqual(response.json(), {"result": "MyResult"})
         mock_post.assert_called_once_with(
-            "b.a.n.a.n.a:27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=30
+            "b.a.n.a.n.a:27147/", json={"method": "MyMethod", "jsonrpc": "2.0", "params": {"symbol": "BANANA"}, "id": "dontcare"}, timeout=10
         )
 
     @patch("requests.get", return_value=MagicMock(status_code=200, json=MagicMock(return_value={"result": "MyResult"})))
     def test_api_request_success(self, mock_get):
         response = self.client._call_node_api("MyPath")
         self.assertEqual(response.json(), {"result": "MyResult"})
-        mock_get.assert_called_once_with("b.a.n.a.n.a:1169/api/v1/MyPath", timeout=30)
+        mock_get.assert_called_once_with("b.a.n.a.n.a:1169/api/v1/MyPath", timeout=10)
 
     @patch("dragonchain.lib.dto.bnb.requests.post")
     def test_rpc_request_error(self, mock_requests):

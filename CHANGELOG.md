@@ -22,6 +22,7 @@
 - **Development:**
   - Added hard limit to the number of L4 blocks included in an L5 block
   - Use independent model and dao for api keys
+  - Reduce interchain timeouts so client requests don't timeout
 
 ## 4.2.0
 
