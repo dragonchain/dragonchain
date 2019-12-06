@@ -3,9 +3,10 @@
 ## 4.3.1
 
 - **Feature:**
-  - Allow option for disabling redisearch on verification (L2+) nodes
+  - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
 - **Packaging:**
   - Update boto3 dependencies
+  - Change default node level with helm install to L2 (from L1)
 - **Development:**
   - Add script to check for newer requirements.txt package versions
 
