@@ -27,6 +27,7 @@ spec:
       port: 8080
 
 ---
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -55,7 +56,7 @@ spec:
     ports:
     - protocol: TCP
       port: 6379
-
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

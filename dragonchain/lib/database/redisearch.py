@@ -45,8 +45,10 @@ if TYPE_CHECKING:
 _log = logger.get_logger()
 
 LEVEL = os.environ["LEVEL"]
-REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
-REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
+ENABLED = not (LEVEL != "1" and os.environ.get("USE_REDISEARCH") == "false")
+if ENABLED:
+    REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
+    REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
 INDEX_GENERATION_KEY = "dc:index_generation_complete"
 BLOCK_MIGRATION_KEY = "dc:migrations:block"
@@ -103,6 +105,8 @@ def _get_redisearch_index_client(index: str) -> redisearch.Client:
     """
     global _redis_connection
     if _redis_connection is None:
+        if not ENABLED:
+            raise RuntimeError("Redisearch was attempted to be used, but is disabled")
         _redis_connection = dragonchain_redis._initialize_redis(host=REDISEARCH_ENDPOINT, port=REDIS_PORT)
     return redisearch.Client(index, conn=_redis_connection)
 
