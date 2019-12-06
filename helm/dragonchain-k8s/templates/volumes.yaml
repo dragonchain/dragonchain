@@ -14,7 +14,7 @@ metadata:
 spec:
 {{ toYaml .Values.redis.storage.spec | indent 2 }}
 ---
-{{- if and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1")) }}
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

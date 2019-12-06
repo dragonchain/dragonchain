@@ -75,7 +75,7 @@ data:
     aof-load-truncated yes
     aof-use-rdb-preamble yes
 ---
-{{- if and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1")) }}
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 # Redisearch Config Map
 apiVersion: v1
 kind: ConfigMap

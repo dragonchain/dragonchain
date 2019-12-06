@@ -652,7 +652,7 @@ spec:
             claimName: {{ .Release.Name }}-redis-volume
 
 ---
-{{- if and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1")) }}
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 # Redisearch
 apiVersion: apps/v1
 kind: Deployment

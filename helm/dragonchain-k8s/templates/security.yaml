@@ -27,7 +27,7 @@ spec:
       port: 8080
 
 ---
-{{- if and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1")) }}
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
