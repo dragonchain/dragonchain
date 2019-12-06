@@ -14,6 +14,7 @@ metadata:
 spec:
 {{ toYaml .Values.redis.storage.spec | indent 2 }}
 ---
+{{- if and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1")) }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -29,9 +30,9 @@ metadata:
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
 spec:
 {{ toYaml .Values.redisearch.storage.spec | indent 2 }}
-
-{{- if .Values.dragonchain.storage }}
+{{- end }}
 ---
+{{- if .Values.dragonchain.storage }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

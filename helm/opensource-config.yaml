@@ -12,6 +12,7 @@ global:
     LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
     TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
+    USE_REDISEARCH: "true" # (l2+ only) Set to 'false' in order to disable redisearch functionality for a thinner node. Disables query endpoints
     BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
 
 # -- isMinikube --

@@ -2,6 +2,13 @@
 
 ## 4.3.1
 
+- **Feature:**
+  - Allow option for disabling redisearch on verification (L2+) nodes
+- **Packaging:**
+  - Update boto3, and web3 dependencies
+- **Development:**
+  - Add script to check for newer requirements.txt package versions
+
 ## 4.3.0
 
 - **Feature:**

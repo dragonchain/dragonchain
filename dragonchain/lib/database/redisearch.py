@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 _log = logger.get_logger()
 
 LEVEL = os.environ["LEVEL"]
+ENABLED = not (LEVEL != "1" and os.environ.get("USE_REDISEARCH") == "false")
 REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
 REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
@@ -103,6 +104,8 @@ def _get_redisearch_index_client(index: str) -> redisearch.Client:
     """
     global _redis_connection
     if _redis_connection is None:
+        if not ENABLED:
+            raise RuntimeError("Redisearch was attempted to be used, but is disabled")
         _redis_connection = dragonchain_redis._initialize_redis(host=REDISEARCH_ENDPOINT, port=REDIS_PORT)
     return redisearch.Client(index, conn=_redis_connection)
 

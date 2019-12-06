@@ -49,15 +49,17 @@ def start() -> None:
         else:
             _log.info("HMAC key secret already exists. Skipping credential storage write.")
 
-    _log.info("Checking if redisearch indexes need to be regenerated")
-    redisearch.generate_indexes_if_necessary()
+    if redisearch.ENABLED:
+        _log.info("Checking if redisearch indexes need to be regenerated")
+        redisearch.generate_indexes_if_necessary()
 
     _log.info("Finish pre-boot successful")
 
 
 if __name__ == "__main__":
     # Wait for Redis and Redisearch to connect before starting initialization
-    redisearch._get_redisearch_index_client("test")
+    if redisearch.ENABLED:
+        redisearch._get_redisearch_index_client("test")
     redis._set_redis_client_if_necessary()
     redis._set_redis_client_lru_if_necessary()
     try:
