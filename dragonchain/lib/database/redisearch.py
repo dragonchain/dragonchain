@@ -46,8 +46,9 @@ _log = logger.get_logger()
 
 LEVEL = os.environ["LEVEL"]
 ENABLED = not (LEVEL != "1" and os.environ.get("USE_REDISEARCH") == "false")
-REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
-REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
+if ENABLED:
+    REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
+    REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
 INDEX_GENERATION_KEY = "dc:index_generation_complete"
 BLOCK_MIGRATION_KEY = "dc:migrations:block"
