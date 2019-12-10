@@ -110,7 +110,7 @@ def set_l5_wait_time(chain_id: str) -> int:
     except Exception:  # if there is an error when contacting matchmaking
         _log.exception(f"[BROADCAST PROCESSOR] Exception when fetching config from matchmaking for chain {chain_id}")
         broadcast_receipt_wait_time_l5 = 43200  # seconds (12 hours) [fallback value]
-    L5_WAIT_TIMES[chain_id] = broadcast_receipt_wait_time_l5  # adds to module-level dictionary cache
+    _l5_wait_times[chain_id] = broadcast_receipt_wait_time_l5  # adds to module-level dictionary cache
     return broadcast_receipt_wait_time_l5
 
 
