@@ -51,7 +51,7 @@ phases:
       - docker push $PUB_TAG_EDGE
       - if [ "$(uname -m)" = "x86_64" ]; then sh cicd/deploy_docs.sh; fi
       - if [ "$STAGE" = dev ]; then echo Generating Banana Index && jq -c ".message |= \"$(grep -ir banana . | wc -l)\"" cicd/banana-shield.json > shield.json && aws s3 cp shield.json s3://dragonchain-core-docs/banana-shield.json; fi
-      - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_VERSION && docker; fi
+      - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_VERSION; fi
       # Update docker manifests
       - rm -rf "$HOME/.docker/manifests/"
       - if docker manifest create dragonchain/dragonchain_core:edge dragonchain/dragonchain_core:edge-linux-amd64 dragonchain/dragonchain_core:edge-linux-arm64; then docker manifest push dragonchain/dragonchain_core_dependencies:edge; fi
