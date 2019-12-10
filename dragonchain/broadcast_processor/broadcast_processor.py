@@ -35,19 +35,18 @@ from dragonchain.lib import crypto
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.interfaces import storage
+from dragonchain.lib.dto import eth, btc, bnb
 
 BROADCAST = os.environ["BROADCAST"]
 LEVEL = os.environ["LEVEL"]
 HTTP_REQUEST_TIMEOUT = 30  # seconds
 BROADCAST_RECEIPT_WAIT_TIME = 35  # seconds
-# TODO Make L5 wait time dynamic
-BROADCAST_RECEIPT_WAIT_TIME_L5 = 43200  # seconds
 
 VERIFICATION_NOTIFICATION: Dict[str, List[str]] = {}
 if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
     VERIFICATION_NOTIFICATION = cast(Dict[str, List[str]], json.loads(os.environ["VERIFICATION_NOTIFICATION"]))
 
-
+_l5_wait_times: Dict[str, int] = {}  # dcID: wait in seconds
 _log = logger.get_logger()
 # For these variables, we are sure to call setup() when initializing this module before using it, so we ignore type error for None
 _requirements: dict = {}
@@ -87,6 +86,34 @@ def chain_id_set_from_matchmaking_claim(claim: dict, level: int) -> Set[str]:
     return set(claim["validations"][f"l{level}"].keys())
 
 
+def get_l5_wait_time(chain_id: str) -> int:
+    if chain_id in _l5_wait_times:
+        return _l5_wait_times[chain_id]
+    else:
+        return set_l5_wait_time(chain_id)
+
+
+def set_l5_wait_time(chain_id: str) -> int:
+    network_attr = {
+        "btc": {"confirmations": btc.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": btc.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
+        "eth": {"confirmations": eth.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": eth.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
+        "bnb": {"confirmations": bnb.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": bnb.AVERAGE_BLOCK_TIME, "delay_buffer": 1.5},
+    }  # block_time is in seconds; delay_buffer multiplier is to account for network delays
+    try:
+        mm_config = matchmaking.get_registration(chain_id)
+        interchain_network = mm_config["network"]  # returns: "btc" / "eth" / "bnb"
+        broadcast_interval = mm_config["broadcastInterval"]  # returns: decimal value in hours
+        broadcast_interval = int(broadcast_interval * 3600)  # converts to int value in seconds
+        attr = network_attr[interchain_network]
+        broadcast_receipt_wait_time_l5 = int(attr["confirmations"] * attr["block_time"] * attr["delay_buffer"])  # in seconds
+        broadcast_receipt_wait_time_l5 += broadcast_interval
+    except Exception:  # if there is an error when contacting matchmaking
+        _log.exception(f"[BROADCAST PROCESSOR] Exception when fetching config from matchmaking for chain {chain_id}")
+        broadcast_receipt_wait_time_l5 = 43200  # seconds (12 hours) [fallback value]
+    L5_WAIT_TIMES[chain_id] = broadcast_receipt_wait_time_l5  # adds to module-level dictionary cache
+    return broadcast_receipt_wait_time_l5
+
+
 def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level: int, chain_ids: set) -> Optional[Set[asyncio.Task]]:
     """Initiate broadcasts for a block id to certain higher level nodes
     Args:
@@ -112,6 +139,8 @@ def make_broadcast_futures(session: aiohttp.ClientSession, block_id: str, level:
             headers, data = authorization.generate_authenticated_request("POST", chain, path, broadcast_dto)
             if level != 5:
                 headers["deadline"] = str(BROADCAST_RECEIPT_WAIT_TIME)
+            else:
+                headers["deadline"] = str(get_l5_wait_time(chain))
             url = f"{matchmaking.get_dragonchain_address(chain)}{path}"
             _log.info(f"[BROADCAST PROCESSOR] Firing transaction for {chain} (level {level}) at {url}")
             broadcasts.add(asyncio.create_task(session.post(url=url, data=data, headers=headers, timeout=HTTP_REQUEST_TIMEOUT)))
@@ -232,6 +261,8 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None: 
             await broadcast_functions.save_unfinished_claim(block_id)
             continue
         claim_chains = chain_id_set_from_matchmaking_claim(claim, current_level)
+        if current_level == 5:
+            chain_id = claim["properties"]["metadata"]["properties"]["dcId"]  # see: matchmaking schema
         if score == 0:
             # If this block hasn't been broadcast at this level before (score is 0)
             _log.info(f"[BROADCAST PROCESSOR] Block {block_id} Level {current_level} not broadcasted yet. Broadcasting to all chains in claim")
@@ -243,7 +274,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None: 
             request_futures.update(futures)
             # Schedule this block to be re-checked after BROADCAST_RECEIPT_WAIT_TIME more seconds have passed
             await broadcast_functions.schedule_block_for_broadcast_async(
-                block_id, int(time.time()) + (BROADCAST_RECEIPT_WAIT_TIME if current_level != 5 else BROADCAST_RECEIPT_WAIT_TIME_L5)
+                block_id, int(time.time()) + (BROADCAST_RECEIPT_WAIT_TIME if current_level != 5 else get_l5_wait_time(chain_id))
             )
         else:
             # Block has been broadcast at this level before. Figure out which chains didn't respond in time
@@ -280,7 +311,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None: 
                 request_futures.update(futures)
                 # Schedule this block to be re-checked after BROADCAST_RECEIPT_WAIT_TIME more seconds have passed
                 await broadcast_functions.schedule_block_for_broadcast_async(
-                    block_id, int(time.time()) + (BROADCAST_RECEIPT_WAIT_TIME if current_level != 5 else BROADCAST_RECEIPT_WAIT_TIME_L5)
+                    block_id, int(time.time()) + (BROADCAST_RECEIPT_WAIT_TIME if current_level != 5 else get_l5_wait_time(chain_id))
                 )
             else:
                 if current_level >= 5:

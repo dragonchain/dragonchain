@@ -69,10 +69,8 @@ def enqueue_item(item: dict, deadline: int = 0) -> None:
     """Enqueues to the chain's block / transaction queue"""
     if LEVEL == "1":
         return enqueue_l1(item)
-    elif LEVEL == "2" or LEVEL == "3" or LEVEL == "4":
+    elif LEVEL == "2" or LEVEL == "3" or LEVEL == "4" or LEVEL == "5":
         return enqueue_generic(item["payload"], queue=INCOMING_TX_KEY, deadline=deadline)
-    elif LEVEL == "5":
-        return enqueue_generic(item["payload"], queue=INCOMING_TX_KEY, deadline=0)
     else:
         raise RuntimeError(f"Invalid level {LEVEL}")
 
@@ -126,7 +124,7 @@ def enqueue_generic(content: dict, queue: str, deadline: int) -> None:
     string_content = json.dumps(content, separators=(",", ":"))
     if not redis.lpush_sync(queue, string_content):
         raise RuntimeError("Failed to enqueue")
-    if deadline:  # Set a deadline, beyond-which this L2-4 will disgard this item completely
+    if deadline:  # Set a deadline, beyond-which this L2-5 will disgard this item completely
         key = get_deadline_key(string_content.encode("utf8"))
         redis.set_sync(key, "a", deadline)  # Value is irrelevant
 
@@ -155,7 +153,7 @@ def get_next_item() -> Optional[Any]:
     """Get and json.loads the next item from the queue"""
     item = cast(bytes, redis.rpoplpush_sync(INCOMING_TX_KEY, PROCESSING_TX_KEY, decode=False))
     if item is not None:
-        if LEVEL != "1" and LEVEL != "5":
+        if LEVEL != "1":
             if item_is_expired(item):
                 redis.lpop_sync(PROCESSING_TX_KEY, decode=False)
                 return get_next_item()
