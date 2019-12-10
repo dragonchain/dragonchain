@@ -12,6 +12,7 @@
   - Add building/testing for arm64 containers (in addition to amd64)
 - **Development:**
   - Add script to check for newer requirements.txt package versions
+  - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains 
 
 ## 4.3.0
 
