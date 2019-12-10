@@ -5,14 +5,22 @@ branches:
 language: minimal
 services:
   - docker
+
+matrix:
+  include:
+    - arch: amd64
+      env: PLATFORM="x86_64"
+    - arch: arm64
+      env: PLATFORM="aarch64"
+
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
-script:
-  - docker build . -f cicd/Dockerfile.test -t built
+  - if [ "$PLATFORM" = "x86_64" ]; then curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter && ./cc-test-reporter before-build; fi
+  - sync
+  script:
+  - if [ "$PLATFORM" = "x86_64" ]; then docker build . -f cicd/Dockerfile.test -t built; fi
+  - if [ "$PLATFORM" = "aarch64" ]; then docker build . -f cicd/Dockerfile.test.arm64 -t built; fi
   - docker run -v $(pwd)/docs:/usr/src/core/docs built
   - if [ ! -d "./docs/.build/html" ]; then echo "Docs did not build correctly!"; exit 1; fi
   - mv docs/coverage.xml ./coverage.xml
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - if [ "$PLATFORM" = "x86_64" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi

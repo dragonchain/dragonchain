@@ -80,7 +80,11 @@ elif [ "$1" = "clean" ]; then
 elif [ "$1" = "cicd-update" ]; then
     aws cloudformation deploy --stack-name Dragonchain-CICD --template-file ./cicd/CICD.cft.yml --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
 elif [ "$1" = "docker-test" ]; then
-    docker build . -f ./cicd/Dockerfile.test -t dragonchain_testing_container
+    if [ "$(uname -m)" = "x86_64" ]; then
+        docker build . -f ./cicd/Dockerfile.test -t dragonchain_testing_container
+    elif [ "$(uname -m)" = "aarch64" ]; then
+        docker build . -f ./cicd/Dockerfile.test.arm64 -t dragonchain_testing_container
+    fi
     docker run -v "$(pwd)":/usr/src/core dragonchain_testing_container
 elif [ "$1" = "full-test" ]; then
     set +e

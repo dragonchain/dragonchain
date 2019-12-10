@@ -7,7 +7,6 @@ flake8-builtins
 flake8-import-order
 flake8-mypy
 mypy
-mypy-extensions
 coverage
 bandit
 sphinx

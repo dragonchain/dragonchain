@@ -15,9 +15,7 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-from typing import List, Union, Dict, Tuple, Any, TYPE_CHECKING
-
-from mypy_extensions import TypedDict
+from typing import List, Union, Dict, Tuple, TypedDict, Any, TYPE_CHECKING
 
 if not TYPE_CHECKING:
     raise RuntimeError("dragonchain.lib.types should never be imported during runtime")

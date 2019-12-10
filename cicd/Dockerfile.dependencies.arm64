@@ -2,10 +2,10 @@
 FROM python:3.8-alpine
 
 # Install helm for linting chart, and yq for building docs
-RUN wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \
-    tar xzf helm-v2.14.3-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
-    rm -rf helm-v2.14.3-linux-amd64.tar.gz linux-amd64 && \
-    wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_amd64' && \
+RUN wget -O helm-v2.14.3-linux-arm64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-arm64.tar.gz' && \
+    tar xzf helm-v2.14.3-linux-arm64.tar.gz && mv linux-arm64/helm /usr/local/bin/helm && \
+    rm -rf helm-v2.14.3-linux-arm64.tar.gz linux-arm64 && \
+    wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_arm64' && \
     chmod +x yq && mv yq /usr/local/bin/
 
 # Install dev build dependencies

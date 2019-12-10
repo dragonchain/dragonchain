@@ -6,10 +6,10 @@ Parameters:
     Default: GitHubReadOnlyToken
 
 Resources:
-  DevCodeBuild:
+  DevCodeBuildAmd64:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: "dragonchain-codebuild-deploy-dev"
+      Name: "dragonchain-codebuild-deploy-dev-amd64"
       ServiceRole:
         Ref: CICDPipelineRole
       Artifacts:
@@ -28,10 +28,32 @@ Resources:
         BuildSpec: cicd/buildspec.deploy.yml
       TimeoutInMinutes: 60
 
-  ProdCodeBuild:
+  DevCodeBuildArm64:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: "dragonchain-codebuild-deploy-prod"
+      Name: "dragonchain-codebuild-deploy-dev-arm64"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:1.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: dev
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  ProdCodeBuildAmd64:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-prod-amd64"
       ServiceRole:
         Ref: CICDPipelineRole
       Artifacts:
@@ -40,6 +62,28 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_LARGE
         Image: aws/codebuild/standard:2.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: prod
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  ProdCodeBuildArm64:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-prod-arm64"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:1.0
         EnvironmentVariables:
           - Name: STAGE
             Type: PLAINTEXT
@@ -123,7 +167,7 @@ Resources:
               RunOrder: 1
         - Name: Deploy
           Actions:
-            - Name: Test-Build-Deploy
+            - Name: Test-Build-Deploy-amd64
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -131,7 +175,20 @@ Resources:
                 Version: 1
               Configuration:
                 ProjectName:
-                  Ref: DevCodeBuild
+                  Ref: DevCodeBuildAmd64
+              InputArtifacts:
+                - Name: MasterDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
+            - Name: Test-Build-Deploy-arm64
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: DevCodeBuildArm64
               InputArtifacts:
                 - Name: MasterDragonchainCode
               RoleArn: !GetAtt CICDPipelineRole.Arn
@@ -166,7 +223,7 @@ Resources:
               RunOrder: 1
         - Name: Deploy
           Actions:
-            - Name: Test-Build-Deploy
+            - Name: Test-Build-Deploy-amd64
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -174,7 +231,20 @@ Resources:
                 Version: 1
               Configuration:
                 ProjectName:
-                  Ref: ProdCodeBuild
+                  Ref: ProdCodeBuildAmd64
+              InputArtifacts:
+                - Name: ProductionDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
+            - Name: Test-Build-Deploy-arm64
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: ProdCodeBuildArm64
               InputArtifacts:
                 - Name: ProductionDragonchainCode
               RoleArn: !GetAtt CICDPipelineRole.Arn
