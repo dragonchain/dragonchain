@@ -37,6 +37,7 @@ MAINNET_API_PORT = 1169
 TESTNET_RPC_PORT = 26657
 TESTNET_API_PORT = 11699
 
+AVERAGE_BLOCK_TIME = 1  # in seconds
 CONFIRMATIONS_CONSIDERED_FINAL = 1  # https://docs.binance.org/faq.html#what-is-the-design-principle-of-binance-chain
 BLOCK_THRESHOLD = 3  # The number of blocks that can pass by before trying to send another transaction
 SEND_FEE = 37500  # transfer fee fixed at 0.000375 BNB : https://docs.binance.org/trading-spec.html#current-fees-table-on-mainnet

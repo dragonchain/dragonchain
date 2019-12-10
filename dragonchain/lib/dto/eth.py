@@ -36,7 +36,7 @@ DRAGONCHAIN_CLASSIC_NODE = "http://internal-Parity-Classic-Internal-2003699904.u
 # Testnet ETC
 DRAGONCHAIN_MORDEN_NODE = "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545"
 
-
+AVERAGE_BLOCK_TIME = 15  # in seconds
 CONFIRMATIONS_CONSIDERED_FINAL = 12
 BLOCK_THRESHOLD = 30  # The number of blocks that can pass by before trying to send another transaction
 STANDARD_GAS_LIMIT = 60000
