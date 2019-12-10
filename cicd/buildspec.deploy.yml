@@ -58,4 +58,4 @@ phases:
       - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:$VERSION dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:$VERSION; fi; fi
       - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:latest dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:latest; fi; fi
       # Build dependencies container if necessary
-      if [ "$STAGE" = dev ]; then sh scripts/build_dependency_docker.sh; fi
+      - if [ "$STAGE" = dev ]; then sh scripts/build_dependency_docker.sh; fi
