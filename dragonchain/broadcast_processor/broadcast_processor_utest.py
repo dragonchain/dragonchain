@@ -99,13 +99,13 @@ class BroadcastProcessorTests(unittest.TestCase):
         self.assertEqual(broadcast_processor.set_l5_wait_time("btc"), 43200)  # hardcoded fallback value
         mock_get_rego.assert_called_once_with("btc")
 
-    @patch.dict("dragonchain.broadcast_processor.broadcast_processor.L5_WAIT_TIMES", {"banana": 123})
+    @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {"banana": 123})
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration")
     def test_get_l5_wait_time_is_cached(self, mock_get_rego):
         self.assertEqual(broadcast_processor.get_l5_wait_time("banana"), 123)
         mock_get_rego.assert_not_called()
 
-    @patch.dict("dragonchain.broadcast_processor.broadcast_processor.L5_WAIT_TIMES", {})
+    @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {})
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
     )
