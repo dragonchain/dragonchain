@@ -5,7 +5,6 @@ branches:
 language: minimal
 services:
   - docker
-
 matrix:
   include:
     - arch: amd64
