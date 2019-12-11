@@ -22,6 +22,9 @@ Resources:
           - Name: STAGE
             Type: PLAINTEXT
             Value: dev
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: amd64
         PrivilegedMode: true
       Source:
         Type: CODEPIPELINE
@@ -44,6 +47,34 @@ Resources:
           - Name: STAGE
             Type: PLAINTEXT
             Value: dev
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: arm64
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  DevCodeBuildArmv7:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-dev-armv7"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:1.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: dev
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: armv7
         PrivilegedMode: true
       Source:
         Type: CODEPIPELINE
@@ -66,6 +97,9 @@ Resources:
           - Name: STAGE
             Type: PLAINTEXT
             Value: prod
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: amd64
         PrivilegedMode: true
       Source:
         Type: CODEPIPELINE
@@ -88,6 +122,34 @@ Resources:
           - Name: STAGE
             Type: PLAINTEXT
             Value: prod
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: arm64
+        PrivilegedMode: true
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/buildspec.deploy.yml
+      TimeoutInMinutes: 60
+
+  ProdCodeBuildArmv7:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: "dragonchain-codebuild-deploy-prod-armv7"
+      ServiceRole:
+        Ref: CICDPipelineRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:1.0
+        EnvironmentVariables:
+          - Name: STAGE
+            Type: PLAINTEXT
+            Value: prod
+          - Name: ARCHITECTURE
+            Type: PLAINTEXT
+            Value: armv7
         PrivilegedMode: true
       Source:
         Type: CODEPIPELINE
@@ -193,6 +255,19 @@ Resources:
                 - Name: MasterDragonchainCode
               RoleArn: !GetAtt CICDPipelineRole.Arn
               RunOrder: 1
+            - Name: Test-Build-Deploy-armv7
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: DevCodeBuildArmv7
+              InputArtifacts:
+                - Name: MasterDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
 
   CodePipelineProduction:
     Type: AWS::CodePipeline::Pipeline
@@ -245,6 +320,19 @@ Resources:
               Configuration:
                 ProjectName:
                   Ref: ProdCodeBuildArm64
+              InputArtifacts:
+                - Name: ProductionDragonchainCode
+              RoleArn: !GetAtt CICDPipelineRole.Arn
+              RunOrder: 1
+            - Name: Test-Build-Deploy-armv7
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName:
+                  Ref: ProdCodeBuildArmv7
               InputArtifacts:
                 - Name: ProductionDragonchainCode
               RoleArn: !GetAtt CICDPipelineRole.Arn
