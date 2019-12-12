@@ -5,11 +5,11 @@
 - **Feature:**
   - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
 - **Packaging:**
-  - Update boto3, and web3 dependencies
+  - Update boto3, fastjsonschema, and web3 dependencies
   - Change default node level with helm install to L2 (from L1)
-  - Provide multiarch (armv7/arm64/amd64) manifests for built containers in dockerhub
+  - Provide multiarch (arm64/amd64) manifests for built containers in dockerhub
 - **CICD:**
-  - Add building for arm64/armv7 containers (in addition to existing amd64)
+  - Add building for arm64 containers (in addition to existing amd64)
 - **Development:**
   - Add script to check for newer requirements.txt package versions
   - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains

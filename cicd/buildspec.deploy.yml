@@ -24,7 +24,6 @@ phases:
       - echo Building and running tests
       - if [ "$ARCHITECTURE" = "amd64" ]; then docker build . -f cicd/Dockerfile.test -t built; fi
       - if [ "$ARCHITECTURE" = "arm64" ]; then docker build . -f cicd/Dockerfile.test.arm64 -t built; fi
-      - if [ "$ARCHITECTURE" = "armv7" ]; then docker build . -f cicd/Dockerfile.test.armv7 -t built; fi
       - docker run -v $(pwd)/docs:/usr/src/core/docs built
       - if [ ! -d "./docs/.build/html" ]; then echo "Docs did not build correctly!"; exit 1; fi
   build:
@@ -44,7 +43,6 @@ phases:
       - echo Building and pushing docker containers
       - if [ "$ARCHITECTURE" = "amd64" ]; then docker build . -f Dockerfile -t "$TAG"; fi
       - if [ "$ARCHITECTURE" = "arm64" ]; then docker build . -f Dockerfile.arm64 -t "$TAG"; fi
-      - if [ "$ARCHITECTURE" = "armv7" ]; then docker build . -f Dockerfile.armv7 -t "$TAG"; fi
       - docker tag $TAG $PUB_TAG_VERSION
       - docker tag $TAG $PUB_TAG_EDGE
       # Upload built containers and docs
@@ -55,8 +53,8 @@ phases:
       - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_VERSION; fi
       # Update docker manifests
       - rm -rf "$HOME/.docker/manifests/"
-      - if docker manifest create dragonchain/dragonchain_core:edge dragonchain/dragonchain_core:edge-linux-amd64 dragonchain/dragonchain_core:edge-linux-arm64 dragonchain/dragonchain_core:edge-linux-armv7; then docker manifest push dragonchain/dragonchain_core:edge; fi
-      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:$VERSION dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64 dragonchain/dragonchain_core:$VERSION-linux-armv7; then docker manifest push dragonchain/dragonchain_core:$VERSION; fi; fi
-      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:latest dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64 dragonchain/dragonchain_core:$VERSION-linux-armv7; then docker manifest push dragonchain/dragonchain_core:latest; fi; fi
+      - if docker manifest create dragonchain/dragonchain_core:edge dragonchain/dragonchain_core:edge-linux-amd64 dragonchain/dragonchain_core:edge-linux-arm64; then docker manifest push dragonchain/dragonchain_core:edge; fi
+      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:$VERSION dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:$VERSION; fi; fi
+      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:latest dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:latest; fi; fi
       # Build dependencies container if necessary
       - if [ "$STAGE" = dev ]; then sh scripts/build_dependency_docker.sh; fi
