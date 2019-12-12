@@ -4,6 +4,7 @@
 
 - **Feature:**
   - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
+  - Add field to status endpoint return to indicate if indexing (redisearch) is on/off
 - **Packaging:**
   - Update boto3, fastjsonschema, and web3 dependencies
   - Change default node level with helm install to L2 (from L1)

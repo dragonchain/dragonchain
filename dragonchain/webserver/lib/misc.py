@@ -21,6 +21,7 @@ from typing import Dict, Any
 from dragonchain import logger
 from dragonchain.lib import matchmaking
 from dragonchain.lib import keys
+from dragonchain.lib.database import redisearch
 
 _log = logger.get_logger()
 
@@ -35,6 +36,7 @@ def get_v1_status() -> Dict[str, Any]:
         "scheme": str(matchmaking_data["scheme"]),
         "version": str(matchmaking_data["version"]),
         "encryptionAlgo": str(matchmaking_data["encryptionAlgo"]),
+        "indexingEnabled": redisearch.ENABLED,
     }
     # Return extra data if level 5
     if os.environ["LEVEL"] == "5":
