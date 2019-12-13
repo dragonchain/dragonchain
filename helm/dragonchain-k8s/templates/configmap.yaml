@@ -127,5 +127,5 @@ metadata:
 data:
   redis-config: |
     appendonly no
-    maxmemory 190mb
+    maxmemory 80mb
     maxmemory-policy allkeys-lru

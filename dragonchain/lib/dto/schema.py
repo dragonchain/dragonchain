@@ -531,7 +531,12 @@ smart_contract_create_schema_v1 = {
         "cmd": {"type": "string"},
         "args": {"type": "array", "items": {"type": "string"}},
         "env": {"type": "object"},
-        "secrets": {"type": "object"},
+        "secrets": {
+            "type": "object",
+            # Don't allow secrets to overwrite 'secret-key' or 'auth-key-id'
+            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id)).+$": {"type": "string"}},
+            "additionalProperties": False,
+        },
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
         "cron": {"type": "string"},
         "execution_order": {"type": "string", "enum": ["serial", "parallel"]},
@@ -554,7 +559,12 @@ smart_contract_update_schema_v1 = {
         "cmd": {"type": "string"},
         "args": {"type": "array", "items": {"type": "string"}},
         "env": {"type": "object"},
-        "secrets": {"type": "object"},
+        "secrets": {
+            "type": "object",
+            # Don't allow secrets to overwrite 'secret-key' or 'auth-key-id'
+            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id)).+$": {"type": "string"}},
+            "additionalProperties": False,
+        },
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
         "cron": {"type": "string"},
         "execution_order": {"type": "string", "enum": ["serial", "parallel"]},

@@ -299,21 +299,21 @@ class ContractJob(object):
             new_secrets = self.model.secrets
 
         for secret, value in new_secrets.items():
-            secret_name = f"sc-{self.model.id}-{secret.lower()}"
+            secret = secret.lower()
+            secret_name = f"sc-{self.model.id}-{secret}"
             requests_method = requests.post if secret not in existing_secrets else requests.put
 
             _log.info(f"Creating secret: {secret_name} at {FAAS_GATEWAY}")
             response = requests_method(
                 f"{FAAS_GATEWAY}/system/secrets", headers={"Authorization": faas.get_faas_auth()}, json={"name": secret_name, "value": value}
             )
-
             _log.info(f"Response: {response.status_code}")
-            _log.info(f"Response Body: {response.text}")
 
             if response.status_code != 202:
                 self.model.set_state(state=self.end_error_state, msg="Error creating contract secrets")
                 raise exceptions.ContractException("Error creating contract secret")
-            existing_secrets.append(secret.lower())
+            if secret not in existing_secrets:
+                existing_secrets.append(secret)
 
         self.model.existing_secrets = existing_secrets
 
