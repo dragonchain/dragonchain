@@ -7,6 +7,7 @@
   - Allow get/list/update on smart contract api keys (allowing their permissions to be viewed/changed)
 - **Bugs:**
   - Fix bug where updating an existing secret for a smart contract would cause the contract deployment to fail
+  - Restrict contract create/update schema to deny overwriting reserved 'secret-key' and 'auth-key-id' secrets
 - **Documentation:**
   - Edit notes about ram usage requirements for Dragonchain
 - **Packaging:**
