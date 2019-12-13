@@ -4,6 +4,7 @@
 
 - **Feature:**
   - Add field to status endpoint return to indicate if indexing (redisearch) is on/off
+  - Allow get/list/update on smart contract api keys (allowing their permissions to be viewed/changed)
 - **Documentation:**
   - Edit notes about ram usage requirements for Dragonchain
 - **Packaging:**
@@ -18,6 +19,7 @@
 - **Development:**
   - Add script to check for newer requirements.txt package versions
   - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains
+  - Remove any concept of api keys starting with `WEB_` from being special
 
 ## 4.3.0
 
