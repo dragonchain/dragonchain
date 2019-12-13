@@ -132,6 +132,9 @@ class TestApiKeyDAO(unittest.TestCase):
         api_key_dao.delete_api_key("notinterchain", interchain=False)
         mock_delete.assert_has_calls([call("KEYS/INTERCHAIN/interchain"), call("KEYS/notinterchain")])
 
+    def test_delete_api_key_throws_error_if_deleting_interchain_key_when_not_intended(self):
+        self.assertRaises(RuntimeError, api_key_dao.delete_api_key, "INTERCHAIN/malicious", False)
+
     @patch("dragonchain.lib.dao.api_key_dao.storage.list_objects")
     @patch("dragonchain.lib.dao.api_key_dao.storage.get", return_value=b"1")
     def test_perform_api_key_migration_doesnt_do_anything_when_already_migrated(self, mock_get, mock_list):

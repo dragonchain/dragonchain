@@ -61,10 +61,9 @@ def list_api_keys(include_interchain: bool) -> List[api_key_model.APIKeyModel]:
     # Get keys from storage, excluding migration marker and interchain keys
     return_list = []
     for key in storage.list_objects(prefix=FOLDER):
-        if MIGRATION_V1 not in key:
-            if key.startswith("KEYS/INTERCHAIN") and not include_interchain:
-                continue
-            return_list.append(api_key_model.new_from_at_rest(storage.get_json_from_object(key)))
+        if (MIGRATION_V1 in key) or (key.startswith("KEYS/INTERCHAIN") and not include_interchain):
+            continue
+        return_list.append(api_key_model.new_from_at_rest(storage.get_json_from_object(key)))
     return return_list
 
 
