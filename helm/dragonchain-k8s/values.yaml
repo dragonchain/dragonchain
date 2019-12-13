@@ -33,25 +33,35 @@ secret:
   name: SecretString
   mountPath: /etc/chain-secrets
 
-# LRU Cache Redis Configuration
+# LRU cache redis resources configuration
 cacheredis:
   resources:
     limits:
-      cpu: 50m
-      memory: 200Mi
+      cpu: 100m
+      memory: 100Mi
     requests:
       cpu: 15m
-      memory: 200Mi
+      memory: 100Mi
 
-# Persistent redis Configuration
+# Persistent redis resources configuration
 persistentredis:
   resources:
     limits:
-      cpu: 50m
+      cpu: 100m
       memory: 100Mi
     requests:
       cpu: 15m
       memory: 100Mi
+
+# Redisearch resources configuration
+redisearch:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 300Mi
+    requests:
+      cpu: 50m
+      memory: 300Mi
 
 # Webserver configuration
 webserver:
@@ -159,14 +169,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.18
-  resources:
-    limits:
-      cpu: 500m
-      memory: 300Mi
-    requests:
-      cpu: 50m
-      memory: 300Mi
+    tag: 1.4.19
   storage:
     spec:
       storageClassName: standard

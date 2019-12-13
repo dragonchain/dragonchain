@@ -3,12 +3,16 @@
 ## 4.3.1
 
 - **Feature:**
-  - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
   - Add field to status endpoint return to indicate if indexing (redisearch) is on/off
+- **Documentation:**
+  - Edit notes about ram usage requirements for Dragonchain
 - **Packaging:**
   - Update boto3, fastjsonschema, and web3 dependencies
   - Change default node level with helm install to L2 (from L1)
+  - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
   - Provide multiarch (arm64/amd64) manifests for built containers in dockerhub
+  - Update redisearch in helm chart to 1.4.19
+  - Tweak pod resource usages in helm chart for lower requirements
 - **CICD:**
   - Add building for arm64 containers (in addition to existing amd64)
 - **Development:**

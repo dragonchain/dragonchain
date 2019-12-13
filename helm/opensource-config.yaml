@@ -145,3 +145,44 @@ redisearch:
 
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 # PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core
+
+
+# If running on a very low power machine (i.e. a raspberry pi), it can be useful to allow higher cpu limits on various pods
+# Uncomment below if running on something with little power like a raspberry pi
+
+# cacheredis:
+#   resources:
+#     limits:
+#       cpu: 1
+# persistentredis:
+#   resources:
+#     limits:
+#       cpu: 1
+# redisearch:
+#   resources:
+#     limits:
+#       cpu: 1
+# webserver:
+#   resources:
+#     limits:
+#       cpu: 1
+# transactionProcessor:
+#   resources:
+#     limits:
+#       cpu: 1
+# contractInvoker:
+#   resources:
+#     limits:
+#       cpu: 1
+# broadcastProcessor:
+#   resources:
+#     limits:
+#       cpu: 1
+# scheduler:
+#   resources:
+#     limits:
+#       cpu: 1
+# jobProcessor:
+#   resources:
+#     limits:
+#       cpu: 1
