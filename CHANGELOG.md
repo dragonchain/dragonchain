@@ -5,6 +5,8 @@
 - **Feature:**
   - Add field to status endpoint return to indicate if indexing (redisearch) is on/off
   - Allow get/list/update on smart contract api keys (allowing their permissions to be viewed/changed)
+- **Bugs:**
+  - Fix bug where updating an existing secret for a smart contract would cause the contract deployment to fail
 - **Documentation:**
   - Edit notes about ram usage requirements for Dragonchain
 - **Packaging:**
