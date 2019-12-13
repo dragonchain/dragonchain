@@ -59,19 +59,12 @@ def list_api_keys(include_interchain: bool) -> List[api_key_model.APIKeyModel]:
         List of api key models
     """
     # Get keys from storage, excluding migration marker and interchain keys
-    valid_keys = list(filter(lambda x: (MIGRATION_V1 not in x) and (not x.startswith("KEYS/INTERCHAIN")), storage.list_objects(prefix=FOLDER)))
     return_list = []
-    for key in valid_keys:
-        model = api_key_model.new_from_at_rest(storage.get_json_from_object(key))
-        if model.interchain is not False:  # Double check the interchain value of the key is what we expect; otherwise panic
-            raise RuntimeError(f"Bad interchain key {key} found. Expected interchain: {False} but got: {model.interchain}")
-        return_list.append(model)
-    if include_interchain:
-        for key in storage.list_objects(prefix=INTERCHAIN_FOLDER):
-            model = api_key_model.new_from_at_rest(storage.get_json_from_object(key))
-            if model.interchain is not True:  # Double check the interchain value of the key is what we expect; otherwise panic
-                raise RuntimeError(f"Bad interchain key {key} found. Expected interchain: {True} but got: {model.interchain}")
-            return_list.append(model)
+    for key in storage.list_objects(prefix=FOLDER):
+        if MIGRATION_V1 not in key:
+            if key.startswith("KEYS/INTERCHAIN") and not include_interchain:
+                continue
+            return_list.append(api_key_model.new_from_at_rest(storage.get_json_from_object(key)))
     return return_list
 
 
