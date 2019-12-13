@@ -37,30 +37,9 @@ class TestApiKeyDAO(unittest.TestCase):
             "nickname": "",
         },
     )
-    @patch("dragonchain.lib.dao.api_key_dao.storage.list_objects", return_value=["KEYS/SC_blah", "KEYS/WEB_blah", "KEYS/blah"])
-    def test_list_api_keys_removes_system_keys(self, mock_list_objects, mock_get_object):
-        response = api_key_dao.list_api_keys(include_interchain=False, include_system=False)
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].key_id, "blah")
-        self.assertEqual(response[0].registration_time, 1234)
-        mock_get_object.assert_called_once()
-
-    @patch(
-        "dragonchain.lib.dao.api_key_dao.storage.get_json_from_object",
-        return_value={
-            "key_id": "blah",
-            "registration_time": 1234,
-            "key": "my_auth_key",
-            "version": "1",
-            "permissions_document": {"version": "1", "default_allow": True, "permissions": {}},
-            "interchain": False,
-            "root": False,
-            "nickname": "",
-        },
-    )
     @patch("dragonchain.lib.dao.api_key_dao.storage.list_objects", return_value=["KEYS/INTERCHAIN/blah", "KEYS/blah"])
     def test_list_api_keys_removes_interchain_keys(self, mock_list_objects, mock_get_object):
-        response = api_key_dao.list_api_keys(include_interchain=False, include_system=True)
+        response = api_key_dao.list_api_keys(include_interchain=False)
         self.assertEqual(len(response), 1)
         self.assertEqual(response[0].key_id, "blah")
         self.assertEqual(response[0].registration_time, 1234)
@@ -81,7 +60,7 @@ class TestApiKeyDAO(unittest.TestCase):
     )
     @patch("dragonchain.lib.dao.api_key_dao.storage.list_objects", return_value=["KEYS/INTERCHAIN/blah"])
     def test_list_api_keys_include_interchain_keys(self, mock_list_objects, mock_get_object):
-        response = api_key_dao.list_api_keys(include_interchain=True, include_system=True)
+        response = api_key_dao.list_api_keys(include_interchain=True)
         self.assertEqual(len(response), 1)
         self.assertEqual(response[0].key_id, "blah")
         self.assertEqual(response[0].registration_time, 1234)
@@ -102,7 +81,7 @@ class TestApiKeyDAO(unittest.TestCase):
     )
     @patch("dragonchain.lib.dao.api_key_dao.storage.list_objects", return_value=["KEYS/blah", "KEYS/INTERCHAIN/blah"])
     def test_list_api_key_raises_error_when_mismatching_interchain(self, mock_list_objects, mock_get_object):
-        self.assertRaises(RuntimeError, api_key_dao.list_api_keys, include_interchain=True, include_system=True)
+        self.assertRaises(RuntimeError, api_key_dao.list_api_keys, include_interchain=True)
         mock_get_object.return_value = {
             "key_id": "blah",
             "registration_time": 1234,
@@ -114,7 +93,7 @@ class TestApiKeyDAO(unittest.TestCase):
             "nickname": "",
         }
 
-        self.assertRaises(RuntimeError, api_key_dao.list_api_keys, include_interchain=False, include_system=True)
+        self.assertRaises(RuntimeError, api_key_dao.list_api_keys, include_interchain=False)
 
     @patch("dragonchain.lib.dao.api_key_dao.storage.put_object_as_json")
     def test_save_api_key_calls_storage_correctly(self, mock_save):
