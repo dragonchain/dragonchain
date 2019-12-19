@@ -10,6 +10,7 @@
   - Restrict contract create/update schema to deny overwriting reserved 'secret-key' and 'auth-key-id' secrets
 - **Documentation:**
   - Edit notes about ram usage requirements for Dragonchain
+  - Add documentation for deploying with a raspberry pi
 - **Packaging:**
   - Update boto3, fastjsonschema, and web3 dependencies
   - Change default node level with helm install to L2 (from L1)
@@ -23,6 +24,7 @@
   - Add script to check for newer requirements.txt package versions
   - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains
   - Remove any concept of api keys starting with `WEB_` from being special
+  - Deprecate support for Ethereum Classic Testnet (Morden) with ethereum interchain functionality
 
 ## 4.3.0
 
