@@ -190,7 +190,6 @@ def legacy_get_blockchain_addresses_v1() -> Dict[str, str]:
         "eth_mainnet": interchain_dao.get_interchain_client("ethereum", "ETH_MAINNET").address,
         "eth_ropsten": interchain_dao.get_interchain_client("ethereum", "ETH_ROPSTEN").address,
         "etc_mainnet": interchain_dao.get_interchain_client("ethereum", "ETC_MAINNET").address,
-        "etc_morden": interchain_dao.get_interchain_client("ethereum", "ETC_MORDEN").address,
         "btc_mainnet": interchain_dao.get_interchain_client("bitcoin", "BTC_MAINNET").address,
         "btc_testnet3": interchain_dao.get_interchain_client("bitcoin", "BTC_TESTNET3").address,
     }

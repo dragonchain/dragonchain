@@ -33,8 +33,6 @@ DRAGONCHAIN_MAINNET_NODE = "http://internal-Parity-Mainnet-Internal-1844666982.u
 DRAGONCHAIN_ROPSTEN_NODE = "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545"
 # Mainnet ETC
 DRAGONCHAIN_CLASSIC_NODE = "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545"
-# Testnet ETC
-DRAGONCHAIN_MORDEN_NODE = "http://internal-Parity-Morden-Internal-26081757.us-west-2.elb.amazonaws.com:8545"
 
 AVERAGE_BLOCK_TIME = 15  # in seconds
 CONFIRMATIONS_CONSIDERED_FINAL = 12
@@ -76,11 +74,9 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noq
                 user_input["rpc_address"] = DRAGONCHAIN_ROPSTEN_NODE
             elif user_input.get("chain_id") == 61:
                 user_input["rpc_address"] = DRAGONCHAIN_CLASSIC_NODE
-            elif user_input.get("chain_id") == 62:
-                user_input["rpc_address"] = DRAGONCHAIN_MORDEN_NODE
             else:
                 raise exceptions.BadRequest(
-                    "If an rpc address is not provided, a valid chain id must be provided. ETH_MAIN = 1, ETH_ROPSTEN = 3, ETC_MAIN = 61, ETC_MORDEN = 62"
+                    "If an rpc address is not provided, a valid chain id must be provided. ETH_MAIN = 1, ETH_ROPSTEN = 3, ETC_MAIN = 61"
                 )
         # Create our client with a still undetermined chain id
         try:
@@ -95,9 +91,9 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noq
         except Exception as e:
             raise exceptions.BadRequest(f"Error trying to contact ethereum rpc node. Error: {e}")
         effective_chain_id = user_input.get("chain_id")
-        # For ethereum classic, the mainnet/testnet nodes are chain ID 1/2, however their transactions
-        # must be signed with chain id 61/62, so we have an exception here for the chain id sanity check
-        if effective_chain_id == 61 or effective_chain_id == 62:
+        # For ethereum classic, the mainnet node is chain ID 1, however its transactions
+        # must be signed with chain id 61, so we have an exception here for the chain id sanity check
+        if effective_chain_id == 61:
             effective_chain_id -= 60
         # Sanity check if user provided chain id that it matches the what the RPC node reports
         if isinstance(effective_chain_id, int) and effective_chain_id != reported_chain_id:

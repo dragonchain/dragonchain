@@ -40,6 +40,7 @@ All of the source code, as well as issue tracker can be viewed `on github <https
    deployment/dragonnet
    deployment/deploying
    deployment/links
+   deployment/raspberry_pi
    deployment/migrating_v4
 
 .. toctree::
