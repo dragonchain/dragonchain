@@ -7,7 +7,7 @@ Although all of the Dragonchain code supports running on ARM, redisearch does
 not run on ARM, so any chain with a redisearch will not be able to run on a
 raspberry pi.
 
-With that said, all chains L2+ only optionally require redisearch, and are
+With that said, verification nodes (L2-5) do not require redisearch and are
 deployed without a redisearch by default, so the existing helm chart fully
 supports deploying onto a kubernetes cluster running on an ARM machine such as
 as raspberry pi.
