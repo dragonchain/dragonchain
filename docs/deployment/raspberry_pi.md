@@ -42,8 +42,8 @@ Additionally, when deploying the helm chart, some cpu resource limits should
 be increased in order to compensate for the lower performance of the device's
 CPU.
 
-These limits are commented out at the bottom of the available
-`opensource-config.yaml` from the previous deployment docs.
+These suggested limits are provided, commented out, at the bottom of the
+available `opensource-config.yaml` from the previous deployment docs.
 
 Alternatively, simply add this flag to your `helm upgrade` or `helm install`
 command when installing dragonchain:
