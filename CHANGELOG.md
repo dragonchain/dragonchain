@@ -18,6 +18,7 @@
   - Provide multiarch (arm64/amd64) manifests for built containers in dockerhub
   - Update redisearch in helm chart to 1.4.19
   - Tweak pod resource usages in helm chart for lower requirements
+  - Update fwatchdog to 0.18.7 for OpenFaaS smart contracts
 - **CICD:**
   - Add building for arm64 containers (in addition to existing amd64)
 - **Development:**
