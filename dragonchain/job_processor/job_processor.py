@@ -108,6 +108,7 @@ def start_task() -> None:
         if job and (job.status.succeeded or job.status.failed):
             delete_existing_job(task_definition)
         attempt_job_launch(task_definition)
+        redis.lpop_sync(PENDING_TASK_KEY)
 
 
 def get_next_task() -> Optional[dict]:
@@ -128,7 +129,6 @@ def get_next_task() -> Optional[dict]:
         _log.exception("Error processing task, skipping")
         return None
     _log.info(f"New task request received: {event}")
-    redis.lpop_sync(PENDING_TASK_KEY)
     return event
 
 

@@ -59,12 +59,20 @@ class TestJobPoller(unittest.TestCase):
             },
         )
 
+    @patch("dragonchain.job_processor.job_processor.kubernetes.client.BatchV1Api")
+    @patch("dragonchain.job_processor.job_processor.kubernetes.config.load_incluster_config")
+    @patch("dragonchain.job_processor.job_processor.redis.llen_sync", return_value=True)
+    @patch("dragonchain.job_processor.job_processor.redis")
+    def task_restores_from_pending_queue(self, mock_kube_config, mock_kube_client, mock_redis_llen, mock_redis):
+        job_processor.start()
+        mock_redis_llen.assert_called_once_with("mq:contract-pending")
+        mock_redis.lrange_sync.assert_called_once_with("mq:contract-pending", 0, -1, decode=False)
+        mock_redis.pipeline_sync.assert_called_once()
+
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, valid_task_definition_string))
-    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
-    def test_can_get_next_task(self, mock_lpopsync, mock_brpoplpush):
+    def test_can_get_next_task(self, mock_brpoplpush):
         self.assertEqual(job_processor.get_next_task(), valid_task_definition)
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
-        mock_lpopsync.assert_called_once()
 
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, invalid_task_definition_string))
     def test_get_next_task_returns_none_on_invalid_json_schema(self, mock_brpoplpush):
@@ -122,31 +130,37 @@ class TestJobPoller(unittest.TestCase):
             "contract-my-id", "", body=kubernetes.client.V1DeleteOptions(propagation_policy="Background")
         )
 
+    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
     @patch("dragonchain.job_processor.job_processor.get_next_task", return_value=valid_task_definition)
     @patch("dragonchain.job_processor.job_processor.get_existing_job_status", return_value=None)
     @patch("dragonchain.job_processor.job_processor.delete_existing_job")
     @patch("dragonchain.job_processor.job_processor.attempt_job_launch")
-    def test_start_task_launches_job_when_no_existing_job(self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task):
+    def test_start_task_launches_job_when_no_existing_job(self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task, mock_lpopsync):
         job_processor.start_task()
 
         mock_get_task.assert_called_once_with()
         mock_get_job.assert_called_once_with(valid_task_definition)
         mock_delete_job.assert_not_called()
         mock_job_launch.assert_called_once_with(valid_task_definition)
+        mock_lpopsync.assert_called_once()
 
+    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
     @patch("dragonchain.job_processor.job_processor.get_next_task", return_value=valid_task_definition)
     @patch(
         "dragonchain.job_processor.job_processor.get_existing_job_status", return_value=MagicMock(status=MagicMock(active=0, succeeded=1, failed=0))
     )
     @patch("dragonchain.job_processor.job_processor.delete_existing_job")
     @patch("dragonchain.job_processor.job_processor.attempt_job_launch")
-    def test_start_task_deletes_and_launches_job_when_finished_existing_job(self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task):
+    def test_start_task_deletes_and_launches_job_when_finished_existing_job(
+        self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task, mock_lpopsync
+    ):
         job_processor.start_task()
 
         mock_get_task.assert_called_once_with()
         mock_get_job.assert_called_once_with(valid_task_definition)
         mock_delete_job.assert_called_once_with(valid_task_definition)
         mock_job_launch.assert_called_once_with(valid_task_definition)
+        mock_lpopsync.assert_called_once()
 
     @patch("dragonchain.job_processor.job_processor.get_next_task", return_value=valid_task_definition)
     @patch(
