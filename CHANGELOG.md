@@ -8,6 +8,7 @@
 - **Bugs:**
   - Fix bug where updating an existing secret for a smart contract would cause the contract deployment to fail
   - Restrict contract create/update schema to deny overwriting reserved 'secret-key' and 'auth-key-id' secrets
+  - Restrict contract create/update schema to only allow a restricted character-set for secret names so invalid names can't be used (which would previously cause the smart contract build to fail)
 - **Documentation:**
   - Edit notes about ram usage requirements for Dragonchain
   - Add documentation for deploying with a raspberry pi
