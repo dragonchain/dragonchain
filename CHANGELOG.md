@@ -48,6 +48,7 @@
   - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains
   - Remove any concept of api keys starting with `WEB_` from being special
   - Deprecate support for Ethereum Classic Testnet (Morden) with ethereum interchain functionality
+  - Add retry logic to catch failed job processor jobs
 
 ## 4.3.0
 
