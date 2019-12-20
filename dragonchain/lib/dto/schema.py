@@ -534,7 +534,7 @@ smart_contract_create_schema_v1 = {
         "secrets": {
             "type": "object",
             # Don't allow secrets to overwrite 'secret-key' or 'auth-key-id'
-            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id)).+$": {"type": "string"}},
+            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id))[a-z0-9-]+$": {"type": "string"}},
             "additionalProperties": False,
         },
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
@@ -562,7 +562,7 @@ smart_contract_update_schema_v1 = {
         "secrets": {
             "type": "object",
             # Don't allow secrets to overwrite 'secret-key' or 'auth-key-id'
-            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id)).+$": {"type": "string"}},
+            "patternProperties": {"^(?=(?!secret-key))(?=(?!auth-key-id))[a-z0-9-]+$": {"type": "string"}},
             "additionalProperties": False,
         },
         "seconds": {"type": "integer", "minimum": 1, "maximum": 60},
