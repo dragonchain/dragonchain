@@ -46,6 +46,11 @@ VERIFICATION_NOTIFICATION: Dict[str, List[str]] = {}
 if os.environ.get("VERIFICATION_NOTIFICATION") is not None:
     VERIFICATION_NOTIFICATION = cast(Dict[str, List[str]], json.loads(os.environ["VERIFICATION_NOTIFICATION"]))
 
+_network_attr = {
+    "bitcoin": {"confirmations": btc.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": btc.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
+    "ethereum": {"confirmations": eth.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": eth.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
+    "binance": {"confirmations": bnb.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": bnb.AVERAGE_BLOCK_TIME, "delay_buffer": 1.5},
+}
 _l5_wait_times: Dict[str, int] = {}  # dcID: wait in seconds
 _log = logger.get_logger()
 # For these variables, we are sure to call setup() when initializing this module before using it, so we ignore type error for None
@@ -94,17 +99,12 @@ def get_l5_wait_time(chain_id: str) -> int:
 
 
 def set_l5_wait_time(chain_id: str) -> int:
-    network_attr = {
-        "btc": {"confirmations": btc.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": btc.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
-        "eth": {"confirmations": eth.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": eth.AVERAGE_BLOCK_TIME, "delay_buffer": 3.0},
-        "bnb": {"confirmations": bnb.CONFIRMATIONS_CONSIDERED_FINAL, "block_time": bnb.AVERAGE_BLOCK_TIME, "delay_buffer": 1.5},
-    }  # block_time is in seconds; delay_buffer multiplier is to account for network delays
     try:
         mm_config = matchmaking.get_registration(chain_id)
-        interchain_network = mm_config["network"]  # returns: "btc" / "eth" / "bnb"
+        interchain_network = mm_config["network"].split(" ", 1)[0]  # first word of network string
         broadcast_interval = mm_config["broadcastInterval"]  # returns: decimal value in hours
         broadcast_interval = int(broadcast_interval * 3600)  # converts to int value in seconds
-        attr = network_attr[interchain_network]
+        attr = _network_attr[interchain_network]
         broadcast_receipt_wait_time_l5 = int(attr["confirmations"] * attr["block_time"] * attr["delay_buffer"])  # in seconds
         broadcast_receipt_wait_time_l5 += broadcast_interval
     except Exception:  # if there is an error when contacting matchmaking
