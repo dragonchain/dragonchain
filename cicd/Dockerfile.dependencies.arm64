@@ -5,8 +5,8 @@ FROM arm64v8/python:3.8.0-alpine as base as base
 RUN if ! command -v helm; then \
     wget -O helm-v2.14.3-linux-arm64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-arm64.tar.gz' && \
     tar xzf helm-v2.14.3-linux-arm64.tar.gz && mv linux-arm64/helm /usr/local/bin/helm && \
-    rm -rf helm-v2.14.3-linux-arm64.tar.gz linux-arm64; fi && \
-    helm init --client-only && \
+    rm -rf helm-v2.14.3-linux-arm64.tar.gz linux-arm64 && \
+    helm init --client-only; fi && \
     if ! command -v yq; then \
     wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_arm64' && \
     chmod +x yq && mv yq /usr/local/bin/; fi
