@@ -1,5 +1,19 @@
 # Change FROM to arm64v8/python:3.8-alpine to test without the dependencies container
-FROM arm64v8/python:3.8.0-alpine as base as base
+FROM arm64v8/python:3.8.0-alpine
+
+WORKDIR /usr/src/core
+# Install necessary base dependencies and set UTC timezone for apscheduler
+RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone
+
+# Install dev build dependencies
+RUN apk --no-cache add g++ make gmp-dev libffi-dev automake autoconf libtool
+# Install python dev dependencies
+ENV SECP_BUNDLED_EXPERIMENTAL 1
+ENV SECP_BUNDLED_WITH_BIGNUM 1
+COPY requirements.txt .
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+COPY dev_requirements.txt .
+RUN python3 -m pip install --no-cache-dir --upgrade -r dev_requirements.txt
 
 # Install Helm for chart linting and/or yq for doc builds if it doesn't exist
 RUN if ! command -v helm; then \
@@ -10,20 +24,6 @@ RUN if ! command -v helm; then \
     if ! command -v yq; then \
     wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_arm64' && \
     chmod +x yq && mv yq /usr/local/bin/; fi
-
-WORKDIR /usr/src/core
-# Install necessary base dependencies and set UTC timezone for apscheduler
-RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone
-
-# Install dev build dependencies
-RUN apk add g++ make gmp-dev libffi-dev automake autoconf libtool
-# Install python dev dependencies
-ENV SECP_BUNDLED_EXPERIMENTAL 1
-ENV SECP_BUNDLED_WITH_BIGNUM 1
-COPY requirements.txt .
-RUN python3 -m pip install -r requirements.txt
-COPY dev_requirements.txt .
-RUN python3 -m pip install --upgrade -r dev_requirements.txt
 
 # Copy our actual application
 COPY --chown=1000:1000 . .

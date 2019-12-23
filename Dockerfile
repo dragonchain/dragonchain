@@ -6,12 +6,12 @@ RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "U
 
 FROM base AS builder
 # Install build dependencies
-RUN apk add g++ make gmp-dev libffi-dev automake autoconf libtool
+RUN apk --no-cache add g++ make gmp-dev libffi-dev automake autoconf libtool
 # Install python dependencies
 ENV SECP_BUNDLED_EXPERIMENTAL 1
 ENV SECP_BUNDLED_WITH_BIGNUM 1
 COPY requirements.txt .
-RUN python3 -m pip install -r requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 FROM base AS release
 # Copy the installed python dependencies from the builder
