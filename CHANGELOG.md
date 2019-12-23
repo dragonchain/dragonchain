@@ -6,6 +6,7 @@
   - Fix bug that would cause broadcast processor to fail when handling sending blocks to L5 chains
 - **Packaging:**
   - Update boto3 dependency
+  - Pin python to 3.8.0
 - **CICD:**
   - Only push edge containers if building dev code (master)
 

@@ -1,5 +1,5 @@
 # This container is used as a base by Dockerfile.test in order to speed up dependency install for testing purposes only
-FROM amd64/python:3.8-alpine
+FROM amd64/python:3.8.0-alpine
 
 # Install helm for linting chart, and yq for building docs
 RUN wget -O helm-v2.14.3-linux-amd64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz' && \

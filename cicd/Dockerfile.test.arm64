@@ -1,5 +1,5 @@
 # Change FROM to arm64v8/python:3.8-alpine to test without the dependencies container
-FROM dragonchain/dragonchain_core_dependencies:linux-arm64-latest as base
+FROM arm64v8/python:3.8.0-alpine as base as base
 
 # Install Helm for chart linting and/or yq for doc builds if it doesn't exist
 RUN if ! command -v helm; then \
