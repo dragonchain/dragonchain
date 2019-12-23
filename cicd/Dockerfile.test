@@ -15,7 +15,6 @@ WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
 RUN apk --no-cache upgrade && apk --no-cache add libffi libstdc++ gmp && echo "UTC" > /etc/timezone
 
-FROM base AS builder
 # Install dev build dependencies
 RUN apk add g++ make gmp-dev libffi-dev automake autoconf libtool
 # Install python dev dependencies
@@ -26,7 +25,6 @@ RUN python3 -m pip install -r requirements.txt
 COPY dev_requirements.txt .
 RUN python3 -m pip install --upgrade -r dev_requirements.txt
 
-FROM base AS release
 # Copy the installed python dependencies from the builder
 COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
 # Sphinx is needed to build the docs
