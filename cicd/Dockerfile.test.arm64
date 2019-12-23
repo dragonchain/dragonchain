@@ -1,5 +1,5 @@
 # Change FROM to arm64v8/python:3.8-alpine to test without the dependencies container
-FROM arm64v8/python:3.8.0-alpine
+FROM dragonchain/dragonchain_core_dependencies:linux-arm64-latest
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
