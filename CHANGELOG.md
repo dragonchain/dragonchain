@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.3.2
+
+- **Packaging:**
+  - Update boto3 dependencies
+- **CICD:**
+  - Only push edge containers if building dev code (master)
+
 ## 4.3.1
 
 - **Feature:**
