@@ -32,7 +32,7 @@ class TestApiKeyLib(unittest.TestCase):
         self.assertEqual(len(response), 1)
         self.assertEqual(response[0]["id"], "blah")
         self.assertEqual(response[0]["registration_time"], 1234)
-        mock_list_keys.assert_called_once_with(include_interchain=False, include_system=False)
+        mock_list_keys.assert_called_once_with(include_interchain=False)
 
     @patch("dragonchain.webserver.lib.api_keys.api_key_model.new_from_scratch")
     @patch("dragonchain.webserver.lib.api_keys.api_key_dao.save_api_key")
@@ -65,14 +65,8 @@ class TestApiKeyLib(unittest.TestCase):
         api_keys.delete_api_key_v1("1")
         mock_delete_api_key.assert_called_once_with(key_id="1", interchain=False)
 
-    def test_get_api_key_raises_not_found_when_sc_key(self):
-        self.assertRaises(exceptions.NotFound, api_keys.get_api_key_v1, "SC_key")
-
     def test_get_api_key_raises_not_found_when_interchain_key(self):
         self.assertRaises(exceptions.NotFound, api_keys.get_api_key_v1, "INTERCHAIN/ic_key")
-
-    def test_get_api_key_raises_not_found_when_web_key(self):
-        self.assertRaises(exceptions.NotFound, api_keys.get_api_key_v1, "WEB_key")
 
     @patch("dragonchain.webserver.lib.api_keys.api_key_dao.get_api_key")
     def test_get_api_key_calls_appropriately(self, mock_get_key):
@@ -82,8 +76,6 @@ class TestApiKeyLib(unittest.TestCase):
         self.assertEqual(response["registration_time"], mock_get_key.return_value.registration_time)
 
     def test_update_api_key_raises_forbidden_when_key_id_starts_with_reserved_sequence(self):
-        self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "SC_thing")
-        self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "WEB_thing")
         self.assertRaises(exceptions.ActionForbidden, api_keys.update_api_key_v1, "INTERCHAIN/whatever")
 
     @patch("dragonchain.webserver.lib.api_keys.api_key_dao.get_api_key")

@@ -7,6 +7,8 @@ phases:
     commands:
       - if [ -z "$STAGE" ]; then echo "STAGE env var is missing"; exit 1; fi
       - if [ -z "$AWS_DEFAULT_REGION" ]; then echo "AWS_DEFAULT_VERSION env var is missing"; exit 1; fi
+      # Enable docker cli experimental features for manifests
+      - mkdir -p "$HOME/.docker" && echo '{"experimental":"enabled"}' > "$HOME/.docker/config.json"
       # Install helm and s3repo plugin
       - curl -LO https://git.io/get_helm.sh
       - bash get_helm.sh --version v2.14.3
@@ -20,32 +22,39 @@ phases:
     commands:
       # Run tests before building
       - echo Building and running tests
-      - docker build . -f cicd/Dockerfile.test -t built
+      - if [ "$ARCHITECTURE" = "amd64" ]; then docker build . -f cicd/Dockerfile.test -t built; fi
+      - if [ "$ARCHITECTURE" = "arm64" ]; then docker build . -f cicd/Dockerfile.test.arm64 -t built; fi
       - docker run -v $(pwd)/docs:/usr/src/core/docs built
       - if [ ! -d "./docs/.build/html" ]; then echo "Docs did not build correctly!"; exit 1; fi
   build:
     commands:
       # Package/upload helm chart (if necessary)
-      - sh cicd/deploy_helm.sh
+      - if [ "$ARCHITECTURE" = "amd64" ]; then sh cicd/deploy_helm.sh; fi
       # Set docker tags
       - export VERSION=$(cat .version)
       - TAG="381978683274.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/dragonchain_core:$STAGE-$VERSION"
-      - PUB_TAG_EDGE="dragonchain/dragonchain_core:edge"
-      - PUB_TAG_LATEST="dragonchain/dragonchain_core:latest"
-      - PUB_TAG_VERSION="dragonchain/dragonchain_core:$VERSION"
+      - PUB_TAG_EDGE="dragonchain/dragonchain_core:edge-linux-$ARCHITECTURE"
+      - PUB_TAG_VERSION="dragonchain/dragonchain_core:$VERSION-linux-$ARCHITECTURE"
       # Login to docker repositories
       - echo Logging into docker
       - $(aws ecr get-login --no-include-email --region us-west-2)
       - aws secretsmanager get-secret-value --secret-id dockerHubPassword --query SecretString --output text | docker login -u dragonchain --password-stdin
       # Build/tag container
       - echo Building and pushing docker containers
-      - docker build . -t $TAG
-      - docker tag $TAG $PUB_TAG_LATEST
+      - if [ "$ARCHITECTURE" = "amd64" ]; then docker build . -f Dockerfile -t "$TAG"; fi
+      - if [ "$ARCHITECTURE" = "arm64" ]; then docker build . -f Dockerfile.arm64 -t "$TAG"; fi
       - docker tag $TAG $PUB_TAG_VERSION
       - docker tag $TAG $PUB_TAG_EDGE
       # Upload built containers and docs
-      - docker push $TAG
+      - if [ "$ARCHITECTURE" = "amd64" ]; then docker push $TAG; fi
       - docker push $PUB_TAG_EDGE
-      - sh cicd/deploy_docs.sh
-      - if [ "$STAGE" = dev ]; then echo Generating Banana Index && jq -c ".message |= \"$(grep -ir banana . | wc -l)\"" cicd/banana-shield.json > shield.json && aws s3 cp shield.json s3://dragonchain-core-docs/banana-shield.json; fi
-      - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_LATEST && docker push $PUB_TAG_VERSION; fi
+      - if [ "$ARCHITECTURE" = "amd64" ]; then sh cicd/deploy_docs.sh; fi
+      - if [ "$STAGE" = dev ] && [ "$ARCHITECTURE" = "amd64" ]; then echo Generating Banana Index && jq -c ".message |= \"$(grep -ir banana . | wc -l)\"" cicd/banana-shield.json > shield.json && aws s3 cp shield.json s3://dragonchain-core-docs/banana-shield.json; fi
+      - if [ "$STAGE" = prod ]; then docker push $PUB_TAG_VERSION; fi
+      # Update docker manifests
+      - rm -rf "$HOME/.docker/manifests/"
+      - if docker manifest create dragonchain/dragonchain_core:edge dragonchain/dragonchain_core:edge-linux-amd64 dragonchain/dragonchain_core:edge-linux-arm64; then docker manifest push dragonchain/dragonchain_core:edge; fi
+      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:$VERSION dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:$VERSION; fi; fi
+      - if [ "$STAGE" = prod ]; then if docker manifest create dragonchain/dragonchain_core:latest dragonchain/dragonchain_core:$VERSION-linux-amd64 dragonchain/dragonchain_core:$VERSION-linux-arm64; then docker manifest push dragonchain/dragonchain_core:latest; fi; fi
+      # Build dependencies container if necessary
+      - if [ "$STAGE" = dev ]; then sh scripts/build_dependency_docker.sh; fi

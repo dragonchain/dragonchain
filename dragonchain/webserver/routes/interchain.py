@@ -248,7 +248,7 @@ def public_blockchain_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]
     try:
         if data["network"] in ["BTC_MAINNET", "BTC_TESTNET3"]:
             _validate_bitcoin_transaction_v1(data.get("transaction"))
-        elif data["network"] in ["ETH_MAINNET", "ETH_ROPSTEN", "ETC_MAINNET", "ETC_MORDEN"]:
+        elif data["network"] in ["ETH_MAINNET", "ETH_ROPSTEN", "ETC_MAINNET"]:
             _validate_ethereum_transaction_v1(data.get("transaction"))
         else:
             raise exceptions.ValidationException("Invalid network provided")

@@ -9,14 +9,15 @@ global:
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
     # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
     # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
-    LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
-    TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
+    LEVEL: "2" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
+    TLS_SUPPORT: "" # Put "true" here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
-    BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
+    BROADCAST: "true" # Set to "false" if you want to disable Dragon Net support (L1 only)
+    USE_REDISEARCH: "false" # (l2+ only) Set to "true" in order to enable redisearch functionality (requires more cpu/memory). Enables query endpoints
 
 # -- isMinikube --
-# When running on minikube this should be boolean true. otherwise boolean false.
-# This is mainly used in the redis configuration to adjust the somaxconn to a value minikube should use.
+# When running on minikube, this should be boolean true
+# This is mainly used in the redis configuration to adjust the somaxconn to a value minikube should use
 # I.e:
 # - name: net.core.somaxconn
 #     value: "1024"
@@ -71,7 +72,7 @@ dragonchain:
     # -- dragonchain.image.version --
     # The tag to use with the dragonchain image
     # Check here for available values: https://hub.docker.com/r/dragonchain/dragonchain_core/tags
-    version: 4.3.0
+    version: 4.3.1
 
   # -- dragonchain.storage --
   # The mount path of a persistent volume to be used by all dragonchain microservices.
@@ -144,3 +145,44 @@ redisearch:
 
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 # PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core
+
+
+# If running on a very low power machine (i.e. a raspberry pi), it can be useful to allow higher cpu limits on various pods
+# Uncomment below if running on something with little power like a raspberry pi
+
+# cacheredis:
+#   resources:
+#     limits:
+#       cpu: 1
+# persistentredis:
+#   resources:
+#     limits:
+#       cpu: 1
+# redisearch:
+#   resources:
+#     limits:
+#       cpu: 1
+# webserver:
+#   resources:
+#     limits:
+#       cpu: 1
+# transactionProcessor:
+#   resources:
+#     limits:
+#       cpu: 1
+# contractInvoker:
+#   resources:
+#     limits:
+#       cpu: 1
+# broadcastProcessor:
+#   resources:
+#     limits:
+#       cpu: 1
+# scheduler:
+#   resources:
+#     limits:
+#       cpu: 1
+# jobProcessor:
+#   resources:
+#     limits:
+#       cpu: 1

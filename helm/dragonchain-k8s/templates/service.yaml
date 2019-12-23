@@ -75,6 +75,7 @@ spec:
     app.kubernetes.io/name: {{ .Release.Name }}-persistent-redis
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
 ---
+{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -98,3 +99,4 @@ spec:
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-redisearch
     dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+{{- end }}

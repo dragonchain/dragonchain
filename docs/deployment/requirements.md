@@ -32,9 +32,13 @@ cluster with the intent to run dragonchain(s).
   layer, the relevant ports to your running chain(s) are forwarded
   appropriately.
 
-- ~1GB of RAM is required for L2+ chains to run, and ~1.5GB of RAM is
-  required for L1 chains. This means that the kubernetes node running the chain
-  (or the VM in the case of minikube) should have at least ~2GB of RAM total.
+- ~600MB of RAM is required for L2+ chains to run (~900MB if redisearch is
+  enabled), and ~1.25GB of RAM is required for L1 chains (or a bit more if
+  openfaas/docker registry is running on the same machine). This means that the
+  kubernetes node running the chain (or the VM in the case of minikube) should
+  have at least ~1.5-2GB of RAM total for an L2+ chain, or ~3GB for an L1 (with
+  openfaas/docker also running). This is because there is also overhead with
+  linux and kubernetes itself.
 
 ### Recommended
 

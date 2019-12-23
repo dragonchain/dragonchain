@@ -32,6 +32,7 @@ DRAGONCHAIN_MAINNET_NODE = "http://internal-Btc-Mainnet-Internal-297595751.us-we
 DRAGONCHAIN_TESTNET_NODE = "http://internal-Btc-Testnet-Internal-1334656512.us-west-2.elb.amazonaws.com:18332"
 DRAGONCHAIN_NODE_AUTHORIZATION = "Yml0Y29pbnJwYzpkcmFnb24="  # Username: bitcoinrpc | Password: dragon
 
+AVERAGE_BLOCK_TIME = 600  # in seconds (10 minutes)
 CONFIRMATIONS_CONSIDERED_FINAL = 6
 BLOCK_THRESHOLD = 10  # The number of blocks that can pass by before trying to send another transaction
 MINIMUM_SATOSHI_PER_BYTE = 10

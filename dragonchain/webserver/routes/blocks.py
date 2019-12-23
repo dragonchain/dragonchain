@@ -22,13 +22,15 @@ import flask
 from dragonchain.webserver import helpers
 from dragonchain.webserver.lib import blocks
 from dragonchain.webserver import request_authorizer
+from dragonchain.lib.database import redisearch
 
 
 def apply_routes(app: flask.Flask):
-    app.add_url_rule("/block", "query_blocks_v1", query_blocks_v1, methods=["GET"])
-    app.add_url_rule("/v1/block", "query_blocks_v1", query_blocks_v1, methods=["GET"])
     app.add_url_rule("/block/<block_id>", "get_block_v1", get_block_v1, methods=["GET"])
     app.add_url_rule("/v1/block/<block_id>", "get_block_v1", get_block_v1, methods=["GET"])
+    if redisearch.ENABLED:
+        app.add_url_rule("/block", "query_blocks_v1", query_blocks_v1, methods=["GET"])
+        app.add_url_rule("/v1/block", "query_blocks_v1", query_blocks_v1, methods=["GET"])
 
 
 @request_authorizer.Authenticated(api_resource="blocks", api_operation="read", api_name="get_block")

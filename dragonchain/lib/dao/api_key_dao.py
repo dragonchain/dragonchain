@@ -51,30 +51,19 @@ def get_api_key(key_id: str, interchain: bool) -> api_key_model.APIKeyModel:
     return model
 
 
-def list_api_keys(include_interchain: bool, include_system: bool) -> List[api_key_model.APIKeyModel]:
+def list_api_keys(include_interchain: bool) -> List[api_key_model.APIKeyModel]:
     """Retrieve a list of api keys
     Args:
         include_interchain: whether or not to include interchain api keys
-        include_system: whether or not to include system-generated api keys
     Returns:
         List of api key models
     """
     # Get keys from storage, excluding migration marker and interchain keys
-    valid_keys = list(filter(lambda x: (MIGRATION_V1 not in x) and (not x.startswith("KEYS/INTERCHAIN")), storage.list_objects(prefix=FOLDER)))
-    if not include_system:
-        valid_keys = list(filter(lambda x: not x.startswith("KEYS/WEB_") and not x.startswith("KEYS/SC_"), valid_keys))
     return_list = []
-    for key in valid_keys:
-        model = api_key_model.new_from_at_rest(storage.get_json_from_object(key))
-        if model.interchain is not False:  # Double check the interchain value of the key is what we expect; otherwise panic
-            raise RuntimeError(f"Bad interchain key {key} found. Expected interchain: {False} but got: {model.interchain}")
-        return_list.append(model)
-    if include_interchain:
-        for key in storage.list_objects(prefix=INTERCHAIN_FOLDER):
-            model = api_key_model.new_from_at_rest(storage.get_json_from_object(key))
-            if model.interchain is not True:  # Double check the interchain value of the key is what we expect; otherwise panic
-                raise RuntimeError(f"Bad interchain key {key} found. Expected interchain: {True} but got: {model.interchain}")
-            return_list.append(model)
+    for key in storage.list_objects(prefix=FOLDER):
+        if (MIGRATION_V1 in key) or (key.startswith("KEYS/INTERCHAIN") and not include_interchain):
+            continue
+        return_list.append(api_key_model.new_from_at_rest(storage.get_json_from_object(key)))
     return return_list
 
 
@@ -84,6 +73,8 @@ def delete_api_key(key_id: str, interchain: bool) -> None:
         key_id: The key id to delete (public chain id if interchain)
         interchain: Whether or not this is an interchain key
     """
+    if not interchain and key_id.startswith("INTERCHAIN"):
+        raise RuntimeError("Attempt to remove interchain key when not intended")
     storage.delete(f"{INTERCHAIN_FOLDER if interchain else FOLDER}/{key_id}")
 
 

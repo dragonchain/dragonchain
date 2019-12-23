@@ -8,10 +8,11 @@ global:
     DRAGONCHAIN_ENDPOINT: "https://my-chain.api.company.org:443" # publicly accessible endpoint for this chain. MUST be able to be hit from the internet
     # If using a simple single node cluster like minikube, and the service values below are left as NodePort with port 30000, this would simply be 'http://public.ip.of.minikube.node:30000'
     # Remember to switch the protocol http:// or https:// depending on if you have enabled TLS support or not. (This can be any arbitrary string if no Dragon Net)
-    LEVEL: "1" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
-    TLS_SUPPORT: "" # Put 'true' here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
+    LEVEL: "2" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
+    TLS_SUPPORT: "" # Put "true" here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
-    BROADCAST: "true" # Set to 'false' if you want to disable Dragon Net support
+    BROADCAST: "true" # Set to "false" if you want to disable Dragon Net support (L1 only)
+    USE_REDISEARCH: "false" # (l2+ only) Set to "true" in order to enable redisearch functionality (requires more cpu/memory). Enables query endpoints
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
     STAGE: "prod"
     STORAGE_LOCATION: "/dragonchain"
@@ -32,25 +33,35 @@ secret:
   name: SecretString
   mountPath: /etc/chain-secrets
 
-# LRU Cache Redis Configuration
+# LRU cache redis resources configuration
 cacheredis:
   resources:
     limits:
-      cpu: 50m
-      memory: 200Mi
+      cpu: 100m
+      memory: 100Mi
     requests:
       cpu: 15m
-      memory: 200Mi
+      memory: 100Mi
 
-# Persistent redis Configuration
+# Persistent redis resources configuration
 persistentredis:
   resources:
     limits:
-      cpu: 50m
+      cpu: 100m
       memory: 100Mi
     requests:
       cpu: 15m
       memory: 100Mi
+
+# Redisearch resources configuration
+redisearch:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 300Mi
+    requests:
+      cpu: 50m
+      memory: 300Mi
 
 # Webserver configuration
 webserver:
@@ -132,7 +143,7 @@ dragonchain:
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core
-    version: 4.3.0
+    version: 4.3.1
   storage:
     spec:
       storageClassName: standard
@@ -158,14 +169,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.18
-  resources:
-    limits:
-      cpu: 500m
-      memory: 300Mi
-    requests:
-      cpu: 50m
-      memory: 300Mi
+    tag: 1.4.19
   storage:
     spec:
       storageClassName: standard

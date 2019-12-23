@@ -47,7 +47,7 @@ def get_api_key_list_v1() -> Dict[str, List[Dict[str, Any]]]:
     Returns:
         List of API keys
     """
-    keys = api_key_dao.list_api_keys(include_interchain=False, include_system=False)
+    keys = api_key_dao.list_api_keys(include_interchain=False)
     returned_keys = []
     for key in keys:
         returned_keys.append(_api_key_model_to_user_dto(key))
@@ -73,8 +73,8 @@ def delete_api_key_v1(key_id: str) -> None:
         key_id: ID of api key to delete
     """
     # Don't allow removal of reserved keys
-    if key_id.startswith("SC_") or key_id.startswith("INTERCHAIN") or key_id.startswith("WEB_"):
-        raise exceptions.ActionForbidden("cannot delete reserved API keys")
+    if key_id.startswith("SC_") or key_id.startswith("INTERCHAIN"):
+        raise exceptions.ActionForbidden("Cannot delete reserved API keys")
     # Don't allow removal of root keys
     if secrets.get_dc_secret("hmac-id") == key_id:
         raise exceptions.ActionForbidden("Cannot remove root API key")
@@ -90,8 +90,8 @@ def get_api_key_v1(key_id: str) -> Dict[str, Any]:
     Returns:
         API key ID and registration timestamp (if any)
     """
-    if key_id.startswith("SC_") or key_id.startswith("WEB_") or key_id.startswith("INTERCHAIN"):
-        raise exceptions.NotFound("Cannot get reserved api key")
+    if key_id.startswith("INTERCHAIN"):
+        raise exceptions.NotFound("Cannot get interchain api keys")
     return _api_key_model_to_user_dto(api_key_dao.get_api_key(key_id, interchain=False))
 
 
@@ -101,8 +101,8 @@ def update_api_key_v1(key_id: str, nickname: Optional[str] = None, permissions_d
         key_id: ID of api key to update
         nickname: new nickname for the given key
     """
-    if key_id.startswith("SC_") or key_id.startswith("WEB_") or key_id.startswith("INTERCHAIN"):
-        raise exceptions.ActionForbidden("Cannot modify reserved keys")
+    if key_id.startswith("INTERCHAIN"):
+        raise exceptions.ActionForbidden("Cannot modify interchain keys")
     key = api_key_dao.get_api_key(key_id, interchain=False)
     if nickname:
         key.nickname = nickname

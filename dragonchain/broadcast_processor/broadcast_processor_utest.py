@@ -87,6 +87,32 @@ class BroadcastProcessorTests(unittest.TestCase):
         urls = broadcast_processor.get_notification_urls("all")
         self.assertEqual(urls, {"url1"})
 
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+    )
+    def test_set_l5_wait_time_success(self, mock_get_rego):
+        self.assertEqual(broadcast_processor.set_l5_wait_time("btc"), 15228)  # (600 * 6 * 3) + ((1.23 * 60) *60)
+        mock_get_rego.assert_called_once_with("btc")
+
+    @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"fruit": "banana"})
+    def test_set_l5_wait_time_throws_exception(self, mock_get_rego):
+        self.assertEqual(broadcast_processor.set_l5_wait_time("btc"), 43200)  # hardcoded fallback value
+        mock_get_rego.assert_called_once_with("btc")
+
+    @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {"banana": 123})
+    @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration")
+    def test_get_l5_wait_time_is_cached(self, mock_get_rego):
+        self.assertEqual(broadcast_processor.get_l5_wait_time("banana"), 123)
+        mock_get_rego.assert_not_called()
+
+    @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {})
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+    )
+    def test_get_l5_wait_time_not_cached(self, mock_get_rego):
+        self.assertEqual(broadcast_processor.get_l5_wait_time("btc"), 15228)
+        mock_get_rego.assert_called_once_with("btc")
+
     @patch("dragonchain.broadcast_processor.broadcast_processor.block_dao.get_broadcast_dto")
     def test_broadcast_futures_gets_broadcast_dto_for_block_id(self, patch_get_broadcast):
         broadcast_processor.make_broadcast_futures(None, "id", 3, set())
@@ -122,12 +148,18 @@ class BroadcastProcessorTests(unittest.TestCase):
         "dragonchain.broadcast_processor.broadcast_processor.authorization.generate_authenticated_request",
         return_value=({"header": "thing"}, b"some data"),
     )
-    def test_broadcast_futures_doesnt_set_deadline_header_for_l5(self, mock_gen_request, mock_get_address, mock_create_task, mock_dto):
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+    )
+    def test_broadcast_futures_sets_deadline_header_for_l5(self, mock_get_rego, mock_gen_request, mock_get_address, mock_create_task, mock_dto):
         fake_session = MagicMock()
         fake_session.post = MagicMock(return_value="session_request")
         broadcast_processor.make_broadcast_futures(fake_session, "block_id", 5, {"chain_id"})
         fake_session.post.assert_called_once_with(
-            url="addr/v1/enqueue", data=b"some data", headers={"header": "thing"}, timeout=broadcast_processor.HTTP_REQUEST_TIMEOUT
+            url="addr/v1/enqueue",
+            data=b"some data",
+            headers={"header": "thing", "deadline": "15228"},
+            timeout=broadcast_processor.HTTP_REQUEST_TIMEOUT,
         )
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.block_dao.get_broadcast_dto", return_value="dto")
@@ -156,7 +188,10 @@ class BroadcastProcessorTests(unittest.TestCase):
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_blocks.assert_called_once()
 
-    @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check", return_value="claim")
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
+        return_value={"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}},
+    )
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
     )
@@ -178,7 +213,7 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_claim.assert_called_once_with("block_id", broadcast_processor._requirements)
-        mock_chain_id_set.assert_called_once_with("claim", 2)
+        mock_chain_id_set.assert_called_once_with({"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}}, 2)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check", side_effect=exceptions.InsufficientFunds)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.sleep", return_value=asyncio.Future())
@@ -383,7 +418,10 @@ class BroadcastProcessorTests(unittest.TestCase):
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_no_response_node.assert_called_once_with("block_id", 2, "chain_id")
 
-    @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
+        return_value={"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}},
+    )
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.overwrite_no_response_node", return_value={"verification"})
     @patch("dragonchain.broadcast_processor.broadcast_processor.time.time", return_value=123)
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=3)

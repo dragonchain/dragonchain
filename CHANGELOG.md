@@ -1,12 +1,40 @@
 # Changelog
 
+## 4.3.1
+
+- **Feature:**
+  - Add field to status endpoint return to indicate if indexing (redisearch) is on/off
+  - Allow get/list/update on smart contract api keys (allowing their permissions to be viewed/changed)
+- **Bugs:**
+  - Fix bug where updating an existing secret for a smart contract would cause the contract deployment to fail
+  - Restrict contract create/update schema to deny overwriting reserved 'secret-key' and 'auth-key-id' secrets
+  - Restrict contract create/update schema to only allow a restricted character-set for secret names so invalid names can't be used (which would previously cause the smart contract build to fail)
+- **Documentation:**
+  - Edit notes about ram usage requirements for Dragonchain
+  - Add documentation for deploying with a raspberry pi
+- **Packaging:**
+  - Update boto3, fastjsonschema, and web3 dependencies
+  - Change default node level with helm install to L2 (from L1)
+  - Allow option for turning redisearch on/off with verification (L2+) nodes (and disable by default)
+  - Provide multiarch (arm64/amd64) manifests for built containers in dockerhub
+  - Update redisearch in helm chart to 1.4.19
+  - Tweak pod resource usages in helm chart for lower requirements
+  - Update fwatchdog to 0.18.7 for OpenFaaS smart contracts
+- **CICD:**
+  - Add building for arm64 containers (in addition to existing amd64)
+- **Development:**
+  - Add script to check for newer requirements.txt package versions
+  - Implemented deadlines for L5 blocks based on block times and confirmations for public blockchains
+  - Remove any concept of api keys starting with `WEB_` from being special
+  - Deprecate support for Ethereum Classic Testnet (Morden) with ethereum interchain functionality
+
 ## 4.3.0
 
 - **Feature:**
   - Add api key permissioning (check their [docs](https://dragonchain-core-docs.dragonchain.com/latest/usage/permissioning.html) for more info)
   - Add root and permissions document api key information in response when creating/getting/listing/updating api keys
   - Speed up bulk transaction intake with redis pipelines, and increase max transactions in a bulk request to 5000 (from 250)
-  - Change error codes expected from matchmaking to support new error code for not enough validating nodes and propely handle claim not found
+  - Change error codes expected from matchmaking to support new error code for not enough validating nodes and properly handle claim not found
 - **Bugs:**
   - Fix a bug where a failure in matchmaking would result in claims not being finalized
 - **Documentation:**
