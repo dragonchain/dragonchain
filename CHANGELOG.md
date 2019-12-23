@@ -9,6 +9,7 @@
   - Pin python to 3.8.0
 - **CICD:**
   - Only push edge containers if building dev code (master)
+  - Modify/fix dependency/test docker containers for docker caching
 
 ## 4.3.1
 
