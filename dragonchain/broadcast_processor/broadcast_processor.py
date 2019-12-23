@@ -262,7 +262,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None: 
             continue
         claim_chains = chain_id_set_from_matchmaking_claim(claim, current_level)
         if current_level == 5:
-            chain_id = claim["properties"]["metadata"]["properties"]["dcId"]  # see: matchmaking schema
+            chain_id = claim["metadata"]["dcId"]  # see: matchmaking schema
         if score == 0:
             # If this block hasn't been broadcast at this level before (score is 0)
             _log.info(f"[BROADCAST PROCESSOR] Block {block_id} Level {current_level} not broadcasted yet. Broadcasting to all chains in claim")

@@ -190,7 +190,7 @@ class BroadcastProcessorTests(unittest.TestCase):
 
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
-        return_value={"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}},
+        return_value={"metadata": {"dcId": "banana-dc-id"}},
     )
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
@@ -213,7 +213,7 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_claim.assert_called_once_with("block_id", broadcast_processor._requirements)
-        mock_chain_id_set.assert_called_once_with({"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}}, 2)
+        mock_chain_id_set.assert_called_once_with({"metadata": {"dcId": "banana-dc-id"}}, 2)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check", side_effect=exceptions.InsufficientFunds)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.sleep", return_value=asyncio.Future())
@@ -420,7 +420,7 @@ class BroadcastProcessorTests(unittest.TestCase):
 
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
-        return_value={"properties": {"metadata": {"properties": {"dcId": "banana-dc-id"}}}},
+        return_value={"metadata": {"dcId": "banana-dc-id"}},
     )
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.overwrite_no_response_node", return_value={"verification"})
     @patch("dragonchain.broadcast_processor.broadcast_processor.time.time", return_value=123)

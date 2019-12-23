@@ -2,10 +2,14 @@
 
 ## 4.3.2
 
+- **Bugs:**
+  - Fix bug that would cause broadcast processor to fail when handling sending blocks to L5 chains
 - **Packaging:**
-  - Update boto3 dependencies
+  - Update boto3 dependency
+  - Pin python to 3.8.0
 - **CICD:**
   - Only push edge containers if building dev code (master)
+  - Modify/fix dependency/test docker containers for docker caching
 
 ## 4.3.1
 
