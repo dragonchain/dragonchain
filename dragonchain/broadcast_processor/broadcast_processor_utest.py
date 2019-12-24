@@ -88,16 +88,17 @@ class BroadcastProcessorTests(unittest.TestCase):
         self.assertEqual(urls, {"url1"})
 
     @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration",
+        return_value={"network": "bitcoin mainnet", "broadcastInterval": 1.23},
     )
     def test_set_l5_wait_time_success(self, mock_get_rego):
-        self.assertEqual(broadcast_processor.set_l5_wait_time("btc"), 15228)  # (600 * 6 * 3) + ((1.23 * 60) *60)
-        mock_get_rego.assert_called_once_with("btc")
+        self.assertEqual(broadcast_processor.set_l5_wait_time("chainid"), 15228)  # (600 * 6 * 3) + ((1.23 * 60) *60)
+        mock_get_rego.assert_called_once_with("chainid")
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"fruit": "banana"})
     def test_set_l5_wait_time_throws_exception(self, mock_get_rego):
-        self.assertEqual(broadcast_processor.set_l5_wait_time("btc"), 43200)  # hardcoded fallback value
-        mock_get_rego.assert_called_once_with("btc")
+        self.assertEqual(broadcast_processor.set_l5_wait_time("chainid"), 43200)  # hardcoded fallback value
+        mock_get_rego.assert_called_once_with("chainid")
 
     @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {"banana": 123})
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration")
@@ -107,11 +108,12 @@ class BroadcastProcessorTests(unittest.TestCase):
 
     @patch.dict("dragonchain.broadcast_processor.broadcast_processor._l5_wait_times", {})
     @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration",
+        return_value={"network": "bitcoin mainnet", "broadcastInterval": 1.23},
     )
     def test_get_l5_wait_time_not_cached(self, mock_get_rego):
-        self.assertEqual(broadcast_processor.get_l5_wait_time("btc"), 15228)
-        mock_get_rego.assert_called_once_with("btc")
+        self.assertEqual(broadcast_processor.get_l5_wait_time("chainid"), 15228)
+        mock_get_rego.assert_called_once_with("chainid")
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.block_dao.get_broadcast_dto")
     def test_broadcast_futures_gets_broadcast_dto_for_block_id(self, patch_get_broadcast):
@@ -149,7 +151,8 @@ class BroadcastProcessorTests(unittest.TestCase):
         return_value=({"header": "thing"}, b"some data"),
     )
     @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration", return_value={"network": "btc", "broadcastInterval": 1.23}
+        "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_registration",
+        return_value={"network": "bitcoin mainnet", "broadcastInterval": 1.23},
     )
     def test_broadcast_futures_sets_deadline_header_for_l5(self, mock_get_rego, mock_gen_request, mock_get_address, mock_create_task, mock_dto):
         fake_session = MagicMock()
