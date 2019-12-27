@@ -1,4 +1,4 @@
-FROM python:3.8.0-alpine as base
+FROM python:3.8-alpine as base
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler

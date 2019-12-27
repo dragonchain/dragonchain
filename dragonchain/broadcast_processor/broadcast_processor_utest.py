@@ -18,22 +18,14 @@
 import importlib
 import asyncio
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from dragonchain import test_env  # noqa: F401
 from dragonchain.broadcast_processor import broadcast_processor
 from dragonchain import exceptions
 
 
-def async_test(coro):
-    def wrapper(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(coro(*args, **kwargs))
-
-    return wrapper
-
-
-class BroadcastProcessorTests(unittest.TestCase):
+class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         importlib.reload(broadcast_processor)
         broadcast_processor.BROADCAST = "true"
@@ -181,78 +173,62 @@ class BroadcastProcessorTests(unittest.TestCase):
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async", return_value=[],
     )
-    @async_test
     async def test_process_blocks_gets_blocks_for_broadcast(self, mock_get_blocks, mock_gather):
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([])
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_get_blocks.assert_called_once()
+        mock_get_blocks.assert_awaited_once()
 
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
         return_value={"metadata": {"dcId": "banana-dc-id"}},
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim")
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 0)],
     )
-    @async_test
     async def test_process_blocks_calls_matchmaking_for_claims(
         self, mock_get_blocks, mock_gather, mock_get_block_level, mock_chain_id_set, mock_get_futures, mock_schedule_broadcast, mock_claim
     ):
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_claim.assert_called_once_with("block_id", broadcast_processor._requirements)
         mock_chain_id_set.assert_called_once_with({"metadata": {"dcId": "banana-dc-id"}}, 2)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check", side_effect=exceptions.InsufficientFunds)
-    @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.sleep", return_value=asyncio.Future())
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.sleep")
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=None)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 0)],
     )
-    @async_test
     async def test_process_blocks_sleeps_with_insufficient_funds(self, mock_get_blocks, mock_gather, mock_get_block_level, mock_sleep, mock_claim):
-        mock_sleep.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(None)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_sleep.assert_called_once_with(1800)
+        mock_sleep.assert_awaited_once_with(1800)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
     @patch("dragonchain.broadcast_processor.broadcast_processor.time.time", return_value=123)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value=None,
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 0)],
     )
-    @async_test
     async def test_process_blocks_fires_requests_and_reschedules_for_new_block(
         self,
         mock_get_blocks,
@@ -265,60 +241,47 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_time,
         mock_claim,
     ):
-        mock_get_verifications.return_value.set_result(None)
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once_with(None, "block_id", 2, {"chain_id"})
-        mock_schedule_broadcast.assert_called_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
         mock_gather.assert_called_once_with(return_exceptions=True)
         mock_get_verifications.assert_not_called()
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures", return_value=None)
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 0)],
     )
-    @async_test
     async def test_process_blocks_doesnt_reschedule_new_block_which_failed_had_no_futures(
         self, mock_get_blocks, mock_gather, mock_get_block_level, mock_chain_id_set, mock_get_futures, mock_schedule_broadcast, mock_claim
     ):
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 0)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once()
         mock_schedule_broadcast.assert_not_called()
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.set_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.set_current_block_level_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=0)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value={"verification"},
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 1)],
     )
-    @async_test
     async def test_process_blocks_promotes_block_with_enough_verifications(
         self,
         mock_get_blocks,
@@ -332,15 +295,10 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_set_block_level,
         mock_claim_check,
     ):
-        mock_set_block_level.return_value.set_result(None)
-        mock_get_verifications.return_value.set_result({"verification"})
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 1)])
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_set_block_level.assert_called_once_with("block_id", 3)
-        mock_schedule_broadcast.assert_called_once_with("block_id")
+        mock_set_block_level.assert_awaited_once_with("block_id", 3)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id")
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
     @patch(
@@ -350,17 +308,16 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=0)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value={"verification"},
     )
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=5)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 1)],
     )
-    @async_test
     async def test_process_blocks_removes_l5_block_with_enough_verifications(
         self,
         mock_get_blocks,
@@ -373,11 +330,8 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_remove_block,
         mock_claim_check,
     ):
-        mock_get_verifications.return_value.set_result({"verification"})
-        mock_remove_block.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(5)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 1)])
+        mock_remove_block.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_remove_block.assert_called_once_with("block_id")
 
@@ -386,20 +340,17 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=3)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value={"verification"},
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 1)],
     )
-    @async_test
     async def test_process_blocks_updates_matchmaking_claim_for_new_chain_verification(
         self,
         mock_get_blocks,
@@ -413,11 +364,7 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_no_response_node,
         mock_claim_check,
     ):
-        mock_get_verifications.return_value.set_result({"verification"})
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 1)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_no_response_node.assert_called_once_with("block_id", 2, "chain_id")
 
@@ -430,20 +377,17 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=3)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value={"verification"},
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures")
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 1)],
     )
-    @async_test
     async def test_process_blocks_makes_broadcast_and_reschedules_block_when_sending_new_requests(
         self,
         mock_get_blocks,
@@ -458,14 +402,10 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_no_response_node,
         mock_claim_check,
     ):
-        mock_get_verifications.return_value.set_result({"verification"})
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 1)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once_with(None, "block_id", 2, {"chain_id"})
-        mock_schedule_broadcast.assert_called_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
         mock_gather.assert_called_once_with(return_exceptions=True)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
@@ -473,20 +413,17 @@ class BroadcastProcessorTests(unittest.TestCase):
     @patch("dragonchain.broadcast_processor.broadcast_processor.needed_verifications", return_value=3)
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_receieved_verifications_for_block_and_level_async",
-        return_value=asyncio.Future(),
+        return_value={"verification"},
     )
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async", return_value=asyncio.Future()
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.schedule_block_for_broadcast_async")
     @patch("dragonchain.broadcast_processor.broadcast_processor.make_broadcast_futures", return_value=None)
     @patch("dragonchain.broadcast_processor.broadcast_processor.chain_id_set_from_matchmaking_claim", return_value={"chain_id"})
-    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=asyncio.Future())
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_current_block_level_async", return_value=2)
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async",
-        return_value=asyncio.Future(),
+        return_value=[("block_id", 1)],
     )
-    @async_test
     async def test_process_blocks_doesnt_reschedule_existing_block_which_failed_had_no_futures(
         self,
         mock_get_blocks,
@@ -500,53 +437,45 @@ class BroadcastProcessorTests(unittest.TestCase):
         mock_no_response_node,
         mock_claim_check,
     ):
-        mock_get_verifications.return_value.set_result({"verification"})
-        mock_schedule_broadcast.return_value.set_result(None)
-        mock_get_block_level.return_value.set_result(2)
         mock_gather.return_value.set_result(None)
-        mock_get_blocks.return_value.set_result([("block_id", 1)])
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once()
         mock_schedule_broadcast.assert_not_called()
 
-    @patch("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
-    @patch("dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async", return_value=asyncio.Future())
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async",
+        return_value={"BLOCK/banana-l2-whatever"},
+    )
     @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
     @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
     @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
-    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
-    @async_test
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value="OK")
     async def test_process_verification_notification_calls_configured_url(
         self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
     ):
-        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
-        mock = MagicMock(return_value=asyncio.Future())
-        mock.return_value.set_result(MagicMock(status=200))
-        fake_session = MagicMock(post=mock)
-        srem_mock.return_value.set_result("OK")
+        broadcast_processor.VERIFICATION_NOTIFICATION = {"all": ["url1"]}
+        fake_session = AsyncMock(post=AsyncMock())
         await broadcast_processor.process_verification_notifications(fake_session)
-        fake_session.post.assert_called_once_with(
+        fake_session.post.assert_awaited_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+        srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
 
-    @patch("dragonchain.broadcast_processor.broadcast_processor.VERIFICATION_NOTIFICATION", {"all": ["url1"]})
-    @patch("dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async", return_value=asyncio.Future())
+    @patch(
+        "dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async",
+        return_value={"BLOCK/banana-l2-whatever"},
+    )
     @patch("dragonchain.broadcast_processor.broadcast_processor.sign", return_value="my-signature")
     @patch("dragonchain.broadcast_processor.broadcast_processor.storage.get", return_value=b"location-object-bytes")
     @patch("dragonchain.broadcast_processor.broadcast_processor.keys.get_public_id", return_value="my-public-id")
-    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value=asyncio.Future())
-    @async_test
+    @patch("dragonchain.broadcast_processor.broadcast_functions.redis.srem_async", return_value="OK")
     async def test_process_verification_notification_removes_from_set_when_fail(
         self, srem_mock, public_id_mock, storage_get_mock, sign_mock, get_location_mock
     ):
-        get_location_mock.return_value.set_result(["BLOCK/banana-l2-whatever"])
-        mock = MagicMock(side_effect=Exception("boom"))
-        mock.return_value.set_result(MagicMock(status=200))
-        fake_session = MagicMock(post=mock)
-        srem_mock.return_value.set_result("OK")
+        broadcast_processor.VERIFICATION_NOTIFICATION = {"all": ["url1"]}
+        fake_session = AsyncMock(post=AsyncMock(side_effect=Exception("boom")))
         await broadcast_processor.process_verification_notifications(fake_session)
         fake_session.post.assert_called_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+        srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")

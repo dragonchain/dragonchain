@@ -15,26 +15,17 @@
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
 
-import asyncio
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from dragonchain.lib.database import redis
 
 
-def async_test(coro):
-    def wrapper(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(coro(*args, **kwargs))
-
-    return wrapper
-
-
-class TestRedisAccess(unittest.TestCase):
+class TestRedisAccess(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         redis.redis_client = MagicMock()
         redis.redis_client_lru = MagicMock()
-        redis.async_redis_client = MagicMock(return_value=asyncio.Future())
+        redis.async_redis_client = AsyncMock(multi_exec=MagicMock())
 
     @patch("dragonchain.lib.database.redis._initialize_redis")
     def test_set_redis_client_if_necessary(self, mock_redis):
@@ -48,104 +39,63 @@ class TestRedisAccess(unittest.TestCase):
         redis._set_redis_client_lru_if_necessary()
         mock_redis.assert_called_once()
 
-    @async_test
-    async def test_set_redis_client_async_if_necessary(self):
-        redis._initialize_async_redis = MagicMock(return_value=asyncio.Future())
-        redis._initialize_async_redis.return_value.set_result("dummy")
+    @patch("dragonchain.lib.database.redis._initialize_async_redis")
+    async def test_set_redis_client_async_if_necessary(self, mock_redis):
         redis.async_redis_client = None
         await redis._set_redis_client_async_if_necessary()
         redis._initialize_async_redis.assert_called_once()
 
-    @async_test
     async def test_z_range_by_score_async(self):
-        redis.async_redis_client.zrangebyscore = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.zrangebyscore.return_value.set_result("dummy")
         await redis.z_range_by_score_async("banana", 1, 2)
-        redis.async_redis_client.zrangebyscore.assert_called_once_with("banana", 1, 2, count=None, encoding="utf8", offset=None, withscores=False)
+        redis.async_redis_client.zrangebyscore.assert_awaited_once_with("banana", 1, 2, count=None, encoding="utf8", offset=None, withscores=False)
 
-    @async_test
     async def test_get_async(self):
-        redis.async_redis_client.get = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.get.return_value.set_result("dummy")
         await redis.get_async("banana")
-        redis.async_redis_client.get.assert_called_once_with("banana", encoding="utf8")
+        redis.async_redis_client.get.assert_awaited_once_with("banana", encoding="utf8")
 
-    @async_test
     async def test_set_async(self):
-        redis.async_redis_client.set = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.set.return_value.set_result("dummy")
         await redis.set_async("banana", "banana")
-        redis.async_redis_client.set.assert_called_once_with("banana", "banana", expire=0, pexpire=0, exist=None)
+        redis.async_redis_client.set.assert_awaited_once_with("banana", "banana", expire=0, pexpire=0, exist=None)
 
-    @async_test
     async def test_zadd_async(self):
-        redis.async_redis_client.zadd = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.zadd.return_value.set_result("dummy")
         await redis.zadd_async("banana", "banana", "banana")
-        redis.async_redis_client.zadd.assert_called_once_with("banana", "banana", "banana", exist=None)
+        redis.async_redis_client.zadd.assert_awaited_once_with("banana", "banana", "banana", exist=None)
 
-    @async_test
     async def test_smembers_async(self):
-        redis.async_redis_client.smembers = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.smembers.return_value.set_result("dummy")
         await redis.smembers_async("banana")
-        redis.async_redis_client.smembers.assert_called_once_with("banana", encoding="utf8")
+        redis.async_redis_client.smembers.assert_awaited_once_with("banana", encoding="utf8")
 
-    @async_test
     async def test_multi_exec_async(self):
-        redis.async_redis_client.multi_exec = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.multi_exec.return_value.set_result("dummy")
         await redis.multi_exec_async()
         redis.async_redis_client.multi_exec.assert_called_once()
 
-    @async_test
     async def test_hgetall_async(self):
-        redis.async_redis_client.hgetall = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.hgetall.return_value.set_result("dummy")
         await redis.hgetall_async("banana")
-        redis.async_redis_client.hgetall.assert_called_once_with("banana", encoding="utf8")
+        redis.async_redis_client.hgetall.assert_awaited_once_with("banana", encoding="utf8")
 
-    @async_test
     async def test_rpush_async(self):
-        redis.async_redis_client.rpush = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.rpush.return_value.set_result("dummy")
         await redis.rpush_async("banana", "banana", "banana", "banana")
-        redis.async_redis_client.rpush.assert_called_once_with("banana", "banana", "banana", "banana")
+        redis.async_redis_client.rpush.assert_awaited_once_with("banana", "banana", "banana", "banana")
 
-    @async_test
     async def test_delete_async(self):
-        redis.async_redis_client.delete = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.delete.return_value.set_result("dummy")
         await redis.delete_async("banana", "banana", "banana")
-        redis.async_redis_client.delete.assert_called_once_with("banana", "banana", "banana")
+        redis.async_redis_client.delete.assert_awaited_once_with("banana", "banana", "banana")
 
-    @async_test
     async def test_brpop_async(self):
-        redis.async_redis_client.brpop = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.brpop.return_value.set_result("dummy")
         await redis.brpop_async("banana", "banana", "banana")
-        redis.async_redis_client.brpop.assert_called_once_with("banana", "banana", "banana", encoding="utf8", timeout=0)
+        redis.async_redis_client.brpop.assert_awaited_once_with("banana", "banana", "banana", encoding="utf8", timeout=0)
 
-    @async_test
     async def test_hset_async(self):
-        redis.async_redis_client.hset = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.hset.return_value.set_result("dummy")
         await redis.hset_async("banana", "banana", "banana")
-        redis.async_redis_client.hset.assert_called_once_with("banana", "banana", "banana")
+        redis.async_redis_client.hset.assert_awaited_once_with("banana", "banana", "banana")
 
-    @async_test
     async def test_srem_async(self):
-        redis.async_redis_client.srem = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.srem.return_value.set_result(1)
         await redis.srem_async("apple", "banana")
-        redis.async_redis_client.srem.assert_called_once_with("apple", "banana")
+        redis.async_redis_client.srem.assert_awaited_once_with("apple", "banana")
 
-    @async_test
     async def test_hdel_async(self):
-        redis.async_redis_client.hdel = MagicMock(return_value=asyncio.Future())
-        redis.async_redis_client.hdel.return_value.set_result("dummy")
         await redis.hdel_async("banana", "banana", "banana")
-        redis.async_redis_client.hdel.assert_called_once_with("banana", "banana", "banana")
+        redis.async_redis_client.hdel.assert_awaited_once_with("banana", "banana", "banana")
 
     def test_cache_put_with_cache_expire(self):
         redis.cache_put("banana", "banana", cache_expire=60)
