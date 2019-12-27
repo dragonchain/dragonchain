@@ -172,9 +172,7 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         mock_increment_error.assert_called_once_with("block_id", 2)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.asyncio.gather", return_value=asyncio.Future())
-    @patch(
-        "dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async", return_value=[],
-    )
+    @patch("dragonchain.broadcast_processor.broadcast_processor.broadcast_functions.get_blocks_to_process_for_broadcast_async", return_value=[])
     async def test_process_blocks_gets_blocks_for_broadcast(self, mock_get_blocks, mock_gather):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
@@ -457,7 +455,10 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         fake_session = AsyncMock(post=AsyncMock())
         await broadcast_processor.process_verification_notifications(fake_session)
         fake_session.post.assert_awaited_once_with(
-            data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
+            data=b"location-object-bytes",
+            headers={"Content-Type": "application/json", "dragonchainId": "my-public-id", "signature": "my-signature"},
+            timeout=30,
+            url="url1",
         )
         srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
 
@@ -476,6 +477,9 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         fake_session = AsyncMock(post=AsyncMock(side_effect=Exception("boom")))
         await broadcast_processor.process_verification_notifications(fake_session)
         fake_session.post.assert_called_once_with(
-            data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
+            data=b"location-object-bytes",
+            headers={"Content-Type": "application/json", "dragonchainId": "my-public-id", "signature": "my-signature"},
+            timeout=30,
+            url="url1",
         )
         srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
