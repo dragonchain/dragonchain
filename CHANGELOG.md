@@ -7,6 +7,8 @@
   - Un-pin python to version 3.8.X
 - **Development:**
   - Fix tests for python 3.8.1
+- **Bugs:**
+  - Adds Content-Type header to all verification notifications
 
 ## 4.3.2
 

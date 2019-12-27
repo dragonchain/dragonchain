@@ -214,7 +214,7 @@ class APIKeyModel(model.Model):
     """
 
     def __init__(
-        self, key_id: str, key: str, registration_time: int, root: bool, nickname: str, interchain: bool, permissions_document: "permissions_doc",
+        self, key_id: str, key: str, registration_time: int, root: bool, nickname: str, interchain: bool, permissions_document: "permissions_doc"
     ):
         self.key_id = key_id
         self.key = key

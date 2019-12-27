@@ -31,9 +31,7 @@ _log = logger.get_logger()
 
 def save_api_key(api_key: api_key_model.APIKeyModel) -> None:
     """Save an api key model to storage"""
-    storage.put_object_as_json(
-        f"{INTERCHAIN_FOLDER if api_key.interchain else FOLDER}/{api_key.key_id}", api_key.export_as_at_rest(),
-    )
+    storage.put_object_as_json(f"{INTERCHAIN_FOLDER if api_key.interchain else FOLDER}/{api_key.key_id}", api_key.export_as_at_rest())
 
 
 def get_api_key(key_id: str, interchain: bool) -> api_key_model.APIKeyModel:
