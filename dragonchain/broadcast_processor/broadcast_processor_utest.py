@@ -178,7 +178,7 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
     async def test_process_blocks_gets_blocks_for_broadcast(self, mock_get_blocks, mock_gather):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_get_blocks.assert_called_once()
+        mock_get_blocks.assert_awaited_once()
 
     @patch(
         "dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check",
@@ -212,7 +212,7 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
     async def test_process_blocks_sleeps_with_insufficient_funds(self, mock_get_blocks, mock_gather, mock_get_block_level, mock_sleep, mock_claim):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_sleep.assert_called_once_with(1800)
+        mock_sleep.assert_awaited_once_with(1800)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
     @patch("dragonchain.broadcast_processor.broadcast_processor.time.time", return_value=123)
@@ -244,7 +244,7 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once_with(None, "block_id", 2, {"chain_id"})
-        mock_schedule_broadcast.assert_called_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
         mock_gather.assert_called_once_with(return_exceptions=True)
         mock_get_verifications.assert_not_called()
 
@@ -297,8 +297,8 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
     ):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
-        mock_set_block_level.assert_called_once_with("block_id", 3)
-        mock_schedule_broadcast.assert_called_once_with("block_id")
+        mock_set_block_level.assert_awaited_once_with("block_id", 3)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id")
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
     @patch(
@@ -405,7 +405,7 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         mock_gather.return_value.set_result(None)
         await broadcast_processor.process_blocks_for_broadcast(None)
         mock_get_futures.assert_called_once_with(None, "block_id", 2, {"chain_id"})
-        mock_schedule_broadcast.assert_called_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
+        mock_schedule_broadcast.assert_awaited_once_with("block_id", 123 + broadcast_processor.BROADCAST_RECEIPT_WAIT_TIME)
         mock_gather.assert_called_once_with(return_exceptions=True)
 
     @patch("dragonchain.broadcast_processor.broadcast_processor.matchmaking.get_or_create_claim_check")
@@ -456,10 +456,10 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         broadcast_processor.VERIFICATION_NOTIFICATION = {"all": ["url1"]}
         fake_session = AsyncMock(post=AsyncMock())
         await broadcast_processor.process_verification_notifications(fake_session)
-        fake_session.post.assert_called_once_with(
+        fake_session.post.assert_awaited_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+        srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
 
     @patch(
         "dragonchain.broadcast_processor.broadcast_functions.get_notification_verifications_for_broadcast_async",
@@ -478,4 +478,4 @@ class BroadcastProcessorTests(unittest.IsolatedAsyncioTestCase):
         fake_session.post.assert_called_once_with(
             data=b"location-object-bytes", headers={"dragonchainId": "my-public-id", "signature": "my-signature"}, timeout=30, url="url1"
         )
-        srem_mock.assert_called_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
+        srem_mock.assert_awaited_once_with("broadcast:notifications", "BLOCK/banana-l2-whatever")
