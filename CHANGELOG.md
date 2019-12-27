@@ -3,7 +3,10 @@
 ## 4.3.3
 
 - **Packaging:**
-  - Update boto3 dependencies
+  - Update redisearch, and boto3 dependencies
+  - Un-pin python to version 3.8.X
+- **Development:**
+  - Fix tests for python 3.8.1
 
 ## 4.3.2
 

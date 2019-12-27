@@ -1,5 +1,5 @@
 # This container is used as a base by Dockerfile.test.arm64 in order to speed up dependency install for testing purposes only
-FROM arm64v8/python:3.8.0-alpine
+FROM arm64v8/python:3.8-alpine
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
