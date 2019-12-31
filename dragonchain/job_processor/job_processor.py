@@ -104,6 +104,7 @@ def start_task() -> None:
         job = get_existing_job_status(task_definition)
         if job and job.status.active:
             _log.warning("Throwing away task because job already exists")
+            redis.lpop_sync(PENDING_TASK_KEY)
             return
         if job and (job.status.succeeded or job.status.failed):
             delete_existing_job(task_definition)
@@ -119,6 +120,7 @@ def get_next_task() -> Optional[dict]:
     _log.info("Awaiting contract task...")
     pop_result = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
     if pop_result is None:
+        redis.lpop_sync(PENDING_TASK_KEY)
         return None
     _, event = pop_result
     _log.debug(f"received task: {event}")
