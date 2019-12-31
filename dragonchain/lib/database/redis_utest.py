@@ -145,6 +145,10 @@ class TestRedisAccess(unittest.IsolatedAsyncioTestCase):
         redis.brpop_sync("banana")
         redis.redis_client.brpop.assert_called_once_with("banana", timeout=0)
 
+    def test_brpoplpush(self):
+        redis.brpoplpush_sync("banana", "apple")
+        redis.redis_client.brpoplpush.assert_called_once_with("banana", "apple", 0)
+
     def test_get_sync(self):
         redis.get_sync("banana")
         redis.redis_client.get.assert_called_once_with("banana")

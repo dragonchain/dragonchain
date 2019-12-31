@@ -9,6 +9,7 @@
   - Fix tests for python 3.8.1
 - **Bugs:**
   - Adds Content-Type header to all verification notifications
+  - Add retry logic to catch failed job processor jobs
 
 ## 4.3.2
 
