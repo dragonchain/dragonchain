@@ -69,11 +69,13 @@ class TestJobPoller(unittest.TestCase):
         try:
             job_processor.start()
         except Exception:
-            pass  # catch exception to allow the start method to ever exit
-        mock_redis_llen.assert_called_once_with("mq:contract-pending")
-        mock_lrange.assert_called_once_with("mq:contract-pending", 0, -1, decode=False)
-        mock_start_task.assert_called_once()
-        mock_pipeline.assert_called_once()
+            # catch exception to allow the start method to ever exit
+            mock_redis_llen.assert_called_once_with("mq:contract-pending")
+            mock_lrange.assert_called_once_with("mq:contract-pending", 0, -1, decode=False)
+            mock_start_task.assert_called_once()
+            mock_pipeline.assert_called_once()
+            return
+        self.fail('Should have had an exception, honestly not sure how you got here')
 
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, valid_task_definition_string))
     def test_can_get_next_task(self, mock_brpoplpush):

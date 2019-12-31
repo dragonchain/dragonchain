@@ -120,7 +120,6 @@ def get_next_task() -> Optional[dict]:
     _log.info("Awaiting contract task...")
     pop_result = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
     if pop_result is None:
-        redis.lpop_sync(PENDING_TASK_KEY)
         return None
     _, event = pop_result
     _log.debug(f"received task: {event}")
@@ -129,6 +128,7 @@ def get_next_task() -> Optional[dict]:
         _validate_sc_build_task(event)
     except Exception:
         _log.exception("Error processing task, skipping")
+        redis.lpop_sync(PENDING_TASK_KEY)
         return None
     _log.info(f"New task request received: {event}")
     return event
