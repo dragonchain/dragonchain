@@ -75,7 +75,7 @@ class TestJobPoller(unittest.TestCase):
             mock_start_task.assert_called_once()
             mock_pipeline.assert_called_once()
             return
-        self.fail('Should have had an exception, honestly not sure how you got here')
+        self.fail("Should have had an exception, honestly not sure how you got here")
 
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, valid_task_definition_string))
     def test_can_get_next_task(self, mock_brpoplpush):
