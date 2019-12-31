@@ -59,15 +59,21 @@ class TestJobPoller(unittest.TestCase):
             },
         )
 
+    @patch("dragonchain.job_processor.job_processor.start_task", side_effect=Exception("this is really stupid"))
     @patch("dragonchain.job_processor.job_processor.kubernetes.client.BatchV1Api")
     @patch("dragonchain.job_processor.job_processor.kubernetes.config.load_incluster_config")
-    @patch("dragonchain.job_processor.job_processor.redis.llen_sync", return_value=True)
-    @patch("dragonchain.job_processor.job_processor.redis")
-    def task_restores_from_pending_queue(self, mock_kube_config, mock_kube_client, mock_redis_llen, mock_redis):
-        job_processor.start()
+    @patch("dragonchain.job_processor.job_processor.redis.llen_sync", return_value=1)
+    @patch("dragonchain.job_processor.job_processor.redis.lrange_sync")
+    @patch("dragonchain.job_processor.job_processor.redis.pipeline_sync")
+    def test_restores_from_pending_queue(self, mock_pipeline, mock_lrange, mock_redis_llen, mock_kube_config, mock_kube_client, mock_start_task):
+        try:
+            job_processor.start()
+        except Exception:
+            pass  # catch exception to allow the start method to ever exit
         mock_redis_llen.assert_called_once_with("mq:contract-pending")
-        mock_redis.lrange_sync.assert_called_once_with("mq:contract-pending", 0, -1, decode=False)
-        mock_redis.pipeline_sync.assert_called_once()
+        mock_lrange.assert_called_once_with("mq:contract-pending", 0, -1, decode=False)
+        mock_start_task.assert_called_once()
+        mock_pipeline.assert_called_once()
 
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, valid_task_definition_string))
     def test_can_get_next_task(self, mock_brpoplpush):
