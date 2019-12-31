@@ -162,19 +162,21 @@ class TestJobPoller(unittest.TestCase):
         mock_job_launch.assert_called_once_with(valid_task_definition)
         mock_lpopsync.assert_called_once()
 
+    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
     @patch("dragonchain.job_processor.job_processor.get_next_task", return_value=valid_task_definition)
     @patch(
         "dragonchain.job_processor.job_processor.get_existing_job_status", return_value=MagicMock(status=MagicMock(active=1, succeeded=0, failed=0))
     )
     @patch("dragonchain.job_processor.job_processor.delete_existing_job")
     @patch("dragonchain.job_processor.job_processor.attempt_job_launch")
-    def test_start_task_no_ops_when_running_job(self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task):
+    def test_start_task_no_ops_when_running_job(self, mock_job_launch, mock_delete_job, mock_get_job, mock_get_task, mock_lpop):
         job_processor.start_task()
 
         mock_get_task.assert_called_once_with()
         mock_get_job.assert_called_once_with(valid_task_definition)
         mock_delete_job.assert_not_called()
         mock_job_launch.assert_not_called()
+        mock_lpop.assert_called_once()
 
     def test_attempt_job_launch_raises_on_too_many_retries(self):
         self.assertRaises(RuntimeError, job_processor.attempt_job_launch, valid_task_definition, retry=6)
