@@ -82,15 +82,19 @@ class TestJobPoller(unittest.TestCase):
         self.assertEqual(job_processor.get_next_task(), valid_task_definition)
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
 
+    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, invalid_task_definition_string))
-    def test_get_next_task_returns_none_on_invalid_json_schema(self, mock_brpoplpush):
+    def test_get_next_task_returns_none_on_invalid_json_schema(self, mock_brpoplpush, mock_lpop):
         self.assertIsNone(job_processor.get_next_task())
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
+        mock_lpop.assert_called_once_with("mq:contract-pending")
 
+    @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
     @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, '!i "am" not {valid} json!'))
-    def test_get_next_task_returns_none_on_invalid_json(self, mock_brpoplpush):
+    def test_get_next_task_returns_none_on_invalid_json(self, mock_brpoplpush, mock_lpop):
         self.assertIsNone(job_processor.get_next_task())
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
+        mock_lpop.assert_called_once_with("mq:contract-pending")
 
     @patch("dragonchain.job_processor.job_processor._kube", read_namespaced_job_status=MagicMock(return_value={"test": "dict"}))
     def test_get_existing_job_status(self, mock_kube):
