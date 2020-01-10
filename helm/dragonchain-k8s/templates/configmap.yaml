@@ -33,7 +33,7 @@ data:
   DRAGONCHAIN_ENDPOINT: "{{ .Values.global.environment.DRAGONCHAIN_ENDPOINT }}"
   BROADCAST_INTERVAL: "{{ .Values.global.environment.BROADCAST_INTERVAL }}"
 {{- if .Values.dragonchain.verificationNotification }}
-  VERIFICATION_NOTIFICATION: "{{ .Values.dragonchain.verificationNotification | toJson | quote }}"
+  VERIFICATION_NOTIFICATION: {{ .Values.dragonchain.verificationNotification | toJson | quote }}
 {{- end }}
 {{- if .Values.faas.registry_username }}
   REGISTRY_USERNAME: "{{ .Values.faas.registry_username }}"
