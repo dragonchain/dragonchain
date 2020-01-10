@@ -10,6 +10,7 @@
 - **Bugs:**
   - Adds Content-Type header to all verification notifications
   - Add retry logic to catch failed job processor jobs
+  - Fixes double quote error on VERIFICATION_NOTIFICATION json.
 
 ## 4.3.2
 
