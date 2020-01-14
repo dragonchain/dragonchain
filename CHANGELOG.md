@@ -5,6 +5,7 @@
 - **Packaging:**
   - Update redisearch, and boto3 dependencies
   - Un-pin python to version 3.8.X
+  - Update redisearch in helm chart to 1.4.20
 - **Development:**
   - Fix tests for python 3.8.1
 - **Bugs:**

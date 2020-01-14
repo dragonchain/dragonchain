@@ -169,7 +169,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.19
+    tag: 1.4.20
   storage:
     spec:
       storageClassName: standard
