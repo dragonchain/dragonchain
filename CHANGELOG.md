@@ -8,6 +8,7 @@
   - Update redisearch in helm chart to 1.4.20
 - **Development:**
   - Fix tests for python 3.8.1
+  - Use helm 3 (specifically 3.0.2) for dependency container and lint checking
 - **Bugs:**
   - Adds Content-Type header to all verification notifications
   - Add retry logic to catch failed job processor jobs
