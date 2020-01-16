@@ -118,10 +118,9 @@ def get_next_task() -> Optional[dict]:
         The next task. Blocks until a job is found.
     """
     _log.info("Awaiting contract task...")
-    pop_result = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
-    if pop_result is None:
+    event = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
+    if event is None:
         return None
-    _, event = pop_result
     _log.debug(f"received task: {event}")
     try:
         event = json.loads(event)
