@@ -299,7 +299,7 @@ def brpop_sync(keys: str, timeout: int = 0, decode: bool = True) -> Optional[tup
     return _decode_tuple_response(response, decode)
 
 
-def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool = True) -> Optional[tuple]:
+def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool = True) -> Optional[str]:
     """Perform a blocking pop against redis list(s)
     Args:
         pop_key: Can be a single key (bytes, string, int, etc), or an array of keys to wait on popping from
@@ -307,13 +307,13 @@ def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool 
         timeout: Number of seconds to wait before 'timing out' and returning None. If 0, it will block indefinitely (default)
     Returns:
         None when no element could be popped and the timeout expired. This is only possible when timeout is not 0
-        A tuple with the first element being the key where the element was popped, and the second element being the value of the popped element.
+        The element that was moved between the lists
     """
     _set_redis_client_if_necessary()
     response = redis_client.brpoplpush(pop_key, push_key, timeout)
-    if not response:
+    if response is None:
         return None
-    return _decode_tuple_response(response, decode)
+    return _decode_response(response, decode)
 
 
 def get_sync(name: str, decode: bool = True) -> Optional[str]:

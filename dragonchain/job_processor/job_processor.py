@@ -121,10 +121,9 @@ def get_next_task() -> Optional[dict]:
     pop_result = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
     if pop_result is None:
         return None
-    _, event = pop_result
-    _log.debug(f"received task: {event}")
+    _log.debug(f"received task: {pop_result}")
     try:
-        event = json.loads(event)
+        event = json.loads(pop_result)
         _validate_sc_build_task(event)
     except Exception:
         _log.exception("Error processing task, skipping")

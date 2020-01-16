@@ -77,13 +77,13 @@ class TestJobPoller(unittest.TestCase):
             return
         self.fail("Should have had an exception, honestly not sure how you got here")
 
-    @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, valid_task_definition_string))
+    @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=valid_task_definition_string.encode("utf8"))
     def test_can_get_next_task(self, mock_brpoplpush):
         self.assertEqual(job_processor.get_next_task(), valid_task_definition)
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
 
     @patch("dragonchain.job_processor.job_processor.redis.lpop_sync")
-    @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, invalid_task_definition_string))
+    @patch("dragonchain.job_processor.job_processor.redis.brpoplpush_sync", return_value=(1, invalid_task_definition_string.encode("utf8")))
     def test_get_next_task_returns_none_on_invalid_json_schema(self, mock_brpoplpush, mock_lpop):
         self.assertIsNone(job_processor.get_next_task())
         mock_brpoplpush.assert_called_once_with("mq:contract-task", "mq:contract-pending", 0, decode=False)
