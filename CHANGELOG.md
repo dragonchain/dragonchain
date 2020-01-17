@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.3.4
+
+- **Packaging:**
+  - Update boto3 dependencies
+
 ## 4.3.3
 
 - **Bugs:**
