@@ -85,7 +85,7 @@ elif [ "$1" = "docker-test" ]; then
     elif [ "$(uname -m)" = "aarch64" ]; then
         docker build . -f ./cicd/Dockerfile.test.arm64 -t dragonchain_testing_container --pull
     fi
-    docker run -v "$(pwd)":/usr/src/core dragonchain_testing_container
+    docker run -it -v "$(pwd)":/usr/src/core dragonchain_testing_container
 elif [ "$1" = "full-test" ]; then
     set +e
     printf "\\nChecking for linting errors\\n\\n"

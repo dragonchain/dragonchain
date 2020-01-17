@@ -1,7 +1,7 @@
 from typing import Tuple, Dict, cast
 import os
 
-# Copyright 2019 Dragonchain, Inc.
+# Copyright 2020 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
 # compliance with the Apache License and the following modification to it:

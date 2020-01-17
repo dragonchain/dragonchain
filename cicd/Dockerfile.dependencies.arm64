@@ -1,5 +1,5 @@
 # This container is used as a base by Dockerfile.test.arm64 in order to speed up dependency install for testing purposes only
-FROM arm64v8/python:3.8.0-alpine
+FROM arm64v8/python:3.8-alpine
 
 WORKDIR /usr/src/core
 # Install necessary base dependencies and set UTC timezone for apscheduler
@@ -17,10 +17,9 @@ RUN python3 -m pip install --no-cache-dir --upgrade -r dev_requirements.txt
 
 # Install Helm for chart linting and/or yq for doc builds if it doesn't exist
 RUN if ! command -v helm; then \
-    wget -O helm-v2.14.3-linux-arm64.tar.gz 'https://get.helm.sh/helm-v2.14.3-linux-arm64.tar.gz' && \
-    tar xzf helm-v2.14.3-linux-arm64.tar.gz && mv linux-arm64/helm /usr/local/bin/helm && \
-    rm -rf helm-v2.14.3-linux-arm64.tar.gz linux-arm64 && \
-    helm init --client-only; fi && \
+    wget -O helm-v3.0.2-linux-arm64.tar.gz 'https://get.helm.sh/helm-v3.0.2-linux-arm64.tar.gz' && \
+    tar xzf helm-v3.0.2-linux-arm64.tar.gz && mv linux-arm64/helm /usr/local/bin/helm && \
+    rm -rf helm-v3.0.2-linux-arm64.tar.gz linux-arm64; fi && \
     if ! command -v yq; then \
     wget -O yq 'https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_arm64' && \
     chmod +x yq && mv yq /usr/local/bin/; fi

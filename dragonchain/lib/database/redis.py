@@ -1,4 +1,4 @@
-# Copyright 2019 Dragonchain, Inc.
+# Copyright 2020 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
 # compliance with the Apache License and the following modification to it:
@@ -284,7 +284,7 @@ def hset_sync(name: str, key: str, value: str) -> int:
 
 
 def brpop_sync(keys: str, timeout: int = 0, decode: bool = True) -> Optional[tuple]:
-    """Preform a blocking pop against redis list(s)
+    """Perform a blocking pop against redis list(s)
     Args:
         keys: Can be a single key (bytes, string, int, etc), or an array of keys to wait on
         timeout: Number of seconds to wait before 'timing out' and returning None. If 0, it will block indefinitely (default)
@@ -297,6 +297,23 @@ def brpop_sync(keys: str, timeout: int = 0, decode: bool = True) -> Optional[tup
     if not response:
         return None
     return _decode_tuple_response(response, decode)
+
+
+def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool = True) -> Optional[str]:
+    """Perform a blocking pop against redis list(s)
+    Args:
+        pop_key: Can be a single key (bytes, string, int, etc), or an array of keys to wait on popping from
+        push_key: key to push currently processing items to
+        timeout: Number of seconds to wait before 'timing out' and returning None. If 0, it will block indefinitely (default)
+    Returns:
+        None when no element could be popped and the timeout expired. This is only possible when timeout is not 0
+        The element that was moved between the lists
+    """
+    _set_redis_client_if_necessary()
+    response = redis_client.brpoplpush(pop_key, push_key, timeout)
+    if response is None:
+        return None
+    return _decode_response(response, decode)
 
 
 def get_sync(name: str, decode: bool = True) -> Optional[str]:

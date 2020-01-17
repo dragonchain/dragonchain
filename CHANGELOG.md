@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.3.3
+
+- **Bugs:**
+  - Adds Content-Type header to all verification notifications
+  - Add retry logic to catch failed job_processor jobs
+  - Fixes double quote error on VERIFICATION_NOTIFICATION json deployment
+  - Fix bug where an L1 processing a receipt from an L5 could result in dropping some receipts
+- **Packaging:**
+  - Update redisearch, base58, and boto3 dependencies
+  - Un-pin python to version 3.8.X
+  - Update redisearch in helm chart to 1.4.20
+- **Development:**
+  - Fix tests for python 3.8.1
+  - Use helm 3 (specifically 3.0.2) for dependency container and lint checking
+
 ## 4.3.2
 
 - **Bugs:**

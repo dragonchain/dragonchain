@@ -1,4 +1,4 @@
-# Copyright 2019 Dragonchain, Inc.
+# Copyright 2020 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
 # compliance with the Apache License and the following modification to it:
@@ -40,6 +40,9 @@ STORAGE_LOCATION = os.environ["STORAGE_LOCATION"]
 SECRET_LOCATION = os.environ["SECRET_LOCATION"]
 DRAGONCHAIN_IMAGE = os.environ["DRAGONCHAIN_IMAGE"]
 
+CONTRACT_TASK_KEY = "mq:contract-task"
+PENDING_TASK_KEY = "mq:contract-pending"
+
 _log = logger.get_logger()
 _kube: kubernetes.client.BatchV1Api = cast(kubernetes.client.BatchV1Api, None)  # This will always be defined before starting by being set in start()
 _validate_sc_build_task = fastjsonschema.compile(schema.smart_contract_build_task_schema)
@@ -55,6 +58,14 @@ def start() -> None:
     _kube = kubernetes.client.BatchV1Api()
 
     _log.debug("Job processor ready!")
+
+    if redis.llen_sync(PENDING_TASK_KEY):
+        _log.warning("WARNING! Pending job processor queue was not empty. Last job probably crashed. Re-queueing these dropped items.")
+        to_recover = redis.lrange_sync(PENDING_TASK_KEY, 0, -1, decode=False)
+        p = redis.pipeline_sync()
+        p.rpush(CONTRACT_TASK_KEY, *to_recover)
+        p.delete(PENDING_TASK_KEY)
+        p.execute()
     while True:
         start_task()
 
@@ -93,10 +104,12 @@ def start_task() -> None:
         job = get_existing_job_status(task_definition)
         if job and job.status.active:
             _log.warning("Throwing away task because job already exists")
+            redis.lpop_sync(PENDING_TASK_KEY)
             return
         if job and (job.status.succeeded or job.status.failed):
             delete_existing_job(task_definition)
         attempt_job_launch(task_definition)
+        redis.lpop_sync(PENDING_TASK_KEY)
 
 
 def get_next_task() -> Optional[dict]:
@@ -105,16 +118,16 @@ def get_next_task() -> Optional[dict]:
         The next task. Blocks until a job is found.
     """
     _log.info("Awaiting contract task...")
-    pop_result = redis.brpop_sync("mq:contract-task", 0, decode=False)
+    pop_result = redis.brpoplpush_sync(CONTRACT_TASK_KEY, PENDING_TASK_KEY, 0, decode=False)
     if pop_result is None:
         return None
-    _, event = pop_result
-    _log.debug(f"received task: {event}")
+    _log.debug(f"received task: {pop_result}")
     try:
-        event = json.loads(event)
+        event = json.loads(pop_result)
         _validate_sc_build_task(event)
     except Exception:
         _log.exception("Error processing task, skipping")
+        redis.lpop_sync(PENDING_TASK_KEY)
         return None
     _log.info(f"New task request received: {event}")
     return event

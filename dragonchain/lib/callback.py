@@ -1,4 +1,4 @@
-# Copyright 2019 Dragonchain, Inc.
+# Copyright 2020 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
 # compliance with the Apache License and the following modification to it:
@@ -33,9 +33,7 @@ def register_callback(txn_id: str, callback_url: str) -> None:
 
 def fire_if_exists(txn_id: str, transaction_model: transaction_model.TransactionModel) -> None:
     """ Fires a callback with a given payload, then removes from redis"""
-    _log.debug(f"Looking in redis for callback: {CALLBACK_REDIS_KEY} {txn_id}")
     url = redis.hget_sync(CALLBACK_REDIS_KEY, txn_id)
-    _log.debug(f"Found {url}")
     if url is not None:
         try:
             _log.debug(f"POST -> {url}")

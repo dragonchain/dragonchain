@@ -1,4 +1,4 @@
-# Copyright 2019 Dragonchain, Inc.
+# Copyright 2020 Dragonchain, Inc.
 # Licensed under the Apache License, Version 2.0 (the "Apache License")
 # with the following modification; you may not use this file except in
 # compliance with the Apache License and the following modification to it:
@@ -66,27 +66,36 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
 
     _log.info(f"Processing receipt for blocks {l1_block_id_set} from L{level_received_from}")
     for l1_block_id in l1_block_id_set:
-        # Check that the chain which sent this receipt is in our claims, and that this L1 block is accepting receipts for this level
-        validations = matchmaking.get_claim_check(l1_block_id)["validations"][f"l{level_received_from}"]
-        if (block_model.dc_id in validations) and broadcast_functions.is_block_accepting_verifications_from_level(l1_block_id, level_received_from):
-            _log.info(f"Verified that block {l1_block_id} was sent. Inserting receipt")
-            storage_location = broadcast_functions.verification_storage_location(l1_block_id, level_received_from, block_model.dc_id)
-            storage.put_object_as_json(storage_location, block_model.export_as_at_rest())
-            # Set new receipt for matchmaking claim check
+        try:
+            # Check that the chain which sent this receipt is in our claims, and that this L1 block is accepting receipts for this level
             try:
-                block_id = block_model.block_id
-                proof = block_model.proof
-                dc_id = block_model.dc_id
-                matchmaking.add_receipt(l1_block_id, level_received_from, dc_id, block_id, proof)
-            except Exception:
-                _log.exception("matchmaking add_receipt failed!")
-            # Update the broadcast system about this receipt
-            broadcast_functions.set_receieved_verification_for_block_from_chain_sync(l1_block_id, level_received_from, block_model.dc_id)
-        else:
-            _log.warning(
-                f"Chain {block_model.dc_id} (level {level_received_from}) returned a receipt that wasn't expected (possibly expired?) for block {l1_block_id}. Rejecting receipt"  # noqa: B950
-            )
-            raise exceptions.NotAcceptingVerifications(f"Not accepting verifications for block {l1_block_id} from {block_model.dc_id}")
+                validations = matchmaking.get_claim_check(l1_block_id)["validations"][f"l{level_received_from}"]
+            except exceptions.NotFound:
+                _log.info(f"Block {l1_block_id} has no claim check. Presumably already closed by another L5. Ignoring receipt for this L1 block.")
+                continue
+            if (block_model.dc_id in validations) and broadcast_functions.is_block_accepting_verifications_from_level(
+                l1_block_id, level_received_from
+            ):
+                _log.info(f"Verified that block {l1_block_id} was sent. Inserting receipt")
+                storage_location = broadcast_functions.verification_storage_location(l1_block_id, level_received_from, block_model.dc_id)
+                storage.put_object_as_json(storage_location, block_model.export_as_at_rest())
+                # Set new receipt for matchmaking claim check
+                try:
+                    block_id = block_model.block_id
+                    proof = block_model.proof
+                    dc_id = block_model.dc_id
+                    matchmaking.add_receipt(l1_block_id, level_received_from, dc_id, block_id, proof)
+                except Exception:
+                    _log.exception("matchmaking add_receipt failed!")
+                # Update the broadcast system about this receipt
+                broadcast_functions.set_receieved_verification_for_block_from_chain_sync(l1_block_id, level_received_from, block_model.dc_id)
+            else:
+                _log.warning(
+                    f"Chain {block_model.dc_id} (level {level_received_from}) returned a receipt that wasn't expected (possibly expired?) for block {l1_block_id}. Rejecting receipt"  # noqa: B950
+                )
+                raise exceptions.NotAcceptingVerifications(f"Not accepting verifications for block {l1_block_id} from {block_model.dc_id}")
+        except Exception:
+            _log.exception(f"Unknown error occurred processing block {l1_block_id}. Skipping receipt for this block.")
 
 
 def enqueue_item_for_verification_v1(content: Dict[str, str], deadline: int) -> None:
