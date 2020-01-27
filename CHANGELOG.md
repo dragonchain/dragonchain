@@ -4,6 +4,7 @@
 
 - **Packaging:**
   - Update boto3 dependencies
+  - Update redisearch in helm chart to 1.6.7
 
 ## 4.3.3
 
