@@ -1,10 +1,13 @@
 # Changelog
 
-## 4.3.4
+## 4.4.0
 
+- **Feature:**
+  - Modify L4 block schema to include chain name in the L4 block header
 - **Packaging:**
   - Update boto3 dependencies
   - Update redisearch in helm chart to 1.6.7
+  - Update fwatchdog to 0.18.10 for OpenFaaS smart contracts
 
 ## 4.3.3
 
