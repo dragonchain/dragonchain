@@ -2,17 +2,15 @@
 
 ## 4.4.0
 
-- **Feature**
-  - Delete smart contracts by transaction type
-
-## 4.4.0
-
 - **Feature:**
   - Modify L4 block schema to include chain name in the L4 block header
+  - Add ability to delete smart contracts by transaction type
 - **Packaging:**
   - Update boto3 dependencies
   - Update redisearch in helm chart to 1.6.7
   - Update fwatchdog to 0.18.10 for OpenFaaS smart contracts
+- **Development**
+  - Removed all references of DisabledForLab functionality
 
 ## 4.3.3
 

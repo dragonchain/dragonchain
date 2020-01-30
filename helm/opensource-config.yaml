@@ -100,8 +100,7 @@ dragonchain:
   # The bearer token will be the signature of the utf8 encoded bytes of the post body signed with the private key, and verifiable with
   # the public key found in the DragonchainId header. NOTE: Do not trust this header alone to verify signature. Make sure it's a public id
   # that you trust and expect.
-  verificationNotification:
-    null
+  verificationNotification: null
     # -- Example:
     # all:
     #   - https://yourUrlHere
@@ -114,6 +113,7 @@ dragonchain:
     #   - https://yourUrlHere
     # l5:
     #   - https://yourUrlHere
+
 
 redis:
   # -- redis.storage --
@@ -142,8 +142,10 @@ redisearch:
       resources:
         requests:
           storage: 1Gi
+
 # For more information on kubernetes storage, view the docs: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
 # PersistentVolumeClaimSpec API Reference: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#persistentvolumeclaimspec-v1-core
+
 
 # If running on a very low power machine (i.e. a raspberry pi), it can be useful to allow higher cpu limits on various pods
 # Uncomment below if running on something with little power like a raspberry pi
