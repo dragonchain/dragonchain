@@ -4,13 +4,13 @@
 
 - **Feature:**
   - Modify L4 block schema to include chain name in the L4 block header
-  - Add ability to delete smart contracts by transaction type
+  - Add new endpoint `DELETE /v1/contract/txn_type/<txn_type>` for deleting smart contracts by transaction type
 - **Packaging:**
   - Update boto3 dependencies
   - Update redisearch in helm chart to 1.6.7
   - Update fwatchdog to 0.18.10 for OpenFaaS smart contracts
-- **Development**
-  - Removed all references of DisabledForLab functionality
+- **Development:**
+  - Removed all references about lab chain
 
 ## 4.3.3
 
