@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.4.1
+## 4.4.0
 
 - **Feature**
   - Delete smart contracts by transaction type

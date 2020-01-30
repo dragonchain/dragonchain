@@ -80,7 +80,6 @@ def get_smart_contract_logs_v1(contract_id: str, **kwargs) -> Tuple[str, int, Di
 
 
 @request_authorizer.Authenticated(api_resource="contracts", api_operation="create", api_name="create_contract")
-@helpers.DisabledForLab
 def post_contract_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
@@ -98,7 +97,6 @@ def post_contract_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated(api_resource="contracts", api_operation="update", api_name="update_contract")
-@helpers.DisabledForLab
 def update_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
         raise exceptions.BadRequest("Could not parse JSON")
@@ -114,14 +112,12 @@ def update_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, 
 
 
 @request_authorizer.Authenticated(api_resource="contracts", api_operation="delete", api_name="delete_contract")
-@helpers.DisabledForLab
 def delete_contract_v1(contract_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     smart_contracts.delete_contract_v1(contract_id)
     return helpers.flask_http_response(202, helpers.format_success(True))
 
 
 @request_authorizer.Authenticated(api_resource="contracts", api_operation="delete", api_name="delete_contract")
-@helpers.DisabledForLab
 def delete_contract_by_txn_type_v1(txn_type: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     contract_id = smart_contracts.get_id_by_txn_type_v1(txn_type)
     smart_contracts.delete_contract_v1(contract_id)

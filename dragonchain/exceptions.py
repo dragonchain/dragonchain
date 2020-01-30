@@ -57,10 +57,6 @@ class OpenFaasException(DragonchainException):
     """Exception raised when OpenFaaS returns with error status"""
 
 
-class LabChainForbiddenException(DragonchainException):
-    """Exception raised when lab chain action is not allowed"""
-
-
 class NotFound(DragonchainException):
     """Exception raised when object is not found"""
 
