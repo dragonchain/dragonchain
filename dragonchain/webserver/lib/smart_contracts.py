@@ -41,6 +41,10 @@ def get_by_txn_type_v1(txn_type: str) -> Dict[str, Any]:
     return get_by_id_v1(smart_contract_dao.get_contract_id_by_txn_type(txn_type))
 
 
+def get_id_by_txn_type_v1(txn_type: str) -> str:
+    return smart_contract_dao.get_contract_id_by_txn_type(txn_type)
+
+
 def list_contracts_v1() -> Dict[str, List[Dict[str, Any]]]:
     """ Function used by the smartcontract endpoint with method GET.
         Returns a list of all smart contracts.
