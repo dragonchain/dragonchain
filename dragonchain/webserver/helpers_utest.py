@@ -159,14 +159,6 @@ class TestWebserverHelpers(unittest.TestCase):
 
     @patch("dragonchain.webserver.helpers.error_reporter.report_exception")
     @patch("dragonchain.webserver.helpers.flask_http_response")
-    def test_webserver_error_handler_lab_chain_forbidden(self, mock_http_response, mock_report_exception):
-        exception = exceptions.LabChainForbiddenException()
-        helpers.webserver_error_handler(exception)
-        mock_report_exception.assert_not_called()
-        mock_http_response.assert_called_once_with(403, ANY)
-
-    @patch("dragonchain.webserver.helpers.error_reporter.report_exception")
-    @patch("dragonchain.webserver.helpers.flask_http_response")
     def test_webserver_error_handler_unkown_error(self, mock_http_response, mock_report_exception):
         exception = RuntimeError()
         helpers.webserver_error_handler(exception)

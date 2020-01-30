@@ -16,9 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import json
-import os
-import functools
-from typing import Tuple, Dict, Any, Callable, Iterable, TYPE_CHECKING
+from typing import Tuple, Dict, Any, Iterable, TYPE_CHECKING
 
 import fastjsonschema
 from werkzeug import exceptions as werkzeug_exceptions
@@ -32,18 +30,6 @@ if TYPE_CHECKING:
     from dragonchain.lib.types import custom_index  # noqa: F401
 
 _log = logger.get_logger()
-_is_lab = os.environ.get("LAB") == "true"
-
-
-def DisabledForLab(route: Callable) -> Callable:  # noqa: N802
-    @functools.wraps(route)
-    def decorator(*args: Any, **kwargs: Any) -> Any:
-        if _is_lab:
-            raise exceptions.LabChainForbiddenException
-        else:
-            return route(*args, **kwargs)
-
-    return decorator
 
 
 def flask_http_response(status: int, data: Any) -> Tuple[str, int, Dict[str, str]]:
@@ -87,10 +73,6 @@ INSUFFICIENT_CRYPTO = format_error("INSUFFICIENT_CRYPTO", "You do not have enoug
 NOT_ACCEPTING_VERIFICATIONS = format_error("NOT_ACCEPTING_VERIFICATIONS", "Not currently accepting verifications")
 INVALID_TRANSACTION_TYPE = format_error(
     "INVALID_TRANSACTION_TYPE", "The transaction type you are attempting to use either does not exist or is invalid."
-)
-ACTION_FORBIDDEN_LAB_CHAIN = format_error(
-    "ACTION_FORBIDDEN_LAB_CHAIN",
-    "This feature is disabled for Labs. If you are interested in this feature, please visit https://dragonchain.com/pricing",
 )
 INTERNAL_SERVER_ERROR = format_error("INTERNAL_SERVER_ERROR", "Unexpected error occurred")
 
@@ -180,9 +162,6 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, exceptions.BadDockerAuth):
         status_code = 400
         surface_error = BAD_DOCKER_AUTH_ERROR
-    elif isinstance(exception, exceptions.LabChainForbiddenException):
-        status_code = 403
-        surface_error = ACTION_FORBIDDEN_LAB_CHAIN
     elif isinstance(exception, werkzeug_exceptions.MethodNotAllowed):
         status_code = 405
         surface_error = METHOD_NOT_ALLOWED

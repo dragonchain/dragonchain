@@ -45,7 +45,6 @@ def apply_routes(app: flask.Flask):
 
 
 @request_authorizer.Authenticated(api_resource="api_keys", api_operation="create", api_name="create_api_key")
-@helpers.DisabledForLab
 def create_api_key_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     nickname = ""
     permissions_document = None
@@ -62,7 +61,6 @@ def create_api_key_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated(api_resource="api_keys", api_operation="read", api_name="get_api_key")
-@helpers.DisabledForLab
 def get_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
@@ -71,13 +69,11 @@ def get_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated(api_resource="api_keys", api_operation="read", api_name="list_api_keys")
-@helpers.DisabledForLab
 def list_api_keys_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, api_keys.get_api_key_list_v1())
 
 
 @request_authorizer.Authenticated(api_resource="api_keys", api_operation="delete", api_name="delete_api_key")
-@helpers.DisabledForLab
 def delete_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
@@ -87,7 +83,6 @@ def delete_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
 
 
 @request_authorizer.Authenticated(api_resource="api_keys", api_operation="update", api_name="update_api_key")
-@helpers.DisabledForLab
 def update_api_key_v1(key_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not key_id:
         raise exceptions.ValidationException("Invalid parameter: key_id")
