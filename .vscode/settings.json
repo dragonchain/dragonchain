@@ -12,6 +12,5 @@
         "py38"
     ],
     "editor.formatOnSave": true,
-    "restructuredtext.confPath": "${workspaceFolder}/docs",
-    "python.pythonPath": ".venv/bin/python"
+    "restructuredtext.confPath": "${workspaceFolder}/docs"
 }
