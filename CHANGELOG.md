@@ -12,6 +12,7 @@
   - Update fwatchdog to 0.18.10 for OpenFaaS smart contracts
 - **Development:**
   - Removed all references about lab chain
+  - Remove codeowners
 
 ## 4.3.3
 
