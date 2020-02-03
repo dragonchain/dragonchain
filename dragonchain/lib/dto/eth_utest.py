@@ -54,7 +54,7 @@ class TestEthereumMethods(unittest.TestCase):
             return_value=b"\xec>s;\xb6\x8a\xbb?\xfa\x87\xa1+\x03\x9at\x9f\xcc\xafXDn\xee\xed\xa9:\xd0\xd5\x9fQ\x03\x8f\xf2"
         )
 
-        response = self.client._publish_transaction("DC-L5:0xhash")
+        response = self.client._publish_l5_transaction("DC-L5:0xhash")
         self.assertEqual(response, "0xec3e733bb68abb3ffa87a12b039a749fccaf58446eeeeda93ad0d59f51038ff2")
 
         self.client.sign_transaction.assert_called_once_with(

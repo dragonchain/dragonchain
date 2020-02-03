@@ -42,6 +42,7 @@ _validate_binance_network_update_v1 = fastjsonschema.compile(schema.update_binan
 _validate_binance_transaction_v1 = fastjsonschema.compile(schema.bnb_transaction_schema_v1)
 
 _validate_set_default_interchain_v1 = fastjsonschema.compile(schema.set_default_interchain_schema_v1)
+_validate_publish_interchain_transaction_v1 = fastjsonschema.compile(schema.publish_interchain_transaction_schema_v1)
 
 
 def apply_routes(app: flask.Flask):
@@ -59,6 +60,8 @@ def apply_routes(app: flask.Flask):
         "/v1/interchains/ethereum/<name>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"]
     )
     app.add_url_rule("/v1/interchains/binance/<name>/transaction", "create_binance_transaction_v1", create_binance_transaction_v1, methods=["POST"])
+    # Publish interchain transaction
+    app.add_url_rule("/v1/interchains/transaction/publish", "publish_interchain_transaction_v1", publish_interchain_transaction_v1, methods=["POST"])
     # List
     app.add_url_rule("/v1/interchains/<blockchain>", "list_interchains_v1", list_interchains_v1, methods=["GET"])
     # Get
@@ -192,6 +195,19 @@ def create_binance_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[s
         raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("binance", name, data))
+
+
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="publish_interchain_transaction")
+def publish_interchain_transaction_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_publish_interchain_transaction_v1(data)
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
+
+    return helpers.flask_http_response(200, interchain.publish_interchain_transaction_v1(data["blockchain"], data["name"], data["signed_txn"]))
 
 
 @request_authorizer.Authenticated(api_resource="interchains", api_operation="read", api_name="list_interchains")

@@ -254,7 +254,17 @@ class BitcoinNetwork(model.InterchainModel):
         """
         return base64.b64encode(self.priv_key.to_bytes()).decode("ascii")
 
-    def _publish_transaction(self, transaction_payload: str) -> str:
+    def publish_transaction(self, signed_transaction: str) -> str:
+        """Publish an already signed transaction to this network
+        Args:
+            signed_transaction: The already signed transaction from self.sign_transaction
+        Returns:
+            The string of the published transaction hash
+        """
+        _log.debug(f"[BTC] Publishing transaction {signed_transaction}")
+        return self._call("sendrawtransaction", signed_transaction)
+
+    def _publish_l5_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:
             transaction_payload: The arbitrary data to send with this transaction
@@ -265,7 +275,7 @@ class BitcoinNetwork(model.InterchainModel):
         # Sign transaction data
         signed_transaction = self.sign_transaction({"data": transaction_payload})
         # Send signed transaction
-        return self._call("sendrawtransaction", signed_transaction)
+        return self.publish_transaction(signed_transaction)
 
     def _calculate_transaction_fee(self) -> int:
         """Get the current satoshi/byte fee estimate
