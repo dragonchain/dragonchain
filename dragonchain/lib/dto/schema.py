@@ -583,7 +583,7 @@ publish_interchain_transaction_schema_v1 = {
         "version": {"type": "string", "enum": ["1"]},
         "blockchain": {"type": "string"},
         "name": {"type": "string"},
-        "signed_txn": {"type": "string"}
+        "signed_txn": {"type": "string"},
     },
     "additionalProperties": False,
 }
