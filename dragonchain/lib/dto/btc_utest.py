@@ -60,7 +60,7 @@ class TestBitcoinMethods(unittest.TestCase):
     def test_publish_creates_signs_and_sends(self):
         self.client._call = MagicMock(return_value="MyFakeTransactionHash")
         self.client.sign_transaction = MagicMock(return_value="signed_transaction")
-        response = self.client._publish_transaction("DC-L5:0xhash")
+        response = self.client._publish_l5_transaction("DC-L5:0xhash")
         self.assertEqual(response, "MyFakeTransactionHash")
 
         self.client._call.assert_called_once_with("sendrawtransaction", "signed_transaction")

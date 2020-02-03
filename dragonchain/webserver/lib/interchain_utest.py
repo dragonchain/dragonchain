@@ -68,6 +68,11 @@ class TestInterchain(unittest.TestCase):
         interchain.sign_interchain_transaction_v1("bitcoin", "name", {"some": "data"})
         mock_get_client.return_value.sign_transaction.assert_called_once_with({"some": "data"})
 
+    @patch("dragonchain.lib.dao.interchain_dao.get_interchain_client")
+    def test_publish_interchain_v1(self, mock_get_client):
+        interchain.publish_interchain_transaction_v1("bitcoin", "name", "signed_txn")
+        mock_get_client.return_value.publish_transaction.assert_called_once_with("signed_txn")
+
     @patch("dragonchain.lib.dao.interchain_dao.get_default_interchain_client", return_value="banana")
     @patch("dragonchain.webserver.lib.interchain._get_output_dto_v1", return_value="blah")
     def test_get_default_interchain(self, mock_get_output, mock_get_interchain):

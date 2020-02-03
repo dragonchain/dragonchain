@@ -110,6 +110,7 @@ custom schema:
 | `interchains`       | `create_interchain`                    | `create`       | default         |
 | `interchains`       | `update_interchain`                    | `update`       | default         |
 | `interchains`       | `create_interchain_transaction`        | `create`       | default         |
+| `interchains`       | `publish_interchain_transaction`       | `create`       | default         |
 | `interchains`       | `list_interchains`                     | `read`         | default         |
 | `interchains`       | `get_interchain`                       | `read`         | default         |
 | `interchains`       | `delete_interchain`                    | `delete`       | default         |

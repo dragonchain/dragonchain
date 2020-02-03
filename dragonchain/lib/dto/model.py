@@ -71,7 +71,7 @@ class InterchainModel(Model):
         Returns:
             String of the transaction hash (or equivalent) for the posted transaction
         """
-        return self._publish_transaction(f"DC-L5:{l5_block_hash}")
+        return self._publish_l5_transaction(f"DC-L5:{l5_block_hash}")
 
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
         """Check if a transaction is considered confirmed
@@ -121,8 +121,17 @@ class InterchainModel(Model):
         """
         raise NotImplementedError("This is an abstract method")
 
-    def _publish_transaction(self, payload: str) -> str:
-        """Publish a transaction to this network with a certain data payload
+    def publish_transaction(self, signed_transaction: str) -> str:
+        """Publish an already signed transaction to this network
+        Args:
+            signed_transaction: The already signed transaction from self.sign_transaction
+        Returns:
+            String of created transaction hash (or equivalent)
+        """
+        raise NotImplementedError("This is an abstract method")
+
+    def _publish_l5_transaction(self, payload: str) -> str:
+        """Publish an l5 transaction to this network with a certain data payload (l5 block hash)
         Args:
             transaction_payload: The arbitrary data to send with this transaction
         Returns:

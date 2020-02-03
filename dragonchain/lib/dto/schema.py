@@ -577,6 +577,17 @@ set_default_interchain_schema_v1 = {
     "properties": {"version": {"type": "string", "enum": ["1"]}, "blockchain": {"type": "string"}, "name": {"type": "string"}},
 }
 
+publish_interchain_transaction_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "blockchain": {"type": "string"},
+        "name": {"type": "string"},
+        "signed_txn": {"type": "string"}
+    },
+    "additionalProperties": False,
+}
+
 # BITCOIN INTERCHAIN #
 
 create_bitcoin_interchain_schema_v1 = {
@@ -778,6 +789,7 @@ permission_document_schema_v1 = {
                                 "create_interchain": default_endpoint_property_schema,
                                 "update_interchain": default_endpoint_property_schema,
                                 "create_interchain_transaction": default_endpoint_property_schema,
+                                "publish_interchain_transaction": default_endpoint_property_schema,
                                 "list_interchains": default_endpoint_property_schema,
                                 "get_interchain": default_endpoint_property_schema,
                                 "delete_interchain": default_endpoint_property_schema,
