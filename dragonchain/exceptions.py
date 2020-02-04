@@ -151,6 +151,10 @@ class SanityCheckFailure(DragonchainException):
     """Exception raised when sanity check fails"""
 
 
+class InterchainPublishError(DragonchainException):
+    """Exception raised when an interchain publish action fails"""
+
+
 class InterchainConnectionError(DragonchainException):
     """Exception raise when RPC / API call has an error"""
 
