@@ -113,6 +113,11 @@ def bad_request(exception: Exception) -> dict:
     return format_error("BAD_REQUEST", message)
 
 
+def interchain_publish_error(exception: Exception) -> dict:
+    message = error_reporter.get_exception_message(exception)
+    return format_error("INTERCHAIN_PUBLISH_ERROR", message)
+
+
 def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, str]]:  # noqa C901
     if isinstance(exception, exceptions.UnauthorizedException):
         status_code = 401
@@ -171,6 +176,9 @@ def webserver_error_handler(exception: Exception) -> Tuple[str, int, Dict[str, s
     elif isinstance(exception, exceptions.OpenFaasException):
         status_code = 500
         surface_error = OPENFAAS_ERROR
+    elif isinstance(exception, exceptions.InterchainPublishError):
+        status_code = 500
+        surface_error = interchain_publish_error(exception)
     else:
         status_code = 500
         surface_error = INTERNAL_SERVER_ERROR
