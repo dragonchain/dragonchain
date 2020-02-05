@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 
 PROOF_SCHEME = os.environ["PROOF_SCHEME"].lower()
 ADDRESS = os.environ["INTERNAL_ID"]
+CHAIN_NAME = os.environ["DRAGONCHAIN_NAME"]
 
 _log = logger.get_logger()
 
@@ -167,6 +168,7 @@ def create_block(l1_headers: "L1Headers", validations: List[Dict[str, Any]]) -> 
         l1_block_id=l1_headers["block_id"],
         l1_proof=l1_headers["proof"],
         validations=validations,
+        chain_name=CHAIN_NAME,
     )
 
     sign_block(l4_block)

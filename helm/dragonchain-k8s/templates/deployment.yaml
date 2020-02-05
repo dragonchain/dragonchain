@@ -278,7 +278,7 @@ spec:
 {{- end }}
 {{- end }}
 ---
-{{- if and (eq .Values.global.environment.LEVEL "1") (not .Values.global.environment.LAB) }}
+{{- if and (eq .Values.global.environment.LEVEL "1") }}
 # Job Processor Deployment
 apiVersion: apps/v1
 kind: Deployment

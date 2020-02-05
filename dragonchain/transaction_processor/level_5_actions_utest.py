@@ -154,6 +154,14 @@ class TestLevelFiveActions(unittest.TestCase):
 
     @patch("dragonchain.lib.database.redis.smembers_sync", return_value={"CLAIMID_1", "CLAIMID_2", "CLAIMID_3"})
     @patch("dragonchain.lib.database.redis.srem_sync", return_value=1)  # successful removal of member from set
+    @patch("dragonchain.lib.matchmaking.resolve_claim_check", side_effect=exceptions.NotFound)
+    def test_process_claims_backlog_works_with_matchmaking_404(self, mock_resolve_claim_check, mock_srem_sync, mock_smembers_sync):
+        level_5_actions.process_claims_backlog()
+        self.assertEqual(mock_resolve_claim_check.call_count, 3)
+        self.assertEqual(mock_srem_sync.call_count, 3)
+
+    @patch("dragonchain.lib.database.redis.smembers_sync", return_value={"CLAIMID_1", "CLAIMID_2", "CLAIMID_3"})
+    @patch("dragonchain.lib.database.redis.srem_sync", return_value=1)  # successful removal of member from set
     @patch("dragonchain.lib.matchmaking.resolve_claim_check", side_effect=exceptions.MatchmakingRetryableError)
     def test_process_claims_backlog_with_matchmaking_still_failing(self, mock_resolve_claim_check, mock_srem_sync, mock_smembers_sync):
         level_5_actions.process_claims_backlog()

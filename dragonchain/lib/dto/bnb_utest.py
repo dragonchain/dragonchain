@@ -112,7 +112,7 @@ class TestBinanceMethods(unittest.TestCase):
         self.assertEqual(response, "ZmFrZV9lbmNvZGVkX3R4bg==")
         mock_encode.assert_called_once()
 
-    def test_publish_transaction(self):
+    def test_publish_l5_transaction(self):
         fake_response = requests.Response()
         fake_response._content = b'{"result": {"hash": "BOGUS_RESULT_HASH"}}'
         self.client._build_transaction_msg = MagicMock(return_value={"built_tx": "fake"})
@@ -121,7 +121,7 @@ class TestBinanceMethods(unittest.TestCase):
         fake_acct._content = b'{"sequence": 0, "account_number": 12345}'
         self.client._call_node_api = MagicMock(return_value=fake_acct)
         self.client._call_node_rpc = MagicMock(return_value=fake_response)
-        response = self.client._publish_transaction("DC-L5:_fake_L5_block_hash")
+        response = self.client._publish_l5_transaction("DC-L5:_fake_L5_block_hash")
         self.assertEqual(response, "BOGUS_RESULT_HASH")
         self.client._call_node_rpc.assert_called_once_with("broadcast_tx_commit", {"tx": "signed_tx"})
 

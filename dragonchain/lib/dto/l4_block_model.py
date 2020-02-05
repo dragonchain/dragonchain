@@ -36,7 +36,23 @@ def new_from_at_rest(block: Dict[str, Any]) -> "L4BlockModel":
     validations = []
     for item in block["l3-validations"]:
         validations.append({"l3_dc_id": item["l3_dc_id"], "l3_block_id": item["l3_block_id"], "l3_proof": item["l3_proof"], "valid": item["valid"]})
-    if block.get("version") == "2":
+    if block.get("version") == "3":
+        return L4BlockModel(
+            dc_id=block["header"]["dc_id"],
+            current_ddss=block["header"].get("current_ddss"),
+            block_id=block["header"]["block_id"],
+            timestamp=block["header"].get("timestamp") or "-1",
+            prev_proof=block["header"]["prev_proof"],
+            scheme=block["proof"]["scheme"],
+            proof=block["proof"]["proof"],
+            nonce=block["proof"].get("nonce"),
+            l1_dc_id=block["header"]["l1_dc_id"],
+            l1_block_id=block["header"]["l1_block_id"],
+            l1_proof=block["header"]["l1_proof"],
+            validations=validations,
+            chain_name=block["header"]["chain_name"],
+        )
+    elif block.get("version") == "2":
         return L4BlockModel(
             dc_id=block["header"]["dc_id"],
             current_ddss=block["header"].get("current_ddss"),
@@ -78,6 +94,7 @@ class L4BlockModel(model.BlockModel):
         l1_block_id=None,
         l1_proof=None,
         validations=None,
+        chain_name="",
     ):
         """Model Constructor"""
         if validations is None:
@@ -96,6 +113,7 @@ class L4BlockModel(model.BlockModel):
         self.l1_block_id = l1_block_id
         self.l1_proof = l1_proof
         self.validations = validations
+        self.chain_name = chain_name
 
     def get_associated_l1_dcid(self) -> str:
         """Interface function for compatibility"""
@@ -113,9 +131,10 @@ class L4BlockModel(model.BlockModel):
         else:
             proof = {"scheme": self.scheme, "proof": self.proof, "nonce": self.nonce}
         return {
-            "version": "2",
+            "version": "3",
             "dcrn": schema.DCRN.Block_L4_At_Rest.value,
             "header": {
+                "chain_name": self.chain_name,
                 "dc_id": self.dc_id,
                 "current_ddss": self.current_ddss,
                 "level": 4,

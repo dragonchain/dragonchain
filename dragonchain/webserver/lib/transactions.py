@@ -71,7 +71,7 @@ def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearc
         if error_str.startswith("Syntax error"):
             raise exceptions.BadRequest(error_str)
         # If unknown index, user provided a bad transaction type
-        elif error_str == "Unknown Index name":
+        elif error_str.endswith(": no such index"):
             raise exceptions.BadRequest("Invalid transaction type")
         else:
             raise

@@ -122,6 +122,9 @@ def process_claims_backlog() -> None:
     for claim_check_id in claims_set:
         try:
             matchmaking.resolve_claim_check(claim_check_id)
+        except exceptions.NotFound:
+            # If claim is not found, then this claim is irrelevant and we can safely skip
+            pass
         except Exception:
             _log.exception("Failure to finalize claim in matchmaking.  Skipping the rest of the retry queue.")
             return  # short-circuit and exit early, matchmaking still unreachable

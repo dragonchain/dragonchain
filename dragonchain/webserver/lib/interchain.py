@@ -182,6 +182,15 @@ def sign_interchain_transaction_v1(blockchain: str, name: str, transaction: Dict
     return {"signed": client.sign_transaction(transaction)}
 
 
+def publish_interchain_transaction_v1(blockchain: str, name: str, signed_transaction: str) -> Dict[str, str]:
+    client = interchain_dao.get_interchain_client(blockchain, name)
+    try:
+        return {"transaction": client.publish_transaction(signed_transaction)}
+    except Exception as e:
+        # Try to surface a usable error for the user if there is a failure
+        raise exceptions.InterchainPublishError(str(e))
+
+
 # Below methods are deprecated and exist for legacy support only. Both methods will return a 404 if not a legacy chain
 
 

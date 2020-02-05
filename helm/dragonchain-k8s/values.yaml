@@ -16,7 +16,6 @@ global:
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
     STAGE: "prod"
     STORAGE_LOCATION: "/dragonchain"
-    LAB: ""
 
 service:
   # If using ingress, this should remain ClusterIP, if exposing via the cluster directly, this should be NodePort
@@ -143,7 +142,7 @@ dragonchain:
   image:
     pullPolicy: Always
     value: docker.io/dragonchain/dragonchain_core
-    version: 4.3.3
+    version: 4.4.0
   storage:
     spec:
       storageClassName: standard
@@ -169,7 +168,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.4.20
+    tag: 1.6.7
   storage:
     spec:
       storageClassName: standard

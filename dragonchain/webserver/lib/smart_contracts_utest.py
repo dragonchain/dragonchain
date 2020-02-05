@@ -174,3 +174,15 @@ class TestGetContractLogs(unittest.TestCase):
         self.assertRaises(exceptions.NotFound, smart_contracts.get_logs_v1, "test", "mytimestamp", 100)
         mock_get_contract.assert_called_once_with("test")
         mock_get_logs.assert_not_called()
+
+
+class TestGetContract(unittest.TestCase):
+    @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_id_by_txn_type", return_value="test")
+    def test_get_smart_contract_by_txn_type(self, mock_get_contract):
+        ret_val = smart_contracts.get_id_by_txn_type_v1("banana")
+        self.assertEqual(ret_val, "test")
+
+    @patch("dragonchain.webserver.lib.smart_contracts.smart_contract_dao.get_contract_id_by_txn_type", side_effect=exceptions.NotFound)
+    def test_get_smart_contract_by_txn_type_fails(self, mock_get_contract):
+        self.assertRaises(exceptions.NotFound, smart_contracts.get_id_by_txn_type_v1, "banana")
+        mock_get_contract.assert_called_once_with("banana")

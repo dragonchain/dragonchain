@@ -86,6 +86,7 @@ ENDPOINT_MAP = {
     "create_interchain": _check_default_endpoint_permission,
     "update_interchain": _check_default_endpoint_permission,
     "create_interchain_transaction": _check_default_endpoint_permission,
+    "publish_interchain_transaction": _check_default_endpoint_permission,
     "list_interchains": _check_default_endpoint_permission,
     "get_interchain": _check_default_endpoint_permission,
     "delete_interchain": _check_default_endpoint_permission,

@@ -339,7 +339,22 @@ class BinanceNetwork(model.InterchainModel):
             raise exceptions.BadRequest(f"[BINANCE] Error signing transaction: {e}")
 
     # https://docs.binance.org/api-reference/node-rpc.html#622-broadcasttxcommit
-    def _publish_transaction(self, transaction_payload: str) -> str:
+    def publish_transaction(self, signed_transaction: str) -> str:
+        """Publish an already signed transaction to this network
+        Args:
+            signed_transaction: The already signed transaction from self.sign_transaction
+        Returns:
+            The string of the published transaction hash
+        """
+        _log.debug(f"[BINANCE] Publishing transaction {signed_transaction}")
+        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_transaction})
+        response_json = response.json()
+        # cannot check HTTP status codes, errors will return 200 :
+        if response_json.get("error") is not None:
+            _log.warning(f"[BINANCE] Error response from Binance node: {response_json['error']['data']}")
+        return response_json["result"]["hash"]  # transaction hash
+
+    def _publish_l5_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
         Args:
             transaction_payload: The arbitrary data to send with this transaction
@@ -351,13 +366,7 @@ class BinanceNetwork(model.InterchainModel):
         # send funds to yourself, avoid hardcoding a dummy recipient address
         raw_transaction = {"amount": 1, "to_address": self.address, "symbol": "BNB", "memo": transaction_payload}
         signed_tx = self.sign_transaction(raw_transaction)
-        _log.info(f"[BINANCE] Sending signed transaction: {signed_tx}")
-        response = self._call_node_rpc("broadcast_tx_commit", {"tx": signed_tx})
-        response_json = response.json()
-        # cannot check HTTP status codes, errors will return 200 :
-        if response_json.get("error") is not None:
-            _log.warning(f"[BINANCE] Error response from Binance node: {response_json['error']['data']}")
-        return response_json["result"]["hash"]  # transaction hash
+        return self.publish_transaction(signed_tx)
 
     # endpoints currently hit are:
     #     "status" (ping check)

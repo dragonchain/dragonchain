@@ -1,12 +1,12 @@
-boto3==1.11.3
-redis==3.3.11
+boto3==1.11.9
+redis==3.4.1
 apscheduler==3.6.3
 jsonpath==0.82
 Flask==1.1.1
 requests==2.22.0
 fastjsonschema==2.14.2
 secp256k1==0.13.2
-web3==5.4.0
+web3==5.5.0
 kubernetes==10.0.1
 docker==4.1.0
 gunicorn[gevent]==20.0.4
