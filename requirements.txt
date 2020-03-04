@@ -1,4 +1,4 @@
-boto3==1.12.10
+boto3==1.12.13
 redis==3.4.1
 apscheduler==3.6.3
 jsonpath==0.82
