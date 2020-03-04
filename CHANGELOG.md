@@ -3,8 +3,10 @@
 ## 4.4.1
 
 - **Packaging:**
-  - Update web3, docker, bit, requests, and boto3 dependencies
+  - Update web3, docker, bit, requests, fastjsonschema, and boto3 dependencies
   - Update redisearch in helm chart to 1.6.8
+- **Development:**
+  - Use helm 3.1.1 and yq 3.2.1 for dependency container and lint checking
 
 ## 4.4.0
 

@@ -18,6 +18,7 @@
 import base64
 from typing import Dict, Any
 
+from eth_typing import URI, ChecksumAddress, HexStr
 import secp256k1
 import web3
 import web3.gas_strategies.time_based
@@ -127,6 +128,8 @@ def new_from_at_rest(ethereum_network_at_rest: Dict[str, Any]) -> "EthereumNetwo
 
 
 class EthereumNetwork(model.InterchainModel):
+    address: ChecksumAddress
+
     def __init__(self, name: str, rpc_address: str, chain_id: int, b64_private_key: str):
         self.blockchain = "ethereum"
         self.name = name
@@ -134,7 +137,7 @@ class EthereumNetwork(model.InterchainModel):
         self.chain_id = chain_id
         self.priv_key = eth_keys.keys.PrivateKey(base64.b64decode(b64_private_key))
         self.address = self.priv_key.public_key.to_checksum_address()
-        self.w3 = web3.Web3(web3.HTTPProvider(self.rpc_address))
+        self.w3 = web3.Web3(web3.HTTPProvider(URI(self.rpc_address)))
         # Set gas strategy
         self.w3.eth.setGasPriceStrategy(web3.gas_strategies.time_based.medium_gas_price_strategy)
 
@@ -181,12 +184,12 @@ class EthereumNetwork(model.InterchainModel):
         """
         _log.info(f"[ETHEREUM] Getting confirmations for {transaction_hash}")
         try:
-            transaction_block_number = self.w3.eth.getTransaction(transaction_hash)["blockNumber"]
+            transaction_block_number = self.w3.eth.getTransaction(HexStr(transaction_hash))["blockNumber"]
         except web3.exceptions.TransactionNotFound:
             raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
         latest_block_number = self.get_current_block()
         _log.info(f"[ETHEREUM] Latest ethereum block number: {latest_block_number} | Block number of transaction: {transaction_block_number}")
-        return transaction_block_number and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
+        return bool(transaction_block_number) and (latest_block_number - transaction_block_number) >= CONFIRMATIONS_CONSIDERED_FINAL
 
     def check_balance(self) -> int:
         """Check the balance of the address for this network
@@ -242,7 +245,7 @@ class EthereumNetwork(model.InterchainModel):
             The hex string of the published transaction hash
         """
         _log.debug(f"[ETH] Publishing transaction {signed_transaction}")
-        return self.w3.toHex(self.w3.eth.sendRawTransaction(signed_transaction))
+        return self.w3.toHex(self.w3.eth.sendRawTransaction(HexStr(signed_transaction)))
 
     def _publish_l5_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
@@ -269,7 +272,7 @@ class EthereumNetwork(model.InterchainModel):
             Gas price estimate in wei
         """
         _log.debug(f"[ETHEREUM] Getting estimated gas price")
-        gas_price = max(int(self.w3.eth.generateGasPrice()), 100000000)  # Calculate gas price, but set minimum to 0.1 gwei for safety
+        gas_price = max(int(self.w3.eth.generateGasPrice() or 0), 100000000)  # Calculate gas price, but set minimum to 0.1 gwei for safety
         _log.info(f"[ETHEREUM] Current estimated gas price: {gas_price}")
         return gas_price
 
