@@ -17,9 +17,9 @@ RUN python3 -m pip install --no-cache-dir --upgrade -r dev_requirements.txt
 
 # Install Helm for chart linting and/or yq for doc builds if it doesn't exist
 RUN if ! command -v helm; then \
-    wget -O helm-v3.1.1-linux-amd64.tar.gz 'https://get.helm.sh/helm-v3.1.1-linux-amd64.tar.gz' && \
-    tar xzf helm-v3.1.1-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
-    rm -rf helm-v3.1.1-linux-amd64.tar.gz linux-amd64; fi && \
+    wget -O helm-v3.1.2-linux-amd64.tar.gz 'https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz' && \
+    tar xzf helm-v3.1.2-linux-amd64.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && \
+    rm -rf helm-v3.1.2-linux-amd64.tar.gz linux-amd64; fi && \
     if ! command -v yq; then \
     wget -O yq 'https://github.com/mikefarah/yq/releases/download/3.2.1/yq_linux_amd64' && \
     chmod +x yq && mv yq /usr/local/bin/; fi
