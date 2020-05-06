@@ -28,6 +28,14 @@ from dragonchain import exceptions
 from dragonchain import logger
 
 
+AVERAGE_BLOCK_TIME = 600  # in seconds (10 minutes)
+CONFIRMATIONS_CONSIDERED_FINAL = 6
+BLOCK_THRESHOLD = 10  # The number of blocks that can pass by before trying to send another transaction
+MINIMUM_SATOSHI_PER_BYTE = 10
+
+_log = logger.get_logger()
+
+
 class DiviNetwork(model.InterchainModel):
     def __init__(self, name: str, rpc_address: str, testnet: bool, b64_private_key: str, authorization: Optional[str] = None):
         self.blockchain = "divi"
@@ -41,9 +49,29 @@ class DiviNetwork(model.InterchainModel):
             self.priv_key = bit.Key.from_bytes(base64.b64decode(b64_private_key))
         self.address = self.priv_key.address
 
+    def _calculate_transaction_fee(self) -> int:
+        """Get the current satoshi/byte fee estimate
+        Returns:
+            satoshi/byte fee estimate
+        """
+        resp = self._call("estimateFee", 2)
+        satoshi_per_byte = math.ceil(
+            btc_to_satoshi(resp["feerate"]) / 1024
+        )  # feerate is in BTC/kB; divide by 1024 to convert to BTC/byte, then convert to satoshi/byte
+        _log.info(f"[BTC] Satoshis/Byte: {satoshi_per_byte}")
+        return MINIMUM_SATOSHI_PER_BYTE if satoshi_per_byte < MINIMUM_SATOSHI_PER_BYTE else satoshi_per_byte
+
+    def get_current_block(self) -> int:
+        """Get the current latest block number of the network
+        Returns:
+            The latest known mined block number on the network
+        """
+        return self._call("getBlockCount")
+
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
-        self._call()
+        if self.get_current_block() == 0:
+            raise exceptions.InterchainConnectionError("The RPC ping call failed")
 
     def _call(self, method: str, *args: Any) -> Any:
         """Call the remote divi node RPC with a method and parameters
@@ -58,7 +86,7 @@ class DiviNetwork(model.InterchainModel):
         r = requests.post(
             self.rpc_address,
             json={"method": method, "params": list(args), "id": "REPLACE ME WITH RANDOM NUMBER", "jsonrpc": "2.0"},
-            headers={"Authorization": f"Basic ${self.authorization}", "Content-Type": "text/plain"},
+            headers={"Authorization": f"Basic ${self.authorization}", "Content-Type": "application/json"},
             timeout=20,
         )
         if r.status_code != 200:
@@ -82,3 +110,13 @@ class DiviNetwork(model.InterchainModel):
             "testnet": self.testnet,
             "private_key": self.get_private_key(),
         }
+
+
+def btc_to_satoshi(btc: float) -> int:
+    """Convert a btc value to satoshis
+    Args:
+        btc: The amount of btc to convert
+    Returns:
+        The integer of satoshis for this conversion
+    """
+    return int(btc * 100000000)
