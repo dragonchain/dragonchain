@@ -49,6 +49,36 @@ class DiviNetwork(model.InterchainModel):
             self.priv_key = bit.Key.from_bytes(base64.b64decode(b64_private_key))
         self.address = self.priv_key.address
 
+    def get_private_key(self) -> str:
+        """Get the base64 encoded private key for this network
+        Returns:
+            Base64 encoded string of the private key
+        """
+        return base64.b64encode(self.priv_key.to_bytes()).decode("ascii")
+
+    def publish_transaction(self, signed_transaction: str) -> str:
+        """Publish an already signed transaction to this network
+        Args:
+            signed_transaction: The already signed transaction from self.sign_transaction
+        Returns:
+            The string of the published transaction hash
+        """
+        _log.debug(f"[divi] Publishing transaction {signed_transaction}")
+        return self._call("sendRawTransaction", signed_transaction)
+
+    def _publish_l5_transaction(self, transaction_payload: str) -> str:
+        """Publish a transaction to this network with a certain data payload
+        Args:
+            transaction_payload: The arbitrary data to send with this transaction
+        Returns:
+            The string of the published transaction hash
+        """
+        _log.info(f"[divi] Publishing transaction: payload = {transaction_payload}")
+        # Sign transaction data
+        signed_transaction = self.sign_transaction({"data": transaction_payload})
+        # Send signed transaction
+        return self.publish_transaction(signed_transaction)
+
     def _calculate_transaction_fee(self) -> int:
         """Get the current satoshi/byte fee estimate
         Returns:
@@ -56,9 +86,9 @@ class DiviNetwork(model.InterchainModel):
         """
         resp = self._call("estimateFee", 2)
         satoshi_per_byte = math.ceil(
-            btc_to_satoshi(resp["feerate"]) / 1024
-        )  # feerate is in BTC/kB; divide by 1024 to convert to BTC/byte, then convert to satoshi/byte
-        _log.info(f"[BTC] Satoshis/Byte: {satoshi_per_byte}")
+            divi_to_satoshi(resp["feerate"]) / 1024
+        )  # feerate is in divi/kB; divide by 1024 to convert to divi/byte, then convert to satoshi/byte
+        _log.info(f"[Divi] Satoshis/Byte: {satoshi_per_byte}")
         return MINIMUM_SATOSHI_PER_BYTE if satoshi_per_byte < MINIMUM_SATOSHI_PER_BYTE else satoshi_per_byte
 
     def get_current_block(self) -> int:
@@ -72,6 +102,20 @@ class DiviNetwork(model.InterchainModel):
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         if self.get_current_block() == 0:
             raise exceptions.InterchainConnectionError("The RPC ping call failed")
+
+    def _get_utxos(self) -> list:
+        """Get the utxos for this address
+            Note: This address must have been registered with the node (with register_address) for this to work
+        Returns:
+            List of bit UTXO objects
+        """
+        utxos = self._call("listUnspent", 1, 9999999, [self.address])
+        if not utxos:
+            raise exceptions.NotEnoughCrypto
+        return [
+            bit.network.meta.Unspent(divi_to_satoshi(utxo["amount"]), utxo["confirmations"], utxo["scriptPubKey"], utxo["txid"], utxo["vout"])
+            for utxo in utxos
+        ]
 
     def _call(self, method: str, *args: Any) -> Any:
         """Call the remote divi node RPC with a method and parameters
@@ -112,11 +156,11 @@ class DiviNetwork(model.InterchainModel):
         }
 
 
-def btc_to_satoshi(btc: float) -> int:
-    """Convert a btc value to satoshis
+def divi_to_satoshi(divi: float) -> int:
+    """Convert a divi value to satoshis
     Args:
-        btc: The amount of btc to convert
+        divi: The amount of divi to convert
     Returns:
         The integer of satoshis for this conversion
     """
-    return int(btc * 100000000)
+    return int(divi * 100000000)

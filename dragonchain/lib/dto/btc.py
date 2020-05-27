@@ -234,7 +234,7 @@ class BitcoinNetwork(model.InterchainModel):
         """
         registered = self._call("listlabels")
         if self.address not in registered:
-            response = self._call("importaddress", self.address, self.address, scan)
+            response = self._call("importAddress", self.address, self.address, scan)
             # Note: False on import address prevents scanning for existing utxos. If the wallet already exists with funds,
             # this needs to be True instead of False, which can take a long time (10+ minutes) to run
             if response:  # Returns null on success
