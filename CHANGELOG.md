@@ -6,6 +6,8 @@
   - Update web3, docker, bit, requests, fastjsonschema, kubernetes, redisearch, and boto3 dependencies
   - Update redisearch in helm chart to 1.6.10
   - Update redis in helm chart to 5.0.8
+- **Bugs**
+  - Fixed bug in broadcast processor causing failure when a block cannot be found in redis
 - **Development:**
   - Use helm 3.1.2 and yq 3.2.1 for dependency container and lint checking
 
