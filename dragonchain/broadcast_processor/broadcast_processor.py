@@ -223,7 +223,7 @@ async def send_notification_verification(
         )
         _log.debug(f"Notification <- {resp.status} {url}")
     except Exception:
-        _log.exception(f"Unable to send verification notification.")
+        _log.exception("Unable to send verification notification.")
 
     await broadcast_functions.remove_notification_verification_for_broadcast_async(redis_list_value)
 

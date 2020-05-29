@@ -163,7 +163,7 @@ class BinanceNetwork(model.InterchainModel):
         response_rpc = self._call_node_rpc("status", {}).json()
         response_api = self._call_node_api("tokens/BNB").json()
         if response_rpc.get("error") or response_api.get("error"):
-            raise exceptions.InterchainConnectionError(f"[BINANCE] Node ping checks failed!")
+            raise exceptions.InterchainConnectionError("[BINANCE] Node ping checks failed!")
 
     # https://docs.binance.org/api-reference/node-rpc.html#6114-query-tx
     def is_transaction_confirmed(self, transaction_hash: str) -> bool:
@@ -203,7 +203,7 @@ class BinanceNetwork(model.InterchainModel):
         # cannot check HTTP status codes, errors will return 200 :
         if response_json.get("error") is not None:
             if "interface is nil, not types.NamedAccount" in response_json["error"]["data"] and response.status_code == 500:
-                _log.warning(f"[BINANCE] Non 200 response from Binance node:")
+                _log.warning("[BINANCE] Non 200 response from Binance node:")
                 _log.warning(f"[BINANCE] response code: {response.status_code}")
                 _log.warning(f"[BINANCE] response error: {response_json['error']['data']}")
                 _log.warning("[BINANCE] This is actually expected for a zero balance address.")

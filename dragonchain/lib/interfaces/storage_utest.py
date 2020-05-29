@@ -191,4 +191,4 @@ class TestStorageInterface(unittest.TestCase):
     def test_save_error_message(self, mock_time):
         storage.put = MagicMock()
         storage.save_error_message("some message")
-        storage.put.assert_called_once_with(f"error_testing_123.log", b"some message", should_cache=False)
+        storage.put.assert_called_once_with("error_testing_123.log", b"some message", should_cache=False)
