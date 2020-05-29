@@ -246,7 +246,7 @@ async def process_blocks_for_broadcast(session: aiohttp.ClientSession) -> None: 
         _log.info(f"[BROADCAST PROCESSOR] Checking block {block_id}")
         current_level = await broadcast_functions.get_current_block_level_async(block_id)
         if current_level == -1:
-            _log.warning(f"Matchmaking does not have record of claim for block {block_id}.")
+            _log.warning(f"Failed to lookup current level for block {block_id}.")
             continue
         try:
             claim: Any = matchmaking.get_or_create_claim_check(block_id, _requirements)
