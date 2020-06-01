@@ -155,7 +155,7 @@ dragonchain:
 redis:
   image:
     repository: docker.io/redis
-    tag: 5.0.8-alpine
+    tag: 6.0.4-alpine
   storage:
     spec:
       storageClassName: standard
@@ -168,7 +168,7 @@ redis:
 redisearch:
   image:
     repository: docker.io/redislabs/redisearch
-    tag: 1.6.10
+    tag: 1.6.13
   storage:
     spec:
       storageClassName: standard

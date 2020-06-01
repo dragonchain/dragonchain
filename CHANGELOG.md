@@ -3,13 +3,13 @@
 ## 4.4.1
 
 - **Packaging:**
-  - Update web3, docker, bit, requests, fastjsonschema, kubernetes, redisearch, and boto3 dependencies
-  - Update redisearch in helm chart to 1.6.10
-  - Update redis in helm chart to 5.0.8
+  - Update web3, docker, bit, requests, fastjsonschema, kubernetes, redis, redisearch, Flask, pycoin, and boto3 dependencies
+  - Update redisearch in helm chart to 1.6.13
+  - Update redis in helm chart to 6.0.3
 - **Bugs**
   - Fixed bug in broadcast processor causing failure when a block cannot be found in redis
 - **Development:**
-  - Use helm 3.1.2 and yq 3.2.1 for dependency container and lint checking
+  - Use helm 3.2.1 and yq 3.3.0 for dependency container and lint checking
 
 ## 4.4.0
 

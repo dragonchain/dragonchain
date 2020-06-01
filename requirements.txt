@@ -1,12 +1,12 @@
-boto3==1.12.24
-redis==3.4.1
+boto3==1.13.20
+redis==3.5.3
 apscheduler==3.6.3
 jsonpath==0.82
-Flask==1.1.1
+Flask==1.1.2
 requests==2.23.0
 fastjsonschema==2.14.4
 secp256k1==0.13.2
-web3==5.7.0
+web3==5.10.0
 kubernetes==11.0.0
 docker==4.2.0
 gunicorn[gevent]==20.0.4
@@ -16,5 +16,5 @@ base58==2.0.0
 bit==0.6.1
 redisearch==0.9.0
 bnb-tx==0.0.4
-pycoin==0.90.20190728
+pycoin==0.90.20200322
 mnemonic==0.19
