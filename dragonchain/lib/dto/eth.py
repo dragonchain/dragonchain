@@ -271,7 +271,7 @@ class EthereumNetwork(model.InterchainModel):
         Returns:
             Gas price estimate in wei
         """
-        _log.debug(f"[ETHEREUM] Getting estimated gas price")
+        _log.debug("[ETHEREUM] Getting estimated gas price")
         gas_price = max(int(self.w3.eth.generateGasPrice() or 0), 100000000)  # Calculate gas price, but set minimum to 0.1 gwei for safety
         _log.info(f"[ETHEREUM] Current estimated gas price: {gas_price}")
         return gas_price
