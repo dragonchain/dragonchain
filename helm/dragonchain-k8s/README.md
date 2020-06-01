@@ -2,7 +2,7 @@
 
 [Dragonchain](https://dragonchain.com/) is an enterprise blockchain platform which simplifies the integration of real business applications onto a blockchain.
 
-We recommend visiting [docs.dragonchain.com](https://docs.dragonchain.com/) to get started with using Dragonchain.
+We recommend visiting [docs.dragonchain.com](https://docs.dragonchain.com/) to get started with using Dragonchain. 
 
 ## Information
 
