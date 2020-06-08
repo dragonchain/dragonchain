@@ -27,6 +27,9 @@ from dragonchain.lib.dto import model
 from dragonchain import exceptions
 from dragonchain import logger
 
+DRAGONCHAIN_MAINNET_NODE = "https://rpc.diviproject.org/mainnet"
+DRAGONCHAIN_TESTNET_NODE = "https://rpc.diviproject.org/testnet"
+DRAGONCHAIN_NODE_AUTHORIZATION = ""  # DO NOT COMMIT
 
 AVERAGE_BLOCK_TIME = 600  # in seconds (10 minutes)
 CONFIRMATIONS_CONSIDERED_FINAL = 6
@@ -34,6 +37,92 @@ BLOCK_THRESHOLD = 10  # The number of blocks that can pass by before trying to s
 MINIMUM_SATOSHI_PER_BYTE = 10
 
 _log = logger.get_logger()
+
+
+def new_from_user_input(user_input: Dict[str, Any]) -> "DiviNetwork":
+    """Create a new DiviNetwork model from user input
+    Args:
+        user_input: User dictionary input (assumed already passing create_divi_interchain_schema)
+    Returns:
+        Instantiated DiviNetwork client
+    Raises:
+        exceptions.BadRequest: With bad input
+    """
+    dto_version = user_input.get("version")
+    if dto_version == "1":
+        if not user_input.get("private_key"):
+            # We need to create a private key if not provided
+            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+            user_input["utxo_scan"] = False
+        try:
+            # Check if the provided private key is in WIF format
+            key = bit.wif_to_key(user_input["private_key"])
+            testnet = key.version == "test"
+            if isinstance(user_input.get("testnet"), bool) and testnet != user_input["testnet"]:
+                raise exceptions.BadRequest(f"WIF key was {'testnet' if testnet else 'mainnet'} which doesn't match provided testnet bool")
+            # Extract values from WIF
+            user_input["testnet"] = testnet
+            user_input["private_key"] = base64.b64encode(key.to_bytes()).decode("ascii")
+        except Exception as e:
+            if isinstance(e, exceptions.BadRequest):
+                raise
+            # Provided key is not WIF
+            if not isinstance(user_input.get("testnet"), bool):
+                raise exceptions.BadRequest("Parameter boolean 'testnet' must be provided if key is not WIF")
+
+        # Check for bitcoin node address
+        if not user_input.get("rpc_address"):
+            # Default to Dragonchain managed nodes if not provided
+            user_input["rpc_address"] = DRAGONCHAIN_TESTNET_NODE if user_input["testnet"] else DRAGONCHAIN_MAINNET_NODE
+            user_input["rpc_authorization"] = DRAGONCHAIN_NODE_AUTHORIZATION
+
+        # Create the actual client and check that the given node is reachable
+        try:
+            client = DiviNetwork(
+                name=user_input["name"],
+                testnet=user_input["testnet"],
+                b64_private_key=user_input["private_key"],
+                rpc_address=user_input["rpc_address"],
+                authorization=user_input.get("rpc_authorization"),  # Can be none
+            )
+        except Exception:
+            raise exceptions.BadRequest("Provided private key did not successfully decode into a valid key")
+        # First check that the bitcoin node is reachable
+        try:
+            client.ping()
+        except Exception as e:
+            raise exceptions.BadRequest(f"Provided divi node doesn't seem reachable. Error: {e}")
+        # Now finally register the given address
+        try:
+            client.register_address(user_input.get("utxo_scan") or False)
+        except exceptions.InterchainConnectionError as e:
+            raise exceptions.BadRequest(f"Error registering address with divi node. Error: {e}")
+
+        return client
+    else:
+        raise exceptions.BadRequest(f"User input version {dto_version} not supported")
+
+
+def new_from_at_rest(divi_network_at_rest: Dict[str, Any]) -> "DiviNetwork":
+    """Instantiate a new DiviNetwork model from storage
+    Args:
+        divi_network_at_rest: The dto of the at-rest network from storage
+    Returns:
+        Instantiated DiviNetwork client
+    Raises:
+        NotImplementedError: When the version of the dto passed in is unknown
+    """
+    dto_version = divi_network_at_rest.get("version")
+    if dto_version == "1":
+        return DiviNetwork(
+            name=divi_network_at_rest["name"],
+            rpc_address=divi_network_at_rest["rpc_address"],
+            testnet=divi_network_at_rest["testnet"],
+            b64_private_key=divi_network_at_rest["private_key"],
+            authorization=divi_network_at_rest["authorization"],
+        )
+    else:
+        raise NotImplementedError(f"DTO version {dto_version} not supported for divi network")
 
 
 class DiviNetwork(model.InterchainModel):
@@ -63,8 +152,8 @@ class DiviNetwork(model.InterchainModel):
         Returns:
             The string of the published transaction hash
         """
-        _log.debug(f"[divi] Publishing transaction {signed_transaction}")
-        return self._call("sendRawTransaction", signed_transaction)
+        _log.debug(f"[DIVI] Publishing transaction {signed_transaction}")
+        return self._call("sendrawtransaction", signed_transaction)
 
     def _publish_l5_transaction(self, transaction_payload: str) -> str:
         """Publish a transaction to this network with a certain data payload
@@ -73,7 +162,7 @@ class DiviNetwork(model.InterchainModel):
         Returns:
             The string of the published transaction hash
         """
-        _log.info(f"[divi] Publishing transaction: payload = {transaction_payload}")
+        _log.info(f"[DIVI] Publishing transaction: payload = {transaction_payload}")
         # Sign transaction data
         signed_transaction = self.sign_transaction({"data": transaction_payload})
         # Send signed transaction
@@ -84,11 +173,11 @@ class DiviNetwork(model.InterchainModel):
         Returns:
             satoshi/byte fee estimate
         """
-        resp = self._call("estimateFee", 2)
+        resp = self._call("estimatefee", 2)
         satoshi_per_byte = math.ceil(
             divi_to_satoshi(resp["feerate"]) / 1024
         )  # feerate is in divi/kB; divide by 1024 to convert to divi/byte, then convert to satoshi/byte
-        _log.info(f"[Divi] Satoshis/Byte: {satoshi_per_byte}")
+        _log.info(f"[DIVI] Satoshis/Byte: {satoshi_per_byte}")
         return MINIMUM_SATOSHI_PER_BYTE if satoshi_per_byte < MINIMUM_SATOSHI_PER_BYTE else satoshi_per_byte
 
     def get_current_block(self) -> int:
@@ -96,7 +185,32 @@ class DiviNetwork(model.InterchainModel):
         Returns:
             The latest known mined block number on the network
         """
-        return self._call("getBlockCount")
+        return self._call("getblockcount")
+
+    def register_address(self, scan: bool = False) -> None:
+        """Register this network's address with it's divi node to watch for UTXOs
+        Args:
+            scan: Boolean whether or not to scan the blockchain for existing UTXOs
+                This is necessary if the address that's being imported already has funds. This can take a long time (10+ minutes)
+        Raises:
+            exceptions.AddressRegistrationFailure: When the divi node failed to register the address
+        """
+        registered = self._call("listaccounts")
+        if self.address not in registered:
+            response = self._call("importaddress", self.address, self.address, scan)
+            # Note: False on import address prevents scanning for existing utxos. If the wallet already exists with funds,
+            # this needs to be True instead of False, which can take a long time (10+ minutes) to run
+            if response:  # Returns null on success
+                raise exceptions.AddressRegistrationFailure("Address failed registering")
+
+    def should_retry_broadcast(self, last_sent_block: int) -> bool:
+        """Check whether a new broadcast should be attempted, given a number of blocks past (for L5)
+        Args:
+            last_sent_block: The block when the transaction was last attempted to be sent
+        Returns:
+            Boolean whether a broadcast should be re-attempted
+        """
+        return self.get_current_block() - last_sent_block > BLOCK_THRESHOLD
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
@@ -109,7 +223,7 @@ class DiviNetwork(model.InterchainModel):
         Returns:
             List of bit UTXO objects
         """
-        utxos = self._call("listUnspent", 1, 9999999, [self.address])
+        utxos = self._call("listunspent", 1, 9999999, [self.address])
         if not utxos:
             raise exceptions.NotEnoughCrypto
         return [
@@ -139,6 +253,71 @@ class DiviNetwork(model.InterchainModel):
         if response.get("error") or response.get("errors"):
             raise exceptions.InterchainConnectionError(f"The RPC call got an error response: {response}")
         return response["result"]
+
+    def sign_transaction(self, raw_transaction: Dict[str, Any]) -> str:
+        """Sign a transaction for this network
+        Args:
+            raw_transaction: The dictionary of the raw transaction containing:
+                outputs: Optional list of dictionary of outputs to send btc to various places
+                    to: Address to send this bitcoin
+                    value: Amount of value to send to this address in btc (int, float, or string)
+                fee: Optional integer of satoshis/byte to use for the fee
+                change: Optional string of the change address to use (defaults to its own address)
+                message: Optional string for arbitrary data to add with this transaction
+        Returns:
+            Hex string of the signed transaction
+        """
+        _log.info(f"[DIVI] Signing raw transaction: {raw_transaction}")
+
+        outputs: list = []
+        if raw_transaction.get("outputs"):
+            outputs = [(x["to"], x["value"], "divi") for x in raw_transaction["outputs"]]
+
+        divi_transaction = self.priv_key.create_transaction(
+            outputs,
+            unspents=self._get_utxos(),
+            fee=raw_transaction.get("fee") or self._calculate_transaction_fee(),
+            leftover=raw_transaction.get("change") or self.address,
+            message=raw_transaction.get("data"),
+        )
+        return self.priv_key.sign_transaction(divi_transaction)
+
+    def is_transaction_confirmed(self, transaction_hash: str) -> bool:
+        """Check if a transaction is considered confirmed
+        Args:
+            transaction_hash: The hash of the transaction to check
+        Returns:
+            Boolean if the transaction has received enough confirmations to be considered confirmed
+        Raises:
+            exceptions.TransactionNotFound: When the transaction could not be found (may have been dropped)
+        """
+        _log.info(f"[DIVI] Getting confirmations for {transaction_hash}")
+        try:
+            confirmations = self._call("getrawtransaction", transaction_hash, True).get("confirmations") or 0
+        except exceptions.InterchainConnectionError:
+            _log.warning("The transaction may have been dropped.")
+            raise exceptions.TransactionNotFound(f"Transaction {transaction_hash} not found")
+        _log.info(f"[DIVI] {confirmations} confirmations")
+        return confirmations >= CONFIRMATIONS_CONSIDERED_FINAL
+
+    def check_balance(self) -> int:
+        """Check the balance of the address for this network
+        Returns:
+            The amount of satoshi in the account
+        """
+        _log.info(f"[DIVI] Checking balance for {self.address}")
+        divi_balance = self._call("getreceivedbyaddress", self.address, CONFIRMATIONS_CONSIDERED_FINAL)
+        return divi_to_satoshi(divi_balance)
+
+    def get_transaction_fee_estimate(self, byte_count: int = 262) -> int:
+        """Calculate the transaction fee estimate for a transaction given current fee rates
+        Args:
+            byte_count: The number of bytes for the transaction to use for this calculation. Defaults to 262
+        Returns:
+            The amount of estimated transaction fee cost in satoshis
+        """
+        satoshi_per_byte = self._calculate_transaction_fee()
+        return int(byte_count * satoshi_per_byte)
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export this network to be saved in storage
