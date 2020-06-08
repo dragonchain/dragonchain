@@ -83,30 +83,33 @@ class DCKeys(object):
     Class for holding keys to sign/verify transactions/blocks of individual dragonchains
     """
 
-    def __init__(self, dc_id: str = "", pull_keys: bool = True):
+    def __init__(self, dc_id: str = "", pull_keys: bool = True, override_level: Optional[str] = None):
         """Constructor to retrieve and initialize keys for a dragonchain
         Args:
             dc_id: string of the dragonchain id to initialize the keys (defaults to self)
             pull_keys: boolean whether or not to pull key info from storage (if own keys) or matchmaking (if other chain keys) on initialization
         """
         if pull_keys:
-            identity = matchmaking.get_registration(dc_id)
+            try:
+                identity = matchmaking.get_registration(dc_id)
+            except exceptions.NotFound:
+                identity = {}
             self.initialize(
-                level=int(identity["level"]),
-                scheme=identity["proofScheme"],
+                level=int(identity.get("level") or override_level),
+                scheme=identity.get("proofScheme"),
                 public_key_string=dc_id,
-                hash_type=identity["hashAlgo"],
-                encryption=identity["encryptionAlgo"],
+                hash_type=identity.get("hashAlgo"),
+                encryption=identity.get("encryptionAlgo"),
             )
 
     def initialize(
         self,
-        level: int = 1,
-        scheme: str = "trust",
+        level: Optional[int] = 1,
+        scheme: Optional[str] = "trust",
         private_key_string: Optional[str] = None,
         public_key_string: Optional[str] = None,
-        hash_type: str = "blake2b",
-        encryption: str = "secp256k1",
+        hash_type: Optional[str] = "blake2b",
+        encryption: Optional[str] = "secp256k1",
     ) -> "DCKeys":
         """Initializes the internal state of the keys object with local data that is passed in
         Args:
@@ -118,10 +121,14 @@ class DCKeys(object):
         """
         self.priv = None
         self.pub = None
-        self.set_scheme(scheme)
-        self.set_level(level)
-        self.set_hash(hash_type)
-        self.set_encryption(encryption)
+        if scheme:
+            self.set_scheme(scheme)
+        if level:
+            self.set_level(level)
+        if hash_type:
+            self.set_hash(hash_type)
+        if encryption:
+            self.set_encryption(encryption)
         if public_key_string is not None:
             self.set_public_key(public_key_string)
         if private_key_string is not None:

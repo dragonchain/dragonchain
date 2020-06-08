@@ -18,7 +18,7 @@
 import os
 import time
 import math
-from typing import Set, Union, Tuple, List, Iterable, TYPE_CHECKING
+from typing import Set, Union, Tuple, List, Iterable, TYPE_CHECKING, Optional
 
 from dragonchain.lib.dao import block_dao
 from dragonchain.lib.dto import l3_block_model
@@ -27,7 +27,7 @@ from dragonchain.lib import broadcast
 from dragonchain.lib import matchmaking
 from dragonchain.lib import party
 from dragonchain.lib import queue
-from dragonchain import logger
+from dragonchain import logger, exceptions
 from dragonchain.transaction_processor import shared_functions
 
 if TYPE_CHECKING:
@@ -106,8 +106,8 @@ def get_new_blocks() -> Union[Tuple[None, None], Tuple["L1Headers", List["l2_blo
     return queue.get_next_l2_blocks()
 
 
-def get_verifying_keys(chain_id: str) -> keys.DCKeys:
-    return keys.DCKeys(chain_id)
+def get_verifying_keys(chain_id: str, override_level: Optional[str] = None) -> keys.DCKeys:
+    return keys.DCKeys(chain_id, override_level=override_level)
 
 
 def verify_blocks(l2_blocks: Iterable["l2_block_model.L2BlockModel"], l1_headers: "L1Headers") -> Tuple[int, int, List[str], List[str]]:
@@ -141,14 +141,18 @@ def verify_block(
     block: "l2_block_model.L2BlockModel", clouds: Set[str], regions: Set[str], ddss: int, l2_count: int
 ) -> Tuple[Set[str], Set[str], int, int]:
     try:
-        l2_verify_keys = get_verifying_keys(block.dc_id)
+        l2_verify_keys = get_verifying_keys(block.dc_id, "2")
         _log.info(f"[L3] Verifying proof for L2 block id {block.block_id} from {block.dc_id}")
         if l2_verify_keys.verify_block(block):
             l2_count += 1
             l2_ddss = block.current_ddss or "0"
-            matchmaking_config = matchmaking.get_registration(block.dc_id)
-            clouds.add(matchmaking_config["cloud"])
-            regions.add(matchmaking_config["region"])
+            try:
+                matchmaking_config = matchmaking.get_registration(block.dc_id)
+                clouds.add(matchmaking_config["cloud"])
+                regions.add(matchmaking_config["region"])
+            except exceptions.NotFound:
+                _log.info("Unable to pull matchmaking record for this block")
+                pass
             ddss += int(float(l2_ddss))
             _log.info(f"[L3] Finished processing valid L2 block {block.block_id}")
         else:
