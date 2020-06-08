@@ -95,21 +95,21 @@ class DCKeys(object):
             except exceptions.NotFound:
                 identity = {}
             self.initialize(
-                level=int(identity.get("level") or override_level),
-                scheme=identity.get("proofScheme"),
+                level=int(identity.get("level") or override_level or 1),
+                scheme=identity.get("proofScheme") or "trust",
                 public_key_string=dc_id,
-                hash_type=identity.get("hashAlgo"),
-                encryption=identity.get("encryptionAlgo"),
+                hash_type=identity.get("hashAlgo") or "blake2b",
+                encryption=identity.get("encryptionAlgo") or "secp256k1",
             )
 
     def initialize(
         self,
-        level: Optional[int] = 1,
-        scheme: Optional[str] = "trust",
+        level: int = 1,
+        scheme: str = "trust",
         private_key_string: Optional[str] = None,
         public_key_string: Optional[str] = None,
-        hash_type: Optional[str] = "blake2b",
-        encryption: Optional[str] = "secp256k1",
+        hash_type: str = "blake2b",
+        encryption: str = "secp256k1",
     ) -> "DCKeys":
         """Initializes the internal state of the keys object with local data that is passed in
         Args:
@@ -121,14 +121,10 @@ class DCKeys(object):
         """
         self.priv = None
         self.pub = None
-        if scheme:
-            self.set_scheme(scheme)
-        if level:
-            self.set_level(level)
-        if hash_type:
-            self.set_hash(hash_type)
-        if encryption:
-            self.set_encryption(encryption)
+        self.set_scheme(scheme)
+        self.set_level(level)
+        self.set_hash(hash_type)
+        self.set_encryption(encryption)
         if public_key_string is not None:
             self.set_public_key(public_key_string)
         if private_key_string is not None:
