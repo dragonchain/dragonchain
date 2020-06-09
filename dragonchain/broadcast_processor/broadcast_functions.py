@@ -24,6 +24,7 @@ from dragonchain.lib import dragonnet_config
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
 from dragonchain import exceptions
+from dragonchain.broadcast_processor.broadcast_processor import get_all_notification_endpoints
 
 
 IN_FLIGHT_KEY = "broadcast:in-flight"
@@ -241,8 +242,10 @@ def set_receieved_verification_for_block_from_chain_sync(block_id: str, level: i
     required = dragonnet_config.DRAGONNET_CONFIG[f"l{level}"]["nodesRequired"]
 
     if HAS_VERIFICATION_NOTIFICATIONS:
-        # Schedule the notification of this verification
-        schedule_notification_for_broadcast_sync(verification_storage_location(block_id, level, chain_id))
+        # check if notification has to be stored for this level
+        if len(get_all_notification_endpoints(str(level))) > 0:
+            # Schedule the notification of this verification
+            schedule_notification_for_broadcast_sync(verification_storage_location(block_id, level, chain_id))
 
     # Check if this block needs to be promoted to the next level
     if verifications >= required:
