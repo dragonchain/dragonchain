@@ -590,6 +590,60 @@ publish_interchain_transaction_schema_v1 = {
 
 # BITCOIN INTERCHAIN #
 
+create_divi_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "name": {"type": "string"},
+        "testnet": {"type": "boolean"},
+        "private_key": {"type": "string"},
+        "utxo_scan": {"type": "boolean"},
+        "rpc_address": {"type": "string"},
+        "rpc_authorization": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["name", "version"],
+}
+
+# Same as create without required name field
+update_divi_interchain_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "testnet": {"type": "boolean"},
+        "private_key": {"type": "string"},
+        "utxo_scan": {"type": "boolean"},
+        "rpc_address": {"type": "string"},
+        "rpc_authorization": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["version"],
+}
+
+
+divi_transaction_schema_v1 = {
+    "type": "object",
+    "properties": {
+        "version": {"type": "string", "enum": ["1"]},
+        "outputs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"to": {"type": "string"}, "value": {"type": "number"}},
+                "additionalProperties": False,
+                "required": ["to", "value"],
+            },
+        },
+        "fee": {"type": "integer"},
+        "data": {"type": "string"},
+        "change": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "required": ["version"],
+}
+
+# DIVI INTERCHAIN #
+
 create_bitcoin_interchain_schema_v1 = {
     "type": "object",
     "properties": {

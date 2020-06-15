@@ -20,6 +20,7 @@ from typing import Dict, Any, List, cast, TYPE_CHECKING
 from dragonchain.lib.dto import eth
 from dragonchain.lib.dto import btc
 from dragonchain.lib.dto import bnb
+from dragonchain.lib.dto import divi
 from dragonchain.lib.dao import interchain_dao
 from dragonchain import exceptions
 from dragonchain import logger
@@ -62,6 +63,17 @@ def _binance_client_to_user_dto_v1(bnb_client: bnb.BinanceNetwork) -> Dict[str, 
         "api_port": bnb_client.api_port,
         "testnet": bnb_client.testnet,
         "address": bnb_client.address,
+    }
+
+
+def _divi_client_to_user_dto_v1(divi_client: divi.DiviNetwork) -> Dict[str, any]:
+    return {
+        "version": "1",
+        "blockchain": divi_client.blockchain,
+        "name": divi_client.name,
+        "rpc_address": divi_client.rpc_address,
+        "testnet": divi_client.testnet,
+        "address": divi_client.address,
     }
 
 

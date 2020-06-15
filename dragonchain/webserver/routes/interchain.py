@@ -41,6 +41,10 @@ _validate_binance_network_create_v1 = fastjsonschema.compile(schema.create_binan
 _validate_binance_network_update_v1 = fastjsonschema.compile(schema.update_binance_interchain_schema_v1)
 _validate_binance_transaction_v1 = fastjsonschema.compile(schema.bnb_transaction_schema_v1)
 
+_validate_divi_network_create_v1 = fastjsonschema.compile(schema.create_divi_interchain_schema_v1)
+_validate_divi_network_update_v1 = fastjsonschema.compile(schema.update_divi_interchain_schema_v1)
+_validate_divi_transaction_v1 = fastjsonschema.compile(schema.divi_transaction_schema_v1)
+
 _validate_set_default_interchain_v1 = fastjsonschema.compile(schema.set_default_interchain_schema_v1)
 _validate_publish_interchain_transaction_v1 = fastjsonschema.compile(schema.publish_interchain_transaction_schema_v1)
 
@@ -50,16 +54,19 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/interchains/bitcoin", "create_bitcoin_interchain_v1", create_bitcoin_interchain_v1, methods=["POST"])
     app.add_url_rule("/v1/interchains/ethereum", "create_ethereum_interchain_v1", create_ethereum_interchain_v1, methods=["POST"])
     app.add_url_rule("/v1/interchains/binance", "create_binance_interchain_v1", create_binance_interchain_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/divi", "create_divi_interchain_v1", create_divi_interchain_v1, methods=["POST"])
     # Update Interchain Network
     app.add_url_rule("/v1/interchains/bitcoin/<name>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
     app.add_url_rule("/v1/interchains/ethereum/<name>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
     app.add_url_rule("/v1/interchains/binance/<name>", "update_binance_interchain_v1", update_binance_interchain_v1, methods=["PATCH"])
+    app.add_url_rule("/v1/interchain/divi/<name>", "update_divi_interchain_v1", update_divi_interchain_v1, method=["PATCH"])
     # Create Interchain Transaction
     app.add_url_rule("/v1/interchains/bitcoin/<name>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
     app.add_url_rule(
         "/v1/interchains/ethereum/<name>/transaction", "create_ethereum_transaction_v1", create_ethereum_transaction_v1, methods=["POST"]
     )
     app.add_url_rule("/v1/interchains/binance/<name>/transaction", "create_binance_transaction_v1", create_binance_transaction_v1, methods=["POST"])
+    app.add_url_rule("/v1/interchains/divi/<name>/transaction", "create_divi_transaction_v1", create_divi_transaction_v1, methods=["POST"])
     # Publish interchain transaction
     app.add_url_rule("/v1/interchains/transaction/publish", "publish_interchain_transaction_v1", publish_interchain_transaction_v1, methods=["POST"])
     # List
@@ -119,6 +126,19 @@ def create_binance_interchain_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(201, interchain.create_binance_interchain_v1(data))
 
 
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain")
+def create_divi_interchain_v1(**kwargs) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_divi_network_create_v1(data)
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
+
+    return helpers.flask_http_response(201, interchain.create_divi_interchain_v1(data))
+
+
 @request_authorizer.Authenticated(api_resource="interchains", api_operation="update", api_name="update_interchain")
 def update_bitcoin_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
@@ -158,6 +178,19 @@ def update_binance_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[st
     return helpers.flask_http_response(200, interchain.update_binance_interchain_v1(name, data))
 
 
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="update", api_name="update_interchain")
+def update_divi_interchain_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_divi_network_update_v1(data)
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
+
+    return helpers.flask_http_response(200, interchain.update_divi_interchain_v1(name, data))
+
+
 @request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction")
 def create_bitcoin_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     if not flask.request.is_json:
@@ -195,6 +228,19 @@ def create_binance_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[s
         raise exceptions.ValidationException(str(e))
 
     return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("binance", name, data))
+
+
+@request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="create_interchain_transaction")
+def create_divi_transaction_v1(name: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
+    if not flask.request.is_json:
+        raise exceptions.BadRequest("Could not parse JSON")
+    data = flask.request.json
+    try:
+        _validate_divi_transaction_v1(data)
+    except fastjsonschema.JsonSchemaException as e:
+        raise exceptions.ValidationException(str(e))
+
+    return helpers.flask_http_response(200, interchain.sign_interchain_transaction_v1("divi", name, data))
 
 
 @request_authorizer.Authenticated(api_resource="interchains", api_operation="create", api_name="publish_interchain_transaction")
