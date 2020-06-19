@@ -61,6 +61,17 @@ redisearch:
     requests:
       cpu: 50m
       memory: 300Mi
+  image:
+    repository: docker.io/redislabs/redisearch
+    tag: 1.6.13
+  storage:
+    spec:
+      storageClassName: standard
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
 
 # Webserver configuration
 webserver:
@@ -155,20 +166,7 @@ dragonchain:
 redis:
   image:
     repository: docker.io/redis
-    tag: 5.0.8-alpine
-  storage:
-    spec:
-      storageClassName: standard
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-
-redisearch:
-  image:
-    repository: docker.io/redislabs/redisearch
-    tag: 1.6.10
+    tag: 6.0.5-alpine
   storage:
     spec:
       storageClassName: standard
