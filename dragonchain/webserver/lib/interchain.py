@@ -115,6 +115,15 @@ def create_binance_interchain_v1(user_data: Dict[str, Any], conflict_check: bool
     return _get_output_dto_v1(client)
 
 
+def create_divi_interchain_v1(user_data: Dict[str, Any], conflict_check: bool = True) -> Dict[str, Any]:
+    client = divi.new_from_user_input(user_data)
+    if conflict_check and interchain_dao.does_interchain_exist("divi", client.name):
+        _log.error("Divi network is already registered")
+        raise exceptions.InterchainConflict(f"A divi interchain network with the name {client.name} is already registered")
+    interchain_dao.save_interchain_client(client)
+    return _get_output_dto_v1(client)
+
+
 def update_bitcoin_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
     # Get current client
     current_client = cast(btc.BitcoinNetwork, interchain_dao.get_interchain_client("bitcoin", name))
@@ -162,6 +171,23 @@ def update_binance_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[s
     }
     # Create and save updated client
     return create_binance_interchain_v1(client_data, conflict_check=False)
+
+
+def update_divi_interchain_v1(name: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    # Get current client
+    current_client = cast(divi.DiviNetwork, interchain_dao.get_interchain_client("divi", name))
+    # Merge user data with existing data
+    client_data = {
+        "version": "1",
+        "name": name,
+        "testnet": user_data["testnet"] if isinstance(user_data.get("testnet"), bool) else current_client.testnet,
+        "private_key": user_data["private_key"] if isinstance(user_data.get("private_key"), str) else current_client.get_private_key(),
+        "rpc_address": user_data["rpc_address"] if isinstance(user_data.get("rpc_address"), str) else current_client.rpc_address,
+        "rpc_authorization": user_data["rpc_authorization"] if isinstance(user_data.get("rpc_authorization"), str) else current_client.authorization,
+        "utxo_scan": user_data["utxo_scan"] if isinstance(user_data.get("utxo_scan"), bool) else False,
+    }
+    # Create and save updated client
+    return create_divi_interchain_v1(client_data, conflict_check=False)
 
 
 def get_interchain_v1(blockchain: str, name: str) -> Dict[str, Any]:

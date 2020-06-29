@@ -244,11 +244,11 @@ class DiviNetwork(model.InterchainModel):
         r = requests.post(
             self.rpc_address,
             json={"method": method, "params": list(args), "id": "REPLACE ME WITH RANDOM NUMBER", "jsonrpc": "2.0"},
-            headers={"Authorization": f"Basic ${self.authorization}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {self.authorization}", "Content-Type": "application/json"},
             timeout=20,
         )
         if r.status_code != 200:
-            raise exceptions.InterchainConnectionError(f"Error from bitcoin node with http status code {r.status_code} | {r.text}")
+            raise exceptions.InterchainConnectionError(f"Error from divi node with http status code {r.status_code} | {r.text}")
         response = r.json()
         if response.get("error") or response.get("errors"):
             raise exceptions.InterchainConnectionError(f"The RPC call got an error response: {response}")

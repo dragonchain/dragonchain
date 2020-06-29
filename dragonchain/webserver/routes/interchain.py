@@ -59,7 +59,7 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/v1/interchains/bitcoin/<name>", "update_bitcoin_interchain_v1", update_bitcoin_interchain_v1, methods=["PATCH"])
     app.add_url_rule("/v1/interchains/ethereum/<name>", "update_ethereum_interchain_v1", update_ethereum_interchain_v1, methods=["PATCH"])
     app.add_url_rule("/v1/interchains/binance/<name>", "update_binance_interchain_v1", update_binance_interchain_v1, methods=["PATCH"])
-    app.add_url_rule("/v1/interchain/divi/<name>", "update_divi_interchain_v1", update_divi_interchain_v1, method=["PATCH"])
+    app.add_url_rule("/v1/interchain/divi/<name>", "update_divi_interchain_v1", update_divi_interchain_v1, methods=["PATCH"])
     # Create Interchain Transaction
     app.add_url_rule("/v1/interchains/bitcoin/<name>/transaction", "create_bitcoin_transaction_v1", create_bitcoin_transaction_v1, methods=["POST"])
     app.add_url_rule(
