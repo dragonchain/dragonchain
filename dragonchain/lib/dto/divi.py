@@ -137,6 +137,9 @@ class DiviNetwork(model.InterchainModel):
         else:
             self.priv_key = bit.Key.from_bytes(base64.b64decode(b64_private_key))
         self.address = self.priv_key.address
+        print(self.address)
+        print(self.priv_key.segwit_address)
+        print(self.priv_key)
 
     def get_private_key(self) -> str:
         """Get the base64 encoded private key for this network
@@ -196,8 +199,13 @@ class DiviNetwork(model.InterchainModel):
             exceptions.AddressRegistrationFailure: When the divi node failed to register the address
         """
         registered = self._call("listaccounts")
+        print("REGISTERED RESPONSE")
+        print(registered)
         if self.address not in registered:
+            print("ADDRESS NOT REGISTERED")
             response = self._call("importaddress", self.address, self.address, scan)
+            print("ADDRESS REGISTRATION RESPONSE")
+            print(response)
             # Note: False on import address prevents scanning for existing utxos. If the wallet already exists with funds,
             # this needs to be True instead of False, which can take a long time (10+ minutes) to run
             if response:  # Returns null on success
@@ -215,7 +223,8 @@ class DiviNetwork(model.InterchainModel):
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""
         if self.get_current_block() == 0:
-            raise exceptions.InterchainConnectionError("The RPC ping call failed")
+            _log.info("Current block is 0 but thats ok for now")
+            # raise exceptions.InterchainConnectionError("The RPC ping call failed")
 
     def _get_utxos(self) -> list:
         """Get the utxos for this address
@@ -244,7 +253,7 @@ class DiviNetwork(model.InterchainModel):
         r = requests.post(
             self.rpc_address,
             json={"method": method, "params": list(args), "id": "REPLACE ME WITH RANDOM NUMBER", "jsonrpc": "2.0"},
-            headers={"Authorization": f"Bearer {self.authorization}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Basic {self.authorization}", "Content-Type": "application/json"},
             timeout=20,
         )
         if r.status_code != 200:
