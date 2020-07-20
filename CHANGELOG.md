@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.0
+
+- **Feature:**
+  - Add new endpoint `GET /v1/verifications/interchains/<block_id>` for getting the subsequent interchain broadcasts
+
 ## 4.4.1
 
 - **Packaging:**

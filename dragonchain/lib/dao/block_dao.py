@@ -105,3 +105,9 @@ def insert_block(block: "model.BlockModel") -> None:
 
     #  Upload ref
     storage.put_object_as_json(f"{FOLDER}/{LAST_CLOSED_KEY}", last_block_ref)
+
+
+def insert_l5_verification(storage_location: str, block: "model.BlockModel") -> None:
+    if redisearch.ENABLED:
+        index_id = storage_location.split("/")[1]
+        redisearch.put_document(redisearch.Indexes.verification.value, index_id, block.export_as_search_index(), upsert=True)

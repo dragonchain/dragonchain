@@ -848,7 +848,11 @@ permission_document_schema_v1 = {
                     "verifications": {
                         "type": "object",
                         "properties": add_crud_default_properties(
-                            {"get_verifications": default_endpoint_property_schema, "get_pending_verifications": default_endpoint_property_schema}
+                            {
+                                "get_verifications": default_endpoint_property_schema,
+                                "get_pending_verifications": default_endpoint_property_schema,
+                                "query_interchain_verifications": default_endpoint_property_schema,
+                            }
                         ),
                         "additionalProperties": False,
                     },
