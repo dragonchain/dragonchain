@@ -396,4 +396,4 @@ def hexists_sync(name: str, key: str) -> bool:
 
 def zadd_sync(name: str, mapping: Dict[str, int], nx: bool = False, xx: bool = False, ch: bool = False, incr: bool = False) -> int:
     _set_redis_client_if_necessary()
-    return redis_client.zadd(name, mapping, nx=nx, xx=xx, ch=ch, incr=incr)  # type: ignore
+    return redis_client.zadd(name, mapping, nx=nx, xx=xx, ch=ch, incr=incr)  # noqa: T484

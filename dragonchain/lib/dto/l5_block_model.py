@@ -16,6 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 import json
+from typing import Dict, Any
 
 import fastjsonschema
 
@@ -29,7 +30,7 @@ _validate_l5_block_at_rest = fastjsonschema.compile(schema.l5_block_at_rest_sche
 def new_from_at_rest(block: dict) -> "L5BlockModel":
     """
     Used in querying from the DAO
-    Input: Block::L4::AtRest DTO
+    Input: Block::L5::AtRest DTO
     Returns: BlockModel object
     """
     # Validate inputted schema
@@ -138,4 +139,13 @@ class L5BlockModel(model.BlockModel):
             },
             "l4-blocks": self.l4_blocks,
             "proof": proof,
+        }
+
+    def export_as_search_index(self) -> Dict[str, Any]:
+        """Export as block search index DTO"""
+        return {
+            "block_id": int(self.block_id),
+            "timestamp": int(self.timestamp),
+            "prev_id": int(self.prev_id) if self.prev_id else 0,
+            "dc_id": self.dc_id if self.dc_id else "",
         }

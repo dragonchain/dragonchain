@@ -44,15 +44,19 @@ if TYPE_CHECKING:
 
 _log = logger.get_logger()
 
+BROADCAST_ENABLED = os.environ["BROADCAST"].lower() != "false"
 LEVEL = os.environ["LEVEL"]
 ENABLED = not (LEVEL != "1" and os.environ.get("USE_REDISEARCH") == "false")
 if ENABLED:
     REDISEARCH_ENDPOINT = os.environ["REDISEARCH_ENDPOINT"]
     REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
+INDEX_L5_VERIFICATION_GENERATION_KEY = "dc:l5_index_generation_complete"
 INDEX_GENERATION_KEY = "dc:index_generation_complete"
+L5_BLOCK_MIGRATION_KEY = "dc:migrations:l5_block"
 BLOCK_MIGRATION_KEY = "dc:migrations:block"
 TXN_MIGRATION_KEY = "dc:migrations:txn"
+L5_NODES = "dc:nodes:l5"
 
 _escape_transformation = str.maketrans(
     {
@@ -91,6 +95,7 @@ class Indexes(enum.Enum):
     block = "bk"
     smartcontract = "sc"
     transaction = "tx"
+    verification = "ver"
 
 
 _redis_connection = None
@@ -299,23 +304,63 @@ def generate_indexes_if_necessary() -> None:
     """Initialize redisearch with necessary indexes and fill them from storage if migration has not been marked as complete"""
     redisearch_redis_client = _get_redisearch_index_client("").redis
     needs_generation = not bool(redisearch_redis_client.get(INDEX_GENERATION_KEY))
+    needs_l5_generation = not bool(redisearch_redis_client.get(INDEX_L5_VERIFICATION_GENERATION_KEY))
     # No-op if indexes are marked as already generated
-    if not needs_generation:
+    if not needs_generation and not needs_l5_generation:
         return
-    # Create block index
-    _log.info("Creating block indexes")
-    _generate_block_indexes()
-    # Create indexes for transactions
-    _log.info("Creating transaction indexes")
-    _generate_transaction_indexes()
-    # Create smart contract index
-    _log.info("Creating smart contract indexes")
-    _generate_smart_contract_indexes()
-    # Mark index generation as complete
-    _log.info("Marking redisearch index generation complete")
-    redisearch_redis_client.delete(BLOCK_MIGRATION_KEY)
-    redisearch_redis_client.delete(TXN_MIGRATION_KEY)
-    redisearch_redis_client.set(INDEX_GENERATION_KEY, "a")
+
+    if needs_l5_generation:
+        # Create L5 verification indexes
+        _generate_l5_verification_indexes()
+        # Mark index generation as complete
+        redisearch_redis_client.delete(L5_BLOCK_MIGRATION_KEY)
+        redisearch_redis_client.set(INDEX_L5_VERIFICATION_GENERATION_KEY, "a")
+
+    if needs_generation:
+        # Create block index
+        _log.info("Creating block indexes")
+        _generate_block_indexes()
+        # Create indexes for transactions
+        _log.info("Creating transaction indexes")
+        _generate_transaction_indexes()
+        # Create smart contract index
+        _log.info("Creating smart contract indexes")
+        _generate_smart_contract_indexes()
+        # Mark index generation as complete
+        _log.info("Marking redisearch index generation complete")
+        redisearch_redis_client.delete(BLOCK_MIGRATION_KEY)
+        redisearch_redis_client.delete(TXN_MIGRATION_KEY)
+        redisearch_redis_client.set(INDEX_GENERATION_KEY, "a")
+
+
+def _generate_l5_verification_indexes() -> None:
+    client = _get_redisearch_index_client(Indexes.verification.value)
+    client.drop_index()
+    try:
+        client.create_index(
+            [
+                redisearch.NumericField("block_id", sortable=True),
+                redisearch.NumericField("prev_id", sortable=True),
+                redisearch.NumericField("timestamp", sortable=True),
+                redisearch.TagField("dc_id"),
+            ]
+        )
+    except redis.exceptions.ResponseError as e:
+        if not str(e).startswith("Index already exists"):  # We don't care if index already exists
+            raise
+    _log.info("Listing all blocks in storage")
+    block_paths = storage.list_objects("BLOCK/")
+    pattern = re.compile(r"BLOCK\/([0-9]+)-([Ll])5(.*)$")
+    for block_path in block_paths:
+        if LEVEL == "1" and BROADCAST_ENABLED and re.search(pattern, block_path):
+            if not client.redis.sismember(L5_BLOCK_MIGRATION_KEY, block_path):
+                raw_block = storage.get_json_from_object(block_path)
+                block = l5_block_model.new_from_at_rest(raw_block)
+                put_document(Indexes.verification.value, block_path.split("/")[1], block.export_as_search_index())
+                client.redis.sadd(L5_NODES, block.dc_id)
+                client.redis.sadd(L5_BLOCK_MIGRATION_KEY, block_path)
+            else:
+                _log.info(f"Skipping already indexed L5 block {block_path}")
 
 
 def _generate_block_indexes() -> None:

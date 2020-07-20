@@ -112,6 +112,7 @@ ENDPOINT_MAP = {
     "get_transaction": _check_default_endpoint_permission,
     "get_verifications": _check_default_endpoint_permission,
     "get_pending_verifications": _check_default_endpoint_permission,
+    "query_interchain_verifications": _check_default_endpoint_permission,
 }
 
 

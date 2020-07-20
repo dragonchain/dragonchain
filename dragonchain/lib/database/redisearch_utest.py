@@ -17,7 +17,7 @@
 
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 import redis
 
@@ -194,6 +194,7 @@ class TestRedisearch(unittest.TestCase):
         redisearch._get_redisearch_index_client.assert_any_call("bk")
         redisearch._get_redisearch_index_client.assert_any_call("sc")
         redisearch._get_redisearch_index_client.assert_any_call("tx")
-        mock_redis.get.assert_called_once_with("dc:index_generation_complete")
-        mock_redis.set.assert_called_once()
+        redisearch._get_redisearch_index_client.assert_any_call("ver")
+        mock_redis.get.assert_has_calls([call("dc:index_generation_complete"), call("dc:l5_index_generation_complete")])
+        self.assertEqual(mock_redis.set.call_count, 2)
         mock_put_document.assert_called()
