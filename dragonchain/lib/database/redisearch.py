@@ -335,7 +335,6 @@ def generate_indexes_if_necessary() -> None:
 
 def _generate_l5_verification_indexes() -> None:
     client = _get_redisearch_index_client(Indexes.verification.value)
-    client.drop_index()
     try:
         client.create_index(
             [
