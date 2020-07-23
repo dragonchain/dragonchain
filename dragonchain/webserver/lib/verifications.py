@@ -74,8 +74,6 @@ def query_interchain_broadcasts_v1(block_id: str) -> List[Any]:
 
 
 def _query_l5_verification(l5_dc_id: str, timestamp: str) -> str:
-    print("QUERYING")
-    print(f"@dc_id:{{{l5_dc_id}}} @timestamp:[{int(timestamp)+1} +inf]")
     query_result = redisearch.search(
         index=redisearch.Indexes.verification.value,
         query_str=f"@dc_id:{{{l5_dc_id}}} @timestamp:[{int(timestamp)+1} +inf]",
