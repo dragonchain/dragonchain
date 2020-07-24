@@ -11,6 +11,7 @@
 - **Bugs**
   - Fixed bug in broadcast processor causing failure when a block cannot be found in redis
   - Fixed bug in querying interchain broadcasts when the old L5 chain ID is a UUID and not public key
+  - Fixed bug in re-indexing of L5 verifications where redisearch throws document exists error
 - **Development:**
   - Use helm 3.2.4 and yq 3.3.2 for dependency container and lint checking
 

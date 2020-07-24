@@ -355,7 +355,14 @@ def _generate_l5_verification_indexes() -> None:
             if not client.redis.sismember(L5_BLOCK_MIGRATION_KEY, block_path):
                 raw_block = storage.get_json_from_object(block_path)
                 block = l5_block_model.new_from_at_rest(raw_block)
-                put_document(Indexes.verification.value, block_path.split("/")[1], block.export_as_search_index())
+                storage_location = block_path.split("/")[1]
+                try:
+                    put_document(Indexes.verification.value, storage_location, block.export_as_search_index())
+                except redis.exceptions.ResponseError as e:
+                    if not str(e).startswith("Document already exists"):
+                        raise
+                    else:
+                        _log.info(f"Document {storage_location} already exists")
                 client.redis.sadd(L5_NODES, block.dc_id)
                 client.redis.sadd(L5_BLOCK_MIGRATION_KEY, block_path)
             else:
