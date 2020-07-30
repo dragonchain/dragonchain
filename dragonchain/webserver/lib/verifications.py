@@ -14,16 +14,19 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
-
-from typing import Dict, Union, List, Any, Optional
+import re
+from typing import Dict, Union, List, Any, Optional, cast
 
 from dragonchain.broadcast_processor import broadcast_functions
 from dragonchain.lib.interfaces import storage
+from dragonchain.lib.database import redisearch
 from dragonchain.lib import matchmaking
 from dragonchain import exceptions
 from dragonchain import logger
 
 _log = logger.get_logger()
+
+_uuid_regex = re.compile(r"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")
 
 
 def get_pending_verifications_v1(block_id: str) -> Dict[str, List[str]]:
@@ -48,6 +51,38 @@ def query_verifications_v1(block_id: str, params: Optional[Dict[str, Any]] = Non
     _log.info(f"Getting verifications for {block_id}, params {params}")
     level = int(params.get("level") or "0") if params else 0
     return _get_verification_records(block_id, level)
+
+
+def query_interchain_broadcasts_v1(block_id: str) -> List[Any]:
+    """Return the subsequent broadcasts to other L5 networks"""
+    _log.info(f"Getting subsequent L5 verifications for {block_id}")
+    results = []
+    l5_block = None
+    l5_verifications = _get_verification_records(block_id, 5)
+    if len(l5_verifications) > 0:
+        l5_block = cast(List[Any], l5_verifications)[0]
+        timestamp = l5_block["header"]["timestamp"]
+        dc_id = l5_block["header"]["dc_id"]
+        l5_nodes = redisearch._get_redisearch_index_client(redisearch.Indexes.verification.value).redis.smembers(redisearch.L5_NODES)
+
+        results = [
+            _query_l5_verification(l5_dc_id.decode("utf-8"), timestamp)
+            for l5_dc_id in l5_nodes
+            if l5_dc_id.decode("utf-8") != dc_id and not re.match(_uuid_regex, l5_dc_id.decode("utf-8"))
+        ]
+    return ([l5_block] if l5_block else []) + [storage.get_json_from_object(f"BLOCK/{x}") for x in results if x is not None]
+
+
+def _query_l5_verification(l5_dc_id: str, timestamp: str) -> str:
+    query_result = redisearch.search(
+        index=redisearch.Indexes.verification.value,
+        query_str=f"@dc_id:{{{l5_dc_id}}} @timestamp:[{int(timestamp)+1} +inf]",
+        only_id=True,
+        limit=1,
+        sort_by="timestamp",
+        sort_asc=True,
+    )
+    return query_result.docs[0].id if query_result and len(query_result.docs) > 0 else None
 
 
 def _get_verification_records(block_id: str, level: int = 0) -> Union[List[Any], Dict[str, List[Any]]]:

@@ -27,6 +27,8 @@ from dragonchain.lib.dto import l4_block_model
 from dragonchain.lib.dto import l5_block_model
 from dragonchain.lib.dto import api_key_model
 from dragonchain.lib.dao import api_key_dao
+from dragonchain.lib.dao import block_dao
+from dragonchain.lib.database import redisearch
 from dragonchain.lib import matchmaking
 from dragonchain.lib import keys
 from dragonchain.lib import queue
@@ -89,6 +91,10 @@ def process_receipt_v1(block_dto: Dict[str, Any]) -> None:
                     _log.exception("matchmaking add_receipt failed!")
                 # Update the broadcast system about this receipt
                 broadcast_functions.set_receieved_verification_for_block_from_chain_sync(l1_block_id, level_received_from, block_model.dc_id)
+                if level_received_from == 5:
+                    client = redisearch._get_redisearch_index_client(redisearch.Indexes.verification.value)
+                    client.redis.sadd(redisearch.L5_NODES, block_model.dc_id)
+                    block_dao.insert_l5_verification(storage_location, block_model)
             else:
                 _log.warning(
                     f"Chain {block_model.dc_id} (level {level_received_from}) returned a receipt that wasn't expected (possibly expired?) for block {l1_block_id}. Rejecting receipt"  # noqa: B950

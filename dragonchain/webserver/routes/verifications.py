@@ -28,6 +28,7 @@ def apply_routes(app: flask.Flask):
     app.add_url_rule("/verifications/<block_id>", "get_verification_v1", get_verification_v1, methods=["GET"])
     app.add_url_rule("/v1/verifications/<block_id>", "get_verification_v1", get_verification_v1, methods=["GET"])
     app.add_url_rule("/v1/verifications/pending/<block_id>", "get_pending_verifications_v1", get_pending_verifications_v1, methods=["GET"])
+    app.add_url_rule("/v1/verifications/interchains/<block_id>", "query_l5_verifications_v1", query_l5_verifications_v1, methods=["GET"])
 
 
 @request_authorizer.Authenticated(api_resource="verifications", api_operation="read", api_name="get_verifications")
@@ -39,3 +40,8 @@ def get_verification_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, st
 @request_authorizer.Authenticated(api_resource="verifications", api_operation="read", api_name="get_pending_verifications")
 def get_pending_verifications_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
     return helpers.flask_http_response(200, verifications.get_pending_verifications_v1(block_id))
+
+
+@request_authorizer.Authenticated(api_resource="verifications", api_operation="read", api_name="query_interchain_verifications")
+def query_l5_verifications_v1(block_id: str, **kwargs) -> Tuple[str, int, Dict[str, str]]:
+    return helpers.flask_http_response(200, verifications.query_interchain_broadcasts_v1(block_id))

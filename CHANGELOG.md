@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.5.0
+
+- **Feature:**
+  - Add new endpoint `GET /v1/verifications/interchains/<block_id>` for getting the subsequent interchain broadcasts
+- **Packaging:**
+  - Update web3, docker, bit, requests, fastjsonschema, kubernetes, redis, redisearch, Flask, pycoin, base58, and boto3 dependencies
+  - Update redisearch in helm chart to 1.6.13
+  - Update redis in helm chart to 6.0.5
+- **Bugs**
+  - Fixed bug in broadcast processor causing failure when a block cannot be found in redis
+  - Fixed bug in querying interchain broadcasts when the old L5 chain ID is a UUID and not public key
+  - Fixed bug in re-indexing of L5 verifications where redisearch throws document exists error
+- **Development:**
+  - Use helm 3.2.4 and yq 3.3.2 for dependency container and lint checking
+
 ## 4.4.0
 
 - **Feature:**

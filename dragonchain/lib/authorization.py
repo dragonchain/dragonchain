@@ -356,7 +356,7 @@ def verify_request_authorization(  # noqa: C901
                             # Signature is valid and key is allowed; Return the api key used on success
                             return auth_key
                     except Exception:
-                        _log.exception(f"Uncaught exception checking if api key is allowed")
+                        _log.exception("Uncaught exception checking if api key is allowed")
                     raise exceptions.ActionForbidden(f"This key is not allowed to perform {api_name}")
                 else:
                     # HMAC doesn't match

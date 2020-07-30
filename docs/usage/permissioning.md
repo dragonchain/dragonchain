@@ -99,7 +99,7 @@ their operation type, and whether or not their endpoint permission object has a
 custom schema:
 
 | API Resource        | Endpoint Name                          | Operation Type | Endpoint Schema |
-| ------------------- | -------------------------------------- | -------------- | --------------- |
+|---------------------|----------------------------------------|----------------|-----------------|
 | `api_keys`          | `create_api_key`                       | `create`       | default         |
 | `api_keys`          | `get_api_key`                          | `read`         | default         |
 | `api_keys`          | `list_api_keys`                        | `read`         | default         |
@@ -136,6 +136,7 @@ custom schema:
 | `transactions`      | `get_transaction`                      | `read`         | default         |
 | `verifications`     | `get_verifications`                    | `read`         | default         |
 | `verifications`     | `get_pending_verifications`            | `read`         | default         |
+| `verifications`     | `query_interchain_verifications`       | `read`         | default         |
 
 ### Custom Endpoint Permissions
 

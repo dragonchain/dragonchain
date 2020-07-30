@@ -32,9 +32,9 @@ REDIS_ENDPOINT = os.environ["REDIS_ENDPOINT"]
 LRU_REDIS_ENDPOINT = os.environ["LRU_REDIS_ENDPOINT"]
 REDIS_PORT = int(os.environ["REDIS_PORT"]) or 6379
 
-redis_client: redis.Redis = cast(redis.Redis, None)
-redis_client_lru: redis.Redis = cast(redis.Redis, None)
-async_redis_client: aioredis.Redis = cast(aioredis.Redis, None)
+redis_client = cast(redis.Redis, None)
+redis_client_lru = cast(redis.Redis, None)
+async_redis_client = cast(aioredis.Redis, None)
 
 
 def _set_redis_client_if_necessary() -> None:
@@ -396,4 +396,4 @@ def hexists_sync(name: str, key: str) -> bool:
 
 def zadd_sync(name: str, mapping: Dict[str, int], nx: bool = False, xx: bool = False, ch: bool = False, incr: bool = False) -> int:
     _set_redis_client_if_necessary()
-    return redis_client.zadd(name, mapping, nx=nx, xx=xx, ch=ch, incr=incr)
+    return redis_client.zadd(name, mapping, nx=nx, xx=xx, ch=ch, incr=incr)  # noqa: T484
