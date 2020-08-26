@@ -234,8 +234,8 @@ class TransactionModel(model.Model):
                     indexable_object = jsonpath.jsonpath(json_payload, path)
                     _log.debug(f"indexable_object: {indexable_object}")
                     # If we found a valid item at the specified indexable path
-                    if indexable_object and isinstance(indexable_object, list) and len(indexable_object) == 1:
-                        index_item = indexable_object[0]
+                    if indexable_object and isinstance(indexable_object, list):
+                        index_item = ",".join(map(str, indexable_object))
                         # Check that the item we extracted is a string for tag or text type custom indexes
                         if index["type"] == "tag" or index["type"] == "text":
                             if isinstance(index_item, str):
