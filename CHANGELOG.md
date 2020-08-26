@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.1
+
+- **Feature:**
+  - Add in ability for custom indexing arrays of values
+
 ## 4.5.0
 
 - **Feature:**
