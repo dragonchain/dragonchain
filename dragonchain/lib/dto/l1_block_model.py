@@ -83,6 +83,7 @@ def new_from_stripped_block(stripped_block: Dict[str, Any]) -> "L1BlockModel":
             scheme=stripped_block["proof"]["scheme"],
             proof=stripped_block["proof"]["proof"],
             nonce=stripped_block["proof"].get("nonce"),
+            current_ddss=stripped_block["header"].get("current_ddss"),
         )
     else:
         raise NotImplementedError("Only version 1 DTO of stripped blocks are supported")
@@ -115,6 +116,7 @@ class L1BlockModel(model.BlockModel):
         scheme="",
         proof="",
         nonce=None,
+        current_ddss=None,
     ):
         """L1BlockModel Constructor"""
         self.dc_id = dc_id
@@ -127,6 +129,7 @@ class L1BlockModel(model.BlockModel):
         self.scheme = scheme
         self.proof = proof
         self.nonce = nonce
+        self.current_ddss = current_ddss
 
     def strip_payloads(self) -> None:
         """Generate stringified stripped_transactions array for storage in storage"""
@@ -173,6 +176,7 @@ class L1BlockModel(model.BlockModel):
                 "timestamp": self.timestamp,
                 "prev_id": self.prev_id,
                 "prev_proof": self.prev_proof,
+                "current_ddss": self.current_ddss,
             },
             "transactions": self.stripped_transactions,
             "proof": proof,
