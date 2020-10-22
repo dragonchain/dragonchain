@@ -76,6 +76,13 @@ def delete_directory(location: str, directory_key: str) -> None:
     pass
 
 
+def get_block_transactions(location: str, block_id: str) -> dict:
+    try:
+        obj = s3.get_object(
+            Bucket=location,
+            Key=f"TRANSACTION/{block_id}"
+        )
+
 def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
     """select_transaction helper function
     Args:

@@ -174,3 +174,12 @@ def _generate_transaction_model(transaction: Dict[str, Any]) -> transaction_mode
     txn_model.txn_id = str(uuid.uuid4())
     txn_model.timestamp = str(math.floor(time.time()))
     return txn_model
+
+
+def remove_transaction_payload(transaction_id: str, api_key: "api_key_model.APIKeyModel") -> Dict[str, str]:
+    """
+    Remove a transactions payload for GDPR compliance
+    """
+    txn = get_transaction_v1(transaction_id, False)
+    block_id = txn["headers"]["block_id"]
+    pass
