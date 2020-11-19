@@ -285,11 +285,11 @@ class ContractJob(object):
     def create_openfaas_secrets(self) -> None:
         """Creates secrets for openfaas functions
 
-            Args:
-                existing_model (obj, optional): The existing model for this contract if action is update
+        Args:
+            existing_model (obj, optional): The existing model for this contract if action is update
 
-            Returns:
-                None
+        Returns:
+            None
         """
         existing_secrets = self.model.existing_secrets or []
 
@@ -320,8 +320,8 @@ class ContractJob(object):
     def delete_openfaas_secrets(self) -> None:
         """Deletes secrets for an openfaas function
 
-            Returns:
-                None
+        Returns:
+            None
         """
         _log.info(f"Deleting OpenFaaS secrets: {self.model.existing_secrets}")
         for secret in self.model.existing_secrets:
@@ -334,8 +334,8 @@ class ContractJob(object):
     def deploy_to_openfaas(self) -> None:
         """Deploy this job's smart contract to OpenFaaS and update the faas_spec
 
-            Returns:
-                None, or throws exceptions.InternalServerError
+        Returns:
+            None, or throws exceptions.InternalServerError
         """
         _log.info("Deploying to OpenFaaS cluster")
         spec = self.get_openfaas_spec()
@@ -356,8 +356,8 @@ class ContractJob(object):
     def delete_openfaas_function(self) -> None:
         """Delete this job's smart contract in OpenFaaS and remove the faas_spec
 
-            Returns:
-                None, or throws exceptions.InternalServerError
+        Returns:
+            None, or throws exceptions.InternalServerError
         """
         _log.info("Deleting OpenFaaS function")
         response = requests.delete(

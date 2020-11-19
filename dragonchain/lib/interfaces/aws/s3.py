@@ -91,7 +91,7 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
         obj = s3.select_object_content(
             Bucket=location,
             Key=f"TRANSACTION/{block_id}",
-            Expression=f"select s.txn from s3object s where s.txn_id = '{txn_id}' limit 1",  # nosec (this s3 select query is safe)
+            Expression=f"select s.txn, s.stripped_payload from s3object s where s.txn_id = '{txn_id}' limit 1",  # nosec (this s3 select query is safe)
             ExpressionType="SQL",
             InputSerialization={"JSON": {"Type": "DOCUMENT"}},
             OutputSerialization={"JSON": {"RecordDelimiter": "\n"}},
@@ -104,7 +104,14 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
         if event.get("Records"):
             txn_data = f'{txn_data}{event["Records"]["Payload"].decode("utf-8")}'
     if txn_data:
-        return json.loads(txn_data)["txn"]
+        loaded_txn = json.loads(txn_data)
+        if loaded_txn.get("stripped_payload"):
+            payload_key = f"PAYLOADS/{txn_id}"
+            if does_object_exist(location, payload_key):
+                loaded_txn["txn"]["payload"] = json.loads(get(location, payload_key).decode("utf-8"))
+            else:
+                loaded_txn["txn"]["payload"] = json.dumps({})
+        return loaded_txn["txn"]
     raise exceptions.NotFound
 
 

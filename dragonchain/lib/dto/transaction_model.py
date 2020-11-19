@@ -164,7 +164,6 @@ class TransactionModel(model.Model):
                 "tag": self.tag,
                 "invoker": self.invoker or "",
             },
-            "payload": self.payload,
             "proof": {"full": self.full_hash, "stripped": self.signature},
         }
 

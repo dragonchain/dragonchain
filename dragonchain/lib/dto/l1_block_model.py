@@ -22,6 +22,7 @@ from typing import Dict, Any, List, Set, TYPE_CHECKING
 
 import fastjsonschema
 
+from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib.dto import schema
 from dragonchain.lib.dto import model
@@ -182,6 +183,11 @@ class L1BlockModel(model.BlockModel):
         """Export full transactions in block as NDJSON (for storage select when querying)"""
         txn_string = ""
         for transaction in self.transactions:
-            txn_string += '{"txn_id": "' + transaction.txn_id + '", '
+            txn_string += '{"txn_id": "' + transaction.txn_id + '", "stripped_payload": true, '
             txn_string += '"txn": ' + json.dumps(transaction.export_as_full(), separators=(",", ":")) + "}\n"
         return txn_string
+
+    def store_transaction_payloads(self) -> None:
+        """Stores full transaction payloads for block"""
+        for transaction in self.transactions:
+            storage.put(f"PAYLOADS/{transaction.txn_id}", json.dumps(transaction.payload, separators=(",", ":")).encode("utf-8"))

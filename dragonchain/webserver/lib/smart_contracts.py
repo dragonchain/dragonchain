@@ -46,7 +46,7 @@ def get_id_by_txn_type_v1(txn_type: str) -> str:
 
 
 def list_contracts_v1() -> Dict[str, List[Dict[str, Any]]]:
-    """ Function used by the smartcontract endpoint with method GET.
+    """Function used by the smartcontract endpoint with method GET.
         Returns a list of all smart contracts.
     Returns:
         The search results of the query specified.

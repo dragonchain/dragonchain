@@ -106,7 +106,7 @@ transaction_full_schema = {
         "payload": {"type": "string"},
         "proof": {"type": "object", "properties": {"full": {"type": "string"}, "stripped": {"type": "string"}}, "required": ["full", "stripped"]},
     },
-    "required": ["version", "dcrn", "header", "payload", "proof"],
+    "required": ["version", "dcrn", "header", "proof"],
 }
 
 
