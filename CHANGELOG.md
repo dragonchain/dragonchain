@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.5.1
+
+- **Bugs**
+  - Fixed bug in querying transactions that takes longer than `10s` result in replay attack error
+  - Fixed bug with retrieving transactions with payloads larger than `1mb` results in S3 Select error `OverMaxRecordSize`
+
 ## 4.5.0
 
 - **Feature:**

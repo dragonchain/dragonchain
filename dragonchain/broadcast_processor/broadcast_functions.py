@@ -208,7 +208,7 @@ def schedule_notification_for_broadcast_sync(notification_location: str) -> None
 
 
 def verification_storage_location(l1_block_id: str, level_received_from: int, chain_id: str) -> str:
-    """ Format the path for the storage of a verification object
+    """Format the path for the storage of a verification object
     Args:
         l1_block_id: the id of the L1 block which this verification verifies
         level_received_from: the level from which this verification was received

@@ -199,7 +199,7 @@ async def process_verification_notifications(session: aiohttp.ClientSession) -> 
 async def send_notification_verification(
     session: aiohttp.ClientSession, url: str, verification_bytes: bytes, signature: str, redis_list_value: str
 ) -> None:
-    """ Send a notification verification to a preconfigured address
+    """Send a notification verification to a preconfigured address
 
     This is the actual async broadcast of a single notification at its most atomic
 
