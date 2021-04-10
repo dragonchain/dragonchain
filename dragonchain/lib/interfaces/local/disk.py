@@ -106,6 +106,14 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
                         loaded_txn["txn"]["payload"] = json.loads(get(location, payload_key).decode("utf-8"))
                     else:
                         loaded_txn["txn"]["payload"] = json.dumps({})
+                elif loaded_txn.get("stripped_payload_by_block"):
+                    payload_key = os.path.join("PAYLOADS", block_id)
+                    if does_object_exist(location, payload_key):
+                        loaded_block = json.loads(get(location, payload_key).decode("utf-8"))
+                        if loaded_block.get(txn_id):
+                            loaded_txn["txn"]["payload"] = json.loads(loaded_block[txn_id]).decode("utf-8")
+                        else:
+                            loaded_txn["txn"]["payload"] = json.dumps({})
                 return loaded_txn["txn"]
         except Exception:
             _log.exception("Error loading retrieved transaction from disk select_transaction")
