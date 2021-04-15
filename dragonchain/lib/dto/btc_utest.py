@@ -181,7 +181,7 @@ class TestBitcoinMethods(unittest.TestCase):
         mock_ping.assert_called_once()
         mock_register.assert_called_once_with(False)
         self.assertEqual(client.name, "banana")
-        self.assertEqual(client.rpc_address, "http://internal-Btc-Mainnet-Internal-297595751.us-west-2.elb.amazonaws.com:8332")
+        self.assertEqual(client.rpc_address, "https://mainnet.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a")
         self.assertEqual(client.authorization, "Yml0Y29pbnJwYzpkcmFnb24=")
         self.assertEqual(client.priv_key.to_bytes(), b"w\x96\xb9\xacC?\xab*\x83\xd2\x81\xe8\x06O)\xc95\x1319\xb6.\xc5,\x8es\xde(D\x0c\r\xc6")
         self.assertFalse(client.testnet)

@@ -28,7 +28,7 @@ from dragonchain import exceptions
 from dragonchain import logger
 
 
-DRAGONCHAIN_MAINNET_NODE = "http://internal-Btc-Mainnet-Internal-297595751.us-west-2.elb.amazonaws.com:8332"
+DRAGONCHAIN_MAINNET_NODE = "https://mainnet.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a"
 DRAGONCHAIN_TESTNET_NODE = "http://internal-Btc-Testnet-Internal-1334656512.us-west-2.elb.amazonaws.com:18332"
 DRAGONCHAIN_NODE_AUTHORIZATION = "Yml0Y29pbnJwYzpkcmFnb24="  # Username: bitcoinrpc | Password: dragon
 
