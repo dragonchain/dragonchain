@@ -81,6 +81,7 @@ def execute() -> None:
     * Publishes to public nodes when required
     * Locates confirmations from public nodes when required
     * Sends receipts to all L1 blocks represented in public broadcast
+
     * Finalizes any previously failed claims present in backlog
     """
     matchmaking.renew_registration_if_necessary()

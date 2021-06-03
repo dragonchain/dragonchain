@@ -278,7 +278,8 @@ def add_receipt(l1_block_id: str, level: int, dc_id: str, block_id: str, proof: 
         data["signature"] = proof
         _log.info(f"Adding to local matchmaking claim: {data}")
         claim_check["validations"][f"l{level}"][dc_id] = data
-        cache_claim_check(block_id, claim_check)
+        _log.info(f"ADDING NEW RECEIPT FOR BLOCK {block_id} TO CLAIM CHECK FROM LEVEL {level}: {claim_check}")
+        cache_claim_check(l1_block_id, claim_check)
     except Exception:
         _log.exception("Failure to add receipt to claimcheck")
 

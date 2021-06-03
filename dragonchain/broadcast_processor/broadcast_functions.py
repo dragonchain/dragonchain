@@ -14,7 +14,7 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied. See the Apache License for the specific
 # language governing permissions and limitations under the Apache License.
-
+import json
 import re
 import time
 import os
@@ -24,6 +24,9 @@ from dragonchain.lib import dragonnet_config
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.database import redis
 from dragonchain import exceptions
+from dragonchain import logger
+
+_log = logger.get_logger()
 
 
 IN_FLIGHT_KEY = "broadcast:in-flight"
@@ -315,6 +318,8 @@ def remove_block_from_broadcast_system_sync(block_id: str) -> None:
     transaction.zrem(IN_FLIGHT_KEY, block_id)
     transaction.delete(state_key(block_id))
     transaction.delete(storage_error_key(block_id))
+    claim_check = redis.hget_sync("broadcast:claimcheck", block_id, decode=False)
+    _log.info(f"REMOVING CLAIM CHECK FROM CACHE: {json.loads(claim_check)}")
     for i in range(2, 6):
         transaction.delete(verifications_key(block_id, i))
     # This one is for the claim check from matchmaking that is saved locally
@@ -338,6 +343,8 @@ async def remove_block_from_broadcast_system_async(block_id: str) -> None:
     transaction.zrem(IN_FLIGHT_KEY, block_id)
     transaction.delete(state_key(block_id))
     transaction.delete(storage_error_key(block_id))
+    claim_check = redis.hget_sync("broadcast:claimcheck", block_id, decode=False)
+    _log.info(f"REMOVING CLAIM CHECK FROM CACHE: {json.loads(claim_check)}")
     for i in range(2, 6):
         transaction.delete(verifications_key(block_id, i))
     # This one is for the claim check from matchmaking that is saved locally
