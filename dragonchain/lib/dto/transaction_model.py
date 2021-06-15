@@ -226,6 +226,7 @@ class TransactionModel(model.Model):
                 _log.debug(f"indexes: {transaction_type_model.custom_indexes}")
                 for index in transaction_type_model.custom_indexes:
                     # Get index field name and custom json path to extract from payload json
+                    _log.info(f"CURRENT INDEX: {index}")
                     field_name = index["field_name"]
                     path = index["path"]
                     _log.debug(f"index field name: {field_name}, index path: {path}")
@@ -233,7 +234,7 @@ class TransactionModel(model.Model):
                     indexable_object = jsonpath.jsonpath(json_payload, path)
                     _log.debug(f"indexable_object: {indexable_object}")
                     # If we found a valid item at the specified indexable path
-                    if indexable_object and isinstance(indexable_object, list) and len(indexable_object) == 1:
+                    if indexable_object and indexable_object[0] and isinstance(indexable_object, list) and len(indexable_object) == 1:
                         index_item = indexable_object[0]
                         # Check that the item we extracted is a string for tag or text type custom indexes
                         if index["type"] == "tag" or index["type"] == "text":
