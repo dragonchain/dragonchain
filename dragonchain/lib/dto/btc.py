@@ -28,7 +28,7 @@ from dragonchain import exceptions
 from dragonchain import logger
 
 
-DRAGONCHAIN_MAINNET_NODE = "http://internal-Btc-Mainnet-Internal-297595751.us-west-2.elb.amazonaws.com:8332"
+DRAGONCHAIN_MAINNET_NODE = "https://btc.getblock.io/mainnet/?api_key=a9d2382f-a6e4-43ed-bec3-0ca87c21f1c4"
 DRAGONCHAIN_TESTNET_NODE = "http://internal-Btc-Testnet-Internal-1334656512.us-west-2.elb.amazonaws.com:18332"
 DRAGONCHAIN_NODE_AUTHORIZATION = "Yml0Y29pbnJwYzpkcmFnb24="  # Username: bitcoinrpc | Password: dragon
 
@@ -75,7 +75,8 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BitcoinNetwork":
         if not user_input.get("rpc_address"):
             # Default to Dragonchain managed nodes if not provided
             user_input["rpc_address"] = DRAGONCHAIN_TESTNET_NODE if user_input["testnet"] else DRAGONCHAIN_MAINNET_NODE
-            user_input["rpc_authorization"] = DRAGONCHAIN_NODE_AUTHORIZATION
+            if user_input["testnet"]:
+                user_input["rpc_authorization"] = DRAGONCHAIN_NODE_AUTHORIZATION
 
         # Create the actual client and check that the given node is reachable
         try:
