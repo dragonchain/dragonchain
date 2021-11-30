@@ -22,12 +22,10 @@ from typing import Dict, Any, List, Set, TYPE_CHECKING
 
 import fastjsonschema
 
-from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib.dto import schema
 from dragonchain.lib.dto import model
 from dragonchain.lib import keys
-from dragonchain import logger
 
 if TYPE_CHECKING:
     from dragonchain.lib.dto import transaction_type_model  # noqa: F401
@@ -37,7 +35,6 @@ BLOCK_INTERVAL = 5
 
 _validate_l1_block_at_rest = fastjsonschema.compile(schema.l1_block_at_rest_schema)
 
-_log = logger.get_logger()
 
 
 def new_from_full_transactions(
