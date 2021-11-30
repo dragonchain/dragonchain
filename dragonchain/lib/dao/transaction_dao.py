@@ -61,13 +61,17 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     Store the transactions object as a single file per block in storage.
     Also updates the indexes for each indexed transaction in ES with block information.
     """
-    _log.info("[TRANSACTION DAO] Putting transaction to storage")
+    _log.info(f"TOTAL NUMBER OF TRANSACTIONS {len(block_model.transactions)}")
     storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
-    block_model.store_transaction_payloads()
-    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    txn_dict[redisearch.Indexes.transaction.value] = {}
+    begin = time.time()
+    _log.info(f"uploading payloads for block: {block_model.block_id}")
+    storage.put(f"PAYLOADS/{block_model.block_id}", block_model.export_as_transaction_payloads().encode("utf-8"))
+    end = time.time()
+    _log.info(f"EXECUTION TIME: {end - begin} seconds")
+    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {redisearch.Indexes.transaction.value: {}}
     # O(N) loop where N = # of txn
     # Could optimize by grouping indexing of transactions in the block with matchking txn_types using redisearch.put_many_documents
+    _log.info("PROCESSING TRANSACTIONS INTO A DICTIONARY")
     for txn in block_model.transactions:
         txn_dict[redisearch.Indexes.transaction.value][f"txn-{txn.txn_id}"] = {"block_id": txn.block_id}
         try:
@@ -81,5 +85,6 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
             else:
                 _log.warning(f"Txn type {txn.txn_type} for txn {txn.txn_id} failed to index. (Transaction type may simply be deleted?) Ignoring")
     # O(N) loop where N = # of txn types + 1
+    _log.info("WRITING TRANSACTIONS TO REDIS")
     for key, value in txn_dict.items():  # key = index, value = document
         redisearch.put_many_documents(key, value, upsert=True)

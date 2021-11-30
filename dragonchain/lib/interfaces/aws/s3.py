@@ -22,6 +22,9 @@ import boto3
 import botocore
 
 from dragonchain import exceptions
+from dragonchain import logger
+
+_log = logger.get_logger()
 
 s3 = boto3.client("s3")
 
@@ -91,7 +94,7 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
         obj = s3.select_object_content(
             Bucket=location,
             Key=f"TRANSACTION/{block_id}",
-            Expression=f"select s.txn, s.stripped_payload from s3object s where s.txn_id = '{txn_id}' limit 1",  # nosec (this s3 select query is safe)
+            Expression=f"select s.txn, s.stripped_payload_by_block from s3object s where s.txn_id = '{txn_id}' limit 1",  # nosec (this s3 select query is safe)
             ExpressionType="SQL",
             InputSerialization={"JSON": {"Type": "DOCUMENT"}},
             OutputSerialization={"JSON": {"RecordDelimiter": "\n"}},
@@ -111,6 +114,15 @@ def select_transaction(location: str, block_id: str, txn_id: str) -> dict:
                 loaded_txn["txn"]["payload"] = json.loads(get(location, payload_key).decode("utf-8"))
             else:
                 loaded_txn["txn"]["payload"] = json.dumps({})
+        elif loaded_txn.get("stripped_payload_by_block"):
+            payload_key = f"PAYLOADS/{block_id}"
+            if does_object_exist(location, payload_key):
+                loaded_block = json.loads(get(location, payload_key).decode("utf-8"))
+                _log.info(f"LOADED BLOCK: {loaded_block}")
+                if loaded_block.get(txn_id):
+                    loaded_txn["txn"]["payload"] = json.dumps(loaded_block[txn_id], separators=(",", ":"))
+                else:
+                    loaded_txn["txn"]["payload"] = json.dumps({})
         return loaded_txn["txn"]
     raise exceptions.NotFound
 
