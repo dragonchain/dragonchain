@@ -226,7 +226,6 @@ class TransactionModel(model.Model):
                 _log.debug(f"indexes: {transaction_type_model.custom_indexes}")
                 for index in transaction_type_model.custom_indexes:
                     # Get index field name and custom json path to extract from payload json
-                    _log.info(f"CURRENT INDEX: {index}")
                     field_name = index["field_name"]
                     path = index["path"]
                     _log.debug(f"index field name: {field_name}, index path: {path}")
