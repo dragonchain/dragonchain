@@ -19,7 +19,7 @@ import math
 import base64
 from typing import Optional, Dict, Any
 
-import secp256k1
+import coincurve
 import requests
 import bit
 
@@ -53,7 +53,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BitcoinNetwork":
     if dto_version == "1":
         if not user_input.get("private_key"):
             # We need to create a private key if not provided
-            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+            user_input["private_key"] = base64.b64encode(coincurve.PrivateKey().secret).decode("ascii")
             user_input["utxo_scan"] = False
         try:
             # Check if the provided private key is in WIF format

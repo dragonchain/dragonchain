@@ -18,7 +18,7 @@
 from typing import Dict, Any
 import base64
 
-import secp256k1
+import coincurve
 import requests
 import mnemonic
 from pycoin.symbols.btc import network
@@ -58,7 +58,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":  # noqa
     if dto_version == "1":
         if not user_input.get("private_key"):
             # We need to create a private key if not provided
-            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+            user_input["private_key"] = base64.b64encode(coincurve.PrivateKey().secret).decode("ascii")
         else:
             try:
                 # Check if user provided key is hex and convert if necessary
@@ -68,7 +68,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "BinanceNetwork":  # noqa
                     user_input["private_key"] = base64.b64encode(bytes.fromhex(user_input["private_key"])).decode("ascii")
                 else:
                     try:  # is it a base64 key?  check!
-                        secp256k1.PrivateKey(privkey=base64.b64decode(user_input["private_key"]), raw=True)
+                        coincurve.PrivateKey(secret=base64.b64decode(user_input["private_key"]))
                     except Exception:
                         _log.warning("[BINANCE] Key not hex or base64... falling back to generating key from mnemonic.")
                         # not hex, not base64... at this point, assume key is a mnemonic string
@@ -151,12 +151,12 @@ class BinanceNetwork(model.InterchainModel):
         self.b64_private_key = b64_private_key
 
         decoded_key = base64.b64decode(b64_private_key)
-        priv_key = secp256k1.PrivateKey(privkey=decoded_key, raw=True)
-        self.priv = priv_key
-        self.pub = priv_key.pubkey
+        priv_key = coincurve.PrivateKey(secret=decoded_key)
+        self.priv = priv_key.secret
+        self.pub = priv_key.public_key
 
         hrp = "tbnb" if testnet else "bnb"
-        self.address = segwit_addr.address_from_public_key(self.pub.serialize(compressed=True), hrp=hrp)
+        self.address = segwit_addr.address_from_public_key(self.pub.format(), hrp=hrp)
 
     def ping(self) -> None:
         """Ping this network to check if the given node is reachable and authorization is correct (raises exception if not)"""

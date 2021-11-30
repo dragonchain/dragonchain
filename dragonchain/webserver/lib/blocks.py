@@ -23,16 +23,16 @@ import redis
 from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import schema
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 from dragonchain.lib.interfaces import storage
 
 if TYPE_CHECKING:
-    from dragonchain.lib.types import RSearch  # noqa: F401
+    from dragonchain.lib.types import ESSearch  # noqa: F401
 
 _log = logger.get_logger()
 
 
-def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "RSearch":
+def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "ESSearch":
     """Returns block matching block id, with query parameters accepted.
     Args:
         block_id: string Block id to search for.
@@ -40,14 +40,13 @@ def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "RSearch":
         parse: whether or not we should parse contents
     """
     try:
-        query_result = redisearch.search(
-            index=redisearch.Indexes.block.value,
-            query_str=params["q"],
-            only_id=params.get("id_only"),
+        query_result = elasticsearch.search(
+            index=elasticsearch.Indexes.block.value,
+            q=params["q"],
+            query=params["query"],
             offset=params.get("offset"),
             limit=params.get("limit"),
-            sort_by=params.get("sort_by"),
-            sort_asc=params.get("sort_asc"),
+            sort=params.get("sort"),
         )
     except redis.exceptions.ResponseError as e:
         # Detect if this is a syntax error; if so, throw it back as a 400 with the message
@@ -55,12 +54,12 @@ def query_blocks_v1(params: Dict[str, Any], parse: bool = False) -> "RSearch":
             raise exceptions.BadRequest(str(e))
         else:
             raise
-    result: "RSearch" = {"total": query_result.total, "results": []}
+    result: "ESSearch" = {"total": query_result["total"], "results": []}
     if params.get("id_only"):
-        result["results"] = [x.id for x in query_result.docs]
+        result["results"] = [x.id for x in query_result["results"]]
     else:
         blocks = []
-        for block in query_result.docs:
+        for block in query_result["results"]:
             blocks.append(get_block_by_id_v1(block.id, parse))
         result["results"] = blocks
     return result

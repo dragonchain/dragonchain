@@ -24,7 +24,7 @@ from typing import Tuple, Callable, Any, TYPE_CHECKING, Union
 import base58
 
 if TYPE_CHECKING:
-    from secp256k1 import PrivateKey, PublicKey  # noqa: F401
+    from coincurve import PrivateKey, PublicKey  # noqa: F401
     from dragonchain.lib.dto import transaction_model
     from dragonchain.lib.dto import l1_block_model
     from dragonchain.lib.dto import l2_block_model

@@ -47,7 +47,7 @@ class BlockModel(Model):
 
     def export_as_search_index(self) -> Dict[str, Any]:
         """Export as block search index DTO"""
-        return {"block_id": int(self.block_id), "timestamp": int(self.timestamp), "prev_id": int(self.prev_id) if self.prev_id else 0}
+        return {"block_id": int(self.block_id), "timestamp": int(self.timestamp), "dc_id": self.dc_id, "prev_id": int(self.prev_id) if self.prev_id else 0}
 
 
 class InterchainModel(Model):

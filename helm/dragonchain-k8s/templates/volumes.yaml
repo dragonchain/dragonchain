@@ -14,24 +14,6 @@ metadata:
 spec:
 {{ toYaml .Values.redis.storage.spec | indent 2 }}
 ---
-{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: {{ .Release.Name }}-redisearch-volume
-  labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-redisearch-volume
-    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/part-of: dragonchain
-    app.kubernetes.io/component: redisearch-volume
-    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
-    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
-spec:
-{{ toYaml .Values.redisearch.storage.spec | indent 2 }}
-{{- end }}
----
 {{- if .Values.dragonchain.storage }}
 kind: PersistentVolumeClaim
 apiVersion: v1

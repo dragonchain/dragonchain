@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Dict, Any
 
 import redis
 
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib import namespace
@@ -64,12 +64,10 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     _log.info("[TRANSACTION DAO] Putting transaction to storage")
     storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
     block_model.store_transaction_payloads()
-    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    txn_dict[redisearch.Indexes.transaction.value] = {}
+    txn_dict: Dict[str, Dict[str, Any]] = {}
     # O(N) loop where N = # of txn
     # Could optimize by grouping indexing of transactions in the block with matchking txn_types using redisearch.put_many_documents
     for txn in block_model.transactions:
-        txn_dict[redisearch.Indexes.transaction.value][f"txn-{txn.txn_id}"] = {"block_id": txn.block_id}
         try:
             if not txn_dict.get(txn.txn_type):
                 txn_dict[txn.txn_type] = {}
@@ -82,4 +80,4 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
                 _log.warning(f"Txn type {txn.txn_type} for txn {txn.txn_id} failed to index. (Transaction type may simply be deleted?) Ignoring")
     # O(N) loop where N = # of txn types + 1
     for key, value in txn_dict.items():  # key = index, value = document
-        redisearch.put_many_documents(key, value, upsert=True)
+        elasticsearch.put_many_documents(key, value)

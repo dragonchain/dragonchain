@@ -19,8 +19,7 @@ from typing import Dict, Any, List, Iterable, Optional, TYPE_CHECKING
 
 from dragonchain.lib.interfaces import storage
 from dragonchain.lib.dto import transaction_type_model
-from dragonchain.lib.database import redis
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import redis, elasticsearch
 from dragonchain import logger
 from dragonchain import exceptions
 
@@ -72,7 +71,7 @@ def remove_existing_transaction_type(transaction_type: str) -> None:
     Deletes a registered transaction type
     """
     _log.info(f"Deleting existing transaction type {transaction_type}")
-    redisearch.delete_index(transaction_type)
+    elasticsearch.delete_document(transaction_type)
     storage.delete(f"{FOLDER}/{transaction_type}")
 
 
@@ -113,7 +112,7 @@ def create_new_transaction_type(txn_type_model: transaction_type_model.Transacti
     """Save a new transaction type model"""
     txn_type_dto = txn_type_model.export_as_at_rest()
     _log.info(f"Adding transaction index for {txn_type_model.txn_type}")
-    redisearch.create_transaction_index(txn_type_model.txn_type, txn_type_model.custom_indexes)
+    elasticsearch.create_index(txn_type_model.txn_type)
     _log.debug("Queuing for activation")
     redis.lpush_sync(QUEUED_TXN_TYPES, txn_type_model.txn_type)
     _log.debug("Adding the transaction type to storage")
