@@ -62,17 +62,14 @@ def execute() -> None:
 
     if len(new_signable_txns) > 0:
         # Sign / validate transactions
-        _log.info("-----PROCESSING TRANSACTIONS------")
         signed_transactions = process_transactions(new_signable_txns)
         t3 = time.time()
 
-        _log.info("-----CREATING BLOCK-----")
         # Create the block
         block = create_block(signed_transactions, current_block_id)
         t4 = time.time()
 
         # Store the block
-        _log.info("-------STORING BLOCK---------")
         store_data(block)
         t5 = time.time()
 
