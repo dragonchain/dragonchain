@@ -1,18 +1,9 @@
 # Community
 
-Dragonchain has a slack for technical discussion and support.
+If you need technical support please email info@dragonchain.com.
 
-We highly recommend joining if you want to participate in technical discussion
-to try to understand or contribute to dragonchain, or need technical support.
+For general Dragonchain (company/business) chat please join us in the [Dragonchain Lair](https://den.social/l/Dragonchain/) on Den.social.
 
-Please note that this slack is for technical purposes only, and not general
-Dragonchain (company/business) chat. For that, please use the
-[Dragonchain Telegram](https://t.me/dragontalk).
+## More Information
 
-## Form
-
-If you are interested in joining this slack, please fill out
-[this form](https://forms.gle/ec7sACnfnpLCv6tXA).
-
-After submitting the form, we will review the application and send an
-invitation via email.
+More information about Dragonchain [can be found here](https://docs.dragonchain.com/).
