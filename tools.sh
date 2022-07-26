@@ -64,10 +64,12 @@ elif [ "$1" = "docs" ]; then
 		######################################
     #CHART_VERSION="$(yq r helm/dragonchain-k8s/Chart.yaml version)"
 		######################################
-		# yq version 3 syntax
+		# yq version 4 syntax
 		######################################
-    CHART_VERSION="$(yq '.version' helm/dragonchain-k8s/Chart.yaml | head -n 1)"
-    sed -i '' "s/--version [0-9]\\{1,\\}\\.[0-9]\\{1,\\}\\.[0-9]\\{1,\\}/--version $CHART_VERSION/" docs/deployment/deploying.md
+    #NOT WORKING CHART_VERSION="$(yq '.version' helm/dragonchain-k8s/Chart.yaml | head -n 1)"
+		# use hard coded version
+    #sed -i '' "s/--version [0-9]\\{1,\\}\\.[0-9]\\{1,\\}\\.[0-9]\\{1,\\}/--version $CHART_VERSION/" docs/deployment/deploying.md
+    sed -i '' "s/--version [0-9]\\{1,\\}\\.[0-9]\\{1,\\}\\.[0-9]\\{1,\\}/--version 1.0.9/" docs/deployment/deploying.md
     (
         cd docs || exit 1
         make html

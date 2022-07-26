@@ -32,7 +32,7 @@ def register_callback(txn_id: str, callback_url: str) -> None:
 
 
 def fire_if_exists(txn_id: str, transaction_model: transaction_model.TransactionModel) -> None:
-    """ Fires a callback with a given payload, then removes from redis"""
+    """Fires a callback with a given payload, then removes from redis"""
     url = redis.hget_sync(CALLBACK_REDIS_KEY, txn_id)
     if url is not None:
         try:

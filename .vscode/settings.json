@@ -1,16 +1,12 @@
 {
-    "files.watcherExclude": {
-        "**/.mypy_cache": true,
-        "**/.venv": true
-    },
-    "python.linting.flake8Enabled": true,
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": [
-        "-l",
-        "150",
-        "-t",
-        "py38"
-    ],
-    "editor.formatOnSave": true,
-    "restructuredtext.confPath": "${workspaceFolder}/docs"
+  "files.watcherExclude": {
+    "**/.mypy_cache": true,
+    "**/.venv": true
+  },
+  "python.linting.flake8Enabled": true,
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["-l", "150", "-t", "py38"],
+  "editor.formatOnSave": true,
+  "restructuredtext.confPath": "${workspaceFolder}/docs",
+  "cSpell.words": ["Dragonchain"]
 }
