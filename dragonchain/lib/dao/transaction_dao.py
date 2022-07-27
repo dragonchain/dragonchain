@@ -63,9 +63,12 @@ def store_full_txns(block_model: "l1_block_model.L1BlockModel") -> None:
     """
     _log.info("[TRANSACTION DAO] Putting transaction to storage")
     storage.put(f"{FOLDER}/{block_model.block_id}", block_model.export_as_full_transactions().encode("utf-8"))
-    block_model.store_transaction_payloads()
-    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    txn_dict[redisearch.Indexes.transaction.value] = {}
+    begin = time.time()
+    _log.info(f"uploading payloads for block: {block_model.block_id}")
+    storage.put(f"PAYLOADS/{block_model.block_id}", block_model.export_as_transaction_payloads().encode("utf-8"))
+    end = time.time()
+    _log.info(f"EXECUTION TIME: {end - begin} seconds")
+    txn_dict: Dict[str, Dict[str, Dict[str, Any]]] = {redisearch.Indexes.transaction.value: {}}
     # O(N) loop where N = # of txn
     # Could optimize by grouping indexing of transactions in the block with matchking txn_types using redisearch.put_many_documents
     for txn in block_model.transactions:

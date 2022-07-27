@@ -62,7 +62,7 @@ class TestS3Interface(unittest.TestCase):
         mock_select_object_content.assert_called_once_with(
             Bucket="loc",
             Key="TRANSACTION/block",
-            Expression="select s.txn, s.stripped_payload from s3object s where s.txn_id = 'txn' limit 1",
+            Expression="select s.txn, s.stripped_payload_by_block from s3object s where s.txn_id = 'txn' limit 1",
             ExpressionType="SQL",
             InputSerialization={"JSON": {"Type": "DOCUMENT"}},
             OutputSerialization={"JSON": {"RecordDelimiter": "\n"}},
