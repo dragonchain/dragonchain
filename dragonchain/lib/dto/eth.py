@@ -29,9 +29,9 @@ from dragonchain import exceptions
 from dragonchain.lib.dto import model
 
 # Mainnet ETH
-DRAGONCHAIN_MAINNET_NODE = "http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545"
+DRAGONCHAIN_MAINNET_NODE = "https://mainnet.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a"
 # Testnet ETH
-DRAGONCHAIN_ROPSTEN_NODE = "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545"
+DRAGONCHAIN_ROPSTEN_NODE = "https://ropsten.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a"
 # Mainnet ETC
 DRAGONCHAIN_CLASSIC_NODE = "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545"
 

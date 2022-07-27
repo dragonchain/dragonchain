@@ -158,10 +158,10 @@ class TestEthereumMethods(unittest.TestCase):
         client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 1})
         self.assertEqual(client.chain_id, 1)
         self.assertTrue(bool(client.address))  # Ensure we got an address (private key was generated for us)
-        self.assertEqual(client.rpc_address, "http://internal-Parity-Mainnet-Internal-1844666982.us-west-2.elb.amazonaws.com:8545")
+        self.assertEqual(client.rpc_address, "https://mainnet.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a")
         mock_check_chain_id.return_value = 3
         client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 3})
-        self.assertEqual(client.rpc_address, "http://internal-Parity-Ropsten-Internal-1699752391.us-west-2.elb.amazonaws.com:8545")
+        self.assertEqual(client.rpc_address, "https://ropsten.infura.io/v3/86c6d074149d49f5b7cddb8d340b862a")
         mock_check_chain_id.return_value = 1
         client = eth.new_from_user_input({"version": "1", "name": "banana", "chain_id": 61})
         self.assertEqual(client.rpc_address, "http://internal-Parity-Classic-Internal-2003699904.us-west-2.elb.amazonaws.com:8545")
