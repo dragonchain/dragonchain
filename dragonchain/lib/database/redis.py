@@ -37,13 +37,13 @@ redis_client_lru = cast(redis.Redis, None)
 async_redis_client = cast(aioredis.Redis, None)
 
 
-def _set_redis_client_if_necessary() -> None:
+def set_redis_client_if_necessary() -> None:
     global redis_client
     if redis_client is None:
         redis_client = _initialize_redis(host=REDIS_ENDPOINT, port=REDIS_PORT)
 
 
-def _set_redis_client_lru_if_necessary() -> None:
+def set_redis_client_lru_if_necessary() -> None:
     global redis_client_lru
     if redis_client_lru is None:
         redis_client_lru = _initialize_redis(host=LRU_REDIS_ENDPOINT, port=REDIS_PORT)
@@ -227,59 +227,59 @@ def _cache_key(key: str, service_name: str) -> str:
 
 
 def cache_put(key: str, value: Union[str, bytes], cache_expire: Optional[int] = None, service_name: str = "storage") -> bool:
-    _set_redis_client_lru_if_necessary()
+    set_redis_client_lru_if_necessary()
     # ex has 'or None' here because 0 for cache expire must be set as none
     return redis_client_lru.set(_cache_key(key, service_name), value, ex=(cache_expire or None)) or False
 
 
 def cache_get(key: str, service_name: str = "storage") -> Optional[bytes]:
-    _set_redis_client_lru_if_necessary()
+    set_redis_client_lru_if_necessary()
     return redis_client_lru.get(_cache_key(key, service_name))
 
 
 def cache_delete(key: str, service_name: str = "storage") -> int:
-    _set_redis_client_lru_if_necessary()
+    set_redis_client_lru_if_necessary()
     return redis_client_lru.delete(_cache_key(key, service_name))
 
 
 def cache_flush() -> bool:
-    _set_redis_client_lru_if_necessary()
+    set_redis_client_lru_if_necessary()
     return redis_client_lru.flushall()
 
 
 # PESISTENT REDIS
 def hdel_sync(name: str, *keys: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.hdel(name, *keys)
 
 
 def lpush_sync(name: str, *values: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.lpush(name, *values)
 
 
 def sadd_sync(name: str, *values: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.sadd(name, *values)
 
 
 def sismember_sync(name: str, value: str) -> bool:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.sismember(name, value)
 
 
 def rpush_sync(name: str, *values: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.rpush(name, *values)
 
 
 def delete_sync(*names: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.delete(*names)
 
 
 def hset_sync(name: str, key: str, value: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.hset(name, key, value)
 
 
@@ -292,7 +292,7 @@ def brpop_sync(keys: str, timeout: int = 0, decode: bool = True) -> Optional[tup
         None when no element could be popped and the timeout expired. This is only possible when timeout is not 0
         A tuple with the first element being the key where the element was popped, and the second element being the value of the popped element.
     """
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.brpop(keys, timeout=timeout)
     if not response:
         return None
@@ -309,7 +309,7 @@ def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool 
         None when no element could be popped and the timeout expired. This is only possible when timeout is not 0
         The element that was moved between the lists
     """
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.brpoplpush(pop_key, push_key, timeout)
     if response is None:
         return None
@@ -317,83 +317,83 @@ def brpoplpush_sync(pop_key: str, push_key: str, timeout: int = 0, decode: bool 
 
 
 def get_sync(name: str, decode: bool = True) -> Optional[str]:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.get(name)
     return _decode_response(response, decode)
 
 
 def lindex_sync(name: str, index: int, decode: bool = True) -> Optional[str]:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.lindex(name, index)
     return _decode_response(response, decode)
 
 
 def set_sync(key: str, value: str, ex: Optional[int] = None) -> bool:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.set(key, value, ex=ex) or False
 
 
 def ltrim_sync(key: str, start: int, end: int) -> bool:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.ltrim(key, start, end)
 
 
 def hget_sync(name: str, key: str, decode: bool = True) -> Optional[str]:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.hget(name, key)
     return _decode_response(response, decode)
 
 
 def smembers_sync(name: str, decode: bool = True) -> set:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.smembers(name)
     return _decode_set_response(response, decode)
 
 
 def srem_sync(name: str, *values: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.srem(name, *values)
 
 
 def lrange_sync(name: str, start: int, end: int, decode: bool = True) -> list:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.lrange(name, start, end)
     return _decode_list_response(response, decode)
 
 
 def pipeline_sync(transaction: bool = True) -> redis.client.Pipeline:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.pipeline(transaction=transaction)
 
 
 def llen_sync(name: str) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.llen(name)
 
 
 def rpoplpush_sync(src: str, dst: str, decode: bool = True) -> Optional[str]:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.rpoplpush(src, dst)
     return _decode_response(response, decode)
 
 
 def lpop_sync(name: str, decode: bool = True) -> Optional[str]:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.lpop(name)
     return _decode_response(response, decode)
 
 
 def hgetall_sync(name: str, decode: bool = True) -> dict:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     response = redis_client.hgetall(name)
     return _decode_dict_response(response, decode)
 
 
 def hexists_sync(name: str, key: str) -> bool:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.hexists(name, key)
 
 
 def zadd_sync(name: str, mapping: Dict[str, int], nx: bool = False, xx: bool = False, ch: bool = False, incr: bool = False) -> int:
-    _set_redis_client_if_necessary()
+    set_redis_client_if_necessary()
     return redis_client.zadd(name, mapping, nx=nx, xx=xx, ch=ch, incr=incr)  # noqa: T484

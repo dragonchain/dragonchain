@@ -19,7 +19,7 @@ import base64
 from typing import Dict, Any
 
 from eth_typing import URI, ChecksumAddress, HexStr
-import secp256k1
+import coincurve
 import web3
 import web3.gas_strategies.time_based
 import eth_keys
@@ -56,7 +56,7 @@ def new_from_user_input(user_input: Dict[str, Any]) -> "EthereumNetwork":  # noq
     if dto_version == "1":
         if not user_input.get("private_key"):
             # We need to create a private key if not provided
-            user_input["private_key"] = base64.b64encode(secp256k1.PrivateKey().private_key).decode("ascii")
+            user_input["private_key"] = base64.b64encode(coincurve.PrivateKey().secret).decode("ascii")
         else:
             try:
                 # Check if user provided key is hex and convert if necessary

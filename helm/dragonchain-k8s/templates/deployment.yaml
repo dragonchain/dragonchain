@@ -346,6 +346,10 @@ spec:
             - name: storage
               mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
+{{- if .Values.isMinikube }}
+      imagePullSecrets:
+      - name: {{ .Values.dragonchain.pullCreds }}
+{{- end }}
       volumes:
         - name: secrets
           secret:
@@ -422,6 +426,10 @@ spec:
 {{- if .Values.dragonchain.storage }}
             - name: storage
               mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
+{{- end }}
+{{- if .Values.isMinikube }}
+      imagePullSecrets:
+      - name: {{ .Values.dragonchain.pullCreds }}
 {{- end }}
       volumes:
         - name: secrets
@@ -500,6 +508,10 @@ spec:
             - name: storage
               mountPath: "{{ .Values.global.environment.STORAGE_LOCATION }}"
 {{- end }}
+{{- if .Values.isMinikube }}
+      imagePullSecrets:
+      - name: {{ .Values.dragonchain.pullCreds }}
+{{- end }}
       volumes:
         - name: secrets
           secret:
@@ -570,6 +582,10 @@ spec:
           volumeMounts:
             - mountPath: /usr/local/etc/redis
               name: config
+{{- if .Values.isMinikube }}
+      imagePullSecrets:
+      - name: {{ .Values.dragonchain.pullCreds }}
+{{- end }}
       volumes:
         - name: config
           configMap:
@@ -640,6 +656,10 @@ spec:
               name: config
             - mountPath: /data
               name: storage
+{{- if .Values.isMinikube }}
+      imagePullSecrets:
+      - name: {{ .Values.dragonchain.pullCreds }}
+{{- end }}
       volumes:
         - name: config
           configMap:
@@ -650,78 +670,3 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-redis-volume
-
----
-{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
-# Redisearch
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Release.Name }}-redisearch
-  labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-redisearch
-    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/part-of: dragonchain
-    app.kubernetes.io/component: redisearch
-    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ .Release.Name }}-redisearch
-      dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
-  strategy:
-      type: Recreate
-  template:
-    metadata:
-      name: {{ .Release.Name }}-redisearch
-      labels:
-        app.kubernetes.io/name: {{ .Release.Name }}-redisearch
-        helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        app.kubernetes.io/part-of: dragonchain
-        app.kubernetes.io/component: redisearch
-        stage: {{ .Values.global.environment.STAGE }}
-        dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
-        dragonchainRedis: {{ .Values.global.environment.INTERNAL_ID }}
-    spec:
-      enableServiceLinks: false
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: {{ .Values.runContainerUser }}
-        fsGroup: {{ .Values.runContainerGroup }}
-{{- if not .Values.isMinikube }}
-        sysctls:
-        - name: net.core.somaxconn
-          value: "1024"
-{{- end }}
-      containers:
-        - name: {{ .Release.Name }}-redisearch
-          image: "{{ .Values.redisearch.image.repository }}:{{ .Values.redisearch.image.tag }}"
-          imagePullPolicy: {{ .Values.dragonchain.image.pullPolicy }}
-          command: ["redis-server"]
-          args: ["/usr/local/etc/redis/redis.conf"]
-          ports:
-            - name: http
-              containerPort: 6379
-          resources:
-{{ toYaml .Values.redisearch.resources | indent 12 }}
-          volumeMounts:
-            - mountPath: /usr/local/etc/redis
-              name: config
-            - mountPath: /data
-              name: storage
-      volumes:
-        - name: config
-          configMap:
-            name: {{ .Release.Name }}-rs-configmap
-            items:
-              - key: redis-config
-                path: redis.conf
-        - name: storage
-          persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-redisearch-volume
-{{- end }}

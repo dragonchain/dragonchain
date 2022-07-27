@@ -21,7 +21,7 @@ from dragonchain import logger
 from dragonchain import exceptions
 from dragonchain.lib.dto import smart_contract_model
 from dragonchain.lib.interfaces import storage
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 from dragonchain.lib import faas
 
 #  Constants
@@ -31,11 +31,12 @@ _log = logger.get_logger()
 
 
 def get_contract_id_by_txn_type(txn_type: str) -> str:
-    results = redisearch.search(
-        index=redisearch.Indexes.smartcontract.value, query_str=f"@sc_name:{{{redisearch.get_escaped_redisearch_string(txn_type)}}}", only_id=True
-    ).docs
+    results = elasticsearch.search(
+        index=elasticsearch.Indexes.smartcontract.value,
+        query={"query": {"match": {"sc_name": txn_type}}},
+    )
     if results:
-        return results[0].id
+        return results["results"][0].id
     raise exceptions.NotFound(f"Smart contract {txn_type} could not be found.")
 
 
@@ -45,10 +46,10 @@ def get_contract_by_txn_type(txn_type: str) -> smart_contract_model.SmartContrac
 
 
 def list_all_contract_ids() -> List[str]:
-    query_result = redisearch.search(index=redisearch.Indexes.smartcontract.value, query_str="*", limit=10000, only_id=True)
+    query_result = elasticsearch.list_document_ids(index=elasticsearch.Indexes.smartcontract.value)
     contract_ids = []
-    for index in query_result.docs:
-        contract_ids.append(index.id)
+    for contract_id in query_result:
+        contract_ids.append(contract_id)
     return contract_ids
 
 
@@ -58,13 +59,7 @@ def get_serial_contracts() -> List[smart_contract_model.SmartContractModel]:
     Please note this function fetches all smart contract metadata from storage each time it is run, so should be used sparingly
     """
     # First check and remove bad contracts or this function could fail
-    remove_bad_contracts()
-    serial_contracts = []
-    for sc_id in list_all_contract_ids():
-        sc_model = get_contract_by_id(sc_id)
-        if sc_model.execution_order == "serial":
-            serial_contracts.append(sc_model)
-    return serial_contracts
+    return elasticsearch.search(index=elasticsearch.Indexes.smartcontract.value, query={"query": {"match_phrase": {"execution_order": "serial"}}})["results"]
 
 
 def remove_bad_contracts() -> None:
@@ -73,17 +68,17 @@ def remove_bad_contracts() -> None:
         try:
             get_contract_by_id(sc_id)
         except exceptions.NotFound:
-            redisearch.delete_document(index=redisearch.Indexes.smartcontract.value, doc_name=sc_id)
+            elasticsearch.delete_document(index=elasticsearch.Indexes.smartcontract.value, doc_id=sc_id)
 
 
 def add_smart_contract_index(contract: smart_contract_model.SmartContractModel) -> None:
     """Add the index for a smart contract"""
-    redisearch.put_document(redisearch.Indexes.smartcontract.value, contract.id, {"sc_name": contract.txn_type}, upsert=True)
+    elasticsearch.put_document(elasticsearch.Indexes.smartcontract.value, {"sc_name": contract.txn_type}, contract.id)
 
 
 def remove_smart_contract_index(contract_id: str) -> None:
     """Remove the index for a smart contract"""
-    redisearch.delete_document(redisearch.Indexes.smartcontract.value, contract_id)
+    elasticsearch.delete_document(elasticsearch.Indexes.smartcontract.value, contract_id)
 
 
 def get_contract_by_id(contract_id: str) -> smart_contract_model.SmartContractModel:

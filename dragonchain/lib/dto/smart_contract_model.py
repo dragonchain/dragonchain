@@ -218,7 +218,12 @@ class SmartContractModel(model.Model):
 
     def export_as_search_index(self) -> Dict[str, Any]:
         """Export as search index DTO"""
-        return {"sc_name": self.txn_type}
+        return {
+            "id": self.id,
+            "sc_name": self.txn_type,
+            "state": self.status.get("state"),
+            "execution_order": self.execution_order,
+        }
 
     def export_as_at_rest(self) -> Dict[str, Any]:
         """Export as at rest DTO"""

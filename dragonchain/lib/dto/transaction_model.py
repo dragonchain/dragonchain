@@ -202,7 +202,16 @@ class TransactionModel(model.Model):
     def export_as_search_index(self) -> Dict[str, Any]:
         """Get the search index DTO from this transaction"""
         # Please note that extract_custom_indexes should be ran first, or else custom indexes for this transaction will not be exported
-        search_indexes = {"timestamp": int(self.timestamp), "tag": self.tag, "block_id": int(self.block_id)}
+        search_indexes = {
+            "version": "2",
+            "dcrn": schema.DCRN.Transaction_L1_Search_Index.value,
+            "txn_type": self.txn_type,
+            "dc_id": self.dc_id,
+            "txn_id": self.txn_id,
+            "timestamp": self.timestamp,
+            "tag": self.tag,
+            "block_id": int(self.block_id),
+        }
         if self.invoker:  # Add invoker tag if it exists
             search_indexes["invoker"] = self.invoker
         reserved_keywords = search_indexes.keys()

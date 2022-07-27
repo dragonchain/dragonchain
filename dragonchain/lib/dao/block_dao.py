@@ -24,7 +24,7 @@ from dragonchain.lib.dto import l4_block_model
 from dragonchain.lib import dragonnet_config
 from dragonchain.lib.interfaces import storage
 from dragonchain.broadcast_processor import broadcast_functions
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 from dragonchain import exceptions
 from dragonchain import logger
 
@@ -99,8 +99,8 @@ def insert_block(block: "model.BlockModel") -> None:
     #  Create ref to this block for the next block
     last_block_ref = {"block_id": block.block_id, "proof": block.proof}
     #  Upload stripped block
-    if redisearch.ENABLED:
-        redisearch.put_document(redisearch.Indexes.block.value, block.block_id, block.export_as_search_index(), upsert=True)
+    if elasticsearch.ENABLED:
+        elasticsearch.put_document(elasticsearch.Indexes.block.value, block.export_as_search_index(), block.block_id)
     storage.put_object_as_json(f"{FOLDER}/{block.block_id}", block.export_as_at_rest())
 
     #  Upload ref
@@ -108,6 +108,6 @@ def insert_block(block: "model.BlockModel") -> None:
 
 
 def insert_l5_verification(storage_location: str, block: "model.BlockModel") -> None:
-    if redisearch.ENABLED:
+    if elasticsearch.ENABLED:
         index_id = storage_location.split("/")[1]
-        redisearch.put_document(redisearch.Indexes.verification.value, index_id, block.export_as_search_index(), upsert=True)
+        elasticsearch.put_document(elasticsearch.Indexes.verification.value, block.export_as_search_index(), index_id)

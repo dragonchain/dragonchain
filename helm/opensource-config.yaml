@@ -13,7 +13,6 @@ global:
     TLS_SUPPORT: "" # Put "true" here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
     BROADCAST: "true" # Set to "false" if you want to disable Dragon Net support (L1 only)
-    USE_REDISEARCH: "false" # (l2+ only) Set to "true" in order to enable redisearch functionality (requires more cpu/memory). Enables query endpoints
 
 # -- isMinikube --
 # When running on minikube, this should be boolean true

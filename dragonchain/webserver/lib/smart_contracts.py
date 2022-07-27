@@ -25,7 +25,7 @@ from dragonchain.lib.dao import transaction_type_dao
 from dragonchain.lib.dao import smart_contract_dao
 from dragonchain.lib.dto import smart_contract_model
 from dragonchain.lib.interfaces import storage
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 
 
 _log = logger.get_logger()
@@ -69,7 +69,7 @@ def create_contract_v1(body: dict) -> dict:
         DTO of the contract at rest which is being created
     """
     # Before anything else, check to see if this chain has too many contracts
-    if redisearch.get_document_count(redisearch.Indexes.smartcontract.value) >= MAX_CONTRACT_LIMIT:
+    if elasticsearch.get_document_count(elasticsearch.Indexes.smartcontract.value) >= MAX_CONTRACT_LIMIT:
         raise exceptions.ContractLimitExceeded(MAX_CONTRACT_LIMIT)
     # Create model and validate fields
     _log.info(f"Creating data model for {body['txn_type']}")

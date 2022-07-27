@@ -30,13 +30,13 @@ class TestRedisAccess(unittest.IsolatedAsyncioTestCase):
     @patch("dragonchain.lib.database.redis._initialize_redis")
     def test_set_redis_client_if_necessary(self, mock_redis):
         redis.redis_client = None
-        redis._set_redis_client_if_necessary()
+        redis.set_redis_client_if_necessary()
         mock_redis.assert_called_once()
 
     @patch("dragonchain.lib.database.redis._initialize_redis")
     def test_set_redis_client_lru_if_necessary(self, mock_redis):
         redis.redis_client_lru = None
-        redis._set_redis_client_lru_if_necessary()
+        redis.set_redis_client_lru_if_necessary()
         mock_redis.assert_called_once()
 
     @patch("dragonchain.lib.database.redis._initialize_async_redis")

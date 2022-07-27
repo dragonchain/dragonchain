@@ -39,6 +39,7 @@ _validate_sc_invoke_request = fastjsonschema.compile(schema.smart_contract_invok
 
 def setup() -> None:
     _log.info("Initializing contract service...")
+    _log.info("-------restarting dead workers-----")
     restart_dead_workers()
     _log.info("Service initialized!")
 

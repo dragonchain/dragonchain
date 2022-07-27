@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-webserver-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "false"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS, HEAD"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,timestamp,dragonchain,x-callback-url"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-webserver-ingress
+    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: dragonchain
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
+    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
+spec:
+  rules:
+  - host: elastic-chain.com
+    http:
+      paths:
+      - backend:
+          serviceName: {{ .Release.Name }}-service
+          servicePort: 80

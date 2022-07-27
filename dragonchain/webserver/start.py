@@ -16,8 +16,7 @@
 # language governing permissions and limitations under the Apache License.
 
 from dragonchain.lib.interfaces import secrets
-from dragonchain.lib.database import redis
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import redis, elasticsearch
 from dragonchain.lib.dao import api_key_dao
 from dragonchain.lib.dto import api_key_model
 from dragonchain.lib import error_reporter
@@ -49,19 +48,19 @@ def start() -> None:
         else:
             _log.info("HMAC key secret already exists. Skipping credential storage write.")
 
-    if redisearch.ENABLED:
-        _log.info("Checking if redisearch indexes need to be regenerated")
-        redisearch.generate_indexes_if_necessary()
+    if elasticsearch.ENABLED:
+        _log.info("Checking if elasticsearch indexes need to be regenerated")
+        elasticsearch.generate_indexes_if_necessary()
 
     _log.info("Finish pre-boot successful")
 
 
 if __name__ == "__main__":
     # Wait for Redis and Redisearch to connect before starting initialization
-    if redisearch.ENABLED:
-        redisearch._get_redisearch_index_client("test")
-    redis._set_redis_client_if_necessary()
-    redis._set_redis_client_lru_if_necessary()
+    if elasticsearch.ENABLED:
+        elasticsearch.set_elastic_search_client_if_necessary()
+    redis.set_redis_client_if_necessary()
+    redis.set_redis_client_lru_if_necessary()
     try:
         start()
     except Exception as e:

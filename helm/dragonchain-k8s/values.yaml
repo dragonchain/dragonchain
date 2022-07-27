@@ -1,5 +1,7 @@
 webserverLiveliness: true
 
+ingressEndpoint: api.minikube.com
+
 global:
   environment:
     DRAGONCHAIN_NAME: "ArbitraryName" # This can be anything
@@ -11,17 +13,18 @@ global:
     LEVEL: "2" # Integer 1-5 as a string. Must match with Dragon Net registration if participating in Dragon Net
     TLS_SUPPORT: "" # Put "true" here if you have created a TLS certificate and put into a tls kubernetes secret, otherwise leave empty
     LOG_LEVEL: "debug"
-    BROADCAST: "true" # Set to "false" if you want to disable Dragon Net support (L1 only)
-    USE_REDISEARCH: "false" # (l2+ only) Set to "true" in order to enable redisearch functionality (requires more cpu/memory). Enables query endpoints
+    BROADCAST: "false" # Set to "false" if you want to disable Dragon Net support (L1 only)
+    USE_ELASTICSEARCH: "false"
     BROADCAST_INTERVAL: "2" # L5 ONLY! Number of hours between broadcasts to public chain
     STAGE: "prod"
     STORAGE_LOCATION: "/dragonchain"
+    ELASTICSEARCH_ENDPOINT: "search-elasticsearch-staging-jkouwj4ih5znwtnsgsh7iitmk4.us-west-1.es.amazonaws.com"
 
 service:
   # If using ingress, this should remain ClusterIP, if exposing via the cluster directly, this should be NodePort
-  type: NodePort
+  type: ClusterIP
   # Port is only needed if type is "NodePort", and exposing a chain without ingress. Must be 30000-32767 and unique per cluster
-  port: 30000
+#  port: 30000
 
 # User/Group to use when running container.
 runContainerUser: 1000
@@ -31,6 +34,10 @@ runContainerGroup: 1000
 secret:
   name: SecretString
   mountPath: /etc/chain-secrets
+
+aws:
+  access_key_id: ""
+  secret_key: ""
 
 # LRU cache redis resources configuration
 cacheredis:
@@ -142,18 +149,19 @@ jobProcessor:
 isMinikube: true
 
 faas:
-  gateway: https://my-faas-gateway-url
+  gateway: ""
   mountFaasSecret: false
-  registry: mycompany.docker.io
-  registry_username: MyUsername
+  registry: 381978683274.dkr.ecr.us-west-1.amazonaws.com
+  registry_username: ""
 
 dragonchain:
   verificationNotification: false
   reporting_type: storage
+  pullCreds: awsecr-cred
   image:
     pullPolicy: Always
-    value: docker.io/dragonchain/dragonchain_core
-    version: 4.5.1
+    value: 381978683274.dkr.ecr.us-west-1.amazonaws.com/dragonchain_core
+    version: elastic
   storage:
     spec:
       storageClassName: standard

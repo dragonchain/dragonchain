@@ -21,7 +21,6 @@ data:
   RATE_LIMIT: "0"
   REDIS_ENDPOINT: "{{ .Release.Name }}-pr-service"
   LRU_REDIS_ENDPOINT: "{{ .Release.Name }}-cr-service"
-  REDISEARCH_ENDPOINT: "{{ .Release.Name }}-rs-service"
   REGISTRY: "docker.io/dragonchain"
   FAAS_GATEWAY: "{{ .Values.faas.gateway }}"
   FAAS_REGISTRY: "{{ .Values.faas.registry }}"
@@ -32,6 +31,12 @@ data:
   DRAGONCHAIN_VERSION: "{{ .Values.dragonchain.image.version }}"
   DRAGONCHAIN_ENDPOINT: "{{ .Values.global.environment.DRAGONCHAIN_ENDPOINT }}"
   BROADCAST_INTERVAL: "{{ .Values.global.environment.BROADCAST_INTERVAL }}"
+  ELASTICSEARCH_URL: "{{ .Values.global.environment.ELASTICSEARCH_URL }}"
+  USE_ELASTICSEARCH: "{{ .Values.global.environment.USE_ELASTICSEARCH }}"
+{{- if and .Values.aws.access_key_id .Values.aws.secret_key }}
+  AWS_ACCESS_KEY_ID: "{{ .Values.aws.access_key_id }}"
+  AWS_SECRET_ACCESS_KEY: "{{ .Values.aws.secret_key }}"
+{{- end }}
 {{- if .Values.dragonchain.verificationNotification }}
   VERIFICATION_NOTIFICATION: {{ .Values.dragonchain.verificationNotification | toJson | quote }}
 {{- end }}
@@ -74,41 +79,6 @@ data:
     auto-aof-rewrite-min-size 64mb
     aof-load-truncated yes
     aof-use-rdb-preamble yes
----
-{{- if not (and (eq .Values.global.environment.USE_REDISEARCH "false") (not (eq .Values.global.environment.LEVEL "1"))) }}
-# Redisearch Config Map
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}-rs-configmap
-  labels:
-    app.kubernetes.io/name: {{ .Release.Name }}-rs-configmap
-    helm.sh/chart: {{ include "dragonchain-k8s.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/part-of: dragonchain
-    app.kubernetes.io/component: redisearch-configmap
-    app.kubernetes.io/version: {{ .Values.dragonchain.image.version }}
-    dragonchainId: {{ .Values.global.environment.INTERNAL_ID }}
-data:
-  redis-config: |
-    save 900 1
-    save 300 10
-    save 60 10000
-    stop-writes-on-bgsave-error yes
-    rdbcompression yes
-    rdbchecksum yes
-    dbfilename dump.rdb
-    appendonly yes
-    appendfilename "redisearch.aof"
-    appendfsync everysec
-    no-appendfsync-on-rewrite no
-    auto-aof-rewrite-percentage 100
-    auto-aof-rewrite-min-size 64mb
-    aof-load-truncated yes
-    aof-use-rdb-preamble yes
-    loadmodule /usr/lib/redis/modules/redisearch.so TIMEOUT 2000 ON_TIMEOUT fail
-{{- end }}
 ---
 # Cache Redis Config Map
 apiVersion: v1

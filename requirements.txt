@@ -5,7 +5,7 @@ jsonpath==0.82
 Flask==1.1.2
 requests==2.24.0
 fastjsonschema==2.14.4
-secp256k1==0.13.2
+coincurve==15.0.1
 web3==5.12.0
 kubernetes==11.0.0
 docker==4.2.2
@@ -18,3 +18,5 @@ redisearch==1.0.0
 bnb-tx==0.0.4
 pycoin==0.90.20200322
 mnemonic==0.19
+elasticsearch==7.10
+requests-aws4auth==1.1.1

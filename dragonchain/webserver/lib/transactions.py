@@ -30,12 +30,13 @@ from dragonchain.lib import queue
 from dragonchain.lib import callback
 from dragonchain.lib.dto import transaction_model
 from dragonchain.lib.interfaces import storage
-from dragonchain.lib.database import redisearch
+from dragonchain.lib.database import elasticsearch
 from dragonchain.lib.database import redis as dc_redis
 
 if TYPE_CHECKING:
     from dragonchain.lib.types import RSearch
     from dragonchain.lib.dto import api_key_model
+    from dragonchain.lib.types import ESSearch
 
 _log = logger.get_logger()
 
@@ -44,7 +45,7 @@ def _get_transaction_stub(txn_id: str) -> Dict[str, Any]:
     return {"header": {"txn_id": txn_id}, "status": "pending", "message": "This transaction is waiting to be included in a block"}
 
 
-def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearch":
+def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "ESSearch":
     """invoke queries on redisearch indexes
     Args:
         params: Dictionary of redisearch query options
@@ -54,41 +55,26 @@ def query_transactions_v1(params: Dict[str, Any], parse: bool = True) -> "RSearc
     """
     if not params.get("transaction_type"):
         raise exceptions.ValidationException("transaction_type must be supplied for transaction queries")
-    try:
-        query_result = redisearch.search(
-            index=params["transaction_type"],
-            query_str=params["q"],
-            only_id=params.get("id_only"),
-            verbatim=params.get("verbatim"),
-            offset=params.get("offset"),
-            limit=params.get("limit"),
-            sort_by=params.get("sort_by"),
-            sort_asc=params.get("sort_asc"),
-        )
-    except redis.exceptions.ResponseError as e:
-        error_str = str(e)
-        # Detect if this is a syntax error; if so, throw it back as a 400 with the message
-        if error_str.startswith("Syntax error"):
-            raise exceptions.BadRequest(error_str)
-        # If unknown index, user provided a bad transaction type
-        elif error_str.endswith(": no such index"):
-            raise exceptions.BadRequest("Invalid transaction type")
-        else:
-            raise
-    result: "RSearch" = {"total": query_result.total, "results": []}
-    if params.get("id_only"):
-        result["results"] = [x.id for x in query_result.docs]
-    else:
-        transactions = []
-        for doc in query_result.docs:
-            block_id = doc.block_id
-            transaction_id = doc.id
-            retrieved_txn = storage.select_transaction(block_id, transaction_id)
-            if parse:
-                retrieved_txn["payload"] = json.loads(retrieved_txn["payload"])
-            transactions.append(retrieved_txn)
-        result["results"] = transactions
-    return result
+    query_result = elasticsearch.search(
+        index=params["transaction_type"],
+        query=params["query"],
+        q=params.get("q"),
+        get_all=params.get("get_all"),
+        sort=params.get("sort"),
+        offset=params.get("offset"),
+        limit=params.get("limit"),
+    )
+    results: "ESSearch" = {"total": query_result["total"], "results": []}
+    transactions = []
+    for doc in query_result["results"]:
+        block_id = doc.block_id
+        transaction_id = doc.id
+        retrieved_txn = storage.select_transaction(block_id, transaction_id)
+        if parse:
+            retrieved_txn["payload"] = json.loads(retrieved_txn["payload"])
+        transactions.append(retrieved_txn)
+    results["results"] = transactions
+    return results
 
 
 def get_transaction_v1(transaction_id: str, parse: bool = True) -> Dict[str, Any]:
@@ -98,9 +84,10 @@ def get_transaction_v1(transaction_id: str, parse: bool = True) -> Dict[str, Any
     """
     if dc_redis.sismember_sync(queue.TEMPORARY_TX_KEY, transaction_id):
         return _get_transaction_stub(transaction_id)
-    doc = redisearch.get_document(redisearch.Indexes.transaction.value, f"txn-{transaction_id}")
+    doc = elasticsearch.get_document_by_id(transaction_id)
+    _log.info(f"RESULTS: {doc}")
     try:
-        block_id = doc.block_id
+        block_id = str(doc["block_id"])
     except AttributeError:
         raise exceptions.NotFound(f"Transaction {transaction_id} could not be found.")
     txn = storage.select_transaction(block_id, transaction_id)

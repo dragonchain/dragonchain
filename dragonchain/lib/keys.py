@@ -21,7 +21,7 @@ import base64
 from typing import cast, Tuple, Optional, TYPE_CHECKING
 
 import base58
-import secp256k1
+import coincurve
 
 from dragonchain.lib import crypto
 from dragonchain.lib import matchmaking
@@ -195,9 +195,9 @@ class DCKeys(object):
         decoded_key = base64.b64decode(private_key_string)
         # Modify this statement as support for other encryption algorithms change
         if self.encryption == crypto.SupportedEncryption.secp256k1:
-            priv_key = secp256k1.PrivateKey(privkey=decoded_key, raw=True)
-            self.priv = priv_key
-            self.pub = priv_key.pubkey
+            priv_key = coincurve.PrivateKey(secret=decoded_key)
+            self.priv = priv_key.secret
+            self.pub = priv_key.public_key
         else:
             raise NotImplementedError("Encryption algorithm not implemented")
 
@@ -212,7 +212,8 @@ class DCKeys(object):
         decoded_key = base58.b58decode(public_key_string)
         # Modify this statement as support for other encryption algorithms change
         if self.encryption == crypto.SupportedEncryption.secp256k1:
-            self.pub = secp256k1.PublicKey(pubkey=decoded_key, raw=True)
+            pub_key = coincurve.PublicKey(data=decoded_key)
+            self.pub = pub_key.public_key
         else:
             raise NotImplementedError("Encryption algorithm not implemented")
 
